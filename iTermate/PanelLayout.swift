@@ -3,9 +3,16 @@ import CoreGraphics
 
 struct PanelLayout {
     static let gap: CGFloat = 8
-    static let width: CGFloat = 260
+    static let defaultWidth: CGFloat = 260
+    static let minimumWidth: CGFloat = 180
+    static let maximumWidth: CGFloat = 600
 
-    static func frame(for windowFrame: CGRect, in visibleFrame: CGRect) -> CGRect {
+    static func frame(
+        for windowFrame: CGRect,
+        in visibleFrame: CGRect,
+        width proposedWidth: CGFloat = defaultWidth
+    ) -> CGRect {
+        let width = clampedWidth(proposedWidth)
         let height = min(windowFrame.height, visibleFrame.height)
         let y = min(
             max(windowFrame.minY, visibleFrame.minY),
@@ -28,6 +35,10 @@ struct PanelLayout {
         }
 
         return CGRect(x: x, y: y, width: width, height: height)
+    }
+
+    static func clampedWidth(_ width: CGFloat) -> CGFloat {
+        min(max(width, minimumWidth), maximumWidth)
     }
 
     static func appKitFrame(fromQuartzFrame frame: CGRect) -> CGRect {
