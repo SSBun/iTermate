@@ -193,6 +193,23 @@ class Bridge:
 
     async def monitor_session_commands(self, session_id):
         try:
+            if session_id not in self.agent_managed_session_ids:
+                try:
+                    prompt = await iterm2.async_get_last_prompt(
+                        self.connection, session_id
+                    )
+                except Exception:
+                    prompt = None
+                if (
+                    prompt is not None
+                    and prompt.state == iterm2.PromptState.RUNNING
+                ):
+                    self.session_statuses[session_id] = {
+                        "status": "running",
+                        "exitStatus": None,
+                    }
+                    await self.publish_snapshot()
+
             modes = [
                 iterm2.PromptMonitor.Mode.COMMAND_START,
                 iterm2.PromptMonitor.Mode.COMMAND_END,
@@ -509,6 +526,40 @@ def self_test():
     snapshot = asyncio.run(Bridge(None, app).build_snapshot())
     assert snapshot[0]["tabs"][0]["sessions"][0]["isActive"]
     assert not snapshot[0]["tabs"][1]["sessions"][0]["isActive"]
+
+    class FakePrompt:
+        state = "running"
+
+    class FakePromptMonitor:
+        class Mode:
+            COMMAND_START = "command-start"
+            COMMAND_END = "command-end"
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return False
+
+        async def async_get(self):
+            raise asyncio.CancelledError
+
+    class FakeIterm2:
+        PromptState = type("PromptState", (), {"RUNNING": "running"})
+        PromptMonitor = FakePromptMonitor
+
+        @staticmethod
+        async def async_get_last_prompt(_, __):
+            return FakePrompt()
+
+    globals()["iterm2"] = FakeIterm2
+    bridge = Bridge(None, app)
+    try:
+        asyncio.run(bridge.monitor_session_commands("session-1"))
+    except asyncio.CancelledError:
+        pass
+    assert bridge.session_statuses["session-1"]["status"] == "running"
+    del globals()["iterm2"]
 
     writer = FakeWriter()
     asyncio.run(

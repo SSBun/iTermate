@@ -1,3 +1,22 @@
+# 2026-07-30 — 命令状态监控必须先同步当前状态
+
+## Trigger
+
+- 仅在订阅 `PromptMonitor` 后等待 `COMMAND_START`/`COMMAND_END` 事件。
+- Bridge 启动或重连时，Session 中的命令可能已经开始运行。
+
+## Rule
+
+- 建立事件监控前先读取 Session 的最近 Prompt 状态。
+- 最近 Prompt 为 `RUNNING` 时立即发布 running 状态，再继续监听增量事件。
+- 没有 Shell Integration 或读取失败时保持未知，不根据进程名称猜测运行状态。
+
+## Check
+
+- 启动或重连期间已有普通命令的 running 状态可恢复。
+- 新启动和结束的普通命令仍由 PromptMonitor 更新。
+- 未启用 Shell Integration 的 Session 不伪造状态。
+
 # 2026-07-29 — Bridge 焦点标记必须来自全局当前 Session
 
 ## Trigger

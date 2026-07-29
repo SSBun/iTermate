@@ -217,12 +217,82 @@ private final class PanelHostingView: NSHostingView<PanelContent> {
     }
 }
 
+private struct ActiveHoverContainer<Content: View>: View {
+    @State private var isHovered = false
+    private let content: (Bool) -> Content
+
+    init(@ViewBuilder content: @escaping (Bool) -> Content) {
+        self.content = content
+    }
+
+    var body: some View {
+        content(isHovered)
+            .overlay {
+                ActiveHoverRegion { isHovered = $0 }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+    }
+}
+
+private struct ActiveHoverRegion: NSViewRepresentable {
+    let onHover: (Bool) -> Void
+
+    func makeNSView(context: Context) -> ActiveHoverView {
+        ActiveHoverView(onHover: onHover)
+    }
+
+    func updateNSView(_ view: ActiveHoverView, context: Context) {
+        view.onHover = onHover
+    }
+}
+
+private final class ActiveHoverView: NSView {
+    var onHover: (Bool) -> Void
+    private var hoverTrackingArea: NSTrackingArea?
+
+    init(onHover: @escaping (Bool) -> Void) {
+        self.onHover = onHover
+        super.init(frame: .zero)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func updateTrackingAreas() {
+        if let hoverTrackingArea {
+            removeTrackingArea(hoverTrackingArea)
+        }
+        super.updateTrackingAreas()
+
+        let hoverTrackingArea = NSTrackingArea(
+            rect: bounds,
+            options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect],
+            owner: self,
+            userInfo: nil
+        )
+        addTrackingArea(hoverTrackingArea)
+        self.hoverTrackingArea = hoverTrackingArea
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        onHover(true)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        onHover(false)
+    }
+}
+
 private struct PanelContent: View {
     @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
     @State private var collapsedSectionIDs: Set<String> = []
-    @State private var hoveredSessionID: String?
-    @FocusState private var focusedCloseSessionID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -467,85 +537,77 @@ private struct PanelContent: View {
     }
 
     private func sessionButton(_ item: SessionListItem) -> some View {
-        let showsCloseButton = hoveredSessionID == item.id
-            || focusedCloseSessionID == item.id
-
-        return HStack(spacing: 0) {
-            Button {
-                store.activate(sessionID: item.session.id)
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: item.isFocused ? "circle.fill" : "circle")
-                        .font(.system(size: 8))
-                        .foregroundStyle(item.isFocused ? Color.accentColor : .secondary)
-
-                    Text(sessionName(item.session))
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    if let status = item.session.status {
-                        switch status {
-                        case .running:
-                            WorkingStatusIcon()
-                        case .finished:
-                            Image(
-                                systemName: item.session.exitStatus == 0
-                                    ? "checkmark.circle.fill"
-                                    : "xmark.circle.fill"
-                            )
+        ActiveHoverContainer { isHovered in
+            HStack(spacing: 0) {
+                Button {
+                    store.activate(sessionID: item.session.id)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: item.isFocused ? "circle.fill" : "circle")
+                            .font(.system(size: 8))
                             .foregroundStyle(
-                                item.session.exitStatus == 0 ? .green : .red
+                                item.isFocused ? Color.accentColor : .secondary
                             )
-                            .help(
-                                item.session.exitStatus == 0
-                                    ? "Command finished successfully"
-                                    : "Command failed"
-                            )
+
+                        Text(sessionName(item.session))
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        if let status = item.session.status {
+                            switch status {
+                            case .running:
+                                WorkingStatusIcon()
+                            case .finished:
+                                Image(
+                                    systemName: item.session.exitStatus == 0
+                                        ? "checkmark.circle.fill"
+                                        : "xmark.circle.fill"
+                                )
+                                .foregroundStyle(
+                                    item.session.exitStatus == 0 ? .green : .red
+                                )
+                                .help(
+                                    item.session.exitStatus == 0
+                                        ? "Command finished successfully"
+                                        : "Command failed"
+                                )
+                            }
+                        }
+
+                        if item.session.isMinimized == true {
+                            Image(systemName: "rectangle.compress.vertical")
+                                .foregroundStyle(.secondary)
                         }
                     }
-
-                    if item.session.isMinimized == true {
-                        Image(systemName: "rectangle.compress.vertical")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .contentShape(Rectangle())
-                .padding(.leading, 8)
-                .padding(.vertical, 5)
-            }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityLabel("Activate session \(sessionName(item.session))")
-
-            Button {
-                store.close(sessionID: item.session.id)
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 24, height: 30)
                     .contentShape(Rectangle())
+                    .padding(.leading, 8)
+                    .padding(.vertical, 5)
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel("Activate session \(sessionName(item.session))")
+
+                Button {
+                    store.close(sessionID: item.session.id)
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 24, height: 30)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .opacity(isHovered ? 1 : 0)
+                .help("Close session")
+                .accessibilityLabel("Close session \(sessionName(item.session))")
             }
-            .buttonStyle(.plain)
-            .focused($focusedCloseSessionID, equals: item.id)
-            .opacity(showsCloseButton ? 1 : 0)
-            .allowsHitTesting(showsCloseButton)
-            .help("Close session")
-            .accessibilityLabel("Close session \(sessionName(item.session))")
-        }
-        .padding(.trailing, 4)
-        .background(
-            item.isFocused
-                ? Color.accentColor.opacity(0.14)
-                : Color.clear
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 7))
-        .onHover { isHovered in
-            if isHovered {
-                hoveredSessionID = item.id
-            } else if hoveredSessionID == item.id {
-                hoveredSessionID = nil
-            }
+            .padding(.trailing, 4)
+            .background(
+                item.isFocused
+                    ? Color.accentColor.opacity(0.14)
+                    : Color.clear
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 7))
         }
     }
 

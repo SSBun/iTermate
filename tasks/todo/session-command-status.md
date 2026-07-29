@@ -1,6 +1,6 @@
 # 观察 Session 命令状态并显示完成图标
 
-Status (2026-07-29 14:00): Completed
+Status (2026-07-30 00:53): Completed
 
 ## Scope
 
@@ -21,12 +21,13 @@ Status (2026-07-29 14:00): Completed
 - [x] T7：Agent 退出后状态所有权返回 Shell Integration，普通命令状态观察不回归。
 - [x] T8：本机 Pi/Codex 集成安装后不覆盖现有 extension/hooks，Bridge、App 和测试验证通过。
 - [x] T9：Pi lifecycle handler 在返回前确认状态已送达 Bridge，agent settled 后不再因异步发送失败而残留 running。
+- [x] T10：Bridge 启动或重连时，已在运行的普通 Shell 命令也能显示 running 状态。
 
 ## Plan
 
-1. 让 Pi lifecycle handler 等待 Bridge 确认状态，消除 fire-and-forget 发送窗口。
-2. 更新 bundle 与本机 extension，并复现 running → finished。
-3. 运行相关 smoke check、构建与测试。
+1. 在订阅命令事件前读取每个 Session 的当前 Prompt 状态，补齐 Bridge 启动或重连时已运行的命令。
+2. 增加当前 Prompt 状态的回归检查，并验证运行状态快照。
+3. 重建并重启 Bridge/App，运行相关 smoke check、构建与测试。
 
 ## Result
 
@@ -40,3 +41,5 @@ Status (2026-07-29 14:00): Completed
 - T8：Pi extension 作为新文件安装，未修改现有 Otty extension；Codex hooks 以 `_iTermate` 条目追加，原文件备份为 `~/.codex/hooks.json.itermate-backup`。Bridge 握手为 v4，Python compile/self-test、TypeScript import、Swift parse、`git diff --check` 与完整 Xcode 测试通过，17/17 测试通过。已有 Pi Session 需执行 `/reload`；Codex 需在 `/hooks` 中信任新增条目。
 - T9：Pi integration 的 `report` 改为返回 Promise，连接后立即发送状态并等待匹配 request ID 的 Bridge `actionResult`，最多等待 3 秒；Pi lifecycle handler 现在由 extension runner 等待，不再 fire-and-forget。真实 Bridge smoke check 依次观察到 `agent_start → running`、`agent_settled → finished (0)`，当前 Session 快照保持 finished；源码、本机 extension 与 App bundle 内容一致，24/24 Xcode 测试、Swift parse、TypeScript import 和 `git diff --check` 通过。
 - Review gate: Skipped — no explicit user request.
+- T10：每个 Session 的 `PromptMonitor` 建立前先读取 `async_get_last_prompt`；若状态为 `PromptState.RUNNING`，立即恢复 running 快照，再继续监听增量事件。Python self-test 覆盖“已有命令 + 监控启动”场景；`py_compile`、`git diff --check` 和 Xcode 测试 29/29 通过。重建并重启 Bridge/App 后 Socket 握手为 v5，已安装 Bridge 与源码一致；无 Shell Integration 时仍保持未知状态，不猜测进程运行状态。
+- Initial running-state review gate: Skipped — no explicit user request.
