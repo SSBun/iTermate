@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import Sparkle
 import SwiftUI
 import UserNotifications
 
@@ -158,6 +159,7 @@ final class AppSettings: ObservableObject {
 
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
+    let updaterController: SPUStandardUpdaterController
 
     var body: some View {
         TabView {
@@ -171,7 +173,7 @@ struct SettingsView: View {
                     Label("Agents", systemImage: "terminal")
                 }
 
-            AboutSettingsView()
+            AboutSettingsView(updaterController: updaterController)
                 .tabItem {
                     Label("About", systemImage: "info.circle")
                 }
@@ -217,6 +219,8 @@ private struct BasicSettingsView: View {
 }
 
 private struct AboutSettingsView: View {
+    let updaterController: SPUStandardUpdaterController
+
     var body: some View {
         VStack(spacing: 10) {
             Image(nsImage: NSApplication.shared.applicationIconImage)
@@ -229,6 +233,10 @@ private struct AboutSettingsView: View {
 
             Text(versionText)
                 .foregroundStyle(.secondary)
+
+            Button("Check for Updates…") {
+                updaterController.checkForUpdates(nil)
+            }
 
             Text(copyrightText)
                 .font(.caption)

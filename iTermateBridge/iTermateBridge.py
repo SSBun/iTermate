@@ -6,9 +6,10 @@ import json
 import os
 import shlex
 import sys
+import time
 
-PROTOCOL_VERSION = 5
-BRIDGE_VERSION = 5
+PROTOCOL_VERSION = 6
+BRIDGE_VERSION = 6
 SUPPORT_DIRECTORY = os.path.expanduser(
     "~/Library/Application Support/iTermate"
 )
@@ -104,7 +105,7 @@ class Bridge:
 
         # Enabled integrations are not reinstalled automatically when the app updates.
         if request.get("version") != PROTOCOL_VERSION and not (
-            action == "setSessionStatus" and request.get("version") == 4
+            action == "setSessionStatus" and request.get("version") in {4, 5}
         ):
             await self.send_action_result(
                 writer, request_id, False, "Unsupported protocol version"
@@ -204,10 +205,9 @@ class Bridge:
                     prompt is not None
                     and prompt.state == iterm2.PromptState.RUNNING
                 ):
-                    self.session_statuses[session_id] = {
-                        "status": "running",
-                        "exitStatus": None,
-                    }
+                    # ponytail: recovered commands are timed from observation;
+                    # use prompt timestamps if iTerm exposes them later.
+                    self.set_session_status(session_id, "running")
                     await self.publish_snapshot()
 
             modes = [
@@ -227,15 +227,9 @@ class Bridge:
                         if is_agent_command(value):
                             self.session_statuses.pop(session_id, None)
                         else:
-                            self.session_statuses[session_id] = {
-                                "status": "running",
-                                "exitStatus": None,
-                            }
+                            self.set_session_status(session_id, "running")
                     elif mode == iterm2.PromptMonitor.Mode.COMMAND_END:
-                        self.session_statuses[session_id] = {
-                            "status": "finished",
-                            "exitStatus": int(value),
-                        }
+                        self.set_session_status(session_id, "finished", int(value))
                     else:
                         continue
                     await self.publish_snapshot()
@@ -258,9 +252,17 @@ class Bridge:
             self.session_statuses.pop(session_id, None)
             return
 
+        self.set_session_status(
+            session_id,
+            status,
+            0 if status == "finished" else None,
+        )
+
+    def set_session_status(self, session_id, status, exit_status=None):
         self.session_statuses[session_id] = {
             "status": status,
-            "exitStatus": 0 if status == "finished" else None,
+            "exitStatus": exit_status,
+            "statusChangedAt": time.time(),
         }
 
     def current_session_ids(self):
@@ -392,6 +394,9 @@ class Bridge:
                         "exitStatus": self.session_statuses.get(
                             session.session_id, {}
                         ).get("exitStatus"),
+                        "statusChangedAt": self.session_statuses.get(
+                            session.session_id, {}
+                        ).get("statusChangedAt"),
                     }
                     for session in tab.all_sessions
                 ]
@@ -446,7 +451,7 @@ def self_test():
     )
     assert encoded.endswith(b"\n")
     assert json.loads(encoded) == {
-        "version": 5,
+        "version": 6,
         "type": "activateSession",
         "sessionId": "session-1",
     }
@@ -585,26 +590,29 @@ def self_test():
         }
     ]
 
-    bridge = Bridge(None, None)
-    writer = FakeWriter()
-    asyncio.run(
-        bridge.handle_command(
-            writer,
-            encode_message(
-                {
-                    "version": 4,
-                    "type": "setSessionStatus",
-                    "requestId": "request-2",
-                    "sessionId": "session-1",
-                    "status": "running",
-                }
-            ),
+    for integration_version in (4, 5):
+        bridge = Bridge(None, None)
+        writer = FakeWriter()
+        asyncio.run(
+            bridge.handle_command(
+                writer,
+                encode_message(
+                    {
+                        "version": integration_version,
+                        "type": "setSessionStatus",
+                        "requestId": "request-2",
+                        "sessionId": "session-1",
+                        "status": "running",
+                    }
+                ),
+            )
         )
-    )
-    assert bridge.session_statuses["session-1"]["status"] == "running"
-    assert writer.messages[0]["ok"]
+        assert bridge.session_statuses["session-1"]["status"] == "running"
+        assert writer.messages[0]["ok"]
+
     bridge.set_agent_status("session-1", "finished")
     assert bridge.session_statuses["session-1"]["exitStatus"] == 0
+    assert isinstance(bridge.session_statuses["session-1"]["statusChangedAt"], float)
     bridge.clear_finished_status("session-1")
     assert "session-1" not in bridge.session_statuses
     assert "session-1" in bridge.agent_managed_session_ids

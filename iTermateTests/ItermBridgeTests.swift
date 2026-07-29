@@ -6,7 +6,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 5,
+              "version": 6,
               "type": "snapshot",
               "sequence": 7,
               "windows": [{
@@ -26,7 +26,8 @@ final class ItermBridgeTests: XCTestCase {
                     "isActive": true,
                     "isMinimized": false,
                     "status": "finished",
-                    "exitStatus": 0
+                    "exitStatus": 0,
+                    "statusChangedAt": 1753833600
                   }]
                 }]
               }]
@@ -54,6 +55,23 @@ final class ItermBridgeTests: XCTestCase {
         XCTAssertEqual(
             message.windows?.first?.tabs.first?.sessions.first?.exitStatus,
             0
+        )
+        XCTAssertEqual(
+            message.windows?.first?.tabs.first?.sessions.first?.statusChangedAt,
+            1_753_833_600
+        )
+    }
+
+    func testFormatsSessionStatusTimes() {
+        let now = Date(timeIntervalSince1970: 1_000)
+
+        XCTAssertEqual(
+            TerminalSessionStatus.running.label(changedAt: 760, now: now),
+            "Running · 4m"
+        )
+        XCTAssertEqual(
+            TerminalSessionStatus.finished.label(changedAt: 880, now: now),
+            "Finished · 2m ago"
         )
     }
 
@@ -104,7 +122,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 5,
+              "version": 6,
               "type": "actionResult",
               "requestId": "request-1",
               "ok": false,
@@ -156,7 +174,7 @@ final class ItermBridgeTests: XCTestCase {
 
     func testIncompatibleBridgeCannotPublishSnapshots() throws {
         let store = ItermStore()
-        store.apply(try hello(bridgeVersion: 6))
+        store.apply(try hello(bridgeVersion: 7))
         store.apply(try snapshot(sequence: 1, title: "Ignored"))
 
         XCTAssertTrue(store.windows.isEmpty)
@@ -172,11 +190,22 @@ final class ItermBridgeTests: XCTestCase {
         )
     }
 
-    private func hello(bridgeVersion: Int = 5) throws -> BridgeMessage {
+    func testSparkleConfigurationIsBundled() {
+        XCTAssertEqual(
+            Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") as? String,
+            "https://ssbun.github.io/iTermate/appcast.xml"
+        )
+        XCTAssertEqual(
+            Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String,
+            "L5Q2dHra6pBCxeGReTg3uOslFt/VFO9QVbxM2aCB6XA="
+        )
+    }
+
+    private func hello(bridgeVersion: Int = 6) throws -> BridgeMessage {
         let data = Data(
             """
             {
-              "version": 5,
+              "version": 6,
               "type": "hello",
               "bridgeVersion": \(bridgeVersion)
             }
@@ -189,7 +218,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 5,
+              "version": 6,
               "type": "snapshot",
               "sequence": 1,
               "windows": [{
@@ -260,7 +289,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 5,
+              "version": 6,
               "type": "snapshot",
               "sequence": \(sequence),
               "windows": [{

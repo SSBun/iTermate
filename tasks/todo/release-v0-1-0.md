@@ -1,29 +1,29 @@
 # 发布 iTermate v0.1.0
 
-Status (2026-07-29 23:36): In Progress
+Status (2026-07-30 00:58): Blocked
 
 ## Scope
 
-- 包含：提交当前工作区全部本地修改，统一 0.1.0 版本元数据，构建并验证本地 macOS DMG，创建本地 `v0.1.0` tag。
-- 不包含：GitHub Release、push、notarization 或安装到 `/Applications`；当前仓库未配置 remote，也没有匹配 macOS App 远端发布的 SOP。
+- 包含：完成 Sparkle 2 基线集成后提交全部修改，统一 0.1.0 版本元数据，构建并验证 macOS DMG，将 `main`、`v0.1.0` 与 GitHub Release 发布到公开仓库 `SSBun/iTermate`。
+- 包含：发布可供 0.1.0 客户端访问的 GitHub Pages HTTPS 基线 appcast。
+- 不包含：Developer ID、notarization、安装到 `/Applications` 或 0.1.0 → 0.1.1 双版本升级验收；用户选择先完成开发验证。
 
 ## Target
 
-- [x] T1：当前全部 tracked/untracked 项目改动进入一个可追溯提交，且提交后工作区干净。
-- [x] T2：App marketing version 为 0.1.0，build number 单调有效，CHANGELOG 与发布元数据一致且不包含旧名称或错误安装说明。
-- [x] T3：完整测试与 Release 构建通过，生成可挂载、校验通过且包含 iTermate.app 的 0.1.0 DMG，并记录 SHA-256 与签名状态。
-- [ ] T4：用户确认具体 tag 动作后，本地 `v0.1.0` tag 指向已验证的 release commit。
+- [ ] T1：包括 Sparkle 集成在内的全部本地项目改动进入可追溯提交，发布前工作区干净。
+- [ ] T2：App marketing version 为 0.1.0、build number 为 1，CHANGELOG 与 Sparkle/发布元数据一致。
+- [ ] T3：完整测试与 Release 构建通过，最终 0.1.0 DMG 包含 Sparkle、可挂载且校验通过，并记录 SHA-256 与开发签名限制。
+- [ ] T4：用户确认完整远端动作后，远端 `main`、`v0.1.0` tag 与稳定 GitHub Release 指向同一已验证提交，Release asset 可公开下载。
+- [ ] T5：GitHub Pages 的 HTTPS appcast 可公开访问，0.1.0 基线 App 的标准更新检查能够读取它。
 
 ## Plan
 
-1. 审查全部本地差异、版本源、发布元数据与现有功能任务结果，排除生成缓存和敏感内容。
-2. 补齐最小版本记录与可维护 DMG 打包流程，完成测试、Release 构建、DMG 和签名验证。
-3. 提交全部项目改动并确认工作区干净。
-4. 列出 tag 动作和当前无 remote 的发布边界，取得确认后创建本地 tag。
+1. 完成并验证子任务 [集成 Sparkle 2 自动更新](integrate-sparkle2.md)。
+2. 重建最终 0.1.0 DMG，复核版本、framework、Info.plist、签名、checksum 与 appcast。
+3. 提交全部修改并确认工作区干净。
+4. 列出 tag、push、Release、asset 与 Pages 发布动作，取得确认后执行远端发布。
 
-## Result
+## Block
 
-- T1：提交 `9ada31a feat: prepare iTermate 0.1.0 release` 收录当时全部 26 个本地改动文件，包括完成通知、Session 关闭与唯一聚焦、菜单栏图标、Bridge v5、测试、任务记录、CHANGELOG 和 DMG 脚本；提交 `8916fbf feat: reveal session close action on hover` 收录随后完成的关闭按钮悬停行为及最终产物 SHA 更新。两次提交后 `git status --short --branch --untracked-files=all` 均仅显示 `## main`。
-- T2：[`project.yml`](../../project.yml) 与生成的 Xcode 工程一致，marketing version 为 `0.1.0`、首发 build number 为 `1`；Release App 的 Info.plist 实测为 `0.1.0 (1)`、bundle ID 为 `com.caishilin.iTermate`。新增 [`CHANGELOG.md`](../../CHANGELOG.md) 记录 0.1.0 用户可见功能与修复；仓库没有 README、installer、appcast 或 remote，非任务/报告源码中未发现旧产品名或旧版本发布引用。
-- T3：新增 [`scripts/create-dmg.sh`](../../scripts/create-dmg.sh)，以 Xcode Release build 和原生 `hdiutil` 生成 DMG 与 SHA-256。Bridge self-test/py_compile、Swift parse、`git diff --check` 和全新 Derived Data 的完整 Xcode 测试通过，29/29 测试成功。最终 DMG 可只读挂载，包含 `iTermate.app` 与 `/Applications` 链接，`hdiutil verify`、checksum 与 `codesign --verify --deep --strict` 均通过；产物为 arm64、ad-hoc 签名、未 notarized，包含关闭按钮悬停行为的最终产物 SHA-256 为 `da3d0d59ed7b950f257dee2d5ad61adcbed43f722797fe40fce7ec29e6517ab9`。
-- Review gate: Skipped — no explicit user request.
+- Reason：现有 0.1.0 DMG 不包含用户刚要求的 Sparkle 2，不能作为新的发布基线。
+- Unblock when：Sparkle 子任务完成本地集成与开发验证，并生成新的已验证 0.1.0 DMG。

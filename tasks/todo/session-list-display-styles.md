@@ -1,6 +1,6 @@
 # 按窗口或项目路径展示全部 Session
 
-Status (2026-07-29 23:50): Completed
+Status (2026-07-30 01:19): Completed
 
 ## Scope
 
@@ -24,11 +24,12 @@ Status (2026-07-29 23:50): Completed
 - [x] T13：iTerm Session 标题变化后，Bridge 在下一次周期快照中发布新标题，面板无需重启即可更新。
 - [x] T14：Session 行垂直间距收紧，同时增大 Window/Tab/Project Path 小节之间的垂直留白。
 - [x] T15：同一份 Bridge 快照在面板中最多标记一个当前聚焦 Session。
+- [x] T16：当前聚焦状态变化后，旧 Session 行不会保留蓝色焦点标记。
 
 ## Plan
 
-1. 统一当前聚焦 Session 的判定来源，避免按多个局部 Tab 状态重复标记。
-2. 增加聚焦唯一性的回归检查，并验证真实 Bridge 快照与面板显示。
+1. 让 Session 行的 SwiftUI 身份随聚焦状态变化刷新，避免 LazyVStack 保留旧行内容。
+2. 通过连续切换 Session 验证 Bridge 快照与面板始终只有一个聚焦行。
 
 ## Result
 
@@ -60,3 +61,5 @@ Status (2026-07-29 23:50): Completed
 - Cell spacing review gate: Skipped — no explicit user request.
 - T15：Bridge 快照改为从当前 Window 的当前 Tab 读取唯一全局当前 Session ID，不再把每个 Tab 的局部 `current_session` 都标记为 active；Python self-test、`py_compile` 与 Xcode 测试（29/29）通过。重启运行中的 Bridge 后 Socket 握手为 v5，连续 4 份真实快照的聚焦候选数均为 1；重建并重启 App 后实测面板只显示一个蓝色聚焦行。
 - Focus uniqueness review gate: Skipped — no explicit user request.
+- T16：Session 行身份加入 `item.isFocused`，令 LazyVStack 在焦点变化时重建受影响行。真实 Bridge 激活后又发生后续 Session 切换，运行中面板截图始终只显示最新 Session 的一个蓝色焦点行，先前的 `Sparkle integration` 与 `session time settings` 行均未残留；全新 Derived Data 的完整 Xcode 测试通过，31/31 成功。
+- Focus refresh review gate: Skipped — no explicit user request.

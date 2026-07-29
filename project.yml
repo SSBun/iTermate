@@ -6,6 +6,10 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.9.4
 targets:
   iTermate:
     type: application
@@ -20,14 +24,22 @@ targets:
         buildPhase: resources
     resources:
       - iTermate/Assets.xcassets
+    dependencies:
+      - package: Sparkle
+    info:
+      path: iTermate/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSUIElement: true
+        NSAppleEventsUsageDescription: Start the iTermate Bridge inside iTerm2.
+        SUFeedURL: https://ssbun.github.io/iTermate/appcast.xml
+        SUPublicEDKey: L5Q2dHra6pBCxeGReTg3uOslFt/VFO9QVbxM2aCB6XA=
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.caishilin.iTermate
         MARKETING_VERSION: 0.1.0
         CURRENT_PROJECT_VERSION: 1
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_LSUIElement: YES
-        INFOPLIST_KEY_NSAppleEventsUsageDescription: Start the iTermate Bridge inside iTerm2.
   iTermateTests:
     type: bundle.unit-test
     platform: macOS

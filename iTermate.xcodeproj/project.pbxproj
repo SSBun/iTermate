@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		854F100B60C750D06E8DF1EC /* iTermateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8719B6809A3EC4D52A306 /* iTermateApp.swift */; };
 		8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8A8790CA418B304742A10E /* AgentIntegrations.swift */; };
+		94B162FBE46FC4FD4E2DF794 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 877F89ED3A45C6F8DF3B44C1 /* Sparkle */; };
 		9EA014E904BFB2839F940EBA /* SessionNotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */; };
 		AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */; };
 		C7E944908DE9ED9089171685 /* iTermateBridge.py in Resources */ = {isa = PBXBuildFile; fileRef = 98A663F51BCEE90A4D694DFD /* iTermateBridge.py */; };
@@ -46,11 +47,23 @@
 		8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNotificationTests.swift; sourceTree = "<group>"; };
 		9397D6A74D5DEFB5407287FE /* iTermate-hook.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-hook.py"; sourceTree = "<group>"; };
 		98A663F51BCEE90A4D694DFD /* iTermateBridge.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = iTermateBridge.py; sourceTree = "<group>"; };
+		9BF8CFF4C87D1CF8C9E3F93E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelLayoutTests.swift; sourceTree = "<group>"; };
 		E19ED60DFB350BCCD35BB7D4 /* iTermateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iTermateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItermBridgeTests.swift; sourceTree = "<group>"; };
 		FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNotifications.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3334512B6372A4D07F5375A0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94B162FBE46FC4FD4E2DF794 /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		2E61A8D8AE626BC046971823 /* Products */ = {
@@ -88,6 +101,7 @@
 			children = (
 				8F8A8790CA418B304742A10E /* AgentIntegrations.swift */,
 				26707EC6497714316C11E6B6 /* Assets.xcassets */,
+				9BF8CFF4C87D1CF8C9E3F93E /* Info.plist */,
 				44F8719B6809A3EC4D52A306 /* iTermateApp.swift */,
 				5AC44468A07DBECAD73989BA /* ItermBridge.swift */,
 				2964CC35CF647092E51DBA87 /* PanelLayout.swift */,
@@ -134,6 +148,7 @@
 			buildPhases = (
 				D6797E1A816F39B0E4E111E5 /* Sources */,
 				322F8C8A1DBB648EEFCD1BB0 /* Resources */,
+				3334512B6372A4D07F5375A0 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -141,6 +156,7 @@
 			);
 			name = iTermate;
 			packageProductDependencies = (
+				877F89ED3A45C6F8DF3B44C1 /* Sparkle */,
 			);
 			productName = iTermate;
 			productReference = 0A5616016F9CC20D9F3ADD3E /* iTermate.app */;
@@ -184,6 +200,9 @@
 			);
 			mainGroup = 3658B826EE18D20F9833DF62;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BCE652478ECC8A854AF882D2 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2E61A8D8AE626BC046971823 /* Products */;
 			projectDirPath = "";
@@ -314,9 +333,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Start the iTermate Bridge inside iTerm2.";
+				INFOPLIST_FILE = iTermate/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -367,9 +384,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSUIElement = YES;
-				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Start the iTermate Bridge inside iTerm2.";
+				INFOPLIST_FILE = iTermate/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -467,6 +482,25 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BCE652478ECC8A854AF882D2 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.9.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		877F89ED3A45C6F8DF3B44C1 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BCE652478ECC8A854AF882D2 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4546A343AEC928D0E831142D /* Project object */;
 }

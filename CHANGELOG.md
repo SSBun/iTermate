@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Session 状态旁显示自动更新的运行时长与完成时间。
+
 ## [0.1.0] - 2026-07-29
 
 ### Added
@@ -14,6 +18,7 @@
 - Pi 与 Codex 状态集成及 Settings 中的安装管理。
 - 可选的 Session 完成通知，点击通知可返回对应 Session。
 - 原生 Settings、菜单栏入口和应用图标。
+- Sparkle 2 自动更新框架、HTTPS appcast 与手动检查更新入口。
 
 ### Fixed
 

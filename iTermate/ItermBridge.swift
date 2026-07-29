@@ -5,6 +5,66 @@ import Network
 enum TerminalSessionStatus: String, Codable, Equatable {
     case running
     case finished
+
+    func label(
+        changedAt: TimeInterval?,
+        now: Date,
+        format: SessionTimeFormat
+    ) -> String {
+        let title = self == .running ? "Running" : "Finished"
+        guard let changedAt else { return title }
+
+        let formatter = format == .compact
+            ? Self.compactElapsedFormatter
+            : Self.detailedElapsedFormatter
+        let elapsed = formatter.string(
+            from: max(0, now.timeIntervalSince1970 - changedAt)
+        ) ?? (format == .compact ? "0m" : "0s")
+        return self == .running
+            ? "\(title) · \(elapsed)"
+            : "\(title) · \(elapsed) ago"
+    }
+
+    private static let compactElapsedFormatter = elapsedFormatter(
+        allowedUnits: [.day, .hour, .minute]
+    )
+    private static let detailedElapsedFormatter = elapsedFormatter(
+        allowedUnits: [.day, .hour, .minute, .second]
+    )
+
+    private static func elapsedFormatter(
+        allowedUnits: NSCalendar.Unit
+    ) -> DateComponentsFormatter {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = Locale(identifier: "en_US_POSIX")
+
+        let formatter = DateComponentsFormatter()
+        formatter.calendar = calendar
+        formatter.allowedUnits = allowedUnits
+        formatter.unitsStyle = .abbreviated
+        formatter.maximumUnitCount = 2
+        return formatter
+    }
+}
+
+enum SessionTimeFormat: String, CaseIterable, Identifiable {
+    case compact
+    case detailed
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .compact:
+            "Compact (4m)"
+        case .detailed:
+            "Detailed (4m 32s)"
+        }
+    }
+
+    var refreshInterval: TimeInterval {
+        self == .compact ? 60 : 1
+    }
 }
 
 struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
@@ -17,6 +77,7 @@ struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
     let isMinimized: Bool?
     let status: TerminalSessionStatus?
     let exitStatus: Int?
+    let statusChangedAt: TimeInterval?
 }
 
 struct TerminalTabSnapshot: Codable, Equatable, Identifiable {
@@ -218,8 +279,8 @@ final class ItermStore: ObservableObject {
 }
 
 final class ItermBridgeClient {
-    static let protocolVersion = 5
-    static let bridgeVersion = 5
+    static let protocolVersion = 6
+    static let bridgeVersion = 6
 
     private let queue = DispatchQueue(label: "com.caishilin.iTermate.bridge")
     private let onMessage: (BridgeMessage) -> Void

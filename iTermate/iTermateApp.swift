@@ -1,5 +1,6 @@
 import AppKit
 import CoreGraphics
+import Sparkle
 import SwiftUI
 
 @main
@@ -17,7 +18,10 @@ struct ItermateApplication: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            SettingsView(settings: appDelegate.settings)
+            SettingsView(
+                settings: appDelegate.settings,
+                updaterController: appDelegate.updaterController
+            )
         }
     }
 }
@@ -38,6 +42,11 @@ private func statusBarIcon() -> Image {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings = AppSettings()
     let store = ItermStore()
+    let updaterController = SPUStandardUpdaterController(
+        startingUpdater: false,
+        updaterDelegate: nil,
+        userDriverDelegate: nil
+    )
 
     private var panelFollower: PanelFollower?
     private var notificationController: SessionNotificationController?
@@ -48,6 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApplication.shared.setActivationPolicy(.accessory)
+        updaterController.startUpdater()
         panelFollower = PanelFollower(store: store, settings: settings)
         notificationController = SessionNotificationController(
             store: store,
@@ -455,7 +465,7 @@ private struct PanelContent: View {
 
                             if !showsTabHeaders || !isTabCollapsed(item.tabID) {
                                 sessionButton(item)
-                                    .id("\(settings.sessionListStyle.rawValue):\(item.id)")
+                                    .id("\(settings.sessionListStyle.rawValue):\(item.id):\(item.isFocused)")
                                     .padding(.leading, showsTabHeaders ? 12 : 0)
                             }
                         }
@@ -554,23 +564,40 @@ private struct PanelContent: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         if let status = item.session.status {
-                            switch status {
-                            case .running:
-                                WorkingStatusIcon()
-                            case .finished:
-                                Image(
-                                    systemName: item.session.exitStatus == 0
-                                        ? "checkmark.circle.fill"
-                                        : "xmark.circle.fill"
-                                )
-                                .foregroundStyle(
-                                    item.session.exitStatus == 0 ? .green : .red
-                                )
-                                .help(
-                                    item.session.exitStatus == 0
-                                        ? "Command finished successfully"
-                                        : "Command failed"
-                                )
+                            TimelineView(.periodic(from: .now, by: 60)) { context in
+                                HStack(spacing: 4) {
+                                    switch status {
+                                    case .running:
+                                        WorkingStatusIcon()
+                                            .accessibilityHidden(true)
+                                    case .finished:
+                                        Image(
+                                            systemName: item.session.exitStatus == 0
+                                                ? "checkmark.circle.fill"
+                                                : "xmark.circle.fill"
+                                        )
+                                        .foregroundStyle(
+                                            item.session.exitStatus == 0 ? .green : .red
+                                        )
+                                        .help(
+                                            item.session.exitStatus == 0
+                                                ? "Command finished successfully"
+                                                : "Command failed"
+                                        )
+                                        .accessibilityHidden(true)
+                                    }
+
+                                    Text(
+                                        status.label(
+                                            changedAt: item.session.statusChangedAt,
+                                            now: context.date
+                                        )
+                                    )
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize()
+                                }
+                                .accessibilityElement(children: .combine)
                             }
                         }
 
