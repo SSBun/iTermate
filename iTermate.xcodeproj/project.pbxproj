@@ -8,12 +8,16 @@
 
 /* Begin PBXBuildFile section */
 		854F100B60C750D06E8DF1EC /* iTermateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8719B6809A3EC4D52A306 /* iTermateApp.swift */; };
+		8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8A8790CA418B304742A10E /* AgentIntegrations.swift */; };
 		C7E944908DE9ED9089171685 /* iTermateBridge.py in Resources */ = {isa = PBXBuildFile; fileRef = 98A663F51BCEE90A4D694DFD /* iTermateBridge.py */; };
 		CD6C91A30902A7FCEE57204D /* PanelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */; };
+		D18E483400442845AEEDAF8C /* iTermate-hook.py in Resources */ = {isa = PBXBuildFile; fileRef = 9397D6A74D5DEFB5407287FE /* iTermate-hook.py */; };
 		D2C6987CA2110DB3371B778F /* PanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2964CC35CF647092E51DBA87 /* PanelLayout.swift */; };
 		D70EAEE488EDDDCA530D505D /* ItermBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */; };
 		EAECC190D6FF2D443E6ABD91 /* SettingsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */; };
+		F1BACAA2BF873D0423D5D029 /* iTermate-integration.ts in Resources */ = {isa = PBXBuildFile; fileRef = 455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */; };
 		F8C2B099533A5060DD6FF222 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 26707EC6497714316C11E6B6 /* Assets.xcassets */; };
+		FBA2C09664EC79CCE097AE9C /* AgentIntegrationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */; };
 		FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC44468A07DBECAD73989BA /* ItermBridge.swift */; };
 /* End PBXBuildFile section */
 
@@ -33,7 +37,11 @@
 		26707EC6497714316C11E6B6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		2964CC35CF647092E51DBA87 /* PanelLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelLayout.swift; sourceTree = "<group>"; };
 		44F8719B6809A3EC4D52A306 /* iTermateApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermateApp.swift; sourceTree = "<group>"; };
+		455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */ = {isa = PBXFileReference; path = "iTermate-integration.ts"; sourceTree = "<group>"; };
+		4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIntegrationManagerTests.swift; sourceTree = "<group>"; };
 		5AC44468A07DBECAD73989BA /* ItermBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItermBridge.swift; sourceTree = "<group>"; };
+		8F8A8790CA418B304742A10E /* AgentIntegrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIntegrations.swift; sourceTree = "<group>"; };
+		9397D6A74D5DEFB5407287FE /* iTermate-hook.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-hook.py"; sourceTree = "<group>"; };
 		98A663F51BCEE90A4D694DFD /* iTermateBridge.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = iTermateBridge.py; sourceTree = "<group>"; };
 		AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelLayoutTests.swift; sourceTree = "<group>"; };
 		E19ED60DFB350BCCD35BB7D4 /* iTermateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iTermateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -50,12 +58,23 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		33B56348AF2FFCAAFFF38297 /* codex */ = {
+			isa = PBXGroup;
+			children = (
+				9397D6A74D5DEFB5407287FE /* iTermate-hook.py */,
+			);
+			name = codex;
+			path = integrations/codex;
+			sourceTree = "<group>";
+		};
 		3658B826EE18D20F9833DF62 = {
 			isa = PBXGroup;
 			children = (
+				33B56348AF2FFCAAFFF38297 /* codex */,
 				9D8AD233E03307791188C9BA /* iTermate */,
 				AB381789852D8FBBEF03E620 /* iTermateBridge */,
 				E983C73C444786BC354E7A8A /* iTermateTests */,
+				B116C045A938ACC98A870800 /* pi */,
 				2E61A8D8AE626BC046971823 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -63,6 +82,7 @@
 		9D8AD233E03307791188C9BA /* iTermate */ = {
 			isa = PBXGroup;
 			children = (
+				8F8A8790CA418B304742A10E /* AgentIntegrations.swift */,
 				26707EC6497714316C11E6B6 /* Assets.xcassets */,
 				44F8719B6809A3EC4D52A306 /* iTermateApp.swift */,
 				5AC44468A07DBECAD73989BA /* ItermBridge.swift */,
@@ -80,9 +100,19 @@
 			path = iTermateBridge;
 			sourceTree = "<group>";
 		};
+		B116C045A938ACC98A870800 /* pi */ = {
+			isa = PBXGroup;
+			children = (
+				455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */,
+			);
+			name = pi;
+			path = integrations/pi;
+			sourceTree = "<group>";
+		};
 		E983C73C444786BC354E7A8A /* iTermateTests */ = {
 			isa = PBXGroup;
 			children = (
+				4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */,
 				EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */,
 				AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */,
 			);
@@ -165,6 +195,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				F8C2B099533A5060DD6FF222 /* Assets.xcassets in Resources */,
+				D18E483400442845AEEDAF8C /* iTermate-hook.py in Resources */,
+				F1BACAA2BF873D0423D5D029 /* iTermate-integration.ts in Resources */,
 				C7E944908DE9ED9089171685 /* iTermateBridge.py in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -176,6 +208,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FBA2C09664EC79CCE097AE9C /* AgentIntegrationManagerTests.swift in Sources */,
 				D70EAEE488EDDDCA530D505D /* ItermBridgeTests.swift in Sources */,
 				CD6C91A30902A7FCEE57204D /* PanelLayoutTests.swift in Sources */,
 			);
@@ -185,6 +218,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */,
 				FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */,
 				D2C6987CA2110DB3371B778F /* PanelLayout.swift in Sources */,
 				EAECC190D6FF2D443E6ABD91 /* SettingsViews.swift in Sources */,

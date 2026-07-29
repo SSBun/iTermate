@@ -123,12 +123,17 @@ struct SettingsView: View {
                     Label("Basic", systemImage: "slider.horizontal.3")
                 }
 
+            AgentSettingsView()
+                .tabItem {
+                    Label("Agents", systemImage: "terminal")
+                }
+
             AboutSettingsView()
                 .tabItem {
                     Label("About", systemImage: "info.circle")
                 }
         }
-        .frame(width: 460, height: 220)
+        .frame(width: 520, height: 420)
     }
 }
 
