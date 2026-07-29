@@ -32,6 +32,20 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertTrue(panel.canBecomeKey)
     }
 
+    func testPanelUsesAlwaysActiveResizeTrackingAreas() {
+        let panel = ComradePanel(settings: AppSettings(configURL: makeConfigURL()))
+        let contentView = try! XCTUnwrap(panel.contentView)
+
+        contentView.updateTrackingAreas()
+
+        let edgeAreas = contentView.trackingAreas.filter {
+            $0.userInfo?["iTermateResizeEdge"] != nil
+        }
+        XCTAssertEqual(edgeAreas.count, 2)
+        XCTAssertTrue(edgeAreas.allSatisfy { $0.options.contains(.activeAlways) })
+        XCTAssertTrue(edgeAreas.allSatisfy { $0.options.contains(.mouseEnteredAndExited) })
+    }
+
     func testPanelResizesHorizontallyAndRestoresSavedWidth() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)

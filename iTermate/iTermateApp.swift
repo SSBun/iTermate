@@ -140,26 +140,65 @@ final class ComradePanel: NSPanel, NSWindowDelegate {
 
 private final class PanelHostingView: NSHostingView<PanelContent> {
     private let resizeEdgeWidth: CGFloat = 8
+    private var resizeTrackingAreas: [NSTrackingArea] = []
 
-    override func resetCursorRects() {
-        super.resetCursorRects()
+    override func updateTrackingAreas() {
+        resizeTrackingAreas.forEach(removeTrackingArea)
+        resizeTrackingAreas.removeAll()
+        super.updateTrackingAreas()
 
         let edgeWidth = min(resizeEdgeWidth, bounds.width / 2)
         guard edgeWidth > 0 else { return }
 
-        addCursorRect(
-            NSRect(x: 0, y: 0, width: edgeWidth, height: bounds.height),
-            cursor: .resizeLeftRight
-        )
-        addCursorRect(
-            NSRect(
-                x: bounds.width - edgeWidth,
-                y: 0,
-                width: edgeWidth,
-                height: bounds.height
-            ),
-            cursor: .resizeLeftRight
-        )
+        let options: NSTrackingArea.Options = [
+            .mouseEnteredAndExited,
+            .mouseMoved,
+            .activeAlways,
+            .enabledDuringMouseDrag
+        ]
+        let edges = [
+            ("left", NSRect(x: 0, y: 0, width: edgeWidth, height: bounds.height)),
+            (
+                "right",
+                NSRect(
+                    x: bounds.width - edgeWidth,
+                    y: 0,
+                    width: edgeWidth,
+                    height: bounds.height
+                )
+            )
+        ]
+
+        resizeTrackingAreas = edges.map { edge, rect in
+            NSTrackingArea(
+                rect: rect,
+                options: options,
+                owner: self,
+                userInfo: ["iTermateResizeEdge": edge]
+            )
+        }
+        resizeTrackingAreas.forEach(addTrackingArea)
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        if event.trackingArea?.userInfo?["iTermateResizeEdge"] != nil {
+            NSCursor.resizeLeftRight.set()
+        }
+        super.mouseEntered(with: event)
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        if event.trackingArea?.userInfo?["iTermateResizeEdge"] != nil {
+            NSCursor.resizeLeftRight.set()
+        }
+        super.mouseMoved(with: event)
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        if event.trackingArea?.userInfo?["iTermateResizeEdge"] != nil {
+            NSCursor.arrow.set()
+        }
+        super.mouseExited(with: event)
     }
 }
 
