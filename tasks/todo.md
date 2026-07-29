@@ -1,6 +1,6 @@
 # Tasks
 
-- 为 Session 单元格添加关闭按钮 — Status (2026-07-29 23:49): Completed — [任务记录](todo/close-session-cells.md)
+- 为 Session 单元格添加关闭按钮 — Status (2026-07-29 23:56): Completed — [任务记录](todo/close-session-cells.md)
 - 发布 iTermate v0.1.0 — Status (2026-07-29 23:36): In Progress — [任务记录](todo/release-v0-1-0.md)
 - Session 完成通知 — Status (2026-07-29 18:59): Completed — [任务记录](todo/session-finish-notifications.md)
 - 管理 Coding Agent Hooks — Status (2026-07-29 14:56): Completed — [任务记录](todo/agent-integration-management.md)

@@ -221,6 +221,8 @@ private struct PanelContent: View {
     @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
     @State private var collapsedSectionIDs: Set<String> = []
+    @State private var hoveredSessionID: String?
+    @FocusState private var focusedCloseSessionID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -465,7 +467,10 @@ private struct PanelContent: View {
     }
 
     private func sessionButton(_ item: SessionListItem) -> some View {
-        HStack(spacing: 0) {
+        let showsCloseButton = hoveredSessionID == item.id
+            || focusedCloseSessionID == item.id
+
+        return HStack(spacing: 0) {
             Button {
                 store.activate(sessionID: item.session.id)
             } label: {
@@ -522,6 +527,9 @@ private struct PanelContent: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .focused($focusedCloseSessionID, equals: item.id)
+            .opacity(showsCloseButton ? 1 : 0)
+            .allowsHitTesting(showsCloseButton)
             .help("Close session")
             .accessibilityLabel("Close session \(sessionName(item.session))")
         }
@@ -532,6 +540,13 @@ private struct PanelContent: View {
                 : Color.clear
         )
         .clipShape(RoundedRectangle(cornerRadius: 7))
+        .onHover { isHovered in
+            if isHovered {
+                hoveredSessionID = item.id
+            } else if hoveredSessionID == item.id {
+                hoveredSessionID = nil
+            }
+        }
     }
 
     private func sessionName(_ session: TerminalSessionSnapshot) -> String {
