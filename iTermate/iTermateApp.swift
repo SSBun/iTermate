@@ -356,7 +356,7 @@ private struct PanelContent: View {
 
     private var sessionList: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 6) {
+            LazyVStack(alignment: .leading, spacing: 2) {
                 ForEach(sessionGroups) { group in
                     groupHeader(group)
 
@@ -399,7 +399,7 @@ private struct PanelContent: View {
         .buttonStyle(.plain)
         .font(.caption)
         .foregroundStyle(.secondary)
-        .padding(.top, 2)
+        .padding(.top, 10)
         .accessibilityLabel(
             "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(group.title)"
         )
@@ -423,7 +423,7 @@ private struct PanelContent: View {
         .font(.caption)
         .foregroundStyle(.secondary)
         .padding(.horizontal, 8)
-        .padding(.top, 4)
+        .padding(.top, 10)
         .accessibilityLabel(
             "\(collapsedSectionIDs.contains(sectionID) ? "Expand" : "Collapse") \(item.tabTitle)"
         )
@@ -490,7 +490,7 @@ private struct PanelContent: View {
             }
             .contentShape(Rectangle())
             .padding(.horizontal, 8)
-            .padding(.vertical, 7)
+            .padding(.vertical, 5)
             .background(
                 item.isFocused
                     ? Color.accentColor.opacity(0.14)
