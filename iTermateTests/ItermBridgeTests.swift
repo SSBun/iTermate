@@ -6,7 +6,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 2,
+              "version": 4,
               "type": "snapshot",
               "sequence": 7,
               "windows": [{
@@ -24,7 +24,9 @@ final class ItermBridgeTests: XCTestCase {
                     "windowId": "window-1",
                     "tabId": "tab-1",
                     "isActive": true,
-                    "isMinimized": false
+                    "isMinimized": false,
+                    "status": "finished",
+                    "exitStatus": 0
                   }]
                 }]
               }]
@@ -45,6 +47,14 @@ final class ItermBridgeTests: XCTestCase {
             message.windows?.first?.tabs.first?.sessions.first?.tabId,
             "tab-1"
         )
+        XCTAssertEqual(
+            message.windows?.first?.tabs.first?.sessions.first?.status,
+            .finished
+        )
+        XCTAssertEqual(
+            message.windows?.first?.tabs.first?.sessions.first?.exitStatus,
+            0
+        )
     }
 
     func testGroupsSessionsByWindowOrExactPath() throws {
@@ -62,6 +72,10 @@ final class ItermBridgeTests: XCTestCase {
             windowGroups[0].sessions.map(\.session.name),
             ["zsh", "build"]
         )
+        XCTAssertTrue(windowGroups[0].startsTab(at: 0))
+        XCTAssertTrue(windowGroups[0].startsTab(at: 1))
+        XCTAssertFalse(windowGroups[1].startsTab(at: 1))
+        XCTAssertEqual(windowGroups[0].sessions.map(\.tabTitle), ["One", "Two"])
 
         XCTAssertEqual(
             pathGroups.map(\.title),
@@ -90,7 +104,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 2,
+              "version": 4,
               "type": "actionResult",
               "requestId": "request-1",
               "ok": false,
@@ -142,7 +156,7 @@ final class ItermBridgeTests: XCTestCase {
 
     func testIncompatibleBridgeCannotPublishSnapshots() throws {
         let store = ItermStore()
-        store.apply(try hello(bridgeVersion: 3))
+        store.apply(try hello(bridgeVersion: 5))
         store.apply(try snapshot(sequence: 1, title: "Ignored"))
 
         XCTAssertTrue(store.windows.isEmpty)
@@ -158,11 +172,11 @@ final class ItermBridgeTests: XCTestCase {
         )
     }
 
-    private func hello(bridgeVersion: Int = 2) throws -> BridgeMessage {
+    private func hello(bridgeVersion: Int = 4) throws -> BridgeMessage {
         let data = Data(
             """
             {
-              "version": 2,
+              "version": 4,
               "type": "hello",
               "bridgeVersion": \(bridgeVersion)
             }
@@ -175,7 +189,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 2,
+              "version": 4,
               "type": "snapshot",
               "sequence": 1,
               "windows": [{
@@ -246,7 +260,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 2,
+              "version": 4,
               "type": "snapshot",
               "sequence": \(sequence),
               "windows": [{

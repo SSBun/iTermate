@@ -7,11 +7,15 @@ struct ItermateApplication: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     var body: some Scene {
-        MenuBarExtra(
-            "iTermate",
-            systemImage: "rectangle.trailinghalf.inset.filled"
-        ) {
+        MenuBarExtra {
             StatusMenuView(store: appDelegate.store)
+        } label: {
+            Image("StatusIcon")
+                .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 16, height: 16)
+                .accessibilityLabel("iTermate")
         }
         .menuBarExtraStyle(.window)
 
@@ -60,7 +64,6 @@ private final class PanelFollower {
 
     private func updatePanel() {
         guard
-            NSWorkspace.shared.frontmostApplication?.bundleIdentifier == ItermWindow.bundleIdentifier,
             let window = ItermWindow.frontmost(),
             let screen = PanelLayout.screen(containing: window.frame)
         else {
@@ -99,7 +102,7 @@ final class ComradePanel: NSPanel, NSWindowDelegate {
             defer: false
         )
 
-        contentView = NSHostingView(
+        contentView = PanelHostingView(
             rootView: PanelContent(store: store, settings: settings)
         )
         level = .floating
@@ -135,9 +138,35 @@ final class ComradePanel: NSPanel, NSWindowDelegate {
     }
 }
 
+private final class PanelHostingView: NSHostingView<PanelContent> {
+    private let resizeEdgeWidth: CGFloat = 8
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+
+        let edgeWidth = min(resizeEdgeWidth, bounds.width / 2)
+        guard edgeWidth > 0 else { return }
+
+        addCursorRect(
+            NSRect(x: 0, y: 0, width: edgeWidth, height: bounds.height),
+            cursor: .resizeLeftRight
+        )
+        addCursorRect(
+            NSRect(
+                x: bounds.width - edgeWidth,
+                y: 0,
+                width: edgeWidth,
+                height: bounds.height
+            ),
+            cursor: .resizeLeftRight
+        )
+    }
+}
+
 private struct PanelContent: View {
     @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
+    @State private var collapsedSectionIDs: Set<String> = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -165,6 +194,13 @@ private struct PanelContent: View {
                     sessionList
                 }
             }
+
+            Spacer(minLength: 0)
+
+            HStack {
+                settingsButton
+                Spacer()
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -177,26 +213,85 @@ private struct PanelContent: View {
         .padding(1)
     }
 
+    @ViewBuilder
+    private var settingsButton: some View {
+        if #available(macOS 14.0, *) {
+            SettingsLink {
+                Image(systemName: "gearshape")
+            }
+            .buttonStyle(.borderless)
+            .help("Settings")
+            .accessibilityLabel("Settings")
+        } else {
+            Button {
+                NSApplication.shared.sendAction(
+                    Selector(("showSettingsWindow:")),
+                    to: nil,
+                    from: nil
+                )
+                NSApplication.shared.activate(ignoringOtherApps: true)
+            } label: {
+                Image(systemName: "gearshape")
+            }
+            .buttonStyle(.borderless)
+            .help("Settings")
+            .accessibilityLabel("Settings")
+        }
+    }
+
     private var groupingMenu: some View {
         Menu {
-            ForEach(SessionListStyle.allCases) { style in
-                Button {
-                    settings.setSessionListStyle(style)
-                } label: {
-                    if settings.sessionListStyle == style {
-                        Label(style.title, systemImage: "checkmark")
-                    } else {
-                        Text(style.title)
+            Section("Group By") {
+                Picker(
+                    "Group By",
+                    selection: Binding(
+                        get: { settings.sessionListStyle },
+                        set: settings.setSessionListStyle
+                    )
+                ) {
+                    ForEach(SessionListStyle.allCases) { style in
+                        Label(style.title, systemImage: style.systemImage)
+                            .tag(style)
                     }
                 }
+                .labelsHidden()
+                .pickerStyle(.inline)
+            }
+
+            Section("Display") {
+                Toggle(
+                    isOn: Binding(
+                        get: { settings.showsTabHeaders },
+                        set: settings.setShowsTabHeaders
+                    )
+                ) {
+                    Label("Show Tab Headers", systemImage: "rectangle.stack")
+                }
+                .disabled(settings.sessionListStyle != .window)
+            }
+
+            Section("Sections") {
+                Button {
+                    collapsedSectionIDs.subtract(collapsibleSectionIDs)
+                } label: {
+                    Label("Expand All", systemImage: "chevron.down.2")
+                }
+                .disabled(collapsedSectionIDs.isDisjoint(with: collapsibleSectionIDs))
+
+                Button {
+                    collapsedSectionIDs.formUnion(collapsibleSectionIDs)
+                } label: {
+                    Label("Collapse All", systemImage: "chevron.right.2")
+                }
+                .disabled(collapsibleSectionIDs.isSubset(of: collapsedSectionIDs))
             }
         } label: {
             Image(systemName: "rectangle.3.group")
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .help("Group sessions by \(settings.sessionListStyle.title)")
-        .accessibilityLabel("Session grouping: \(settings.sessionListStyle.title)")
+        .help("Configure session list")
+        .accessibilityLabel("Session list settings")
     }
 
     private var sessionGroups: [SessionListGroup] {
@@ -206,31 +301,112 @@ private struct PanelContent: View {
         )
     }
 
+    private var showsTabHeaders: Bool {
+        settings.sessionListStyle == .window && settings.showsTabHeaders
+    }
+
+    private var collapsibleSectionIDs: Set<String> {
+        var ids = Set(sessionGroups.map(\.id))
+        if showsTabHeaders {
+            ids.formUnion(
+                sessionGroups.flatMap(\.sessions).map { tabSectionID($0.tabID) }
+            )
+        }
+        return ids
+    }
+
     private var sessionList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 6) {
                 ForEach(sessionGroups) { group in
-                    HStack(spacing: 6) {
-                        Image(
-                            systemName: settings.sessionListStyle == .window
-                                ? "macwindow"
-                                : "folder"
-                        )
-                        Text(group.title)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                        Spacer()
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.top, 2)
+                    groupHeader(group)
 
-                    ForEach(group.sessions) { item in
-                        sessionButton(item)
-                            .id("\(settings.sessionListStyle.rawValue):\(item.id)")
+                    if !collapsedSectionIDs.contains(group.id) {
+                        ForEach(Array(group.sessions.enumerated()), id: \.element.id) { index, item in
+                            if showsTabHeaders, group.startsTab(at: index) {
+                                tabHeader(item)
+                            }
+
+                            if !showsTabHeaders || !isTabCollapsed(item.tabID) {
+                                sessionButton(item)
+                                    .id("\(settings.sessionListStyle.rawValue):\(item.id)")
+                                    .padding(.leading, showsTabHeaders ? 12 : 0)
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+
+    private func groupHeader(_ group: SessionListGroup) -> some View {
+        Button {
+            toggleSection(group.id)
+        } label: {
+            HStack(spacing: 6) {
+                disclosureIcon(isCollapsed: collapsedSectionIDs.contains(group.id))
+                Image(
+                    systemName: settings.sessionListStyle == .window
+                        ? "macwindow"
+                        : "folder"
+                )
+                Text(group.title)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .padding(.top, 2)
+        .accessibilityLabel(
+            "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(group.title)"
+        )
+    }
+
+    private func tabHeader(_ item: SessionListItem) -> some View {
+        let sectionID = tabSectionID(item.tabID)
+        return Button {
+            toggleSection(sectionID)
+        } label: {
+            HStack(spacing: 6) {
+                disclosureIcon(isCollapsed: collapsedSectionIDs.contains(sectionID))
+                Image(systemName: "rectangle.stack")
+                Text(item.tabTitle)
+                    .lineLimit(1)
+                Spacer()
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal, 8)
+        .padding(.top, 4)
+        .accessibilityLabel(
+            "\(collapsedSectionIDs.contains(sectionID) ? "Expand" : "Collapse") \(item.tabTitle)"
+        )
+    }
+
+    private func disclosureIcon(isCollapsed: Bool) -> some View {
+        Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+            .font(.caption2)
+            .frame(width: 8)
+    }
+
+    private func tabSectionID(_ tabID: String) -> String {
+        "tab:\(tabID)"
+    }
+
+    private func isTabCollapsed(_ tabID: String) -> Bool {
+        collapsedSectionIDs.contains(tabSectionID(tabID))
+    }
+
+    private func toggleSection(_ sectionID: String) {
+        if collapsedSectionIDs.remove(sectionID) == nil {
+            collapsedSectionIDs.insert(sectionID)
         }
     }
 
@@ -246,6 +422,27 @@ private struct PanelContent: View {
                 Text(sessionName(item.session))
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
+
+                if let status = item.session.status {
+                    switch status {
+                    case .running:
+                        WorkingStatusIcon()
+                    case .finished:
+                        Image(
+                            systemName: item.session.exitStatus == 0
+                                ? "checkmark.circle.fill"
+                                : "xmark.circle.fill"
+                        )
+                        .foregroundStyle(
+                            item.session.exitStatus == 0 ? .green : .red
+                        )
+                        .help(
+                            item.session.exitStatus == 0
+                                ? "Command finished successfully"
+                                : "Command failed"
+                        )
+                    }
+                }
 
                 if item.session.isMinimized == true {
                     Image(systemName: "rectangle.compress.vertical")
@@ -286,6 +483,28 @@ private struct PanelContent: View {
     }
 }
 
+private struct WorkingStatusIcon: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isFlipping = false
+
+    var body: some View {
+        Image(systemName: "hourglass")
+            .foregroundStyle(.orange)
+            .rotationEffect(.degrees(reduceMotion ? 0 : (isFlipping ? 180 : 0)))
+            .animation(
+                reduceMotion
+                    ? nil
+                    : .easeInOut(duration: 0.9).repeatForever(autoreverses: true),
+                value: isFlipping
+            )
+            .onAppear {
+                isFlipping = true
+            }
+            .help("Command running")
+            .accessibilityLabel("Command running")
+    }
+}
+
 struct ItermWindow {
     static let bundleIdentifier = "com.googlecode.iterm2"
 
@@ -296,6 +515,7 @@ struct ItermWindow {
             let application = NSRunningApplication.runningApplications(
                 withBundleIdentifier: bundleIdentifier
             ).first,
+            application.isActive,
             let windowInfo = CGWindowListCopyWindowInfo(
                 [.optionOnScreenOnly, .excludeDesktopElements],
                 kCGNullWindowID

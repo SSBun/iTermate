@@ -4,9 +4,11 @@ import SwiftUI
 final class AppSettings: ObservableObject {
     private static let panelWidthKey = "panelWidth"
     private static let sessionListStyleKey = "sessionListStyle"
+    private static let showsTabHeadersKey = "showsTabHeaders"
 
     @Published private(set) var panelWidth: CGFloat
     @Published private(set) var sessionListStyle: SessionListStyle
+    @Published private(set) var showsTabHeaders: Bool
 
     private let defaults: UserDefaults
 
@@ -18,6 +20,8 @@ final class AppSettings: ObservableObject {
         sessionListStyle = SessionListStyle(
             rawValue: defaults.string(forKey: Self.sessionListStyleKey) ?? ""
         ) ?? .window
+        showsTabHeaders = (defaults.object(forKey: Self.showsTabHeadersKey) as? NSNumber)?
+            .boolValue ?? true
     }
 
     func setPanelWidth(_ width: CGFloat) {
@@ -32,6 +36,11 @@ final class AppSettings: ObservableObject {
     func setSessionListStyle(_ style: SessionListStyle) {
         sessionListStyle = style
         defaults.set(style.rawValue, forKey: Self.sessionListStyleKey)
+    }
+
+    func setShowsTabHeaders(_ showsTabHeaders: Bool) {
+        self.showsTabHeaders = showsTabHeaders
+        defaults.set(showsTabHeaders, forKey: Self.showsTabHeadersKey)
     }
 }
 
@@ -50,7 +59,7 @@ struct SettingsView: View {
                     Label("About", systemImage: "info.circle")
                 }
         }
-        .frame(width: 460, height: 300)
+        .frame(width: 460, height: 220)
     }
 }
 
@@ -59,31 +68,15 @@ private struct BasicSettingsView: View {
 
     var body: some View {
         Form {
-            Section("Panel") {
-                Slider(
-                    value: Binding(
-                        get: { settings.panelWidth },
-                        set: settings.setPanelWidth
-                    ),
-                    in: PanelLayout.minimumWidth...PanelLayout.maximumWidth,
-                    step: 1
-                ) {
-                    Text("Width")
-                } minimumValueLabel: {
-                    Text("180")
-                } maximumValueLabel: {
-                    Text("600")
-                }
-
-                LabeledContent("Current width") {
-                    Text("\(Int(settings.panelWidth)) pt")
-                        .monospacedDigit()
-                }
-
-                Button("Restore Default") {
-                    settings.resetPanelWidth()
-                }
-                .disabled(settings.panelWidth == PanelLayout.defaultWidth)
+            Section("Sessions") {
+                Toggle(
+                    "Show tab headers in Window view",
+                    isOn: Binding(
+                        get: { settings.showsTabHeaders },
+                        set: settings.setShowsTabHeaders
+                    )
+                )
+                .toggleStyle(.checkbox)
             }
         }
         .formStyle(.grouped)

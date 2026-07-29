@@ -1,6 +1,6 @@
 # 按窗口或项目路径展示全部 Session
 
-Status (2026-07-28 23:40): Completed
+Status (2026-07-29 00:42): Completed
 
 ## Scope
 
@@ -16,12 +16,17 @@ Status (2026-07-28 23:40): Completed
 - [x] T5：点击任一 Session 行可选中父 Tab、聚焦对应 pane 并将其 Window 置前。
 - [x] T6：协议、模型、分组和动作验证通过，现有 Tab/设置/面板行为不回归。
 - [x] T7：精简显示后仍逐一呈现真实快照中的所有 Session，并保留焦点标记和点击激活。
+- [x] T8：Window 样式为每个 Tab 显示弱化的小节标题，并将其 Session 缩进列在下方，不使用裸分隔线。
+- [x] T9：Basic Settings 提供默认开启的 Tab 标题复选框，修改后面板即时更新并跨启动保存。
+- [x] T10：标题栏配置菜单按 Group By、Display、Sections 分区，包含现有分组选择、Tab 标题开关与全部展开/折叠操作。
+- [x] T11：Window、Tab 与 Project Path 小节标题支持点击展开/折叠，折叠仅影响当前运行时显示且不丢失 Session。
+- [x] T12：标题栏配置菜单的每个可操作项显示与语义匹配的左侧图标，分组选择仍显示独立选中标记。
 
 ## Plan
 
-1. 移除分组标题中容易被理解为 Window 数量的 Session 数字。
-2. 将两种样式的 Session 行精简为仅显示标题。
-3. 用真实 v2 快照验证 Window 与文件夹 section 层级、焦点和点击行为。
+1. 为分组样式提供稳定的语义图标。
+2. 将 Group By 改为带图标与独立选中状态的原生 Picker，并给 Display 项添加图标。
+3. 验证菜单视觉、切换、折叠与 Session 列表不回归。
 
 ## Result
 
@@ -29,6 +34,13 @@ Status (2026-07-28 23:40): Completed
 - T2：真实 Window 样式截图只显示一个 `Window` section，无数字计数；其下 8 行分别只显示 Session 标题。
 - T3：真实 Project Path 样式截图按 babyfs、babyfs-ios、iTermComrade、Recall、skills 五个文件夹路径创建 section header，每个 section 下只列对应 Session 标题。
 - T7：真实 v2 快照验证时为 1 Window、4 Tabs、9 Sessions，Window 列表逐一显示 9 个标题且没有数量歧义；焦点圆点仍正确显示，`store.activate(sessionID:)` 按钮动作保持不变。定向分组测试和完整 Xcode 测试均通过，16 个测试、0 失败；Swift parse 与 `git diff --check` 通过。
+- T8：真实 Window 样式为 4 个 Tab 分别显示弱化图标与 Tab 标题，Session 缩进排列在对应标题下；同一 Tab 的多个 Session 保持连续，不再显示裸分隔线。Project Path 样式不显示 Tab 标题。
+- T9：Basic Settings 运行截图确认 `Show tab headers in Window view` 原生复选框默认选中；关闭并重启后 Tab 标题与缩进消失，重新开启后恢复。设置持久化单测通过。
+- T8/T9：定向 2 个测试和完整 Xcode 测试通过，共 17 个测试、0 失败；Swift parse 与 `git diff --check` 通过。
+- T10：运行截图确认配置菜单按 Group By、Display、Sections 分区，Window/Project Path、Show Tab Headers、Expand All/Collapse All 均可直接操作；AX 实际切换 Tab 标题后持久化值同步变化。
+- T11：AX 逐项验证 Window 标题、单个 Tab 标题可折叠并重新展开；Project Path 的 5 个路径小节可由 Collapse All 一次折叠，Expand All 可恢复。折叠仅改变 `@State` 中的显示状态，Bridge 快照和 Session 激活动作未改变。
+- T10/T11：定向 2 个测试和完整 Xcode 测试通过，共 17 个测试、0 失败；Swift parse 与 `git diff --check` 通过。
+- T12：运行截图确认 Window 使用窗口图标、Project Path 使用文件夹图标、Show Tab Headers 使用 Tab 图标，Expand All/Collapse All 保留展开与折叠图标；原生 Picker 继续显示当前分组选中标记。AX 实际切换 Project Path→Window 后持久化值正确更新。完整 Xcode 测试通过，共 17 个测试、0 失败；Swift parse 与 `git diff --check` 通过。
 - T4：Accessibility 通过标题栏菜单在两种样式间切换；发现并修复 SwiftUI 行复用导致的动态切换陈旧详情，最终 Window→Project Path 即时正确刷新；偏好测试和重启检查确认样式持久化。
 - T5：Accessibility 点击 `Recall (zsh)` 行后，mock socket 收到正确 v2 `activateSession` 与 Session ID；Python handler 聚焦测试通过。iTerm2 `Session.async_activate()` 默认同时选择父 Tab、聚焦 pane 并将 Window 置前。
 - T6：协议与 Bridge 版本同步升级为 2；旧 v1 snapshot 仍可解码并显示“Restart iTerm2 to update the Bridge”。Python self-test/compile、Swift parse、`git diff --check` 和默认 Xcode 测试通过，共 16 个测试、0 失败；已安装 AutoLaunch 脚本与 App resource 一致。
@@ -36,3 +48,6 @@ Status (2026-07-28 23:40): Completed
 - Review gate: Required — 本次变更升级本地 IPC 协议并打破运行中 v1 Bridge 兼容性，且跨 Python/iTerm API、Swift 状态和 UI；真实 iTerm Session 激活动作未端到端执行以避免打断用户当前 pane。
 - Review decision: `APPROVED` — 独立 Reviewer 全量检查后无有效 finding；[审查报告](../../reports/adversarial-review/session-list-display-styles.md)。
 - Follow-up review gate: Skipped — 本次标题精简修正未请求独立对抗审查。
+- Tab divider review gate: Skipped — 本次 Tab 小节样式与设置修正未请求独立对抗审查。
+- Section folding review gate: Skipped — 本次配置菜单扩展与折叠功能未请求独立对抗审查。
+- Menu icon review gate: Skipped — 本次菜单图标调整未请求独立对抗审查。

@@ -63,6 +63,19 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(AppSettings(defaults: defaults).sessionListStyle, .projectPath)
     }
 
+    func testTabHeadersDefaultOnAndPersist() {
+        let suiteName = "TabHeaderSettingsTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let settings = AppSettings(defaults: defaults)
+        XCTAssertTrue(settings.showsTabHeaders)
+
+        settings.setShowsTabHeaders(false)
+
+        XCTAssertFalse(AppSettings(defaults: defaults).showsTabHeaders)
+    }
+
     func testPlacesPanelToTheRightAndMatchesWindowHeight() {
         let visibleFrame = CGRect(x: 0, y: 0, width: 1_440, height: 900)
         let windowFrame = CGRect(x: 100, y: 100, width: 800, height: 600)

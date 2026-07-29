@@ -4,16 +4,25 @@ import asyncio
 import fcntl
 import json
 import os
+import shlex
 import sys
 
-PROTOCOL_VERSION = 2
-BRIDGE_VERSION = 2
+PROTOCOL_VERSION = 4
+BRIDGE_VERSION = 4
 SUPPORT_DIRECTORY = os.path.expanduser(
     "~/Library/Application Support/iTermate"
 )
 SOCKET_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.sock")
 LOCK_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.lock")
 SNAPSHOT_INTERVAL = 2
+
+
+def is_agent_command(command):
+    try:
+        executable = shlex.split(command)[0]
+    except (IndexError, ValueError):
+        return False
+    return os.path.basename(executable) in {"pi", "codex"}
 
 
 def acquire_process_lock():
@@ -41,6 +50,10 @@ class Bridge:
         self.clients = set()
         self.sequence = 0
         self.snapshot_lock = asyncio.Lock()
+        self.command_monitor_tasks = {}
+        self.command_monitor_unavailable = set()
+        self.agent_managed_session_ids = set()
+        self.session_statuses = {}
 
     async def run(self):
         if os.path.exists(SOCKET_PATH):
@@ -52,6 +65,7 @@ class Bridge:
             server.serve_forever(),
             self.monitor_layout(),
             self.monitor_focus(),
+            self.monitor_commands(),
             self.publish_periodically(),
         )
 
@@ -93,13 +107,23 @@ class Bridge:
             )
             return
 
-        if request.get("type") != "activateSession":
-            await self.send_action_result(writer, request_id, False, "Unknown action")
-            return
-
         session_id = request.get("sessionId")
         if not isinstance(session_id, str) or not session_id or len(session_id) > 512:
             await self.send_action_result(writer, request_id, False, "Invalid session ID")
+            return
+
+        if request.get("type") == "setSessionStatus":
+            status = request.get("status")
+            if status not in {"idle", "running", "finished", "detached"}:
+                await self.send_action_result(writer, request_id, False, "Invalid status")
+                return
+            self.set_agent_status(session_id, status)
+            await self.send_action_result(writer, request_id, True, None)
+            await self.publish_snapshot()
+            return
+
+        if request.get("type") != "activateSession":
+            await self.send_action_result(writer, request_id, False, "Unknown action")
             return
 
         session = self.app.get_session_by_id(session_id)
@@ -113,6 +137,7 @@ class Bridge:
             await self.send_action_result(writer, request_id, False, str(error))
             return
 
+        self.clear_finished_status(session_id)
         await self.send_action_result(writer, request_id, True, None)
         await self.publish_snapshot()
 
@@ -137,7 +162,101 @@ class Bridge:
         async with iterm2.FocusMonitor(self.connection) as monitor:
             while True:
                 await monitor.async_get_next_update()
+                self.clear_finished_status(self.current_active_session_id())
                 await self.publish_snapshot()
+
+    async def monitor_commands(self):
+        while True:
+            session_ids = self.current_session_ids()
+            monitored_ids = set(self.command_monitor_tasks)
+            for session_id in session_ids - monitored_ids - self.command_monitor_unavailable:
+                self.command_monitor_tasks[session_id] = asyncio.create_task(
+                    self.monitor_session_commands(session_id)
+                )
+
+            for session_id in monitored_ids - session_ids:
+                self.command_monitor_tasks.pop(session_id).cancel()
+                self.command_monitor_unavailable.discard(session_id)
+                self.agent_managed_session_ids.discard(session_id)
+                self.session_statuses.pop(session_id, None)
+
+            await asyncio.sleep(1)
+
+    async def monitor_session_commands(self, session_id):
+        try:
+            modes = [
+                iterm2.PromptMonitor.Mode.COMMAND_START,
+                iterm2.PromptMonitor.Mode.COMMAND_END,
+            ]
+            async with iterm2.PromptMonitor(
+                self.connection,
+                session_id,
+                modes,
+            ) as monitor:
+                while True:
+                    mode, value = await monitor.async_get()
+                    if session_id in self.agent_managed_session_ids:
+                        continue
+                    if mode == iterm2.PromptMonitor.Mode.COMMAND_START:
+                        if is_agent_command(value):
+                            self.session_statuses.pop(session_id, None)
+                        else:
+                            self.session_statuses[session_id] = {
+                                "status": "running",
+                                "exitStatus": None,
+                            }
+                    elif mode == iterm2.PromptMonitor.Mode.COMMAND_END:
+                        self.session_statuses[session_id] = {
+                            "status": "finished",
+                            "exitStatus": int(value),
+                        }
+                    else:
+                        continue
+                    await self.publish_snapshot()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            self.command_monitor_unavailable.add(session_id)
+        finally:
+            if self.command_monitor_tasks.get(session_id) is asyncio.current_task():
+                self.command_monitor_tasks.pop(session_id, None)
+
+    def set_agent_status(self, session_id, status):
+        if status == "detached":
+            self.agent_managed_session_ids.discard(session_id)
+            self.session_statuses.pop(session_id, None)
+            return
+
+        self.agent_managed_session_ids.add(session_id)
+        if status == "idle":
+            self.session_statuses.pop(session_id, None)
+            return
+
+        self.session_statuses[session_id] = {
+            "status": status,
+            "exitStatus": 0 if status == "finished" else None,
+        }
+
+    def current_session_ids(self):
+        return {
+            session.session_id
+            for window in self.app.windows
+            for tab in window.tabs
+            for session in tab.all_sessions
+        }
+
+    def current_active_session_id(self):
+        window = self.app.current_window
+        if window is None or window.current_tab is None:
+            return None
+        session = window.current_tab.current_session
+        return session.session_id if session is not None else None
+
+    def clear_finished_status(self, session_id):
+        if session_id is not None and self.session_statuses.get(session_id, {}).get(
+            "status"
+        ) == "finished":
+            self.session_statuses.pop(session_id, None)
 
     async def publish_periodically(self):
         while True:
@@ -223,6 +342,12 @@ class Bridge:
                         "isActive": current_session is not None
                         and session.session_id == current_session.session_id,
                         "isMinimized": session.session_id in minimized_session_ids,
+                        "status": self.session_statuses.get(session.session_id, {}).get(
+                            "status"
+                        ),
+                        "exitStatus": self.session_statuses.get(
+                            session.session_id, {}
+                        ).get("exitStatus"),
                     }
                     for session in tab.all_sessions
                 ]
@@ -273,10 +398,25 @@ def self_test():
     )
     assert encoded.endswith(b"\n")
     assert json.loads(encoded) == {
-        "version": 2,
+        "version": 4,
         "type": "activateSession",
         "sessionId": "session-1",
     }
+
+    assert is_agent_command("pi")
+    assert is_agent_command("/usr/local/bin/codex --resume")
+    assert not is_agent_command("python3 build.py")
+
+    bridge = Bridge(None, None)
+    bridge.set_agent_status("session-1", "running")
+    assert bridge.session_statuses["session-1"]["status"] == "running"
+    bridge.set_agent_status("session-1", "finished")
+    assert bridge.session_statuses["session-1"]["exitStatus"] == 0
+    bridge.clear_finished_status("session-1")
+    assert "session-1" not in bridge.session_statuses
+    assert "session-1" in bridge.agent_managed_session_ids
+    bridge.set_agent_status("session-1", "detached")
+    assert "session-1" not in bridge.agent_managed_session_ids
 
 
 if __name__ == "__main__":

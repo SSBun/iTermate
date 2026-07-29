@@ -2,6 +2,11 @@ import AppKit
 import Foundation
 import Network
 
+enum TerminalSessionStatus: String, Codable, Equatable {
+    case running
+    case finished
+}
+
 struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
     let id: String
     let name: String
@@ -10,6 +15,8 @@ struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
     let tabId: String?
     let isActive: Bool
     let isMinimized: Bool?
+    let status: TerminalSessionStatus?
+    let exitStatus: Int?
 }
 
 struct TerminalTabSnapshot: Codable, Equatable, Identifiable {
@@ -40,10 +47,21 @@ enum SessionListStyle: String, CaseIterable, Identifiable {
             "Project Path"
         }
     }
+
+    var systemImage: String {
+        switch self {
+        case .window:
+            "macwindow"
+        case .projectPath:
+            "folder"
+        }
+    }
 }
 
 struct SessionListItem: Equatable, Identifiable {
     let session: TerminalSessionSnapshot
+    let tabID: String
+    let tabTitle: String
     let isFocused: Bool
 
     var id: String { session.id }
@@ -53,6 +71,10 @@ struct SessionListGroup: Equatable, Identifiable {
     let id: String
     let title: String
     let sessions: [SessionListItem]
+
+    func startsTab(at index: Int) -> Bool {
+        index == 0 || sessions[index - 1].tabID != sessions[index].tabID
+    }
 }
 
 enum SessionGrouping {
@@ -92,6 +114,8 @@ enum SessionGrouping {
             tab.sessions.map {
                 SessionListItem(
                     session: $0,
+                    tabID: tab.id,
+                    tabTitle: tab.title,
                     isFocused: window.isActive && tab.isSelected && $0.isActive
                 )
             }
@@ -190,8 +214,8 @@ final class ItermStore: ObservableObject {
 }
 
 final class ItermBridgeClient {
-    static let protocolVersion = 2
-    static let bridgeVersion = 2
+    static let protocolVersion = 4
+    static let bridgeVersion = 4
 
     private let queue = DispatchQueue(label: "com.caishilin.iTermate.bridge")
     private let onMessage: (BridgeMessage) -> Void
