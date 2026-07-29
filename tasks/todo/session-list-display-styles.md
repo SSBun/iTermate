@@ -1,6 +1,6 @@
 # 按窗口或项目路径展示全部 Session
 
-Status (2026-07-29 00:42): Completed
+Status (2026-07-29 15:15): Completed
 
 ## Scope
 
@@ -21,12 +21,14 @@ Status (2026-07-29 00:42): Completed
 - [x] T10：标题栏配置菜单按 Group By、Display、Sections 分区，包含现有分组选择、Tab 标题开关与全部展开/折叠操作。
 - [x] T11：Window、Tab 与 Project Path 小节标题支持点击展开/折叠，折叠仅影响当前运行时显示且不丢失 Session。
 - [x] T12：标题栏配置菜单的每个可操作项显示与语义匹配的左侧图标，分组选择仍显示独立选中标记。
+- [x] T13：iTerm Session 标题变化后，Bridge 在下一次周期快照中发布新标题，面板无需重启即可更新。
+- [x] T14：Session 行垂直间距收紧，同时增大 Window/Tab/Project Path 小节之间的垂直留白。
 
 ## Plan
 
-1. 为分组样式提供稳定的语义图标。
-2. 将 Group By 改为带图标与独立选中状态的原生 Picker，并给 Display 项添加图标。
-3. 验证菜单视觉、切换、折叠与 Session 列表不回归。
+1. 收紧 Session 行内部 padding 与相邻行 spacing。
+2. 增大 Window、Tab 和 Project Path 标题前的 section 间距。
+3. 构建并运行实际面板，对照截图验证层级节奏。
 
 ## Result
 
@@ -41,6 +43,8 @@ Status (2026-07-29 00:42): Completed
 - T11：AX 逐项验证 Window 标题、单个 Tab 标题可折叠并重新展开；Project Path 的 5 个路径小节可由 Collapse All 一次折叠，Expand All 可恢复。折叠仅改变 `@State` 中的显示状态，Bridge 快照和 Session 激活动作未改变。
 - T10/T11：定向 2 个测试和完整 Xcode 测试通过，共 17 个测试、0 失败；Swift parse 与 `git diff --check` 通过。
 - T12：运行截图确认 Window 使用窗口图标、Project Path 使用文件夹图标、Show Tab Headers 使用 Tab 图标，Expand All/Collapse All 保留展开与折叠图标；原生 Picker 继续显示当前分组选中标记。AX 实际切换 Project Path→Window 后持久化值正确更新。完整 Xcode 测试通过，共 17 个测试、0 失败；Swift parse 与 `git diff --check` 通过。
+- T13：Bridge 周期快照改为通过 `session.async_get_variable("name")` 读取当前标题，失败或为空时回退 `session.name`，Tab 回退标题复用同一动态值。Python self-test 使用 `Cached title` 与 `Current title` 验证动态值胜出；编译通过。热重启 Bridge 后 9 个 Session ID 全部保留，实时快照标题与 iTerm 动态 `name` 变量 9/9 一致，面板截图显示最新 `dashboard API`、`config path`、`REFRESH_LOGIC` 等标题，无需重启 App。
+- T13 verification note：完整 Xcode 测试在编译阶段被并行、无关的未完成修改阻塞：`AgentIntegrations.swift:300` 的 ShapeStyle 类型错误及 `AgentIntegrationManagerTests.swift:97` 的 escaping closure 捕获 mutating self；本次 Python Bridge 改动的 self-test、py_compile、`git diff --check`、热部署和真实运行验证均通过，未修改上述无关文件。
 - T4：Accessibility 通过标题栏菜单在两种样式间切换；发现并修复 SwiftUI 行复用导致的动态切换陈旧详情，最终 Window→Project Path 即时正确刷新；偏好测试和重启检查确认样式持久化。
 - T5：Accessibility 点击 `Recall (zsh)` 行后，mock socket 收到正确 v2 `activateSession` 与 Session ID；Python handler 聚焦测试通过。iTerm2 `Session.async_activate()` 默认同时选择父 Tab、聚焦 pane 并将 Window 置前。
 - T6：协议与 Bridge 版本同步升级为 2；旧 v1 snapshot 仍可解码并显示“Restart iTerm2 to update the Bridge”。Python self-test/compile、Swift parse、`git diff --check` 和默认 Xcode 测试通过，共 16 个测试、0 失败；已安装 AutoLaunch 脚本与 App resource 一致。
@@ -51,3 +55,6 @@ Status (2026-07-29 00:42): Completed
 - Tab divider review gate: Skipped — 本次 Tab 小节样式与设置修正未请求独立对抗审查。
 - Section folding review gate: Skipped — 本次配置菜单扩展与折叠功能未请求独立对抗审查。
 - Menu icon review gate: Skipped — 本次菜单图标调整未请求独立对抗审查。
+- Session title refresh review gate: Skipped — 本次动态标题修正未请求独立对抗审查。
+- T14：Session 行垂直 padding 从 7pt 收紧到 5pt，列表元素 spacing 从 6pt 收紧到 2pt；Window/Project Path 与 Tab 标题的顶部留白统一增至 10pt。运行构建产物并裁切实际面板截图，确认同组 Session 更紧凑、相邻 section 边界更明显；Swift parse、`git diff --check` 与完整 Xcode 测试通过，25/25 测试成功。
+- Cell spacing review gate: Skipped — no explicit user request.
