@@ -17,7 +17,7 @@
 - 切回目标应用后面板恢复原有跟随位置。
 - 目标窗口最小化或不存在时面板仍保持隐藏。
 
-# 2026-07-29 — 长驻 Agent 状态必须使用 Agent 生命周期
+# 2026-07-29 — 长驻 Agent 状态必须使用可靠的 Agent 生命周期
 
 ## Trigger
 
@@ -29,12 +29,14 @@
 - Pi 使用 `agent_start` 与 `agent_settled`，Codex 使用 `UserPromptSubmit` 与 `Stop` 作为工作/完成边界。
 - Agent 生命周期状态优先于 Shell Integration；Shell Integration 只作为普通命令的 fallback。
 - Agent 退出后显式释放状态所有权，使后续普通 shell 命令恢复由 PromptMonitor 观察。
+- Lifecycle handler 返回前必须等待 Bridge 确认状态或达到有界超时，不能 fire-and-forget。
 
 ## Check
 
 - Agent CLI 进程仍存活但已等待输入时，不显示运行动画。
 - 新一轮 agent turn 开始时显示运行动画，settled/Stop 后显示完成图标。
 - Agent 退出后运行普通 shell 命令，PromptMonitor 状态仍可更新。
+- Handler 返回可等待结果，smoke check 观察到 `running → finished` 已由 Bridge 确认。
 
 # 2026-07-29 — UI 图标缩放必须验证可见绘制边界
 

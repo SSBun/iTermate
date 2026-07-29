@@ -13,31 +13,52 @@ function iTermSessionID(): string | undefined {
   return value?.split(":").at(-1);
 }
 
-function report(status: "idle" | "running" | "finished" | "detached"): void {
+function report(
+  status: "idle" | "running" | "finished" | "detached",
+): Promise<void> {
   const sessionID = iTermSessionID();
-  if (!sessionID) return;
+  if (!sessionID) return Promise.resolve();
 
-  const socket = connect(socketPath);
-  let receivedLines = 0;
-  let sent = false;
+  return new Promise((resolve) => {
+    const requestId = randomUUID();
+    const socket = connect(socketPath, () => {
+      socket.write(
+        `${JSON.stringify({
+          version: 4,
+          type: "setSessionStatus",
+          requestId,
+          sessionId: sessionID,
+          status,
+        })}\n`,
+      );
+    });
+    let buffer = "";
+    let completed = false;
+    const complete = () => {
+      if (completed) return;
+      completed = true;
+      socket.destroy();
+      resolve();
+    };
 
-  socket.setTimeout(1000, () => socket.destroy());
-  socket.on("data", (data) => {
-    receivedLines += data.toString().split("\n").length - 1;
-    if (receivedLines < 2 || sent) return;
-    sent = true;
-
-    socket.end(
-      `${JSON.stringify({
-        version: 4,
-        type: "setSessionStatus",
-        requestId: randomUUID(),
-        sessionId: sessionID,
-        status,
-      })}\n`,
-    );
+    socket.setTimeout(3000, complete);
+    socket.on("data", (data) => {
+      buffer += data.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        try {
+          const message = JSON.parse(line);
+          if (message.type === "actionResult" && message.requestId === requestId) {
+            complete();
+            return;
+          }
+        } catch {}
+      }
+    });
+    socket.on("error", complete);
+    socket.on("close", complete);
   });
-  socket.on("error", () => {});
 }
 
 export default function (pi): void {
