@@ -1,20 +1,40 @@
+import AppKit
+import Foundation
 import XCTest
 @testable import iTermate
 
 final class PanelLayoutTests: XCTestCase {
+    private func makeConfigURL() -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("iTermateTests-\(UUID().uuidString)", isDirectory: true)
+        try! FileManager.default.createDirectory(
+            at: directory,
+            withIntermediateDirectories: true
+        )
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: directory)
+        }
+        return directory.appendingPathComponent("config.toml")
+    }
+
+    func testDefaultConfigUsesHiddenHomeDirectory() {
+        let expectedURL = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".iTermate", isDirectory: true)
+            .appendingPathComponent("config.toml")
+
+        XCTAssertEqual(AppSettings.defaultConfigURL, expectedURL)
+    }
+
     func testPanelReceivesMouseEvents() {
-        let panel = ComradePanel()
+        let panel = ComradePanel(settings: AppSettings(configURL: makeConfigURL()))
 
         XCTAssertFalse(panel.ignoresMouseEvents)
         XCTAssertTrue(panel.canBecomeKey)
     }
 
     func testPanelResizesHorizontallyAndRestoresSavedWidth() {
-        let suiteName = "PanelLayoutTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let settings = AppSettings(defaults: defaults)
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
         let panel = ComradePanel(settings: settings)
 
         XCTAssertTrue(panel.styleMask.contains(.resizable))
@@ -32,48 +52,67 @@ final class PanelLayoutTests: XCTestCase {
             Notification(name: NSWindow.didEndLiveResizeNotification, object: panel)
         )
 
-        XCTAssertEqual(AppSettings(defaults: defaults).panelWidth, 420)
+        XCTAssertEqual(AppSettings(configURL: configURL).panelWidth, 420)
     }
 
     func testPanelSettingsClampPersistAndResetWidth() {
-        let suiteName = "PanelSettingsTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let settings = AppSettings(defaults: defaults)
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
         settings.setPanelWidth(700)
 
         XCTAssertEqual(settings.panelWidth, 600)
-        XCTAssertEqual(AppSettings(defaults: defaults).panelWidth, 600)
+        XCTAssertEqual(AppSettings(configURL: configURL).panelWidth, 600)
 
         settings.resetPanelWidth()
 
         XCTAssertEqual(settings.panelWidth, 260)
-        XCTAssertEqual(AppSettings(defaults: defaults).panelWidth, 260)
+        XCTAssertEqual(AppSettings(configURL: configURL).panelWidth, 260)
     }
 
     func testSessionListStylePersists() {
-        let suiteName = "SessionListStyleTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let settings = AppSettings(defaults: defaults)
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
         settings.setSessionListStyle(.projectPath)
 
-        XCTAssertEqual(AppSettings(defaults: defaults).sessionListStyle, .projectPath)
+        XCTAssertEqual(AppSettings(configURL: configURL).sessionListStyle, .projectPath)
     }
 
     func testTabHeadersDefaultOnAndPersist() {
-        let suiteName = "TabHeaderSettingsTests.\(UUID().uuidString)"
-        let defaults = UserDefaults(suiteName: suiteName)!
-        defer { defaults.removePersistentDomain(forName: suiteName) }
-
-        let settings = AppSettings(defaults: defaults)
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
         XCTAssertTrue(settings.showsTabHeaders)
 
         settings.setShowsTabHeaders(false)
 
-        XCTAssertFalse(AppSettings(defaults: defaults).showsTabHeaders)
+        XCTAssertFalse(AppSettings(configURL: configURL).showsTabHeaders)
+    }
+
+    func testSettingsWriteTOMLConfig() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+        settings.setPanelWidth(420)
+        settings.setSessionListStyle(.projectPath)
+        settings.setShowsTabHeaders(false)
+
+        let contents = try! String(contentsOf: configURL)
+        XCTAssertTrue(contents.contains("panel_width = 420"))
+        XCTAssertTrue(contents.contains("session_list_style = \"projectPath\""))
+        XCTAssertTrue(contents.contains("shows_tab_headers = false"))
+    }
+
+    func testLoadsManuallyEditedTOMLConfig() {
+        let configURL = makeConfigURL()
+        try! """
+        panel_width = 420.0
+        session_list_style = "projectPath"
+        shows_tab_headers = false
+        """.write(to: configURL, atomically: true, encoding: .utf8)
+
+        let settings = AppSettings(configURL: configURL)
+
+        XCTAssertEqual(settings.panelWidth, 420)
+        XCTAssertEqual(settings.sessionListStyle, .projectPath)
+        XCTAssertFalse(settings.showsTabHeaders)
     }
 
     func testPlacesPanelToTheRightAndMatchesWindowHeight() {
@@ -120,4 +159,5 @@ final class PanelLayoutTests: XCTestCase {
 
         XCTAssertEqual(frame, CGRect(x: 332, y: 25, width: 260, height: 775))
     }
+
 }

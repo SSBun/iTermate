@@ -1,32 +1,88 @@
 import AppKit
+import Foundation
 import SwiftUI
 
+private struct AppConfig {
+    var panelWidth = PanelLayout.defaultWidth
+    var sessionListStyle: SessionListStyle = .window
+    var showsTabHeaders = true
+
+    init(contents: String = "") {
+        for line in contents.split(whereSeparator: \.isNewline) {
+            let line = line.split(separator: "#", maxSplits: 1)[0]
+                .trimmingCharacters(in: .whitespaces)
+            guard let separator = line.firstIndex(of: "=") else { continue }
+
+            let key = line[..<separator].trimmingCharacters(in: .whitespaces)
+            let value = line[line.index(after: separator)...]
+                .trimmingCharacters(in: .whitespaces)
+
+            switch key {
+            case "panel_width":
+                if let width = Double(value) {
+                    panelWidth = PanelLayout.clampedWidth(CGFloat(width))
+                }
+            case "session_list_style":
+                if let style = Self.stringValue(String(value)),
+                   let parsedStyle = SessionListStyle(rawValue: style) {
+                    sessionListStyle = parsedStyle
+                }
+            case "shows_tab_headers":
+                if value == "true" {
+                    showsTabHeaders = true
+                } else if value == "false" {
+                    showsTabHeaders = false
+                }
+            default:
+                continue
+            }
+        }
+    }
+
+    init(panelWidth: CGFloat, sessionListStyle: SessionListStyle, showsTabHeaders: Bool) {
+        self.panelWidth = panelWidth
+        self.sessionListStyle = sessionListStyle
+        self.showsTabHeaders = showsTabHeaders
+    }
+
+    var toml: String {
+        """
+        # iTermate user configuration
+        panel_width = \(panelWidth)
+        session_list_style = \"\(sessionListStyle.rawValue)\"
+        shows_tab_headers = \(showsTabHeaders)
+        """
+    }
+
+    private static func stringValue(_ value: String) -> String? {
+        guard value.first == "\"", value.last == "\"" else { return nil }
+        return String(value.dropFirst().dropLast())
+    }
+}
+
 final class AppSettings: ObservableObject {
-    private static let panelWidthKey = "panelWidth"
-    private static let sessionListStyleKey = "sessionListStyle"
-    private static let showsTabHeadersKey = "showsTabHeaders"
+    static let defaultConfigURL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent(".iTermate", isDirectory: true)
+        .appendingPathComponent("config.toml")
 
     @Published private(set) var panelWidth: CGFloat
     @Published private(set) var sessionListStyle: SessionListStyle
     @Published private(set) var showsTabHeaders: Bool
 
-    private let defaults: UserDefaults
+    private let configURL: URL
 
-    init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
-        let savedWidth = (defaults.object(forKey: Self.panelWidthKey) as? NSNumber)
-            .map { CGFloat(truncating: $0) }
-        panelWidth = PanelLayout.clampedWidth(savedWidth ?? PanelLayout.defaultWidth)
-        sessionListStyle = SessionListStyle(
-            rawValue: defaults.string(forKey: Self.sessionListStyleKey) ?? ""
-        ) ?? .window
-        showsTabHeaders = (defaults.object(forKey: Self.showsTabHeadersKey) as? NSNumber)?
-            .boolValue ?? true
+    init(configURL: URL = AppSettings.defaultConfigURL) {
+        self.configURL = configURL
+        let config = AppConfig(contents: (try? String(contentsOf: configURL)) ?? "")
+        panelWidth = config.panelWidth
+        sessionListStyle = config.sessionListStyle
+        showsTabHeaders = config.showsTabHeaders
+        saveConfig()
     }
 
     func setPanelWidth(_ width: CGFloat) {
         panelWidth = PanelLayout.clampedWidth(width)
-        defaults.set(Double(panelWidth), forKey: Self.panelWidthKey)
+        saveConfig()
     }
 
     func resetPanelWidth() {
@@ -35,12 +91,25 @@ final class AppSettings: ObservableObject {
 
     func setSessionListStyle(_ style: SessionListStyle) {
         sessionListStyle = style
-        defaults.set(style.rawValue, forKey: Self.sessionListStyleKey)
+        saveConfig()
     }
 
     func setShowsTabHeaders(_ showsTabHeaders: Bool) {
         self.showsTabHeaders = showsTabHeaders
-        defaults.set(showsTabHeaders, forKey: Self.showsTabHeadersKey)
+        saveConfig()
+    }
+
+    private func saveConfig() {
+        let config = AppConfig(
+            panelWidth: panelWidth,
+            sessionListStyle: sessionListStyle,
+            showsTabHeaders: showsTabHeaders
+        )
+        try? FileManager.default.createDirectory(
+            at: configURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try? config.toml.write(to: configURL, atomically: true, encoding: .utf8)
     }
 }
 
