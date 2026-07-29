@@ -23,7 +23,7 @@ Status (2026-07-29 23:36): In Progress
 
 ## Result
 
-- T1：提交 `9ada31a feat: prepare iTermate 0.1.0 release` 收录提交前全部 26 个本地改动文件，包括完成通知、Session 关闭与唯一聚焦、菜单栏图标、Bridge v5、测试、任务记录、CHANGELOG 和 DMG 脚本；提交后 `git status --short --branch --untracked-files=all` 仅显示 `## main`。
+- T1：提交 `9ada31a feat: prepare iTermate 0.1.0 release` 收录当时全部 26 个本地改动文件，包括完成通知、Session 关闭与唯一聚焦、菜单栏图标、Bridge v5、测试、任务记录、CHANGELOG 和 DMG 脚本；提交 `8916fbf feat: reveal session close action on hover` 收录随后完成的关闭按钮悬停行为及最终产物 SHA 更新。两次提交后 `git status --short --branch --untracked-files=all` 均仅显示 `## main`。
 - T2：[`project.yml`](../../project.yml) 与生成的 Xcode 工程一致，marketing version 为 `0.1.0`、首发 build number 为 `1`；Release App 的 Info.plist 实测为 `0.1.0 (1)`、bundle ID 为 `com.caishilin.iTermate`。新增 [`CHANGELOG.md`](../../CHANGELOG.md) 记录 0.1.0 用户可见功能与修复；仓库没有 README、installer、appcast 或 remote，非任务/报告源码中未发现旧产品名或旧版本发布引用。
 - T3：新增 [`scripts/create-dmg.sh`](../../scripts/create-dmg.sh)，以 Xcode Release build 和原生 `hdiutil` 生成 DMG 与 SHA-256。Bridge self-test/py_compile、Swift parse、`git diff --check` 和全新 Derived Data 的完整 Xcode 测试通过，29/29 测试成功。最终 DMG 可只读挂载，包含 `iTermate.app` 与 `/Applications` 链接，`hdiutil verify`、checksum 与 `codesign --verify --deep --strict` 均通过；产物为 arm64、ad-hoc 签名、未 notarized，包含关闭按钮悬停行为的最终产物 SHA-256 为 `da3d0d59ed7b950f257dee2d5ad61adcbed43f722797fe40fce7ec29e6517ab9`。
 - Review gate: Skipped — no explicit user request.
