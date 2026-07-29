@@ -304,6 +304,13 @@ class Bridge:
             *(tab.async_get_variable("title") for _, tab in tab_pairs),
             return_exceptions=True,
         )
+        names = await asyncio.gather(
+            *(
+                session.async_get_variable("name")
+                for _, _, session in session_triplets
+            ),
+            return_exceptions=True,
+        )
         paths = await asyncio.gather(
             *(
                 session.async_get_variable("path")
@@ -315,6 +322,11 @@ class Bridge:
             tab.tab_id: title
             for (_, tab), title in zip(tab_pairs, titles)
             if isinstance(title, str) and title
+        }
+        names_by_session = {
+            session.session_id: name
+            for (_, _, session), name in zip(session_triplets, names)
+            if isinstance(name, str) and name
         }
         paths_by_session = {
             session.session_id: path
@@ -335,7 +347,7 @@ class Bridge:
                 sessions = [
                     {
                         "id": session.session_id,
-                        "name": session.name,
+                        "name": names_by_session.get(session.session_id, session.name),
                         "path": paths_by_session.get(session.session_id),
                         "windowId": window.window_id,
                         "tabId": tab.tab_id,
@@ -351,7 +363,11 @@ class Bridge:
                     }
                     for session in tab.all_sessions
                 ]
-                fallback_title = current_session.name if current_session else "Tab"
+                fallback_title = (
+                    names_by_session.get(current_session.session_id, current_session.name)
+                    if current_session
+                    else "Tab"
+                )
                 tabs.append(
                     {
                         "id": tab.tab_id,
@@ -406,6 +422,41 @@ def self_test():
     assert is_agent_command("pi")
     assert is_agent_command("/usr/local/bin/codex --resume")
     assert not is_agent_command("python3 build.py")
+
+    class FakeSession:
+        session_id = "session-1"
+        name = "Cached title"
+
+        async def async_get_variable(self, name):
+            return {"name": "Current title", "path": "/tmp"}[name]
+
+    class FakeTab:
+        tab_id = "tab-1"
+        minimized_sessions = []
+
+        def __init__(self, session):
+            self.all_sessions = [session]
+            self.current_session = session
+
+        async def async_get_variable(self, name):
+            assert name == "title"
+            return ""
+
+    class FakeWindow:
+        window_id = "window-1"
+        window_number = 1
+
+        def __init__(self, tab):
+            self.tabs = [tab]
+            self.current_tab = tab
+
+    session = FakeSession()
+    tab = FakeTab(session)
+    window = FakeWindow(tab)
+    app = type("FakeApp", (), {"windows": [window], "current_window": window})()
+    snapshot = asyncio.run(Bridge(None, app).build_snapshot())
+    assert snapshot[0]["tabs"][0]["sessions"][0]["name"] == "Current title"
+    assert snapshot[0]["tabs"][0]["title"] == "Current title"
 
     bridge = Bridge(None, None)
     bridge.set_agent_status("session-1", "running")
