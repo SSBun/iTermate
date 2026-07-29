@@ -563,7 +563,7 @@ struct ItermWindow {
             return nil
         }
 
-        for info in windowInfo {
+        let candidateFrames = windowInfo.compactMap { info -> CGRect? in
             guard
                 (info[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value == application.processIdentifier,
                 (info[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
@@ -573,12 +573,21 @@ struct ItermWindow {
                 quartzFrame.width > 0,
                 quartzFrame.height > 0
             else {
-                continue
+                return nil
             }
-
-            return ItermWindow(frame: PanelLayout.appKitFrame(fromQuartzFrame: quartzFrame))
+            return quartzFrame
         }
 
-        return nil
+        // ponytail: the largest layer-0 window excludes iTerm modal alerts; use window IDs if multi-window precision is needed.
+        guard let quartzFrame = largestWindowFrame(from: candidateFrames) else {
+            return nil
+        }
+        return ItermWindow(frame: PanelLayout.appKitFrame(fromQuartzFrame: quartzFrame))
+    }
+
+    static func largestWindowFrame(from frames: [CGRect]) -> CGRect? {
+        frames.max { first, second in
+            first.width * first.height < second.width * second.height
+        }
     }
 }

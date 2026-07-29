@@ -174,4 +174,13 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(frame, CGRect(x: 332, y: 25, width: 260, height: 775))
     }
 
+    func testItermWindowSelectionIgnoresSmallerModalAlert() {
+        let mainWindow = CGRect(x: 0, y: 0, width: 1_600, height: 900)
+        let modalAlert = CGRect(x: 600, y: 300, width: 520, height: 240)
+
+        XCTAssertEqual(
+            ItermWindow.largestWindowFrame(from: [modalAlert, mainWindow]),
+            mainWindow
+        )
+    }
 }
