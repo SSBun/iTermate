@@ -9,7 +9,7 @@ Status (2026-07-29 23:36): In Progress
 
 ## Target
 
-- [ ] T1：当前全部 tracked/untracked 项目改动进入一个可追溯提交，且提交后工作区干净。
+- [x] T1：当前全部 tracked/untracked 项目改动进入一个可追溯提交，且提交后工作区干净。
 - [x] T2：App marketing version 为 0.1.0，build number 单调有效，CHANGELOG 与发布元数据一致且不包含旧名称或错误安装说明。
 - [x] T3：完整测试与 Release 构建通过，生成可挂载、校验通过且包含 iTermate.app 的 0.1.0 DMG，并记录 SHA-256 与签名状态。
 - [ ] T4：用户确认具体 tag 动作后，本地 `v0.1.0` tag 指向已验证的 release commit。
@@ -23,6 +23,7 @@ Status (2026-07-29 23:36): In Progress
 
 ## Result
 
+- T1：提交 `9ada31a feat: prepare iTermate 0.1.0 release` 收录提交前全部 26 个本地改动文件，包括完成通知、Session 关闭与唯一聚焦、菜单栏图标、Bridge v5、测试、任务记录、CHANGELOG 和 DMG 脚本；提交后 `git status --short --branch --untracked-files=all` 仅显示 `## main`。
 - T2：[`project.yml`](../../project.yml) 与生成的 Xcode 工程一致，marketing version 为 `0.1.0`、首发 build number 为 `1`；Release App 的 Info.plist 实测为 `0.1.0 (1)`、bundle ID 为 `com.caishilin.iTermate`。新增 [`CHANGELOG.md`](../../CHANGELOG.md) 记录 0.1.0 用户可见功能与修复；仓库没有 README、installer、appcast 或 remote，非任务/报告源码中未发现旧产品名或旧版本发布引用。
 - T3：新增 [`scripts/create-dmg.sh`](../../scripts/create-dmg.sh)，以 Xcode Release build 和原生 `hdiutil` 生成 DMG 与 SHA-256。Bridge self-test/py_compile、Swift parse、`git diff --check` 和全新 Derived Data 的完整 Xcode 测试通过，29/29 测试成功。最终 DMG 可只读挂载，包含 `iTermate.app` 与 `/Applications` 链接，`hdiutil verify`、checksum 与 `codesign --verify --deep --strict` 均通过；产物为 arm64、ad-hoc 签名、未 notarized，SHA-256 为 `08653708502e2b4f4f48536c1e1e9b60cebaec4173e918c92a8006aae4f6ccb7`。
 - Review gate: Skipped — no explicit user request.
