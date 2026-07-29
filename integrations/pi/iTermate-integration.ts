@@ -24,7 +24,7 @@ function report(
     const socket = connect(socketPath, () => {
       socket.write(
         `${JSON.stringify({
-          version: 4,
+          version: 5,
           type: "setSessionStatus",
           requestId,
           sessionId: sessionID,

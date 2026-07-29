@@ -32,7 +32,7 @@ def main():
         return
 
     request = {
-        "version": 4,
+        "version": 5,
         "type": "setSessionStatus",
         "requestId": str(uuid.uuid4()),
         "sessionId": session_id,

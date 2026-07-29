@@ -6,7 +6,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 4,
+              "version": 5,
               "type": "snapshot",
               "sequence": 7,
               "windows": [{
@@ -104,7 +104,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 4,
+              "version": 5,
               "type": "actionResult",
               "requestId": "request-1",
               "ok": false,
@@ -156,7 +156,7 @@ final class ItermBridgeTests: XCTestCase {
 
     func testIncompatibleBridgeCannotPublishSnapshots() throws {
         let store = ItermStore()
-        store.apply(try hello(bridgeVersion: 5))
+        store.apply(try hello(bridgeVersion: 6))
         store.apply(try snapshot(sequence: 1, title: "Ignored"))
 
         XCTAssertTrue(store.windows.isEmpty)
@@ -172,11 +172,11 @@ final class ItermBridgeTests: XCTestCase {
         )
     }
 
-    private func hello(bridgeVersion: Int = 4) throws -> BridgeMessage {
+    private func hello(bridgeVersion: Int = 5) throws -> BridgeMessage {
         let data = Data(
             """
             {
-              "version": 4,
+              "version": 5,
               "type": "hello",
               "bridgeVersion": \(bridgeVersion)
             }
@@ -189,7 +189,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 4,
+              "version": 5,
               "type": "snapshot",
               "sequence": 1,
               "windows": [{
@@ -260,7 +260,7 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 4,
+              "version": 5,
               "type": "snapshot",
               "sequence": \(sequence),
               "windows": [{

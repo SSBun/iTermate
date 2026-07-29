@@ -7,8 +7,8 @@ import os
 import shlex
 import sys
 
-PROTOCOL_VERSION = 4
-BRIDGE_VERSION = 4
+PROTOCOL_VERSION = 5
+BRIDGE_VERSION = 5
 SUPPORT_DIRECTORY = os.path.expanduser(
     "~/Library/Application Support/iTermate"
 )
@@ -100,8 +100,12 @@ class Bridge:
     async def handle_command(self, writer, line):
         request = json.loads(line)
         request_id = request.get("requestId")
+        action = request.get("type")
 
-        if request.get("version") != PROTOCOL_VERSION:
+        # Enabled integrations are not reinstalled automatically when the app updates.
+        if request.get("version") != PROTOCOL_VERSION and not (
+            action == "setSessionStatus" and request.get("version") == 4
+        ):
             await self.send_action_result(
                 writer, request_id, False, "Unsupported protocol version"
             )
@@ -112,7 +116,7 @@ class Bridge:
             await self.send_action_result(writer, request_id, False, "Invalid session ID")
             return
 
-        if request.get("type") == "setSessionStatus":
+        if action == "setSessionStatus":
             status = request.get("status")
             if status not in {"idle", "running", "finished", "detached"}:
                 await self.send_action_result(writer, request_id, False, "Invalid status")
@@ -122,7 +126,7 @@ class Bridge:
             await self.publish_snapshot()
             return
 
-        if request.get("type") != "activateSession":
+        if action not in {"activateSession", "closeSession"}:
             await self.send_action_result(writer, request_id, False, "Unknown action")
             return
 
@@ -132,12 +136,17 @@ class Bridge:
             return
 
         try:
-            await session.async_activate()
+            if action == "closeSession":
+                await session.async_close()
+            else:
+                await session.async_activate()
+                await self.app.async_activate(raise_all_windows=False)
         except Exception as error:
             await self.send_action_result(writer, request_id, False, str(error))
             return
 
-        self.clear_finished_status(session_id)
+        if action == "activateSession":
+            self.clear_finished_status(session_id)
         await self.send_action_result(writer, request_id, True, None)
         await self.publish_snapshot()
 
@@ -335,6 +344,13 @@ class Bridge:
         }
 
         active_window = self.app.current_window
+        active_tab = active_window.current_tab if active_window is not None else None
+        active_session = (
+            active_tab.current_session if active_tab is not None else None
+        )
+        active_session_id = (
+            active_session.session_id if active_session is not None else None
+        )
         windows = []
         for window in self.app.windows:
             current_tab = window.current_tab
@@ -351,8 +367,7 @@ class Bridge:
                         "path": paths_by_session.get(session.session_id),
                         "windowId": window.window_id,
                         "tabId": tab.tab_id,
-                        "isActive": current_session is not None
-                        and session.session_id == current_session.session_id,
+                        "isActive": session.session_id == active_session_id,
                         "isMinimized": session.session_id in minimized_session_ids,
                         "status": self.session_statuses.get(session.session_id, {}).get(
                             "status"
@@ -414,7 +429,7 @@ def self_test():
     )
     assert encoded.endswith(b"\n")
     assert json.loads(encoded) == {
-        "version": 4,
+        "version": 5,
         "type": "activateSession",
         "sessionId": "session-1",
     }
@@ -427,8 +442,19 @@ def self_test():
         session_id = "session-1"
         name = "Cached title"
 
+        def __init__(self):
+            self.closed = False
+
         async def async_get_variable(self, name):
             return {"name": "Current title", "path": "/tmp"}[name]
+
+        async def async_close(self, force=False):
+            assert not force
+            self.closed = True
+
+    class SecondFakeSession(FakeSession):
+        session_id = "session-2"
+        name = "Second title"
 
     class FakeTab:
         tab_id = "tab-1"
@@ -450,17 +476,82 @@ def self_test():
             self.tabs = [tab]
             self.current_tab = tab
 
+    class FakeApp:
+        def __init__(self, window, session):
+            self.windows = [window]
+            self.current_window = window
+            self.session = session
+
+        def get_session_by_id(self, session_id):
+            return self.session if session_id == self.session.session_id else None
+
+    class FakeWriter:
+        def __init__(self):
+            self.messages = []
+
+        def write(self, message):
+            self.messages.append(json.loads(message))
+
+        async def drain(self):
+            pass
+
     session = FakeSession()
     tab = FakeTab(session)
     window = FakeWindow(tab)
-    app = type("FakeApp", (), {"windows": [window], "current_window": window})()
+    app = FakeApp(window, session)
     snapshot = asyncio.run(Bridge(None, app).build_snapshot())
     assert snapshot[0]["tabs"][0]["sessions"][0]["name"] == "Current title"
     assert snapshot[0]["tabs"][0]["title"] == "Current title"
 
+    second_tab = FakeTab(SecondFakeSession())
+    second_tab.tab_id = "tab-2"
+    window.tabs.append(second_tab)
+    snapshot = asyncio.run(Bridge(None, app).build_snapshot())
+    assert snapshot[0]["tabs"][0]["sessions"][0]["isActive"]
+    assert not snapshot[0]["tabs"][1]["sessions"][0]["isActive"]
+
+    writer = FakeWriter()
+    asyncio.run(
+        Bridge(None, app).handle_command(
+            writer,
+            encode_message(
+                {
+                    "version": PROTOCOL_VERSION,
+                    "type": "closeSession",
+                    "requestId": "request-1",
+                    "sessionId": "session-1",
+                }
+            ),
+        )
+    )
+    assert session.closed
+    assert writer.messages == [
+        {
+            "version": PROTOCOL_VERSION,
+            "type": "actionResult",
+            "requestId": "request-1",
+            "ok": True,
+        }
+    ]
+
     bridge = Bridge(None, None)
-    bridge.set_agent_status("session-1", "running")
+    writer = FakeWriter()
+    asyncio.run(
+        bridge.handle_command(
+            writer,
+            encode_message(
+                {
+                    "version": 4,
+                    "type": "setSessionStatus",
+                    "requestId": "request-2",
+                    "sessionId": "session-1",
+                    "status": "running",
+                }
+            ),
+        )
+    )
     assert bridge.session_statuses["session-1"]["status"] == "running"
+    assert writer.messages[0]["ok"]
     bridge.set_agent_status("session-1", "finished")
     assert bridge.session_statuses["session-1"]["exitStatus"] == 0
     bridge.clear_finished_status("session-1")

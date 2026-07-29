@@ -10,11 +10,8 @@ struct ItermateApplication: App {
         MenuBarExtra {
             StatusMenuView(store: appDelegate.store)
         } label: {
-            Image("StatusIcon")
+            statusBarIcon()
                 .renderingMode(.template)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 16, height: 16)
                 .accessibilityLabel("iTermate")
         }
         .menuBarExtraStyle(.window)
@@ -25,11 +22,25 @@ struct ItermateApplication: App {
     }
 }
 
+private func statusBarIcon() -> Image {
+    guard let image = NSImage(named: "StatusIcon"), image.size.height > 0 else {
+        return Image(systemName: "terminal")
+    }
+
+    let height: CGFloat = 18
+    image.size = NSSize(
+        width: height * image.size.width / image.size.height,
+        height: height
+    )
+    return Image(nsImage: image)
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings = AppSettings()
     let store = ItermStore()
 
     private var panelFollower: PanelFollower?
+    private var notificationController: SessionNotificationController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else {
@@ -38,6 +49,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         NSApplication.shared.setActivationPolicy(.accessory)
         panelFollower = PanelFollower(store: store, settings: settings)
+        notificationController = SessionNotificationController(
+            store: store,
+            settings: settings
+        )
         panelFollower?.start()
         store.start()
     }
@@ -450,56 +465,73 @@ private struct PanelContent: View {
     }
 
     private func sessionButton(_ item: SessionListItem) -> some View {
-        Button {
-            store.activate(sessionID: item.session.id)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: item.isFocused ? "circle.fill" : "circle")
-                    .font(.system(size: 8))
-                    .foregroundStyle(item.isFocused ? Color.accentColor : .secondary)
+        HStack(spacing: 0) {
+            Button {
+                store.activate(sessionID: item.session.id)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: item.isFocused ? "circle.fill" : "circle")
+                        .font(.system(size: 8))
+                        .foregroundStyle(item.isFocused ? Color.accentColor : .secondary)
 
-                Text(sessionName(item.session))
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(sessionName(item.session))
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                if let status = item.session.status {
-                    switch status {
-                    case .running:
-                        WorkingStatusIcon()
-                    case .finished:
-                        Image(
-                            systemName: item.session.exitStatus == 0
-                                ? "checkmark.circle.fill"
-                                : "xmark.circle.fill"
-                        )
-                        .foregroundStyle(
-                            item.session.exitStatus == 0 ? .green : .red
-                        )
-                        .help(
-                            item.session.exitStatus == 0
-                                ? "Command finished successfully"
-                                : "Command failed"
-                        )
+                    if let status = item.session.status {
+                        switch status {
+                        case .running:
+                            WorkingStatusIcon()
+                        case .finished:
+                            Image(
+                                systemName: item.session.exitStatus == 0
+                                    ? "checkmark.circle.fill"
+                                    : "xmark.circle.fill"
+                            )
+                            .foregroundStyle(
+                                item.session.exitStatus == 0 ? .green : .red
+                            )
+                            .help(
+                                item.session.exitStatus == 0
+                                    ? "Command finished successfully"
+                                    : "Command failed"
+                            )
+                        }
+                    }
+
+                    if item.session.isMinimized == true {
+                        Image(systemName: "rectangle.compress.vertical")
+                            .foregroundStyle(.secondary)
                     }
                 }
-
-                if item.session.isMinimized == true {
-                    Image(systemName: "rectangle.compress.vertical")
-                        .foregroundStyle(.secondary)
-                }
+                .contentShape(Rectangle())
+                .padding(.leading, 8)
+                .padding(.vertical, 5)
             }
-            .contentShape(Rectangle())
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(
-                item.isFocused
-                    ? Color.accentColor.opacity(0.14)
-                    : Color.clear
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 7))
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityLabel("Activate session \(sessionName(item.session))")
+
+            Button {
+                store.close(sessionID: item.session.id)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 30)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Close session")
+            .accessibilityLabel("Close session \(sessionName(item.session))")
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Activate session \(sessionName(item.session))")
+        .padding(.trailing, 4)
+        .background(
+            item.isFocused
+                ? Color.accentColor.opacity(0.14)
+                : Color.clear
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 7))
     }
 
     private func sessionName(_ session: TerminalSessionSnapshot) -> String {

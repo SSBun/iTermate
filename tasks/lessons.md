@@ -1,3 +1,76 @@
+# 2026-07-29 — Bridge 焦点标记必须来自全局当前 Session
+
+## Trigger
+
+- Bridge 快照为每个 Tab 分别读取 `current_session` 并把结果直接发布为焦点状态。
+- 面板按 Window 或路径跨 Tab/Window 合并 Session 行。
+
+## Rule
+
+- 先从 iTerm 当前 Window 的当前 Tab 读取唯一当前 Session ID，再为快照中的 Session 生成焦点标记。
+- 不要把每个 Tab 的局部 `current_session` 都发布为全局聚焦状态。
+- 保持快照中最多一个 Session 具有全局焦点标记。
+
+## Check
+
+- self-test 使用两个 Tab 断言只有当前 Tab 的 Session 标记为 active。
+- 真实 Socket 快照连续检查的聚焦候选数为 1。
+- 运行面板截图只显示一个聚焦 Session 行。
+
+# 2026-07-29 — MenuBarExtra 自定义图像必须显式设置 NSImage 尺寸
+
+## Trigger
+
+- SwiftUI `MenuBarExtra` 使用自定义 PNG/PDF/asset image 作为 label。
+- 即使 label 内有 `.frame(width: 16, height: 16)`，运行时图标仍按资源原始尺寸显示。
+
+## Rule
+
+- 不要依赖 SwiftUI label 的 frame 约束自定义状态栏图像。
+- 保留高分辨率资源，并在 `NSImage` 层按目标点高设置尺寸后再创建 `Image(nsImage:)`。
+- 按原始宽高比计算宽度，不要拉伸图像。
+
+## Check
+
+- `assetutil` 确认 bundle 仍包含高分辨率资源。
+- 运行时截图确认图标可见高度约为目标 `16pt`，而不是源 PNG 的像素尺寸。
+
+# 2026-07-29 — macOS 本地通知必须验证系统实际投递
+
+## Trigger
+
+- 新增或修改 `UNUserNotificationCenter` 本地通知。
+- 源码、构建和状态转换测试通过，但用户看不到通知。
+
+## Rule
+
+- `add` 必须提供 completion handler 并记录系统返回的发送错误。
+- 使用真实运行 App 触发完整状态转换，并检查 `usernoted` 是否接受、投递和展示通知。
+- Debug App 的 bundle 在运行期间被重新构建或签名后，先重启 App 再验证通知。
+
+## Check
+
+- App 日志显示通知请求 `hasError: 0`。
+- `usernoted` 日志显示 `Delivering` 和 `Presenting ... as banner`。
+- 发送失败时日志包含 `iTermate notification failed` 及系统错误。
+
+# 2026-07-29 — 高分辨率菜单栏光栅图标不能先降采样
+
+## Trigger
+
+- 用户提供高分辨率 PNG 作为菜单栏图标。
+- 为适配资源画布或增加留白时，准备先把源图缩放到 24px 或更小。
+
+## Rule
+
+- 保留源 PNG 的原始像素分辨率，不要通过降采样解决菜单栏显示尺寸问题。
+- 只在运行时 frame 或高分辨率画布中控制显示尺寸；需要模板化时仅转换颜色/透明度，不降低源分辨率。
+
+## Check
+
+- `file` 或 `sips` 确认资源像素尺寸仍与用户源文件一致。
+- Xcode 构建产物加载的是高分辨率资源，菜单栏 frame 独立控制视觉大小。
+
 # 2026-07-29 — macOS SwiftUI 滚动指示器必须做运行时验证
 
 ## Trigger

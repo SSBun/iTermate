@@ -1,11 +1,13 @@
 import AppKit
 import Foundation
 import SwiftUI
+import UserNotifications
 
 private struct AppConfig {
     var panelWidth = PanelLayout.defaultWidth
     var sessionListStyle: SessionListStyle = .window
     var showsTabHeaders = true
+    var completionNotificationsEnabled = false
 
     init(contents: String = "") {
         for line in contents.split(whereSeparator: \.isNewline) {
@@ -33,16 +35,28 @@ private struct AppConfig {
                 } else if value == "false" {
                     showsTabHeaders = false
                 }
+            case "completion_notifications_enabled":
+                if value == "true" {
+                    completionNotificationsEnabled = true
+                } else if value == "false" {
+                    completionNotificationsEnabled = false
+                }
             default:
                 continue
             }
         }
     }
 
-    init(panelWidth: CGFloat, sessionListStyle: SessionListStyle, showsTabHeaders: Bool) {
+    init(
+        panelWidth: CGFloat,
+        sessionListStyle: SessionListStyle,
+        showsTabHeaders: Bool,
+        completionNotificationsEnabled: Bool
+    ) {
         self.panelWidth = panelWidth
         self.sessionListStyle = sessionListStyle
         self.showsTabHeaders = showsTabHeaders
+        self.completionNotificationsEnabled = completionNotificationsEnabled
     }
 
     var toml: String {
@@ -51,6 +65,7 @@ private struct AppConfig {
         panel_width = \(panelWidth)
         session_list_style = \"\(sessionListStyle.rawValue)\"
         shows_tab_headers = \(showsTabHeaders)
+        completion_notifications_enabled = \(completionNotificationsEnabled)
         """
     }
 
@@ -68,6 +83,7 @@ final class AppSettings: ObservableObject {
     @Published private(set) var panelWidth: CGFloat
     @Published private(set) var sessionListStyle: SessionListStyle
     @Published private(set) var showsTabHeaders: Bool
+    @Published private(set) var completionNotificationsEnabled: Bool
 
     private let configURL: URL
 
@@ -77,6 +93,7 @@ final class AppSettings: ObservableObject {
         panelWidth = config.panelWidth
         sessionListStyle = config.sessionListStyle
         showsTabHeaders = config.showsTabHeaders
+        completionNotificationsEnabled = config.completionNotificationsEnabled
         saveConfig()
     }
 
@@ -99,11 +116,37 @@ final class AppSettings: ObservableObject {
         saveConfig()
     }
 
+    func setCompletionNotificationsEnabled(_ enabled: Bool) {
+        completionNotificationsEnabled = enabled
+        saveConfig()
+    }
+
+    func requestCompletionNotificationAuthorization(
+        using notificationCenter: UNUserNotificationCenter = .current()
+    ) {
+        guard completionNotificationsEnabled else { return }
+
+        notificationCenter.requestAuthorization(options: [.alert, .sound]) {
+            [weak self] granted, error in
+            if let error {
+                NSLog(
+                    "iTermate notification authorization failed: %@",
+                    String(describing: error)
+                )
+            }
+            guard !granted else { return }
+            DispatchQueue.main.async {
+                self?.setCompletionNotificationsEnabled(false)
+            }
+        }
+    }
+
     private func saveConfig() {
         let config = AppConfig(
             panelWidth: panelWidth,
             sessionListStyle: sessionListStyle,
-            showsTabHeaders: showsTabHeaders
+            showsTabHeaders: showsTabHeaders,
+            completionNotificationsEnabled: completionNotificationsEnabled
         )
         try? FileManager.default.createDirectory(
             at: configURL.deletingLastPathComponent(),
@@ -152,8 +195,24 @@ private struct BasicSettingsView: View {
                 )
                 .toggleStyle(.checkbox)
             }
+
+            Section("Notifications") {
+                Toggle(
+                    "Notify when sessions finish",
+                    isOn: Binding(
+                        get: { settings.completionNotificationsEnabled },
+                        set: setCompletionNotificationsEnabled
+                    )
+                )
+                .toggleStyle(.checkbox)
+            }
         }
         .formStyle(.grouped)
+    }
+
+    private func setCompletionNotificationsEnabled(_ enabled: Bool) {
+        settings.setCompletionNotificationsEnabled(enabled)
+        settings.requestCompletionNotificationAuthorization()
     }
 }
 

@@ -167,6 +167,10 @@ final class ItermStore: ObservableObject {
         client.activate(sessionID: sessionID)
     }
 
+    func close(sessionID: String) {
+        client.close(sessionID: sessionID)
+    }
+
     func apply(_ message: BridgeMessage) {
         guard message.version == ItermBridgeClient.protocolVersion else {
             connectionState = .disconnected("Restart iTerm2 to update the Bridge")
@@ -214,8 +218,8 @@ final class ItermStore: ObservableObject {
 }
 
 final class ItermBridgeClient {
-    static let protocolVersion = 4
-    static let bridgeVersion = 4
+    static let protocolVersion = 5
+    static let bridgeVersion = 5
 
     private let queue = DispatchQueue(label: "com.caishilin.iTermate.bridge")
     private let onMessage: (BridgeMessage) -> Void
@@ -250,9 +254,22 @@ final class ItermBridgeClient {
     func activate(sessionID: String) {
         queue.async { [weak self] in
             self?.send(
-                ActivateSessionRequest(
+                SessionActionRequest(
                     version: Self.protocolVersion,
                     type: "activateSession",
+                    requestId: UUID().uuidString,
+                    sessionId: sessionID
+                )
+            )
+        }
+    }
+
+    func close(sessionID: String) {
+        queue.async { [weak self] in
+            self?.send(
+                SessionActionRequest(
+                    version: Self.protocolVersion,
+                    type: "closeSession",
                     requestId: UUID().uuidString,
                     sessionId: sessionID
                 )
@@ -404,7 +421,7 @@ final class ItermBridgeClient {
     }
 }
 
-private struct ActivateSessionRequest: Encodable {
+private struct SessionActionRequest: Encodable {
     let version: Int
     let type: String
     let requestId: String

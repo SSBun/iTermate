@@ -1,6 +1,6 @@
 # 按窗口或项目路径展示全部 Session
 
-Status (2026-07-29 15:15): Completed
+Status (2026-07-29 23:50): Completed
 
 ## Scope
 
@@ -23,12 +23,12 @@ Status (2026-07-29 15:15): Completed
 - [x] T12：标题栏配置菜单的每个可操作项显示与语义匹配的左侧图标，分组选择仍显示独立选中标记。
 - [x] T13：iTerm Session 标题变化后，Bridge 在下一次周期快照中发布新标题，面板无需重启即可更新。
 - [x] T14：Session 行垂直间距收紧，同时增大 Window/Tab/Project Path 小节之间的垂直留白。
+- [x] T15：同一份 Bridge 快照在面板中最多标记一个当前聚焦 Session。
 
 ## Plan
 
-1. 收紧 Session 行内部 padding 与相邻行 spacing。
-2. 增大 Window、Tab 和 Project Path 标题前的 section 间距。
-3. 构建并运行实际面板，对照截图验证层级节奏。
+1. 统一当前聚焦 Session 的判定来源，避免按多个局部 Tab 状态重复标记。
+2. 增加聚焦唯一性的回归检查，并验证真实 Bridge 快照与面板显示。
 
 ## Result
 
@@ -58,3 +58,5 @@ Status (2026-07-29 15:15): Completed
 - Session title refresh review gate: Skipped — 本次动态标题修正未请求独立对抗审查。
 - T14：Session 行垂直 padding 从 7pt 收紧到 5pt，列表元素 spacing 从 6pt 收紧到 2pt；Window/Project Path 与 Tab 标题的顶部留白统一增至 10pt。运行构建产物并裁切实际面板截图，确认同组 Session 更紧凑、相邻 section 边界更明显；Swift parse、`git diff --check` 与完整 Xcode 测试通过，25/25 测试成功。
 - Cell spacing review gate: Skipped — no explicit user request.
+- T15：Bridge 快照改为从当前 Window 的当前 Tab 读取唯一全局当前 Session ID，不再把每个 Tab 的局部 `current_session` 都标记为 active；Python self-test、`py_compile` 与 Xcode 测试（29/29）通过。重启运行中的 Bridge 后 Socket 握手为 v5，连续 4 份真实快照的聚焦候选数均为 1；重建并重启 App 后实测面板只显示一个蓝色聚焦行。
+- Focus uniqueness review gate: Skipped — no explicit user request.

@@ -101,17 +101,31 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertFalse(AppSettings(configURL: configURL).showsTabHeaders)
     }
 
+    func testCompletionNotificationsDefaultOffAndPersist() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+        XCTAssertFalse(settings.completionNotificationsEnabled)
+
+        settings.setCompletionNotificationsEnabled(true)
+
+        XCTAssertTrue(
+            AppSettings(configURL: configURL).completionNotificationsEnabled
+        )
+    }
+
     func testSettingsWriteTOMLConfig() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)
         settings.setPanelWidth(420)
         settings.setSessionListStyle(.projectPath)
         settings.setShowsTabHeaders(false)
+        settings.setCompletionNotificationsEnabled(true)
 
         let contents = try! String(contentsOf: configURL)
         XCTAssertTrue(contents.contains("panel_width = 420"))
         XCTAssertTrue(contents.contains("session_list_style = \"projectPath\""))
         XCTAssertTrue(contents.contains("shows_tab_headers = false"))
+        XCTAssertTrue(contents.contains("completion_notifications_enabled = true"))
     }
 
     func testLoadsManuallyEditedTOMLConfig() {
@@ -120,6 +134,7 @@ final class PanelLayoutTests: XCTestCase {
         panel_width = 420.0
         session_list_style = "projectPath"
         shows_tab_headers = false
+        completion_notifications_enabled = true
         """.write(to: configURL, atomically: true, encoding: .utf8)
 
         let settings = AppSettings(configURL: configURL)
@@ -127,6 +142,7 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(settings.panelWidth, 420)
         XCTAssertEqual(settings.sessionListStyle, .projectPath)
         XCTAssertFalse(settings.showsTabHeaders)
+        XCTAssertTrue(settings.completionNotificationsEnabled)
     }
 
     func testPlacesPanelToTheRightAndMatchesWindowHeight() {
