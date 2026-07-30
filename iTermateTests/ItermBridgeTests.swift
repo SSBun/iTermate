@@ -66,13 +66,31 @@ final class ItermBridgeTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_000)
 
         XCTAssertEqual(
-            TerminalSessionStatus.running.label(changedAt: 760, now: now),
+            TerminalSessionStatus.running.label(
+                changedAt: 760,
+                now: now,
+                format: .compact
+            ),
             "Running · 4m"
         )
         XCTAssertEqual(
-            TerminalSessionStatus.finished.label(changedAt: 880, now: now),
+            TerminalSessionStatus.finished.label(
+                changedAt: 880,
+                now: now,
+                format: .compact
+            ),
             "Finished · 2m ago"
         )
+        XCTAssertEqual(
+            TerminalSessionStatus.running.label(
+                changedAt: 728,
+                now: now,
+                format: .detailed
+            ),
+            "Running · 4m 32s"
+        )
+        XCTAssertEqual(SessionTimeFormat.compact.refreshInterval, 60)
+        XCTAssertEqual(SessionTimeFormat.detailed.refreshInterval, 1)
     }
 
     func testGroupsSessionsByWindowOrExactPath() throws {

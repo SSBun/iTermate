@@ -6,7 +6,7 @@
 
 ### Added
 
-- Session 状态旁显示自动更新的运行时长与完成时间。
+- Session 状态旁显示自动更新的运行时长与完成时间，并可在 Settings 中隐藏或选择 Compact/Detailed 格式。
 
 ## [0.1.0] - 2026-07-29
 

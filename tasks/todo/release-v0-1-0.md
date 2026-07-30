@@ -1,6 +1,6 @@
 # 发布 iTermate v0.1.0
 
-Status (2026-07-30 00:58): Blocked
+Status (2026-07-30 11:43): In Progress
 
 ## Scope
 
@@ -18,12 +18,6 @@ Status (2026-07-30 00:58): Blocked
 
 ## Plan
 
-1. 完成并验证子任务 [集成 Sparkle 2 自动更新](integrate-sparkle2.md)。
-2. 重建最终 0.1.0 DMG，复核版本、framework、Info.plist、签名、checksum 与 appcast。
-3. 提交全部修改并确认工作区干净。
-4. 列出 tag、push、Release、asset 与 Pages 发布动作，取得确认后执行远端发布。
-
-## Block
-
-- Reason：现有 0.1.0 DMG 不包含用户刚要求的 Sparkle 2，不能作为新的发布基线。
-- Unblock when：Sparkle 子任务完成本地集成与开发验证，并生成新的已验证 0.1.0 DMG。
+1. 提交已完成任务的全部本地修改并确认工作区干净。
+2. 从发布提交重建最终 0.1.0 DMG，复核版本、framework、Info.plist、签名、checksum 与 appcast。
+3. 列出 tag、push、Release 与 asset 远端动作，取得确认后执行并验证公开下载。

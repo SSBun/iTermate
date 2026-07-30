@@ -1,6 +1,6 @@
 # 观察 Session 命令状态并显示完成图标
 
-Status (2026-07-30 00:53): Completed
+Status (2026-07-30 10:53): Completed
 
 ## Scope
 
@@ -22,12 +22,14 @@ Status (2026-07-30 00:53): Completed
 - [x] T8：本机 Pi/Codex 集成安装后不覆盖现有 extension/hooks，Bridge、App 和测试验证通过。
 - [x] T9：Pi lifecycle handler 在返回前确认状态已送达 Bridge，agent settled 后不再因异步发送失败而残留 running。
 - [x] T10：Bridge 启动或重连时，已在运行的普通 Shell 命令也能显示 running 状态。
+- [x] T11：电脑从睡眠唤醒后，过期的 running 状态不会继续显示，仍在运行的普通命令可被重新识别。
+- [x] T12：仅重启 App 重新连接 Bridge 后，不会继续显示无法确认的旧 running 状态。
 
 ## Plan
 
-1. 在订阅命令事件前读取每个 Session 的当前 Prompt 状态，补齐 Bridge 启动或重连时已运行的命令。
-2. 增加当前 Prompt 状态的回归检查，并验证运行状态快照。
-3. 重建并重启 Bridge/App，运行相关 smoke check、构建与测试。
+1. 在 App 重新连接 Bridge 时刷新已有状态。
+2. 清理无法确认的 running 状态，并用当前 Prompt 状态恢复普通 Shell 命令。
+3. 增加重连恢复回归检查，重建并运行相关 smoke check、构建与测试。
 
 ## Result
 
@@ -42,4 +44,8 @@ Status (2026-07-30 00:53): Completed
 - T9：Pi integration 的 `report` 改为返回 Promise，连接后立即发送状态并等待匹配 request ID 的 Bridge `actionResult`，最多等待 3 秒；Pi lifecycle handler 现在由 extension runner 等待，不再 fire-and-forget。真实 Bridge smoke check 依次观察到 `agent_start → running`、`agent_settled → finished (0)`，当前 Session 快照保持 finished；源码、本机 extension 与 App bundle 内容一致，24/24 Xcode 测试、Swift parse、TypeScript import 和 `git diff --check` 通过。
 - Review gate: Skipped — no explicit user request.
 - T10：每个 Session 的 `PromptMonitor` 建立前先读取 `async_get_last_prompt`；若状态为 `PromptState.RUNNING`，立即恢复 running 快照，再继续监听增量事件。Python self-test 覆盖“已有命令 + 监控启动”场景；`py_compile`、`git diff --check` 和 Xcode 测试 29/29 通过。重建并重启 Bridge/App 后 Socket 握手为 v5，已安装 Bridge 与源码一致；无 Shell Integration 时仍保持未知状态，不猜测进程运行状态。
+- T11：周期发布使用 `time.time()` 检测事件循环跨越睡眠的长时间间隔；唤醒后清除 Agent 管理且无法确认的 running 状态，保留 finished 状态，并用 iTerm 当前 Prompt 状态恢复普通 Shell 命令。Bridge self-test 覆盖 Agent running 清理、已结束 Prompt 清理与 RUNNING Prompt 恢复；`py_compile`、`git diff --check` 和 Xcode 测试 32/32 通过。重建并重启 App/Bridge 后 Socket 握手为 v6，已安装 Bridge 与源码一致，现场快照正常返回。
+- T12：App 连接 Bridge 后先按当前 Prompt 重新验证 running 状态；已结束的 Agent 状态会被清除并释放状态所有权，仍运行的 Prompt 保留 running，普通 Shell 状态继续恢复。Bridge self-test 覆盖重连路径；`py_compile`、`git diff --check` 和 Xcode 测试 32/32 通过。重建并重启 App/Bridge 后握手为 v6，已安装 Bridge 与源码一致，现场快照为 0 个 running 状态。
+- Wake refresh review gate: Skipped — no explicit user request.
+- Reconnect refresh review gate: Skipped — no explicit user request.
 - Initial running-state review gate: Skipped — no explicit user request.

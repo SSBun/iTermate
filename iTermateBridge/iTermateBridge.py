@@ -81,6 +81,7 @@ class Bridge:
                     "bridgeVersion": BRIDGE_VERSION,
                 },
             )
+            await self.refresh_after_wake()
             await self.publish_snapshot(writer)
 
             while not reader.at_eof():
@@ -192,23 +193,43 @@ class Bridge:
 
             await asyncio.sleep(1)
 
+    async def current_prompt_is_running(self, session_id):
+        try:
+            prompt = await iterm2.async_get_last_prompt(
+                self.connection, session_id
+            )
+        except Exception:
+            return False
+        return prompt is not None and prompt.state == iterm2.PromptState.RUNNING
+
+    async def refresh_after_wake(self):
+        session_ids = self.current_session_ids()
+        for session_id, status in list(self.session_statuses.items()):
+            if status.get("status") != "running":
+                continue
+            if not await self.current_prompt_is_running(session_id):
+                self.session_statuses.pop(session_id, None)
+                self.agent_managed_session_ids.discard(session_id)
+
+        for session_id in session_ids - self.agent_managed_session_ids:
+            if (
+                session_id not in self.session_statuses
+                and await self.current_prompt_is_running(session_id)
+            ):
+                # ponytail: recovered commands are timed from observation;
+                # use prompt timestamps if iTerm exposes them later.
+                self.set_session_status(session_id, "running")
+
     async def monitor_session_commands(self, session_id):
         try:
-            if session_id not in self.agent_managed_session_ids:
-                try:
-                    prompt = await iterm2.async_get_last_prompt(
-                        self.connection, session_id
-                    )
-                except Exception:
-                    prompt = None
-                if (
-                    prompt is not None
-                    and prompt.state == iterm2.PromptState.RUNNING
-                ):
-                    # ponytail: recovered commands are timed from observation;
-                    # use prompt timestamps if iTerm exposes them later.
-                    self.set_session_status(session_id, "running")
-                    await self.publish_snapshot()
+            if (
+                session_id not in self.agent_managed_session_ids
+                and await self.current_prompt_is_running(session_id)
+            ):
+                # ponytail: recovered commands are timed from observation;
+                # use prompt timestamps if iTerm exposes them later.
+                self.set_session_status(session_id, "running")
+                await self.publish_snapshot()
 
             modes = [
                 iterm2.PromptMonitor.Mode.COMMAND_START,
@@ -287,8 +308,13 @@ class Bridge:
             self.session_statuses.pop(session_id, None)
 
     async def publish_periodically(self):
+        last_tick = time.time()
         while True:
             await asyncio.sleep(SNAPSHOT_INTERVAL)
+            now = time.time()
+            if now - last_tick > SNAPSHOT_INTERVAL * 2:
+                await self.refresh_after_wake()
+            last_tick = now
             await self.publish_snapshot()
 
     async def publish_snapshot(self, target=None):
@@ -517,6 +543,12 @@ def self_test():
         async def drain(self):
             pass
 
+        def close(self):
+            pass
+
+        async def wait_closed(self):
+            pass
+
     session = FakeSession()
     tab = FakeTab(session)
     window = FakeWindow(tab)
@@ -533,7 +565,8 @@ def self_test():
     assert not snapshot[0]["tabs"][1]["sessions"][0]["isActive"]
 
     class FakePrompt:
-        state = "running"
+        def __init__(self, state):
+            self.state = state
 
     class FakePromptMonitor:
         class Mode:
@@ -552,10 +585,11 @@ def self_test():
     class FakeIterm2:
         PromptState = type("PromptState", (), {"RUNNING": "running"})
         PromptMonitor = FakePromptMonitor
+        prompt_state = "running"
 
         @staticmethod
         async def async_get_last_prompt(_, __):
-            return FakePrompt()
+            return FakePrompt(FakeIterm2.prompt_state)
 
     globals()["iterm2"] = FakeIterm2
     bridge = Bridge(None, app)
@@ -564,6 +598,36 @@ def self_test():
     except asyncio.CancelledError:
         pass
     assert bridge.session_statuses["session-1"]["status"] == "running"
+
+    FakeIterm2.prompt_state = "finished"
+    wake_bridge = Bridge(None, app)
+    wake_bridge.agent_managed_session_ids.add("session-1")
+    wake_bridge.set_session_status("session-1", "running")
+    asyncio.run(wake_bridge.refresh_after_wake())
+    assert "session-1" not in wake_bridge.session_statuses
+    assert "session-1" not in wake_bridge.agent_managed_session_ids
+
+    FakeIterm2.prompt_state = "running"
+    wake_bridge = Bridge(None, app)
+    wake_bridge.agent_managed_session_ids.add("session-1")
+    wake_bridge.set_session_status("session-1", "running")
+    asyncio.run(wake_bridge.refresh_after_wake())
+    assert wake_bridge.session_statuses["session-1"]["status"] == "running"
+
+    FakeIterm2.prompt_state = "finished"
+    reconnect_bridge = Bridge(None, app)
+    reconnect_bridge.agent_managed_session_ids.add("session-1")
+    reconnect_bridge.set_session_status("session-1", "running")
+
+    class FakeReader:
+        def at_eof(self):
+            return True
+
+    reconnect_writer = FakeWriter()
+    asyncio.run(reconnect_bridge.handle_client(FakeReader(), reconnect_writer))
+    assert "session-1" not in reconnect_bridge.session_statuses
+    assert reconnect_writer.messages[0]["type"] == "hello"
+    assert reconnect_writer.messages[1]["type"] == "snapshot"
     del globals()["iterm2"]
 
     writer = FakeWriter()

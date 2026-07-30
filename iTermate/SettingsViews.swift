@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import Foundation
 import Sparkle
 import SwiftUI
@@ -8,6 +9,8 @@ private struct AppConfig {
     var panelWidth = PanelLayout.defaultWidth
     var sessionListStyle: SessionListStyle = .window
     var showsTabHeaders = true
+    var showsSessionTime = true
+    var sessionTimeFormat: SessionTimeFormat = .compact
     var completionNotificationsEnabled = false
 
     init(contents: String = "") {
@@ -36,6 +39,17 @@ private struct AppConfig {
                 } else if value == "false" {
                     showsTabHeaders = false
                 }
+            case "shows_session_time":
+                if value == "true" {
+                    showsSessionTime = true
+                } else if value == "false" {
+                    showsSessionTime = false
+                }
+            case "session_time_format":
+                if let format = Self.stringValue(String(value)),
+                   let parsedFormat = SessionTimeFormat(rawValue: format) {
+                    sessionTimeFormat = parsedFormat
+                }
             case "completion_notifications_enabled":
                 if value == "true" {
                     completionNotificationsEnabled = true
@@ -52,11 +66,15 @@ private struct AppConfig {
         panelWidth: CGFloat,
         sessionListStyle: SessionListStyle,
         showsTabHeaders: Bool,
+        showsSessionTime: Bool,
+        sessionTimeFormat: SessionTimeFormat,
         completionNotificationsEnabled: Bool
     ) {
         self.panelWidth = panelWidth
         self.sessionListStyle = sessionListStyle
         self.showsTabHeaders = showsTabHeaders
+        self.showsSessionTime = showsSessionTime
+        self.sessionTimeFormat = sessionTimeFormat
         self.completionNotificationsEnabled = completionNotificationsEnabled
     }
 
@@ -66,6 +84,8 @@ private struct AppConfig {
         panel_width = \(panelWidth)
         session_list_style = \"\(sessionListStyle.rawValue)\"
         shows_tab_headers = \(showsTabHeaders)
+        shows_session_time = \(showsSessionTime)
+        session_time_format = "\(sessionTimeFormat.rawValue)"
         completion_notifications_enabled = \(completionNotificationsEnabled)
         """
     }
@@ -84,6 +104,8 @@ final class AppSettings: ObservableObject {
     @Published private(set) var panelWidth: CGFloat
     @Published private(set) var sessionListStyle: SessionListStyle
     @Published private(set) var showsTabHeaders: Bool
+    @Published private(set) var showsSessionTime: Bool
+    @Published private(set) var sessionTimeFormat: SessionTimeFormat
     @Published private(set) var completionNotificationsEnabled: Bool
 
     private let configURL: URL
@@ -94,6 +116,8 @@ final class AppSettings: ObservableObject {
         panelWidth = config.panelWidth
         sessionListStyle = config.sessionListStyle
         showsTabHeaders = config.showsTabHeaders
+        showsSessionTime = config.showsSessionTime
+        sessionTimeFormat = config.sessionTimeFormat
         completionNotificationsEnabled = config.completionNotificationsEnabled
         saveConfig()
     }
@@ -114,6 +138,16 @@ final class AppSettings: ObservableObject {
 
     func setShowsTabHeaders(_ showsTabHeaders: Bool) {
         self.showsTabHeaders = showsTabHeaders
+        saveConfig()
+    }
+
+    func setShowsSessionTime(_ showsSessionTime: Bool) {
+        self.showsSessionTime = showsSessionTime
+        saveConfig()
+    }
+
+    func setSessionTimeFormat(_ format: SessionTimeFormat) {
+        sessionTimeFormat = format
         saveConfig()
     }
 
@@ -147,6 +181,8 @@ final class AppSettings: ObservableObject {
             panelWidth: panelWidth,
             sessionListStyle: sessionListStyle,
             showsTabHeaders: showsTabHeaders,
+            showsSessionTime: showsSessionTime,
+            sessionTimeFormat: sessionTimeFormat,
             completionNotificationsEnabled: completionNotificationsEnabled
         )
         try? FileManager.default.createDirectory(
@@ -159,7 +195,7 @@ final class AppSettings: ObservableObject {
 
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
-    let updaterController: SPUStandardUpdaterController
+    let updater: SPUUpdater
 
     var body: some View {
         TabView {
@@ -173,7 +209,7 @@ struct SettingsView: View {
                     Label("Agents", systemImage: "terminal")
                 }
 
-            AboutSettingsView(updaterController: updaterController)
+            AboutSettingsView(updater: updater)
                 .tabItem {
                     Label("About", systemImage: "info.circle")
                 }
@@ -196,6 +232,28 @@ private struct BasicSettingsView: View {
                     )
                 )
                 .toggleStyle(.checkbox)
+
+                Toggle(
+                    "Show session time",
+                    isOn: Binding(
+                        get: { settings.showsSessionTime },
+                        set: settings.setShowsSessionTime
+                    )
+                )
+                .toggleStyle(.checkbox)
+
+                Picker(
+                    "Time format",
+                    selection: Binding(
+                        get: { settings.sessionTimeFormat },
+                        set: settings.setSessionTimeFormat
+                    )
+                ) {
+                    ForEach(SessionTimeFormat.allCases) { format in
+                        Text(format.title).tag(format)
+                    }
+                }
+                .disabled(!settings.showsSessionTime)
             }
 
             Section("Notifications") {
@@ -218,8 +276,32 @@ private struct BasicSettingsView: View {
     }
 }
 
+private final class CheckForUpdatesViewModel: ObservableObject {
+    @Published var canCheckForUpdates = false
+
+    init(updater: SPUUpdater) {
+        updater.publisher(for: \.canCheckForUpdates)
+            .assign(to: &$canCheckForUpdates)
+    }
+}
+
+private struct CheckForUpdatesButton: View {
+    @ObservedObject private var viewModel: CheckForUpdatesViewModel
+    private let updater: SPUUpdater
+
+    init(updater: SPUUpdater) {
+        self.updater = updater
+        viewModel = CheckForUpdatesViewModel(updater: updater)
+    }
+
+    var body: some View {
+        Button("Check for Updates…", action: updater.checkForUpdates)
+            .disabled(!viewModel.canCheckForUpdates)
+    }
+}
+
 private struct AboutSettingsView: View {
-    let updaterController: SPUStandardUpdaterController
+    let updater: SPUUpdater
 
     var body: some View {
         VStack(spacing: 10) {
@@ -234,9 +316,7 @@ private struct AboutSettingsView: View {
             Text(versionText)
                 .foregroundStyle(.secondary)
 
-            Button("Check for Updates…") {
-                updaterController.checkForUpdates(nil)
-            }
+            CheckForUpdatesButton(updater: updater)
 
             Text(copyrightText)
                 .font(.caption)

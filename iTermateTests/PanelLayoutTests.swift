@@ -101,6 +101,20 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertFalse(AppSettings(configURL: configURL).showsTabHeaders)
     }
 
+    func testSessionTimeDisplayDefaultsAndPersists() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+        XCTAssertTrue(settings.showsSessionTime)
+        XCTAssertEqual(settings.sessionTimeFormat, .compact)
+
+        settings.setShowsSessionTime(false)
+        settings.setSessionTimeFormat(.detailed)
+
+        let restoredSettings = AppSettings(configURL: configURL)
+        XCTAssertFalse(restoredSettings.showsSessionTime)
+        XCTAssertEqual(restoredSettings.sessionTimeFormat, .detailed)
+    }
+
     func testCompletionNotificationsDefaultOffAndPersist() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)
@@ -119,12 +133,16 @@ final class PanelLayoutTests: XCTestCase {
         settings.setPanelWidth(420)
         settings.setSessionListStyle(.projectPath)
         settings.setShowsTabHeaders(false)
+        settings.setShowsSessionTime(false)
+        settings.setSessionTimeFormat(.detailed)
         settings.setCompletionNotificationsEnabled(true)
 
         let contents = try! String(contentsOf: configURL)
         XCTAssertTrue(contents.contains("panel_width = 420"))
         XCTAssertTrue(contents.contains("session_list_style = \"projectPath\""))
         XCTAssertTrue(contents.contains("shows_tab_headers = false"))
+        XCTAssertTrue(contents.contains("shows_session_time = false"))
+        XCTAssertTrue(contents.contains("session_time_format = \"detailed\""))
         XCTAssertTrue(contents.contains("completion_notifications_enabled = true"))
     }
 
@@ -134,6 +152,8 @@ final class PanelLayoutTests: XCTestCase {
         panel_width = 420.0
         session_list_style = "projectPath"
         shows_tab_headers = false
+        shows_session_time = false
+        session_time_format = "detailed"
         completion_notifications_enabled = true
         """.write(to: configURL, atomically: true, encoding: .utf8)
 
@@ -142,6 +162,8 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(settings.panelWidth, 420)
         XCTAssertEqual(settings.sessionListStyle, .projectPath)
         XCTAssertFalse(settings.showsTabHeaders)
+        XCTAssertFalse(settings.showsSessionTime)
+        XCTAssertEqual(settings.sessionTimeFormat, .detailed)
         XCTAssertTrue(settings.completionNotificationsEnabled)
     }
 

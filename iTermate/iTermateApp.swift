@@ -20,7 +20,7 @@ struct ItermateApplication: App {
         Settings {
             SettingsView(
                 settings: appDelegate.settings,
-                updaterController: appDelegate.updaterController
+                updater: appDelegate.updaterController.updater
             )
         }
     }
@@ -65,6 +65,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         panelFollower?.start()
         store.start()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        store.stop()
     }
 }
 
@@ -227,23 +231,6 @@ private final class PanelHostingView: NSHostingView<PanelContent> {
     }
 }
 
-private struct ActiveHoverContainer<Content: View>: View {
-    @State private var isHovered = false
-    private let content: (Bool) -> Content
-
-    init(@ViewBuilder content: @escaping (Bool) -> Content) {
-        self.content = content
-    }
-
-    var body: some View {
-        content(isHovered)
-            .overlay {
-                ActiveHoverRegion { isHovered = $0 }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-    }
-}
-
 private struct ActiveHoverRegion: NSViewRepresentable {
     let onHover: (Bool) -> Void
 
@@ -303,6 +290,7 @@ private struct PanelContent: View {
     @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
     @State private var collapsedSectionIDs: Set<String> = []
+    @State private var hoveredSessionID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -344,6 +332,13 @@ private struct PanelContent: View {
         .overlay {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(.separator.opacity(0.5), lineWidth: 1)
+        }
+        .overlay {
+            ActiveHoverRegion { isHovered in
+                if !isHovered {
+                    hoveredSessionID = nil
+                }
+            }
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(1)
@@ -547,94 +542,115 @@ private struct PanelContent: View {
     }
 
     private func sessionButton(_ item: SessionListItem) -> some View {
-        ActiveHoverContainer { isHovered in
-            HStack(spacing: 0) {
-                Button {
-                    store.activate(sessionID: item.session.id)
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: item.isFocused ? "circle.fill" : "circle")
-                            .font(.system(size: 8))
-                            .foregroundStyle(
-                                item.isFocused ? Color.accentColor : .secondary
-                            )
+        HStack(spacing: 0) {
+            Button {
+                store.activate(sessionID: item.session.id)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: item.isFocused ? "circle.fill" : "circle")
+                        .font(.system(size: 8))
+                        .foregroundStyle(
+                            item.isFocused ? Color.accentColor : .secondary
+                        )
 
-                        Text(sessionName(item.session))
-                            .lineLimit(1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(sessionName(item.session))
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
-                        if let status = item.session.status {
-                            TimelineView(.periodic(from: .now, by: 60)) { context in
-                                HStack(spacing: 4) {
-                                    switch status {
-                                    case .running:
-                                        WorkingStatusIcon()
-                                            .accessibilityHidden(true)
-                                    case .finished:
-                                        Image(
-                                            systemName: item.session.exitStatus == 0
-                                                ? "checkmark.circle.fill"
-                                                : "xmark.circle.fill"
-                                        )
-                                        .foregroundStyle(
-                                            item.session.exitStatus == 0 ? .green : .red
-                                        )
-                                        .help(
-                                            item.session.exitStatus == 0
-                                                ? "Command finished successfully"
-                                                : "Command failed"
-                                        )
-                                        .accessibilityHidden(true)
-                                    }
+                    if let status = item.session.status {
+                        HStack(spacing: 4) {
+                            switch status {
+                            case .running:
+                                WorkingStatusIcon()
+                                    .accessibilityHidden(settings.showsSessionTime)
+                            case .finished:
+                                Image(
+                                    systemName: item.session.exitStatus == 0
+                                        ? "checkmark.circle.fill"
+                                        : "xmark.circle.fill"
+                                )
+                                .foregroundStyle(
+                                    item.session.exitStatus == 0 ? .green : .red
+                                )
+                                .help(
+                                    item.session.exitStatus == 0
+                                        ? "Command finished successfully"
+                                        : "Command failed"
+                                )
+                                .accessibilityLabel(
+                                    item.session.exitStatus == 0
+                                        ? "Command finished successfully"
+                                        : "Command failed"
+                                )
+                                .accessibilityHidden(settings.showsSessionTime)
+                            }
 
+                            if settings.showsSessionTime {
+                                TimelineView(
+                                    .periodic(
+                                        from: .now,
+                                        by: settings.sessionTimeFormat.refreshInterval
+                                    )
+                                ) { context in
                                     Text(
                                         status.label(
                                             changedAt: item.session.statusChangedAt,
-                                            now: context.date
+                                            now: context.date,
+                                            format: settings.sessionTimeFormat
                                         )
                                     )
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .fixedSize()
                                 }
-                                .accessibilityElement(children: .combine)
                             }
                         }
-
-                        if item.session.isMinimized == true {
-                            Image(systemName: "rectangle.compress.vertical")
-                                .foregroundStyle(.secondary)
-                        }
+                        .accessibilityElement(children: .combine)
                     }
-                    .contentShape(Rectangle())
-                    .padding(.leading, 8)
-                    .padding(.vertical, 5)
-                }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityLabel("Activate session \(sessionName(item.session))")
 
-                Button {
-                    store.close(sessionID: item.session.id)
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .frame(width: 24, height: 30)
-                        .contentShape(Rectangle())
+                    if item.session.isMinimized == true {
+                        Image(systemName: "rectangle.compress.vertical")
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                .buttonStyle(.plain)
-                .opacity(isHovered ? 1 : 0)
-                .help("Close session")
-                .accessibilityLabel("Close session \(sessionName(item.session))")
+                .contentShape(Rectangle())
+                .padding(.leading, 8)
+                .padding(.vertical, 5)
             }
-            .padding(.trailing, 4)
-            .background(
-                item.isFocused
-                    ? Color.accentColor.opacity(0.14)
-                    : Color.clear
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 7))
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityLabel("Activate session \(sessionName(item.session))")
+
+            Button {
+                store.close(sessionID: item.session.id)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 30)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .opacity(hoveredSessionID == item.id ? 1 : 0)
+            .allowsHitTesting(hoveredSessionID == item.id)
+            .help("Close session")
+            .accessibilityLabel("Close session \(sessionName(item.session))")
+        }
+        .padding(.trailing, 4)
+        .background(
+            item.isFocused
+                ? Color.accentColor.opacity(0.14)
+                : Color.clear
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 7))
+        .overlay {
+            ActiveHoverRegion { isHovered in
+                if isHovered {
+                    hoveredSessionID = item.id
+                } else if hoveredSessionID == item.id {
+                    hoveredSessionID = nil
+                }
+            }
         }
     }
 

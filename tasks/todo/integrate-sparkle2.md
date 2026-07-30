@@ -1,6 +1,6 @@
 # 集成 Sparkle 2 自动更新
 
-Status (2026-07-30 00:58): In Progress
+Status (2026-07-30 09:36): Completed
 
 ## Scope
 
@@ -14,7 +14,7 @@ Status (2026-07-30 00:58): In Progress
 - [x] T1：Sparkle 2.9.4 通过 SPM 固定解析并只链接到 macOS App target，Release App 内嵌 Sparkle framework。
 - [x] T2：App 包含 HTTPS `SUFeedURL` 与 Keychain 私钥对应的 `SUPublicEDKey`，仓库、命令日志和构建产物不包含 EdDSA 私钥。
 - [x] T3：App 启动时创建长生命周期的标准 updater，About 设置页提供可用的手动检查更新入口，不实现自定义下载或安装逻辑。
-- [ ] T4：仓库包含可由 GitHub Pages 发布的合法基线 appcast；在尚无更新时检查更新不会报 XML、ATS 或签名配置错误。
+- [x] T4：仓库包含可由 GitHub Pages 发布的合法基线 appcast；在尚无更新时检查更新不会报 XML、ATS 或签名配置错误。
 - [x] T5：Swift parse、项目测试、Release 构建、DMG、版本/build、Sparkle framework、Info.plist、SHA-256 与代码签名检查通过，并明确记录开发签名与未 notarized 限制。
 
 ## Plan
@@ -28,6 +28,7 @@ Status (2026-07-30 00:58): In Progress
 
 - T1：[`project.yml`](../../project.yml) 以 exact version `2.9.4` 声明 Sparkle SPM package，生成并提交的 `Package.resolved` 固定 revision `b6496a74a087257ef5e6da1c5b29a447a60f5bd7`。Release App 内嵌 Sparkle 2.9.4、Updater、Autoupdate、Installer.xpc 与 Downloader.xpc，主二进制链接 `@rpath/Sparkle.framework/Versions/B/Sparkle`。
 - T2：Sparkle `generate_keys --account SSBun.iTermate` 将新 EdDSA 私钥保存在登录 Keychain，仅将公钥写入 App Info.plist；`generate_keys -p` 输出与 bundle `SUPublicEDKey` 一致。`SUFeedURL` 为 `https://ssbun.github.io/iTermate/appcast.xml`，未添加 ATS 例外；未导出私钥文件，pending diff 的密钥/凭据扫描只包含可公开公钥。
-- T3：AppDelegate 持有 `SPUStandardUpdaterController(startingUpdater: false)`，通过 XCTest 启动 guard 后在正常 App 启动阶段调用 `startUpdater()`；About 设置页的 `Check for Updates…` 仅调用标准 controller。运行 Release App 后截图确认按钮与 `Version 0.1.0 (1)` 正确显示。
-- T5：`xmllint`、Swift parse、`git diff --check` 与全新 Derived Data 的完整 Xcode 测试通过，31/31 测试成功。0.1.0 DMG 可只读挂载并包含 `/Applications` 链接；Info.plist 为 `0.1.0 (1)`、Sparkle 2.9.4、HTTPS feed 与匹配公钥，`hdiutil verify`、SHA-256、Sparkle XPC 完整性和 `codesign --verify --deep --strict` 均通过。DMG SHA-256 为 `dbed7fbca3676e55a91c30032ac9089f6070ecf314cf5f551792eebbffc60076`；App 为 arm64 ad-hoc 开发签名且未 notarized，未宣称生产分发完成。
+- T3：AppDelegate 持有 `SPUStandardUpdaterController(startingUpdater: false)`，通过 XCTest 启动 guard 后在正常 App 启动阶段调用 `startUpdater()`；About 设置页的 `Check for Updates…` 仅调用标准 updater，并绑定 `canCheckForUpdates`，避免 updater 已有会话时重复发起检查。运行 App 后确认按钮与 `Version 0.1.0 (1)` 正确显示。
+- T4：GitHub Pages 已从公开仓库 `SSBun/iTermate` 的 `main/docs` 发布 `https://ssbun.github.io/iTermate/appcast.xml`；HTTPS 请求返回 200、`application/xml`，内容与仓库基线 appcast 字节一致。运行 App 手动检查后 Sparkle 显示 `You’re up to date!`，日志无 `.sessionInProgress`、XML、ATS 或签名配置错误。
+- T5：`xmllint`、Swift parse、`git diff --check` 与全新 Derived Data 的完整 Xcode 测试通过，32/32 测试成功。最新 0.1.0 DMG 可只读挂载并包含 `/Applications` 链接；Info.plist 为 `0.1.0 (1)`、Sparkle 2.9.4、HTTPS feed 与匹配公钥，`hdiutil verify`、SHA-256、Sparkle XPC 完整性和 `codesign --verify --deep --strict` 均通过。DMG 为 [`iTermate-0.1.0.dmg`](../../dist/iTermate-0.1.0_20260730-093517/iTermate-0.1.0.dmg)，SHA-256 为 `260ec92bb7e820eb7065542c540e8a3dc2d05b391dc31f6a9e7e4d2b0095cda3`；App 为 arm64 ad-hoc 开发签名且未 notarized，未宣称生产分发完成。
 - Review gate: Skipped — no explicit user request.

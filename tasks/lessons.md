@@ -1,3 +1,60 @@
+# 2026-07-30 — 悬停操作必须使用唯一且可兜底清理的状态
+
+## Trigger
+
+- 非激活面板的每个列表行各自保存悬停布尔值。
+- tracking exit 因视图更新、复用或窗口边界而遗漏后，隐藏操作仍残留显示。
+
+## Rule
+
+- 父视图只保存一个当前悬停行 ID；新行进入时替换，离开时仅清理匹配 ID。
+- 面板级 tracking 在指针离开整个面板时无条件清空悬停 ID。
+- 隐藏的鼠标操作同时关闭 hit testing，不能只把 opacity 设为零。
+
+## Check
+
+- 面板外不显示关闭按钮；进入一行时只显示该行按钮，跨行时按钮跟随。
+- 离开面板后所有关闭按钮立即隐藏。
+- 不可见按钮不能接收鼠标点击。
+
+# 2026-07-30 — App 重启不会自动重启常驻 Bridge
+
+## Trigger
+
+- 用户只重启 Swift App，但 Bridge 进程仍由 iTerm2 AutoLaunch 常驻。
+- Bridge 内存中的 Session 状态会跨越 App 客户端重连继续存在。
+
+## Rule
+
+- 分别验证 App 客户端生命周期与 Bridge helper 生命周期，不把 App 重启当作状态重置。
+- Bridge 接受新的 App 连接后，在发送首个快照前按当前 Prompt 重新验证 running 状态。
+- 无法确认已结束的 Agent 状态时同时释放 Agent 状态所有权，避免后续 Shell 状态被永久屏蔽。
+
+## Check
+
+- 重启 App 后新的 Bridge 连接不会继续展示已结束 Session 的旧 running 状态。
+- 仍为 RUNNING 的 Prompt 保留 running，已结束 Prompt 被清理。
+- Socket 握手、安装脚本与运行中 Bridge 版本一致。
+
+# 2026-07-30 — 系统唤醒后不能继续信任内存中的 running 状态
+
+## Trigger
+
+- Bridge 通过内存字典保存 Agent 或命令的 running 状态。
+- macOS 睡眠期间可能错过 Agent settled、PromptMonitor 或 Socket 事件。
+
+## Rule
+
+- 用墙上时钟检测事件循环跨越睡眠的长时间间隔。
+- 唤醒后清除无法重新确认的 running 状态，保留 finished 状态。
+- 对普通 Shell Session 用当前 Prompt 状态恢复仍在运行的命令，不根据 Agent 进程仍存在就猜测状态。
+
+## Check
+
+- 模拟唤醒刷新时，Agent running 状态被清除。
+- Prompt 仍为 RUNNING 的普通命令被恢复，已结束 Prompt 不再显示 running。
+- 运行快照不再长期保留睡眠前的错误 running 状态。
+
 # 2026-07-30 — 命令状态监控必须先同步当前状态
 
 ## Trigger
@@ -128,22 +185,24 @@
 - Agent 退出后运行普通 shell 命令，PromptMonitor 状态仍可更新。
 - Handler 返回可等待结果，smoke check 观察到 `running → finished` 已由 Bridge 确认。
 
-# 2026-07-29 — 非激活浮动面板的光标反馈必须使用 Always tracking
+# 2026-07-30 — 非激活浮动面板的悬停反馈必须使用 Always tracking
 
 ## Trigger
 
 - companion panel 使用 `.nonactivatingPanel`，而另一个应用仍保持系统前台。
-- 仅通过 `addCursorRect` 或 `resetCursorRects` 设置边缘光标，但悬停反馈不可见。
+- 边缘光标或逐行控件依赖 SwiftUI `.onHover`、`addCursorRect` 或普通 tracking，但反馈缺失或出现在错误行。
 
 ## Rule
 
-- 非激活 companion panel 的边缘使用带 `.activeAlways` 的 `NSTrackingArea`。
-- 在 tracking 回调中设置调整光标，离开边缘后恢复箭头；原生 `.resizable` 仍负责实际拖拽。
+- 悬停区域使用带 `.activeAlways` 的 `NSTrackingArea`，不要仅依赖 SwiftUI `.onHover`。
+- 重复列表行各自保存悬停状态；tracking view 覆盖整行且不拦截原有点击。
+- 边缘 tracking 回调负责设置和恢复调整光标，原生 `.resizable` 负责拖拽。
 
 ## Check
 
-- 回归测试断言左右两侧 tracking area 均存在且包含 `.activeAlways`。
-- 目标应用保持前台时，实际悬停面板边缘显示水平调整光标。
+- 回归测试断言 tracking area 包含 `.activeAlways`。
+- 目标应用保持前台时，实际验证边缘光标反馈。
+- 指针依次移过两行及面板外，确认仅悬停行显示控件，移出后全部隐藏。
 
 # 2026-07-29 — 新应用不主动兼容未要求的历史配置
 

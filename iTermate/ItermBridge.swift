@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import Foundation
 import Network
 
@@ -224,6 +225,10 @@ final class ItermStore: ObservableObject {
         client.start()
     }
 
+    func stop() {
+        client.stop()
+    }
+
     func activate(sessionID: String) {
         client.activate(sessionID: sessionID)
     }
@@ -305,10 +310,23 @@ final class ItermBridgeClient {
             guard let self else { return }
             do {
                 self.installedBridgeURL = try BridgeInstaller.install()
+                BridgeInstaller.stopRunningBridge()
                 self.connect()
             } catch {
                 self.publish(state: .disconnected(error.localizedDescription))
             }
+        }
+    }
+
+    func stop() {
+        queue.sync {
+            reconnectWorkItem?.cancel()
+            reconnectWorkItem = nil
+            isReady = false
+            connection?.stateUpdateHandler = nil
+            connection?.cancel()
+            connection = nil
+            BridgeInstaller.stopRunningBridge()
         }
     }
 
@@ -522,6 +540,51 @@ enum BridgeInstaller {
             ofItemAtPath: destinationURL.path
         )
         return destinationURL
+    }
+
+    static func stopRunningBridge() {
+        if let pid = processIDOwningSocket() {
+            terminate(pid: pid)
+        }
+        try? FileManager.default.removeItem(atPath: socketPath)
+    }
+
+    private static func processIDOwningSocket() -> pid_t? {
+        let lsofURL = URL(fileURLWithPath: "/usr/sbin/lsof")
+        guard FileManager.default.isExecutableFile(atPath: lsofURL.path) else {
+            return nil
+        }
+
+        let output = Pipe()
+        let process = Process()
+        process.executableURL = lsofURL
+        process.arguments = ["-t", socketPath]
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return nil }
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
+
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        guard
+            let text = String(data: data, encoding: .utf8),
+            let pidText = text.split(whereSeparator: \.isWhitespace).first,
+            let pid = Int32(pidText)
+        else {
+            return nil
+        }
+        return pid
+    }
+
+    private static func terminate(pid: pid_t) {
+        guard pid > 0, pid != getpid() else { return }
+        guard kill(pid, SIGTERM) == 0 || errno == ESRCH else { return }
+
+        for _ in 0..<20 {
+            if kill(pid, 0) != 0, errno == ESRCH { return }
+            usleep(50_000)
+        }
+        _ = kill(pid, SIGKILL)
     }
 }
 

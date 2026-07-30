@@ -1,6 +1,6 @@
 # 显示 Session 运行与完成时间
 
-Status (2026-07-30 01:18): In Progress
+Status (2026-07-30 01:38): Completed
 
 ## Scope
 
@@ -12,9 +12,9 @@ Status (2026-07-30 01:18): In Progress
 - [x] T1：运行中的 Session 显示 `Running · 4m` 形式的已运行时间，并在无需新 Bridge 快照时继续更新。
 - [x] T2：已完成的 Session 显示 `Finished · 2m ago` 形式的完成时间，原有成功/失败图标与 Session 操作保持不变。
 - [x] T3：Bridge 为状态转换提供时间来源，协议及随 App 分发的 Agent integrations 保持同步，并兼容更新前已安装的 integration。
-- [ ] T4：Basic Settings 提供默认开启的 Session 时间显示开关，关闭后仍保留原有状态图标。
-- [ ] T5：Basic Settings 提供 Compact 与 Detailed 格式选择；Compact 显示 `4m`，Detailed 显示 `4m 32s`，并按各自精度自动刷新。
-- [ ] T6：显示开关与格式写入现有 TOML 配置，并能在重启后恢复。
+- [x] T4：Basic Settings 提供默认开启的 Session 时间显示开关，关闭后仍保留原有状态图标。
+- [x] T5：Basic Settings 提供 Compact 与 Detailed 格式选择；Compact 显示 `4m`，Detailed 显示 `4m 32s`，并按各自精度自动刷新。
+- [x] T6：显示开关与格式写入现有 TOML 配置，并能在重启后恢复。
 
 ## Plan
 
@@ -27,3 +27,7 @@ Status (2026-07-30 01:18): In Progress
 - T1：Session 状态行使用 SwiftUI `TimelineView` 每 60 秒重新计算显示文本；固定时间用例验证 running 4 分钟输出 `Running · 4m`，无需依赖新 Bridge 快照。
 - T2：finished 状态继续保留成功/失败图标、tooltip 与原有 Session 激活/关闭路径，并追加 `Finished · 2m ago` 文本；Swift 编译与 App 测试构建通过。
 - T3：Bridge 在每次 running/finished 转换时记录 Unix 时间并随快照发布；Swift、Python、Pi 与 Codex 协议同步升级到 v6，Bridge self-test 验证 v4/v5 已安装 integration 仍可上报。系统 Python 与 iTerm Python 3.14 self-test、py_compile、Swift parse、`git diff --check` 和完整 Xcode 测试通过，31/31 测试成功。
+- T4：Basic Settings 新增默认开启的 `Show session time`；关闭后不创建 Timeline，running 与 finished 图标继续显示并恢复自身 accessibility label。
+- T5：格式 Picker 提供 `Compact (4m)` 与 `Detailed (4m 32s)`；固定时间测试验证两种输出，刷新周期分别为 60 秒与 1 秒。
+- T6：`shows_session_time` 与 `session_time_format` 写入现有 TOML；默认值、setter 后重新加载及手工配置解析测试均通过。Swift parse、Python self-test/py_compile、`git diff --check` 和完整 Xcode 测试通过，32/32 测试成功。
+- Review gate: Skipped — no explicit user request.
