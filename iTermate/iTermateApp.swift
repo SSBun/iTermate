@@ -292,6 +292,7 @@ private struct PanelContent: View {
     @ObservedObject var settings: AppSettings
     @State private var collapsedSectionIDs: Set<String> = []
     @State private var hoveredSessionID: String?
+    @State private var hoveredCloseButtonSessionID: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -344,6 +345,7 @@ private struct PanelContent: View {
             ActiveHoverRegion { isHovered in
                 if !isHovered {
                     hoveredSessionID = nil
+                    hoveredCloseButtonSessionID = nil
                 }
             }
         }
@@ -665,6 +667,13 @@ private struct PanelContent: View {
                     .font(panelFont(0.85))
                     .foregroundStyle(.secondary)
                     .frame(width: 24, height: 30)
+                    .background {
+                        if hoveredCloseButtonSessionID == item.id {
+                            Circle()
+                                .fill(Color.secondary.opacity(0.18))
+                                .frame(width: 22, height: 22)
+                        }
+                    }
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -672,6 +681,15 @@ private struct PanelContent: View {
             .allowsHitTesting(hoveredSessionID == item.id)
             .help("Close session")
             .accessibilityLabel("Close session \(sessionName(item.session))")
+            .overlay {
+                ActiveHoverRegion { isHovered in
+                    if isHovered {
+                        hoveredCloseButtonSessionID = item.id
+                    } else if hoveredCloseButtonSessionID == item.id {
+                        hoveredCloseButtonSessionID = nil
+                    }
+                }
+            }
         }
         .padding(.trailing, 4)
         .background(
@@ -686,6 +704,7 @@ private struct PanelContent: View {
                     hoveredSessionID = item.id
                 } else if hoveredSessionID == item.id {
                     hoveredSessionID = nil
+                    hoveredCloseButtonSessionID = nil
                 }
             }
         }
