@@ -456,7 +456,10 @@ private struct PanelContent: View {
                     if !collapsedSectionIDs.contains(group.id) {
                         ForEach(Array(group.sessions.enumerated()), id: \.element.id) { index, item in
                             if showsTabHeaders, group.startsTab(at: index) {
-                                tabHeader(item)
+                                tabHeader(
+                                    item,
+                                    sessions: group.sessions(inTab: item.tabID)
+                                )
                             }
 
                             if !showsTabHeaders || !isTabCollapsed(item.tabID) {
@@ -498,9 +501,15 @@ private struct PanelContent: View {
         .accessibilityLabel(
             "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(group.title)"
         )
+        .contextMenu {
+            closeAllSessionsButton(for: group.sessions)
+        }
     }
 
-    private func tabHeader(_ item: SessionListItem) -> some View {
+    private func tabHeader(
+        _ item: SessionListItem,
+        sessions: [SessionListItem]
+    ) -> some View {
         let sectionID = tabSectionID(item.tabID)
         return Button {
             toggleSection(sectionID)
@@ -522,6 +531,19 @@ private struct PanelContent: View {
         .accessibilityLabel(
             "\(collapsedSectionIDs.contains(sectionID) ? "Expand" : "Collapse") \(item.tabTitle)"
         )
+        .contextMenu {
+            closeAllSessionsButton(for: sessions)
+        }
+    }
+
+    private func closeAllSessionsButton(
+        for sessions: [SessionListItem]
+    ) -> some View {
+        Button(role: .destructive) {
+            sessions.forEach { store.close(sessionID: $0.session.id) }
+        } label: {
+            Label("Close All Sessions", systemImage: "trash")
+        }
     }
 
     private func disclosureIcon(isCollapsed: Bool) -> some View {

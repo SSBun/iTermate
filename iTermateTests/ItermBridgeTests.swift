@@ -111,6 +111,14 @@ final class ItermBridgeTests: XCTestCase {
         XCTAssertTrue(windowGroups[0].startsTab(at: 1))
         XCTAssertFalse(windowGroups[1].startsTab(at: 1))
         XCTAssertEqual(windowGroups[0].sessions.map(\.tabTitle), ["One", "Two"])
+        XCTAssertEqual(
+            windowGroups[0].sessions(inTab: "tab-2").map(\.session.id),
+            ["session-2"]
+        )
+        XCTAssertEqual(
+            windowGroups[1].sessions(inTab: "tab-3").map(\.session.id),
+            ["session-3", "session-4"]
+        )
 
         XCTAssertEqual(
             pathGroups.map(\.title),

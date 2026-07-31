@@ -137,6 +137,10 @@ struct SessionListGroup: Equatable, Identifiable {
     func startsTab(at index: Int) -> Bool {
         index == 0 || sessions[index - 1].tabID != sessions[index].tabID
     }
+
+    func sessions(inTab tabID: String) -> [SessionListItem] {
+        sessions.filter { $0.tabID == tabID }
+    }
 }
 
 enum SessionGrouping {
