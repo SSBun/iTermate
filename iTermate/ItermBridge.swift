@@ -120,6 +120,30 @@ enum SessionListStyle: String, CaseIterable, Identifiable {
     }
 }
 
+enum SectionTitleStyle: String, CaseIterable, Identifiable {
+    case fullPath
+    case folderName
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .fullPath:
+            "Full path"
+        case .folderName:
+            "Folder name"
+        }
+    }
+
+    func title(for path: String) -> String {
+        guard self == .folderName else { return path }
+
+        let trimmedPath = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard !trimmedPath.isEmpty else { return path }
+        return (trimmedPath as NSString).lastPathComponent
+    }
+}
+
 struct SessionListItem: Equatable, Identifiable {
     let session: TerminalSessionSnapshot
     let tabID: String

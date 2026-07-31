@@ -5,9 +5,17 @@ import Sparkle
 import SwiftUI
 import UserNotifications
 
+private enum PanelFontDefaults {
+    static let name = "system"
+    static let size: CGFloat = 13
+}
+
 private struct AppConfig {
     var panelWidth = PanelLayout.defaultWidth
+    var panelFontName = PanelFontDefaults.name
+    var panelFontSize = PanelFontDefaults.size
     var sessionListStyle: SessionListStyle = .window
+    var sectionTitleStyle: SectionTitleStyle = .fullPath
     var showsTabHeaders = true
     var showsSessionTime = true
     var sessionTimeFormat: SessionTimeFormat = .compact
@@ -28,10 +36,23 @@ private struct AppConfig {
                 if let width = Double(value) {
                     panelWidth = PanelLayout.clampedWidth(CGFloat(width))
                 }
+            case "panel_font_name":
+                if let fontName = Self.stringValue(String(value)) {
+                    panelFontName = fontName
+                }
+            case "panel_font_size":
+                if let size = Double(value), size.isFinite, size > 0 {
+                    panelFontSize = CGFloat(size)
+                }
             case "session_list_style":
                 if let style = Self.stringValue(String(value)),
                    let parsedStyle = SessionListStyle(rawValue: style) {
                     sessionListStyle = parsedStyle
+                }
+            case "section_title_style":
+                if let style = Self.stringValue(String(value)),
+                   let parsedStyle = SectionTitleStyle(rawValue: style) {
+                    sectionTitleStyle = parsedStyle
                 }
             case "shows_tab_headers":
                 if value == "true" {
@@ -62,27 +83,14 @@ private struct AppConfig {
         }
     }
 
-    init(
-        panelWidth: CGFloat,
-        sessionListStyle: SessionListStyle,
-        showsTabHeaders: Bool,
-        showsSessionTime: Bool,
-        sessionTimeFormat: SessionTimeFormat,
-        completionNotificationsEnabled: Bool
-    ) {
-        self.panelWidth = panelWidth
-        self.sessionListStyle = sessionListStyle
-        self.showsTabHeaders = showsTabHeaders
-        self.showsSessionTime = showsSessionTime
-        self.sessionTimeFormat = sessionTimeFormat
-        self.completionNotificationsEnabled = completionNotificationsEnabled
-    }
-
     var toml: String {
         """
         # iTermate user configuration
         panel_width = \(panelWidth)
+        panel_font_name = "\(panelFontName)"
+        panel_font_size = \(panelFontSize)
         session_list_style = \"\(sessionListStyle.rawValue)\"
+        section_title_style = \"\(sectionTitleStyle.rawValue)\"
         shows_tab_headers = \(showsTabHeaders)
         shows_session_time = \(showsSessionTime)
         session_time_format = "\(sessionTimeFormat.rawValue)"
@@ -102,7 +110,10 @@ final class AppSettings: ObservableObject {
         .appendingPathComponent("config.toml")
 
     @Published private(set) var panelWidth: CGFloat
+    @Published private(set) var panelFontName: String
+    @Published private(set) var panelFontSize: CGFloat
     @Published private(set) var sessionListStyle: SessionListStyle
+    @Published private(set) var sectionTitleStyle: SectionTitleStyle
     @Published private(set) var showsTabHeaders: Bool
     @Published private(set) var showsSessionTime: Bool
     @Published private(set) var sessionTimeFormat: SessionTimeFormat
@@ -114,17 +125,53 @@ final class AppSettings: ObservableObject {
         self.configURL = configURL
         let config = AppConfig(contents: (try? String(contentsOf: configURL)) ?? "")
         panelWidth = config.panelWidth
+        panelFontName = config.panelFontName
+        panelFontSize = config.panelFontSize
         sessionListStyle = config.sessionListStyle
+        sectionTitleStyle = config.sectionTitleStyle
         showsTabHeaders = config.showsTabHeaders
         showsSessionTime = config.showsSessionTime
         sessionTimeFormat = config.sessionTimeFormat
         completionNotificationsEnabled = config.completionNotificationsEnabled
-        saveConfig()
+
+        if !FileManager.default.fileExists(atPath: configURL.path) {
+            writeConfig(config)
+        }
+    }
+
+    var panelFont: NSFont {
+        guard
+            panelFontName != PanelFontDefaults.name,
+            let font = NSFont(name: panelFontName, size: panelFontSize)
+        else {
+            return .systemFont(ofSize: panelFontSize)
+        }
+        return font
     }
 
     func setPanelWidth(_ width: CGFloat) {
         panelWidth = PanelLayout.clampedWidth(width)
-        saveConfig()
+        updateConfig { $0.panelWidth = panelWidth }
+    }
+
+    func setPanelFont(_ font: NSFont) {
+        panelFontName = font.fontName
+        panelFontSize = font.pointSize
+        updateConfig {
+            $0.panelFontName = panelFontName
+            $0.panelFontSize = panelFontSize
+        }
+    }
+
+    func setPanelFontName(_ fontName: String) {
+        panelFontName = fontName
+        updateConfig { $0.panelFontName = fontName }
+    }
+
+    func setPanelFontSize(_ panelFontSize: CGFloat) {
+        guard panelFontSize.isFinite, panelFontSize > 0 else { return }
+        self.panelFontSize = panelFontSize
+        updateConfig { $0.panelFontSize = panelFontSize }
     }
 
     func resetPanelWidth() {
@@ -133,27 +180,32 @@ final class AppSettings: ObservableObject {
 
     func setSessionListStyle(_ style: SessionListStyle) {
         sessionListStyle = style
-        saveConfig()
+        updateConfig { $0.sessionListStyle = style }
+    }
+
+    func setSectionTitleStyle(_ style: SectionTitleStyle) {
+        sectionTitleStyle = style
+        updateConfig { $0.sectionTitleStyle = style }
     }
 
     func setShowsTabHeaders(_ showsTabHeaders: Bool) {
         self.showsTabHeaders = showsTabHeaders
-        saveConfig()
+        updateConfig { $0.showsTabHeaders = showsTabHeaders }
     }
 
     func setShowsSessionTime(_ showsSessionTime: Bool) {
         self.showsSessionTime = showsSessionTime
-        saveConfig()
+        updateConfig { $0.showsSessionTime = showsSessionTime }
     }
 
     func setSessionTimeFormat(_ format: SessionTimeFormat) {
         sessionTimeFormat = format
-        saveConfig()
+        updateConfig { $0.sessionTimeFormat = format }
     }
 
     func setCompletionNotificationsEnabled(_ enabled: Bool) {
         completionNotificationsEnabled = enabled
-        saveConfig()
+        updateConfig { $0.completionNotificationsEnabled = enabled }
     }
 
     func requestCompletionNotificationAuthorization(
@@ -176,15 +228,21 @@ final class AppSettings: ObservableObject {
         }
     }
 
-    private func saveConfig() {
-        let config = AppConfig(
-            panelWidth: panelWidth,
-            sessionListStyle: sessionListStyle,
-            showsTabHeaders: showsTabHeaders,
-            showsSessionTime: showsSessionTime,
-            sessionTimeFormat: sessionTimeFormat,
-            completionNotificationsEnabled: completionNotificationsEnabled
-        )
+    private func updateConfig(_ update: (inout AppConfig) -> Void) {
+        let contents: String
+        if FileManager.default.fileExists(atPath: configURL.path) {
+            guard let existingContents = try? String(contentsOf: configURL) else { return }
+            contents = existingContents
+        } else {
+            contents = ""
+        }
+
+        var config = AppConfig(contents: contents)
+        update(&config)
+        writeConfig(config)
+    }
+
+    private func writeConfig(_ config: AppConfig) {
         try? FileManager.default.createDirectory(
             at: configURL.deletingLastPathComponent(),
             withIntermediateDirectories: true
@@ -223,6 +281,38 @@ private struct BasicSettingsView: View {
 
     var body: some View {
         Form {
+            Section("Appearance") {
+                Picker(
+                    "Panel Font",
+                    selection: Binding(
+                        get: {
+                            NSFont(name: settings.panelFontName, size: settings.panelFontSize) == nil
+                                ? PanelFontDefaults.name
+                                : settings.panelFontName
+                        },
+                        set: settings.setPanelFontName
+                    )
+                ) {
+                    Text("System").tag(PanelFontDefaults.name)
+                    ForEach(NSFontManager.shared.availableFonts.sorted(), id: \.self) { fontName in
+                        Text(
+                            NSFont(name: fontName, size: settings.panelFontSize)?.displayName
+                                ?? fontName
+                        )
+                        .tag(fontName)
+                    }
+                }
+
+                TextField(
+                    "Panel Font Size",
+                    value: Binding(
+                        get: { Double(settings.panelFontSize) },
+                        set: { settings.setPanelFontSize(CGFloat($0)) }
+                    ),
+                    format: FloatingPointFormatStyle<Double>()
+                )
+            }
+
             Section("Sessions") {
                 Toggle(
                     "Show tab headers in Window view",
@@ -254,6 +344,19 @@ private struct BasicSettingsView: View {
                     }
                 }
                 .disabled(!settings.showsSessionTime)
+
+                Picker(
+                    "Project Path Section Title",
+                    selection: Binding(
+                        get: { settings.sectionTitleStyle },
+                        set: settings.setSectionTitleStyle
+                    )
+                ) {
+                    ForEach(SectionTitleStyle.allCases) { style in
+                        Text(style.title).tag(style)
+                    }
+                }
+                .disabled(settings.sessionListStyle != .projectPath)
             }
 
             Section("Notifications") {

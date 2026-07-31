@@ -83,12 +83,74 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(AppSettings(configURL: configURL).panelWidth, 260)
     }
 
+    func testPanelFontDefaultsPersistsAndFallsBackWhenUnavailable() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+
+        XCTAssertEqual(settings.panelFontName, "system")
+        XCTAssertEqual(settings.panelFontSize, 13)
+
+        guard let menlo = NSFont(name: "Menlo-Regular", size: 15) else {
+            return XCTFail("Menlo must be available on macOS")
+        }
+        settings.setPanelFont(menlo)
+
+        let restoredSettings = AppSettings(configURL: configURL)
+        XCTAssertEqual(restoredSettings.panelFontName, menlo.fontName)
+        XCTAssertEqual(restoredSettings.panelFontSize, menlo.pointSize)
+
+        try! """
+        panel_font_name = "MissingFont-Regular"
+        panel_font_size = 15
+        """.write(to: configURL, atomically: true, encoding: .utf8)
+
+        let unavailableSettings = AppSettings(configURL: configURL)
+        let fallback = NSFont.systemFont(ofSize: 15)
+        XCTAssertEqual(unavailableSettings.panelFont.fontName, fallback.fontName)
+        XCTAssertEqual(unavailableSettings.panelFont.pointSize, fallback.pointSize)
+    }
+
     func testSessionListStylePersists() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)
         settings.setSessionListStyle(.projectPath)
 
         XCTAssertEqual(AppSettings(configURL: configURL).sessionListStyle, .projectPath)
+    }
+
+    func testSectionTitleStylePersistsAndFormatsFolderName() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+
+        XCTAssertEqual(settings.sectionTitleStyle, .fullPath)
+        settings.setSectionTitleStyle(.folderName)
+
+        XCTAssertEqual(
+            AppSettings(configURL: configURL).sectionTitleStyle,
+            .folderName
+        )
+        XCTAssertEqual(
+            SectionTitleStyle.folderName.title(for: "/repo/subdirectory"),
+            "subdirectory"
+        )
+        XCTAssertEqual(SectionTitleStyle.folderName.title(for: "/"), "/")
+        XCTAssertEqual(
+            SectionTitleStyle.fullPath.title(for: "/repo/subdirectory"),
+            "/repo/subdirectory"
+        )
+    }
+
+    func testUnrelatedChangesDoNotOverwriteNewerConfigValues() {
+        let configURL = makeConfigURL()
+        let firstSettings = AppSettings(configURL: configURL)
+        let staleSettings = AppSettings(configURL: configURL)
+
+        firstSettings.setSectionTitleStyle(.folderName)
+        staleSettings.setPanelWidth(420)
+
+        let restoredSettings = AppSettings(configURL: configURL)
+        XCTAssertEqual(restoredSettings.sectionTitleStyle, .folderName)
+        XCTAssertEqual(restoredSettings.panelWidth, 420)
     }
 
     func testTabHeadersDefaultOnAndPersist() {
@@ -132,6 +194,7 @@ final class PanelLayoutTests: XCTestCase {
         let settings = AppSettings(configURL: configURL)
         settings.setPanelWidth(420)
         settings.setSessionListStyle(.projectPath)
+        settings.setSectionTitleStyle(.folderName)
         settings.setShowsTabHeaders(false)
         settings.setShowsSessionTime(false)
         settings.setSessionTimeFormat(.detailed)
@@ -139,7 +202,10 @@ final class PanelLayoutTests: XCTestCase {
 
         let contents = try! String(contentsOf: configURL)
         XCTAssertTrue(contents.contains("panel_width = 420"))
+        XCTAssertTrue(contents.contains("panel_font_name = \"system\""))
+        XCTAssertTrue(contents.contains("panel_font_size = 13"))
         XCTAssertTrue(contents.contains("session_list_style = \"projectPath\""))
+        XCTAssertTrue(contents.contains("section_title_style = \"folderName\""))
         XCTAssertTrue(contents.contains("shows_tab_headers = false"))
         XCTAssertTrue(contents.contains("shows_session_time = false"))
         XCTAssertTrue(contents.contains("session_time_format = \"detailed\""))

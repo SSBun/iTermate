@@ -296,8 +296,13 @@ private struct PanelContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("iTermate", systemImage: "terminal")
-                    .font(.headline)
+                Label {
+                    Text("iTermate")
+                } icon: {
+                    statusBarIcon()
+                        .renderingMode(.template)
+                }
+                .font(panelFont(1.2))
                 Spacer()
                 groupingMenu
             }
@@ -310,7 +315,7 @@ private struct PanelContent: View {
             case .connected:
                 if let actionError = store.actionError {
                     Text(actionError)
-                        .font(.caption)
+                        .font(panelFont(0.85))
                         .foregroundStyle(.red)
                 }
                 if sessionGroups.isEmpty {
@@ -327,6 +332,7 @@ private struct PanelContent: View {
                 Spacer()
             }
         }
+        .font(panelFont())
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(.regularMaterial)
@@ -476,8 +482,14 @@ private struct PanelContent: View {
         }
     }
 
+    private func sectionTitle(for group: SessionListGroup) -> String {
+        guard settings.sessionListStyle == .projectPath else { return group.title }
+        return settings.sectionTitleStyle.title(for: group.title)
+    }
+
     private func groupHeader(_ group: SessionListGroup) -> some View {
-        Button {
+        let title = sectionTitle(for: group)
+        return Button {
             toggleSection(group.id)
         } label: {
             HStack(spacing: 6) {
@@ -487,7 +499,7 @@ private struct PanelContent: View {
                         ? "macwindow"
                         : "folder"
                 )
-                Text(group.title)
+                Text(title)
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer()
@@ -495,11 +507,11 @@ private struct PanelContent: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .font(.caption)
+        .font(panelFont(0.85))
         .foregroundStyle(.secondary)
         .padding(.top, 10)
         .accessibilityLabel(
-            "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(group.title)"
+            "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(title)"
         )
         .contextMenu {
             closeAllSessionsButton(for: group.sessions)
@@ -524,7 +536,7 @@ private struct PanelContent: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .font(.caption)
+        .font(panelFont(0.85))
         .foregroundStyle(.secondary)
         .padding(.horizontal, 8)
         .padding(.top, 10)
@@ -548,7 +560,7 @@ private struct PanelContent: View {
 
     private func disclosureIcon(isCollapsed: Bool) -> some View {
         Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
-            .font(.caption2)
+            .font(panelFont(0.7))
             .frame(width: 8)
     }
 
@@ -624,7 +636,7 @@ private struct PanelContent: View {
                                             format: settings.sessionTimeFormat
                                         )
                                     )
-                                    .font(.caption)
+                                    .font(panelFont(0.85))
                                     .foregroundStyle(.secondary)
                                     .fixedSize()
                                 }
@@ -650,7 +662,7 @@ private struct PanelContent: View {
                 store.close(sessionID: item.session.id)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.caption)
+                    .font(panelFont(0.85))
                     .foregroundStyle(.secondary)
                     .frame(width: 24, height: 30)
                     .contentShape(Rectangle())
@@ -684,6 +696,11 @@ private struct PanelContent: View {
         return name.isEmpty ? "Session" : name
     }
 
+    private func panelFont(_ scale: CGFloat = 1) -> Font {
+        let font = settings.panelFont
+        return Font(font.withSize(font.pointSize * scale))
+    }
+
     private func statusView(_ text: String, showsProgress: Bool) -> some View {
         HStack(spacing: 8) {
             if showsProgress {
@@ -693,7 +710,7 @@ private struct PanelContent: View {
                 Image(systemName: "exclamationmark.circle")
             }
             Text(text)
-                .font(.callout)
+                .font(panelFont())
                 .foregroundStyle(.secondary)
         }
     }
