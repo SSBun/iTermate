@@ -6,7 +6,6 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 6,
               "type": "snapshot",
               "sequence": 7,
               "windows": [{
@@ -131,7 +130,6 @@ final class ItermBridgeTests: XCTestCase {
         store.apply(try snapshot(sequence: 1, title: "Old"))
 
         XCTAssertEqual(store.windows.first?.tabs.first?.title, "New")
-        XCTAssertEqual(store.connectionState, .connected)
     }
 
     func testActionFailureDoesNotDisconnectBridge() throws {
@@ -140,7 +138,6 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 6,
               "type": "actionResult",
               "requestId": "request-1",
               "ok": false,
@@ -153,53 +150,6 @@ final class ItermBridgeTests: XCTestCase {
 
         XCTAssertEqual(store.connectionState, .connected)
         XCTAssertEqual(store.actionError, "Session not found")
-    }
-
-    func testOlderProtocolPromptsRestartAndStillDecodesSnapshots() throws {
-        let store = ItermStore()
-        let data = Data(
-            """
-            {
-              "version": 1,
-              "type": "snapshot",
-              "sequence": 1,
-              "windows": [{
-                "id": "window-1",
-                "number": 1,
-                "isActive": true,
-                "tabs": [{
-                  "id": "tab-1",
-                  "title": "Old",
-                  "isSelected": true,
-                  "sessions": [{
-                    "id": "session-1",
-                    "name": "zsh",
-                    "isActive": true
-                  }]
-                }]
-              }]
-            }
-            """.utf8
-        )
-
-        store.apply(try JSONDecoder().decode(BridgeMessage.self, from: data))
-
-        XCTAssertEqual(
-            store.connectionState,
-            .disconnected("Restart iTerm2 to update the Bridge")
-        )
-    }
-
-    func testIncompatibleBridgeCannotPublishSnapshots() throws {
-        let store = ItermStore()
-        store.apply(try hello(bridgeVersion: 7))
-        store.apply(try snapshot(sequence: 1, title: "Ignored"))
-
-        XCTAssertTrue(store.windows.isEmpty)
-        XCTAssertEqual(
-            store.connectionState,
-            .disconnected("Restart iTerm2 to update the Bridge")
-        )
     }
 
     func testBridgeResourceIsBundled() {
@@ -219,13 +169,11 @@ final class ItermBridgeTests: XCTestCase {
         )
     }
 
-    private func hello(bridgeVersion: Int = 6) throws -> BridgeMessage {
+    private func hello() throws -> BridgeMessage {
         let data = Data(
             """
             {
-              "version": 6,
-              "type": "hello",
-              "bridgeVersion": \(bridgeVersion)
+              "type": "hello"
             }
             """.utf8
         )
@@ -236,7 +184,6 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 6,
               "type": "snapshot",
               "sequence": 1,
               "windows": [{
@@ -307,7 +254,6 @@ final class ItermBridgeTests: XCTestCase {
         let data = Data(
             """
             {
-              "version": 6,
               "type": "snapshot",
               "sequence": \(sequence),
               "windows": [{

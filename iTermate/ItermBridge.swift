@@ -199,9 +199,7 @@ enum BridgeConnectionState: Equatable {
 }
 
 struct BridgeMessage: Decodable {
-    let version: Int
     let type: String
-    let bridgeVersion: Int?
     let sequence: Int?
     let windows: [TerminalWindowSnapshot]?
     let requestId: String?
@@ -238,18 +236,8 @@ final class ItermStore: ObservableObject {
     }
 
     func apply(_ message: BridgeMessage) {
-        guard message.version == ItermBridgeClient.protocolVersion else {
-            connectionState = .disconnected("Restart iTerm2 to update the Bridge")
-            return
-        }
-
         switch message.type {
         case "hello":
-            guard message.bridgeVersion == ItermBridgeClient.bridgeVersion else {
-                bridgeIsCompatible = false
-                connectionState = .disconnected("Restart iTerm2 to update the Bridge")
-                return
-            }
             bridgeIsCompatible = true
             connectionState = .connected
         case "snapshot":
@@ -284,9 +272,6 @@ final class ItermStore: ObservableObject {
 }
 
 final class ItermBridgeClient {
-    static let protocolVersion = 6
-    static let bridgeVersion = 6
-
     private let queue = DispatchQueue(label: "com.caishilin.iTermate.bridge")
     private let onMessage: (BridgeMessage) -> Void
     private let onStateChange: (BridgeConnectionState) -> Void
@@ -334,7 +319,6 @@ final class ItermBridgeClient {
         queue.async { [weak self] in
             self?.send(
                 SessionActionRequest(
-                    version: Self.protocolVersion,
                     type: "activateSession",
                     requestId: UUID().uuidString,
                     sessionId: sessionID
@@ -347,7 +331,6 @@ final class ItermBridgeClient {
         queue.async { [weak self] in
             self?.send(
                 SessionActionRequest(
-                    version: Self.protocolVersion,
                     type: "closeSession",
                     requestId: UUID().uuidString,
                     sessionId: sessionID
@@ -501,7 +484,6 @@ final class ItermBridgeClient {
 }
 
 private struct SessionActionRequest: Encodable {
-    let version: Int
     let type: String
     let requestId: String
     let sessionId: String

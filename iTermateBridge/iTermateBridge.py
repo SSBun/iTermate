@@ -8,8 +8,6 @@ import shlex
 import sys
 import time
 
-PROTOCOL_VERSION = 6
-BRIDGE_VERSION = 6
 SUPPORT_DIRECTORY = os.path.expanduser(
     "~/Library/Application Support/iTermate"
 )
@@ -73,14 +71,7 @@ class Bridge:
     async def handle_client(self, reader, writer):
         self.clients.add(writer)
         try:
-            await self.send(
-                writer,
-                {
-                    "version": PROTOCOL_VERSION,
-                    "type": "hello",
-                    "bridgeVersion": BRIDGE_VERSION,
-                },
-            )
+            await self.send(writer, {"type": "hello"})
             await self.refresh_after_wake()
             await self.publish_snapshot(writer)
 
@@ -104,14 +95,6 @@ class Bridge:
         request_id = request.get("requestId")
         action = request.get("type")
 
-        # Enabled integrations are not reinstalled automatically when the app updates.
-        if request.get("version") != PROTOCOL_VERSION and not (
-            action == "setSessionStatus" and request.get("version") in {4, 5}
-        ):
-            await self.send_action_result(
-                writer, request_id, False, "Unsupported protocol version"
-            )
-            return
 
         session_id = request.get("sessionId")
         if not isinstance(session_id, str) or not session_id or len(session_id) > 512:
@@ -154,7 +137,6 @@ class Bridge:
 
     async def send_action_result(self, writer, request_id, succeeded, error):
         message = {
-            "version": PROTOCOL_VERSION,
             "type": "actionResult",
             "requestId": request_id,
             "ok": succeeded,
@@ -324,7 +306,6 @@ class Bridge:
         async with self.snapshot_lock:
             snapshot = await self.build_snapshot()
             message = {
-                "version": PROTOCOL_VERSION,
                 "type": "snapshot",
                 "sequence": self.next_sequence(),
                 "windows": snapshot,
@@ -468,20 +449,6 @@ async def main(connection):
 
 
 def self_test():
-    encoded = encode_message(
-        {
-            "version": PROTOCOL_VERSION,
-            "type": "activateSession",
-            "sessionId": "session-1",
-        }
-    )
-    assert encoded.endswith(b"\n")
-    assert json.loads(encoded) == {
-        "version": 6,
-        "type": "activateSession",
-        "sessionId": "session-1",
-    }
-
     assert is_agent_command("pi")
     assert is_agent_command("/usr/local/bin/codex --resume")
     assert not is_agent_command("python3 build.py")
@@ -636,7 +603,6 @@ def self_test():
             writer,
             encode_message(
                 {
-                    "version": PROTOCOL_VERSION,
                     "type": "closeSession",
                     "requestId": "request-1",
                     "sessionId": "session-1",
@@ -647,7 +613,6 @@ def self_test():
     assert session.closed
     assert writer.messages == [
         {
-            "version": PROTOCOL_VERSION,
             "type": "actionResult",
             "requestId": "request-1",
             "ok": True,
