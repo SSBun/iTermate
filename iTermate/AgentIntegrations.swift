@@ -92,6 +92,35 @@ final class AgentIntegrationManager: ObservableObject {
         refresh()
     }
 
+    func updateInstalledPiIntegration() {
+        guard fileManager.fileExists(atPath: piExtensionURL.path) else { return }
+        defer { refresh() }
+
+        do {
+            guard let piResourceURL else {
+                throw IntegrationError.missingResource("Pi integration")
+            }
+            guard
+                try Data(contentsOf: piResourceURL)
+                    != Data(contentsOf: piExtensionURL)
+            else {
+                return
+            }
+            try installResource(
+                from: piResourceURL,
+                to: piExtensionURL,
+                permissions: 0o600
+            )
+            errors[.pi] = nil
+        } catch {
+            errors[.pi] = error.localizedDescription
+            NSLog(
+                "iTermate failed to update Pi integration: %@",
+                error.localizedDescription
+            )
+        }
+    }
+
     func refresh() {
         var installed: Set<CodingAgent> = []
         if fileManager.fileExists(atPath: piExtensionURL.path) {

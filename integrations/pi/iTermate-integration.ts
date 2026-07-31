@@ -15,6 +15,8 @@ function iTermSessionID(): string | undefined {
 
 function report(
   status: "idle" | "running" | "finished" | "detached",
+  exitStatus?: number,
+  heartbeat = false,
 ): Promise<void> {
   const sessionID = iTermSessionID();
   if (!sessionID) return Promise.resolve();
@@ -24,11 +26,13 @@ function report(
     const socket = connect(socketPath, () => {
       socket.write(
         `${JSON.stringify({
-          version: 6,
+          version: 7,
           type: "setSessionStatus",
           requestId,
           sessionId: sessionID,
           status,
+          exitStatus,
+          heartbeat,
         })}\n`,
       );
     });
@@ -62,8 +66,53 @@ function report(
 }
 
 export default function (pi): void {
-  pi.on("session_start", () => report("idle"));
-  pi.on("agent_start", () => report("running"));
-  pi.on("agent_settled", () => report("finished"));
-  pi.on("session_shutdown", () => report("detached"));
+  let agentFailed = false;
+  let heartbeatGeneration = 0;
+  let heartbeatTimer: ReturnType<typeof setTimeout> | undefined;
+  let reportQueue = Promise.resolve();
+
+  function queueReport(
+    status: "idle" | "running" | "finished" | "detached",
+    exitStatus?: number,
+    heartbeat = false,
+  ): Promise<void> {
+    const send = () => report(status, exitStatus, heartbeat);
+    reportQueue = reportQueue.then(send, send);
+    return reportQueue;
+  }
+
+  function stopHeartbeat(): void {
+    heartbeatGeneration += 1;
+    clearTimeout(heartbeatTimer);
+    heartbeatTimer = undefined;
+  }
+
+  async function sendHeartbeat(generation: number): Promise<void> {
+    await queueReport("running", undefined, true);
+    if (generation !== heartbeatGeneration) return;
+    heartbeatTimer = setTimeout(() => void sendHeartbeat(generation), 2000);
+  }
+
+  function startHeartbeat(): Promise<void> {
+    stopHeartbeat();
+    return sendHeartbeat(heartbeatGeneration);
+  }
+
+  pi.on("session_start", () => queueReport("idle"));
+  pi.on("agent_start", () => {
+    agentFailed = false;
+    return startHeartbeat();
+  });
+  pi.on("agent_end", (event) => {
+    const message = event.messages.findLast(({ role }) => role === "assistant");
+    agentFailed = message?.stopReason === "error";
+  });
+  pi.on("agent_settled", () => {
+    stopHeartbeat();
+    return queueReport("finished", agentFailed ? 1 : 0);
+  });
+  pi.on("session_shutdown", () => {
+    stopHeartbeat();
+    return queueReport("detached");
+  });
 }

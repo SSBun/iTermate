@@ -57,6 +57,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApplication.shared.setActivationPolicy(.accessory)
+        AgentIntegrationManager().updateInstalledPiIntegration()
         updaterController.startUpdater()
         panelFollower = PanelFollower(store: store, settings: settings)
         notificationController = SessionNotificationController(

@@ -14,6 +14,7 @@ SUPPORT_DIRECTORY = os.path.expanduser(
 SOCKET_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.sock")
 LOCK_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.lock")
 SNAPSHOT_INTERVAL = 2
+AGENT_HEARTBEAT_TIMEOUT = 8
 
 
 def is_agent_command(command):
@@ -52,6 +53,7 @@ class Bridge:
         self.command_monitor_tasks = {}
         self.command_monitor_unavailable = set()
         self.agent_managed_session_ids = set()
+        self.agent_heartbeat_times = {}
         self.session_statuses = {}
 
     async def run(self):
@@ -106,7 +108,23 @@ class Bridge:
             if status not in {"idle", "running", "finished", "detached"}:
                 await self.send_action_result(writer, request_id, False, "Invalid status")
                 return
-            self.set_agent_status(session_id, status)
+            exit_status = request.get("exitStatus", 0)
+            if status == "finished" and (
+                isinstance(exit_status, bool)
+                or not isinstance(exit_status, int)
+                or not 0 <= exit_status <= 255
+            ):
+                await self.send_action_result(
+                    writer, request_id, False, "Invalid exit status"
+                )
+                return
+            heartbeat = request.get("heartbeat", False)
+            if not isinstance(heartbeat, bool) or (heartbeat and status != "running"):
+                await self.send_action_result(
+                    writer, request_id, False, "Invalid heartbeat"
+                )
+                return
+            self.set_agent_status(session_id, status, exit_status, heartbeat)
             await self.send_action_result(writer, request_id, True, None)
             await self.publish_snapshot()
             return
@@ -171,20 +189,32 @@ class Bridge:
                 self.command_monitor_tasks.pop(session_id).cancel()
                 self.command_monitor_unavailable.discard(session_id)
                 self.agent_managed_session_ids.discard(session_id)
+                self.agent_heartbeat_times.pop(session_id, None)
                 self.session_statuses.pop(session_id, None)
 
             await asyncio.sleep(1)
 
-    async def current_prompt_is_running(self, session_id):
+    async def current_prompt_is_running(
+        self,
+        session_id,
+        include_agent_commands=True,
+    ):
         try:
             prompt = await iterm2.async_get_last_prompt(
                 self.connection, session_id
             )
         except Exception:
             return False
-        return prompt is not None and prompt.state == iterm2.PromptState.RUNNING
+        if (
+            prompt is None
+            or prompt.state != iterm2.PromptState.RUNNING
+            or not prompt.command
+        ):
+            return False
+        return include_agent_commands or not is_agent_command(prompt.command)
 
     async def refresh_after_wake(self):
+        self.expire_stale_agent_heartbeats(time.monotonic())
         session_ids = self.current_session_ids()
         for session_id, status in list(self.session_statuses.items()):
             if status.get("status") != "running":
@@ -192,11 +222,15 @@ class Bridge:
             if not await self.current_prompt_is_running(session_id):
                 self.session_statuses.pop(session_id, None)
                 self.agent_managed_session_ids.discard(session_id)
+                self.agent_heartbeat_times.pop(session_id, None)
 
         for session_id in session_ids - self.agent_managed_session_ids:
             if (
                 session_id not in self.session_statuses
-                and await self.current_prompt_is_running(session_id)
+                and await self.current_prompt_is_running(
+                    session_id,
+                    include_agent_commands=False,
+                )
             ):
                 # ponytail: recovered commands are timed from observation;
                 # use prompt timestamps if iTerm exposes them later.
@@ -206,7 +240,10 @@ class Bridge:
         try:
             if (
                 session_id not in self.agent_managed_session_ids
-                and await self.current_prompt_is_running(session_id)
+                and await self.current_prompt_is_running(
+                    session_id,
+                    include_agent_commands=False,
+                )
             ):
                 # ponytail: recovered commands are timed from observation;
                 # use prompt timestamps if iTerm exposes them later.
@@ -225,6 +262,14 @@ class Bridge:
                 while True:
                     mode, value = await monitor.async_get()
                     if session_id in self.agent_managed_session_ids:
+                        if mode == iterm2.PromptMonitor.Mode.COMMAND_END:
+                            self.agent_managed_session_ids.discard(session_id)
+                            self.agent_heartbeat_times.pop(session_id, None)
+                            if self.session_statuses.get(session_id, {}).get(
+                                "status"
+                            ) == "running":
+                                self.session_statuses.pop(session_id, None)
+                            await self.publish_snapshot()
                         continue
                     if mode == iterm2.PromptMonitor.Mode.COMMAND_START:
                         if is_agent_command(value):
@@ -244,13 +289,18 @@ class Bridge:
             if self.command_monitor_tasks.get(session_id) is asyncio.current_task():
                 self.command_monitor_tasks.pop(session_id, None)
 
-    def set_agent_status(self, session_id, status):
+    def set_agent_status(self, session_id, status, exit_status=0, heartbeat=False):
         if status == "detached":
             self.agent_managed_session_ids.discard(session_id)
+            self.agent_heartbeat_times.pop(session_id, None)
             self.session_statuses.pop(session_id, None)
             return
 
         self.agent_managed_session_ids.add(session_id)
+        if heartbeat:
+            self.agent_heartbeat_times[session_id] = time.monotonic()
+        else:
+            self.agent_heartbeat_times.pop(session_id, None)
         if status == "idle":
             self.session_statuses.pop(session_id, None)
             return
@@ -258,14 +308,28 @@ class Bridge:
         self.set_session_status(
             session_id,
             status,
-            0 if status == "finished" else None,
+            exit_status if status == "finished" else None,
         )
 
+    def expire_stale_agent_heartbeats(self, now):
+        for session_id, last_heartbeat in list(self.agent_heartbeat_times.items()):
+            if now - last_heartbeat <= AGENT_HEARTBEAT_TIMEOUT:
+                continue
+            self.agent_heartbeat_times.pop(session_id, None)
+            if self.session_statuses.get(session_id, {}).get("status") == "running":
+                self.session_statuses.pop(session_id, None)
+
     def set_session_status(self, session_id, status, exit_status=None):
+        current_status = self.session_statuses.get(session_id)
+        changed_at = (
+            current_status["statusChangedAt"]
+            if current_status is not None and current_status["status"] == status
+            else time.time()
+        )
         self.session_statuses[session_id] = {
             "status": status,
             "exitStatus": exit_status,
-            "statusChangedAt": time.time(),
+            "statusChangedAt": changed_at,
         }
 
     def current_session_ids(self):
@@ -296,6 +360,8 @@ class Bridge:
             now = time.time()
             if now - last_tick > SNAPSHOT_INTERVAL * 2:
                 await self.refresh_after_wake()
+            else:
+                self.expire_stale_agent_heartbeats(time.monotonic())
             last_tick = now
             await self.publish_snapshot()
 
@@ -532,8 +598,9 @@ def self_test():
     assert not snapshot[0]["tabs"][1]["sessions"][0]["isActive"]
 
     class FakePrompt:
-        def __init__(self, state):
+        def __init__(self, state, command):
             self.state = state
+            self.command = command
 
     class FakePromptMonitor:
         class Mode:
@@ -553,10 +620,14 @@ def self_test():
         PromptState = type("PromptState", (), {"RUNNING": "running"})
         PromptMonitor = FakePromptMonitor
         prompt_state = "running"
+        prompt_command = "python3 build.py"
 
         @staticmethod
         async def async_get_last_prompt(_, __):
-            return FakePrompt(FakeIterm2.prompt_state)
+            return FakePrompt(
+                FakeIterm2.prompt_state,
+                FakeIterm2.prompt_command,
+            )
 
     globals()["iterm2"] = FakeIterm2
     bridge = Bridge(None, app)
@@ -580,6 +651,20 @@ def self_test():
     wake_bridge.set_session_status("session-1", "running")
     asyncio.run(wake_bridge.refresh_after_wake())
     assert wake_bridge.session_statuses["session-1"]["status"] == "running"
+
+    ordinary_prompt_bridge = Bridge(None, app)
+    asyncio.run(ordinary_prompt_bridge.refresh_after_wake())
+    assert ordinary_prompt_bridge.session_statuses["session-1"]["status"] == "running"
+
+    FakeIterm2.prompt_command = "pi"
+    agent_prompt_bridge = Bridge(None, app)
+    asyncio.run(agent_prompt_bridge.refresh_after_wake())
+    assert "session-1" not in agent_prompt_bridge.session_statuses
+
+    FakeIterm2.prompt_command = ""
+    unknown_prompt_bridge = Bridge(None, app)
+    asyncio.run(unknown_prompt_bridge.refresh_after_wake())
+    assert "session-1" not in unknown_prompt_bridge.session_statuses
 
     FakeIterm2.prompt_state = "finished"
     reconnect_bridge = Bridge(None, app)
@@ -619,29 +704,76 @@ def self_test():
         }
     ]
 
-    for integration_version in (4, 5):
-        bridge = Bridge(None, None)
-        writer = FakeWriter()
-        asyncio.run(
-            bridge.handle_command(
-                writer,
-                encode_message(
-                    {
-                        "version": integration_version,
-                        "type": "setSessionStatus",
-                        "requestId": "request-2",
-                        "sessionId": "session-1",
-                        "status": "running",
-                    }
-                ),
-            )
+    bridge.set_agent_status("session-1", "running")
+    started_at = bridge.session_statuses["session-1"]["statusChangedAt"]
+    bridge.set_agent_status("session-1", "running")
+    assert bridge.session_statuses["session-1"]["statusChangedAt"] == started_at
+    bridge.expire_stale_agent_heartbeats(time.monotonic() + 100)
+    assert bridge.session_statuses["session-1"]["status"] == "running"
+
+    heartbeat_bridge = Bridge(None, app)
+    writer = FakeWriter()
+    asyncio.run(
+        heartbeat_bridge.handle_command(
+            writer,
+            encode_message(
+                {
+                    "type": "setSessionStatus",
+                    "requestId": "request-heartbeat",
+                    "sessionId": "session-1",
+                    "status": "running",
+                    "heartbeat": True,
+                }
+            ),
         )
-        assert bridge.session_statuses["session-1"]["status"] == "running"
-        assert writer.messages[0]["ok"]
+    )
+    heartbeat_at = heartbeat_bridge.agent_heartbeat_times["session-1"]
+    heartbeat_started_at = heartbeat_bridge.session_statuses["session-1"][
+        "statusChangedAt"
+    ]
+    heartbeat_bridge.set_agent_status("session-1", "running", heartbeat=True)
+    assert writer.messages[0]["ok"]
+    assert (
+        heartbeat_bridge.session_statuses["session-1"]["statusChangedAt"]
+        == heartbeat_started_at
+    )
+
+    heartbeat_bridge.set_agent_status("session-1", "finished")
+    heartbeat_bridge.expire_stale_agent_heartbeats(
+        heartbeat_at + AGENT_HEARTBEAT_TIMEOUT + 1
+    )
+    assert heartbeat_bridge.session_statuses["session-1"]["status"] == "finished"
+
+    heartbeat_bridge.set_agent_status("session-1", "running", heartbeat=True)
+    heartbeat_at = heartbeat_bridge.agent_heartbeat_times["session-1"]
+    heartbeat_bridge.expire_stale_agent_heartbeats(
+        heartbeat_at + AGENT_HEARTBEAT_TIMEOUT + 1
+    )
+    assert "session-1" not in heartbeat_bridge.session_statuses
+    assert "session-1" not in heartbeat_bridge.agent_heartbeat_times
+    assert "session-1" in heartbeat_bridge.agent_managed_session_ids
 
     bridge.set_agent_status("session-1", "finished")
     assert bridge.session_statuses["session-1"]["exitStatus"] == 0
     assert isinstance(bridge.session_statuses["session-1"]["statusChangedAt"], float)
+
+    writer = FakeWriter()
+    asyncio.run(
+        bridge.handle_command(
+            writer,
+            encode_message(
+                {
+                    "type": "setSessionStatus",
+                    "requestId": "request-3",
+                    "sessionId": "session-1",
+                    "status": "finished",
+                    "exitStatus": 1,
+                }
+            ),
+        )
+    )
+    assert bridge.session_statuses["session-1"]["exitStatus"] == 1
+    assert writer.messages[0]["ok"]
     bridge.clear_finished_status("session-1")
     assert "session-1" not in bridge.session_statuses
     assert "session-1" in bridge.agent_managed_session_ids

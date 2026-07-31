@@ -23,6 +23,33 @@ final class AgentIntegrationManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testUpdatesPiIntegrationOnlyWhenAlreadyInstalled() throws {
+        let fixture = try Fixture(testCase: self)
+        let manager = fixture.makeManager()
+        let installedURL = fixture.homeDirectory
+            .appendingPathComponent(".pi/agent/extensions/iTermate-integration.ts")
+
+        manager.updateInstalledPiIntegration()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: installedURL.path))
+
+        try FileManager.default.createDirectory(
+            at: installedURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try "old integration".write(
+            to: installedURL,
+            atomically: true,
+            encoding: .utf8
+        )
+
+        manager.updateInstalledPiIntegration()
+
+        XCTAssertEqual(try String(contentsOf: installedURL), "pi integration")
+        XCTAssertEqual(try permissions(at: installedURL), 0o600)
+        XCTAssertTrue(manager.isInstalled(.pi))
+    }
+
+    @MainActor
     func testCodexInstallPreservesOtherHooksAndUninstallRemovesOnlyItermate() throws {
         let fixture = try Fixture(testCase: self)
         let hooksURL = fixture.homeDirectory.appendingPathComponent(".codex/hooks.json")
