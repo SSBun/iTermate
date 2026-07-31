@@ -55,6 +55,7 @@ class Bridge:
         self.agent_managed_session_ids = set()
         self.agent_heartbeat_times = {}
         self.session_statuses = {}
+        self.session_names = {}
 
     async def run(self):
         if os.path.exists(SOCKET_PATH):
@@ -427,7 +428,19 @@ class Bridge:
         names_by_session = {
             session.session_id: name
             for (_, _, session), name in zip(session_triplets, names)
-            if isinstance(name, str) and name
+            if isinstance(name, str) and name.strip()
+        }
+        for _, _, session in session_triplets:
+            if session.session_id in names_by_session:
+                continue
+            cached_name = self.session_names.get(session.session_id)
+            if cached_name:
+                names_by_session[session.session_id] = cached_name
+            elif isinstance(session.name, str) and session.name.strip():
+                names_by_session[session.session_id] = session.name
+        self.session_names = {
+            session.session_id: names_by_session.get(session.session_id, "")
+            for _, _, session in session_triplets
         }
         paths_by_session = {
             session.session_id: path
@@ -455,7 +468,7 @@ class Bridge:
                 sessions = [
                     {
                         "id": session.session_id,
-                        "name": names_by_session.get(session.session_id, session.name),
+                        "name": self.session_names[session.session_id],
                         "path": paths_by_session.get(session.session_id),
                         "windowId": window.window_id,
                         "tabId": tab.tab_id,
@@ -474,7 +487,7 @@ class Bridge:
                     for session in tab.all_sessions
                 ]
                 fallback_title = (
-                    names_by_session.get(current_session.session_id, current_session.name)
+                    self.session_names[current_session.session_id]
                     if current_session
                     else "Tab"
                 )
@@ -525,9 +538,10 @@ def self_test():
 
         def __init__(self):
             self.closed = False
+            self.current_name = "Current title"
 
         async def async_get_variable(self, name):
-            return {"name": "Current title", "path": "/tmp"}[name]
+            return {"name": self.current_name, "path": "/tmp"}[name]
 
         async def async_close(self, force=False):
             assert not force
@@ -586,9 +600,15 @@ def self_test():
     tab = FakeTab(session)
     window = FakeWindow(tab)
     app = FakeApp(window, session)
-    snapshot = asyncio.run(Bridge(None, app).build_snapshot())
+    bridge = Bridge(None, app)
+    snapshot = asyncio.run(bridge.build_snapshot())
     assert snapshot[0]["tabs"][0]["sessions"][0]["name"] == "Current title"
     assert snapshot[0]["tabs"][0]["title"] == "Current title"
+
+    session.current_name = ""
+    session.name = "caishilin (python)"
+    snapshot = asyncio.run(bridge.build_snapshot())
+    assert snapshot[0]["tabs"][0]["sessions"][0]["name"] == "Current title"
 
     second_tab = FakeTab(SecondFakeSession())
     second_tab.tab_id = "tab-2"

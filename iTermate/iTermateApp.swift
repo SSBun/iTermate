@@ -461,7 +461,9 @@ private struct PanelContent: View {
 
                             if !showsTabHeaders || !isTabCollapsed(item.tabID) {
                                 sessionButton(item)
-                                    .id("\(settings.sessionListStyle.rawValue):\(item.id):\(item.isFocused)")
+                                    .id(
+                                        "\(settings.sessionListStyle.rawValue):\(item.id):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.exitStatus ?? -1)"
+                                    )
                                     .padding(.leading, showsTabHeaders ? 12 : 0)
                             }
                         }
