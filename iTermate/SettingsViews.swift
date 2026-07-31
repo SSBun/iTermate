@@ -252,6 +252,26 @@ final class AppSettings: ObservableObject {
     }
 }
 
+@available(macOS 14.0, *)
+struct OpenSettingsButton<Label: View>: View {
+    @Environment(\.openSettings) private var openSettings
+
+    private let label: Label
+
+    init(@ViewBuilder label: () -> Label) {
+        self.label = label()
+    }
+
+    var body: some View {
+        Button {
+            NSApplication.shared.activate(ignoringOtherApps: true)
+            openSettings()
+        } label: {
+            label
+        }
+    }
+}
+
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
     let updater: SPUUpdater
@@ -548,7 +568,7 @@ struct StatusMenuView: View {
     @ViewBuilder
     private var settingsControl: some View {
         if #available(macOS 14.0, *) {
-            SettingsLink {
+            OpenSettingsButton {
                 Text("Settings…")
             }
         } else {

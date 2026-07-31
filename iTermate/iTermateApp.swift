@@ -354,7 +354,7 @@ private struct PanelContent: View {
     @ViewBuilder
     private var settingsButton: some View {
         if #available(macOS 14.0, *) {
-            SettingsLink {
+            OpenSettingsButton {
                 Image(systemName: "gearshape")
             }
             .buttonStyle(.borderless)
