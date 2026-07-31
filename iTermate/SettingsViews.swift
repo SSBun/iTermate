@@ -209,22 +209,23 @@ final class AppSettings: ObservableObject {
     }
 
     func requestCompletionNotificationAuthorization(
-        using notificationCenter: UNUserNotificationCenter = .current()
+        using notificationCenter: UNUserNotificationCenter = .current(),
+        completion: @escaping (Bool) -> Void = { _ in }
     ) {
         guard completionNotificationsEnabled else { return }
 
-        notificationCenter.requestAuthorization(options: [.alert, .sound]) {
-            [weak self] granted, error in
+        notificationCenter.requestAuthorization(options: [.alert, .sound]) { granted, error in
             if let error {
                 NSLog(
                     "iTermate notification authorization failed: %@",
                     String(describing: error)
                 )
+                return
             }
-            guard !granted else { return }
-            DispatchQueue.main.async {
-                self?.setCompletionNotificationsEnabled(false)
+            if !granted {
+                NSLog("iTermate notification authorization was not granted")
             }
+            completion(granted)
         }
     }
 
@@ -278,6 +279,7 @@ struct SettingsView: View {
 
 private struct BasicSettingsView: View {
     @ObservedObject var settings: AppSettings
+    @State private var showsNotificationAuthorizationAlert = false
 
     var body: some View {
         Form {
@@ -371,11 +373,36 @@ private struct BasicSettingsView: View {
             }
         }
         .formStyle(.grouped)
+        .alert(
+            "Notifications Are Disabled",
+            isPresented: $showsNotificationAuthorizationAlert
+        ) {
+            Button("Open Notification Settings", action: openNotificationSettings)
+            Button("Not Now", role: .cancel) {}
+        } message: {
+            Text(
+                "Enable notifications for iTermate in System Settings > Notifications."
+            )
+        }
     }
 
     private func setCompletionNotificationsEnabled(_ enabled: Bool) {
         settings.setCompletionNotificationsEnabled(enabled)
-        settings.requestCompletionNotificationAuthorization()
+        settings.requestCompletionNotificationAuthorization { granted in
+            guard !granted else { return }
+            DispatchQueue.main.async {
+                showsNotificationAuthorizationAlert = true
+            }
+        }
+    }
+
+    private func openNotificationSettings() {
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension"
+        ) else {
+            return
+        }
+        NSWorkspace.shared.open(url)
     }
 }
 
