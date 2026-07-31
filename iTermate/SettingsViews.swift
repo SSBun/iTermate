@@ -278,9 +278,9 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
-            BasicSettingsView(settings: settings)
+            GeneralSettingsView(settings: settings)
                 .tabItem {
-                    Label("Basic", systemImage: "slider.horizontal.3")
+                    Label("General", systemImage: "gearshape")
                 }
 
             AgentSettingsView()
@@ -297,7 +297,7 @@ struct SettingsView: View {
     }
 }
 
-private struct BasicSettingsView: View {
+private struct GeneralSettingsView: View {
     @ObservedObject var settings: AppSettings
     @State private var showsNotificationAuthorizationAlert = false
 
@@ -337,25 +337,23 @@ private struct BasicSettingsView: View {
 
             Section("Sessions") {
                 Toggle(
-                    "Show tab headers in Window view",
+                    "Show Tab Headers",
                     isOn: Binding(
                         get: { settings.showsTabHeaders },
                         set: settings.setShowsTabHeaders
                     )
                 )
-                .toggleStyle(.checkbox)
 
                 Toggle(
-                    "Show session time",
+                    "Show Session Time",
                     isOn: Binding(
                         get: { settings.showsSessionTime },
                         set: settings.setShowsSessionTime
                     )
                 )
-                .toggleStyle(.checkbox)
 
                 Picker(
-                    "Time format",
+                    "Time Format",
                     selection: Binding(
                         get: { settings.sessionTimeFormat },
                         set: settings.setSessionTimeFormat
@@ -383,16 +381,16 @@ private struct BasicSettingsView: View {
 
             Section("Notifications") {
                 Toggle(
-                    "Notify when sessions finish",
+                    "Notify When Sessions Finish",
                     isOn: Binding(
                         get: { settings.completionNotificationsEnabled },
                         set: setCompletionNotificationsEnabled
                     )
                 )
-                .toggleStyle(.checkbox)
             }
         }
         .formStyle(.grouped)
+        .scrollIndicators(.hidden)
         .alert(
             "Notifications Are Disabled",
             isPresented: $showsNotificationAuthorizationAlert
@@ -435,45 +433,31 @@ private final class CheckForUpdatesViewModel: ObservableObject {
     }
 }
 
-private struct CheckForUpdatesButton: View {
-    @ObservedObject private var viewModel: CheckForUpdatesViewModel
-    private let updater: SPUUpdater
+private struct AboutSettingsView: View {
+    let updater: SPUUpdater
+    @StateObject private var viewModel: CheckForUpdatesViewModel
 
     init(updater: SPUUpdater) {
         self.updater = updater
-        viewModel = CheckForUpdatesViewModel(updater: updater)
+        _viewModel = StateObject(
+            wrappedValue: CheckForUpdatesViewModel(updater: updater)
+        )
     }
 
     var body: some View {
-        Button("Check for Updates…", action: updater.checkForUpdates)
-            .disabled(!viewModel.canCheckForUpdates)
-    }
-}
-
-private struct AboutSettingsView: View {
-    let updater: SPUUpdater
-
-    var body: some View {
-        VStack(spacing: 10) {
-            Image(nsImage: NSApplication.shared.applicationIconImage)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 72, height: 72)
-
-            Text("iTermate")
-                .font(.title2.bold())
-
-            Text(versionText)
-                .foregroundStyle(.secondary)
-
-            CheckForUpdatesButton(updater: updater)
-
-            Text(copyrightText)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        Form {
+            Section("Application") {
+                LabeledContent("Name", value: "iTermate")
+                LabeledContent("Version", value: versionText)
+                LabeledContent("Updates") {
+                    Button("Check for Updates…", action: updater.checkForUpdates)
+                        .disabled(!viewModel.canCheckForUpdates)
+                }
+                LabeledContent("Copyright", value: copyrightText)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(24)
+        .formStyle(.grouped)
+        .scrollIndicators(.hidden)
     }
 
     private var copyrightText: String {

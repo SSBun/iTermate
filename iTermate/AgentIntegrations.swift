@@ -304,61 +304,36 @@ struct AgentSettingsView: View {
     @StateObject private var integrations = AgentIntegrationManager()
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Manage coding-agent integrations. Supported agents can report working and completion status to iTermate.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.bottom, 12)
-
+        Form {
+            Section {
                 ForEach(CodingAgent.allCases) { agent in
                     row(for: agent)
-                    if agent != CodingAgent.allCases.last {
-                        Divider().padding(.leading, 48)
-                    }
                 }
+            } header: {
+                Text("Coding Agents")
+            } footer: {
+                Text(
+                    "Supported agents can report working and completion status to iTermate."
+                )
             }
-            .padding(16)
         }
+        .formStyle(.grouped)
+        .scrollIndicators(.hidden)
         .onAppear(perform: integrations.refresh)
     }
 
     private func row(for agent: CodingAgent) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: agent.symbolName)
-                .font(.title2)
-                .frame(width: 28)
-                .foregroundStyle(.secondary)
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(agent.rawValue)
-                    .font(.body.weight(.medium))
-                Text(detail(for: agent))
-                    .font(.caption)
-                    .foregroundStyle(
-                        integrations.errors[agent] == nil ? Color.secondary : Color.red
-                    )
-                    .lineLimit(2)
-            }
-
-            Spacer()
-
-            Text(status(for: agent))
-                .foregroundStyle(integrations.isInstalled(agent) ? .green : .secondary)
-
-            Toggle(
-                "\(agent.rawValue) integration",
-                isOn: Binding(
-                    get: { integrations.isInstalled(agent) },
-                    set: { integrations.setInstalled($0, for: agent) }
-                )
+        Toggle(
+            isOn: Binding(
+                get: { integrations.isInstalled(agent) },
+                set: { integrations.setInstalled($0, for: agent) }
             )
-            .labelsHidden()
-            .toggleStyle(.switch)
-            .disabled(!agent.isSupported)
+        ) {
+            Label(agent.rawValue, systemImage: agent.symbolName)
         }
-        .padding(.vertical, 11)
+        .disabled(!agent.isSupported)
+        .opacity(agent.isSupported ? 1 : 0.5)
+        .help(detail(for: agent))
     }
 
     private func detail(for agent: CodingAgent) -> String {
@@ -376,7 +351,4 @@ struct AgentSettingsView: View {
             : "Reload existing sessions with /reload"
     }
 
-    private func status(for agent: CodingAgent) -> String {
-        integrations.isInstalled(agent) ? "Installed" : "Off"
-    }
 }
