@@ -1,6 +1,6 @@
 # 按窗口或项目路径展示全部 Session
 
-Status (2026-07-30 01:19): Completed
+Status (2026-07-31 11:15): Completed
 
 ## Scope
 
@@ -25,11 +25,15 @@ Status (2026-07-30 01:19): Completed
 - [x] T14：Session 行垂直间距收紧，同时增大 Window/Tab/Project Path 小节之间的垂直留白。
 - [x] T15：同一份 Bridge 快照在面板中最多标记一个当前聚焦 Session。
 - [x] T16：当前聚焦状态变化后，旧 Session 行不会保留蓝色焦点标记。
+- [x] T17：Project Path section title 可在完整路径与文件夹名之间切换，设置持久化并即时生效。
+- [x] T18：选择 Session 后，单元格继续显示选择前的非空 Session 名称，不回退为“Session”。
+- [x] T19：多个 AppSettings 或 Debug App 实例先后修改不同设置时，已保存的 Project Path 标题样式不会被陈旧内存值覆盖。
 
 ## Plan
 
-1. 让 Session 行的 SwiftUI 身份随聚焦状态变化刷新，避免 LazyVStack 保留旧行内容。
-2. 通过连续切换 Session 验证 Bridge 快照与面板始终只有一个聚焦行。
+1. 用两个设置实例复现不同字段相互覆盖，并保留最小回归测试。
+2. 让每次设置修改只合并目标字段，且初始化不重写已有配置。
+3. 运行设置持久化测试，并用真实 Debug App 重启验证标题样式。
 
 ## Result
 
@@ -63,3 +67,9 @@ Status (2026-07-30 01:19): Completed
 - Focus uniqueness review gate: Skipped — no explicit user request.
 - T16：Session 行身份加入 `item.isFocused`，令 LazyVStack 在焦点变化时重建受影响行。真实 Bridge 激活后又发生后续 Session 切换，运行中面板截图始终只显示最新 Session 的一个蓝色焦点行，先前的 `Sparkle integration` 与 `session time settings` 行均未残留；全新 Derived Data 的完整 Xcode 测试通过，31/31 成功。
 - Focus refresh review gate: Skipped — no explicit user request.
+- T17：新增 `SectionTitleStyle` 与 `section_title_style` 配置；Basic Settings 提供 Full path / Folder name 选择，Project Path 面板 section header 按设置即时显示，Window 模式不受影响。设置持久化与路径格式化回归测试通过；重建并重启 App 后 Socket 握手 v6、13 个 Session 快照正常返回，源码与已安装 Bridge 一致。
+- Section title style review gate: Skipped — no explicit user request.
+- T18：Bridge 为仍存在的 Session 缓存最近一次非空动态/对象标题，激活切换瞬间两者均为空时不再发布空标题，并在 Session 消失时随快照自动清理缓存。Python self-test 覆盖“完整标题 → 瞬时空标题”并通过；部署 Debug 构建后真实选择 `MyWiki · pi selection style fix (pi)`，1 秒内截图仍显示完整标题。完整 Xcode 测试 34/34 通过，`py_compile`、Bridge self-test 与 `git diff --check` 通过。
+- Selection title review gate: Skipped — no explicit user request.
+- T19：复现了两个预先创建的 `AppSettings` 依次修改标题样式和面板宽度时，后者把 `section_title_style` 从 `folderName` 覆盖为 `fullPath`；现改为每个 setter 写入前重新读取磁盘配置并只合并目标字段，初始化已有配置时不再重写文件。回归测试先按预期失败、修复后通过；完整 Xcode 测试 34/34 通过，Swift parse 与 `git diff --check` 通过。重启真实 Debug App 前后 `~/.iTermate/config.toml` SHA-256 均为 `4c7047d38711875ad8a185f655b8072f9cb7e775296956058b739b72da604185`，`section_title_style` 保持 `folderName`。
+- Config persistence review gate: Skipped — no explicit user request.

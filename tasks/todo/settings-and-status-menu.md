@@ -1,6 +1,6 @@
 # 创建标准设置页与菜单栏状态视图
 
-Status (2026-07-29 13:47): Completed
+Status (2026-07-30 13:53): Completed
 
 ## Scope
 
@@ -26,12 +26,14 @@ Status (2026-07-29 13:47): Completed
 - [x] T9：用户直接编辑有效 TOML 配置后，应用下次启动能加载修改值，并继续执行默认值和宽度边界约束。
 - [x] T10：默认配置文件路径为用户主目录下的 `.iTermate/config.toml`，而不是 Application Support 目录。
 - [x] T11：配置加载只访问用户主目录下的 `.iTermate/config.toml`，不读取旧 Application Support 配置。
+- [x] T12：打开 Settings 时，设置窗口会激活 App 并置于其他窗口前方。
+- [x] T13：在当前 macOS 上，菜单栏与浮动面板的 Settings 入口都能实际打开 Settings 窗口。
 
 ## Plan
 
-1. 保持 `AppSettings` 的默认配置路径为用户主目录下的 `.iTermate/config.toml`。
-2. 移除旧 Application Support 配置读取逻辑，保留当前 TOML 读写和默认值行为。
-3. 更新路径回归测试，运行构建、测试与差异检查。
+1. 恢复菜单栏与面板在当前 macOS 上可响应的系统 Settings 入口。
+2. 运行实际构建产物并验证两个入口都创建 Settings 窗口。
+3. 运行构建、测试与差异检查。
 
 ## Result
 
@@ -46,10 +48,13 @@ Status (2026-07-29 13:47): Completed
 - T2：Accessibility 将 Basic 滑杆从 260pt 调至 320pt 后，Core Graphics 确认面板实时变为 320pt且 `UserDefaults` 同步；Restore Default 恢复 260pt。测试覆盖 180–600pt 限制、持久化与重置。
 - T3：About 运行时窗口展示 App 图标、iTermComrade、`Version 0.1.0 (1)` 与当前年份版权信息；版本来自生成的 bundle metadata。
 - T4：运行时菜单栏窗口展示 Bridge 状态、错误详情、Windows/Tab 数量和 Settings/Quit；Accessibility 分别触发 Settings 与 Quit 成功。
-- T5：工程 deployment target 保持 macOS 13；macOS 14+ 使用 `SettingsLink`，macOS 13 编译到标准 `showSettingsWindow:` fallback。默认 `xcodebuild test` 运行 13 个测试全部通过，`swiftc -parse`、bundle 版本检查和 `git diff --check` 通过；当前环境无 macOS 13 主机进行 fallback 运行时验证。
+- T5：工程 deployment target 保持 macOS 13；macOS 14+ 使用 SwiftUI `openSettings` 环境动作，macOS 13 编译到标准 `showSettingsWindow:` fallback。默认 `xcodebuild test` 运行 13 个测试全部通过，`swiftc -parse`、bundle 版本检查和 `git diff --check` 通过；当前环境无 macOS 13 主机进行 fallback 运行时验证。
 - T6：检查 [`SettingsViews.swift`](../../iTermate/SettingsViews.swift) 已移除 Panel/Width 配置，并将设置窗口调整为 220pt；`xcodebuild -project iTermate.xcodeproj -scheme iTermate build test` 通过 17 个测试，覆盖原生边缘调整与宽度持久化行为；`git diff --check` 通过。
 - Review gate: Required — SwiftUI Scene、AppKit 面板与持久化状态构成跨组件和状态变更；macOS 13 设置入口缺少对应系统的运行时环境，存在验证缺口。
 - Review gate: Skipped — no explicit user request (width-config follow-up).
 - T7：检查 [`iTermateApp.swift`](../../iTermate/iTermateApp.swift) 已在面板底部左侧加入 `gearshape` Settings 入口，并保留 macOS 13 fallback；`xcodebuild -project iTermate.xcodeproj -scheme iTermate build test` 通过 17 个测试，`git diff --check` 通过。
 - Review gate: Skipped — no explicit user request (panel Settings icon follow-up).
 - Review decision: `APPROVED` — 2 次 Reviewer pass 后无未解决 finding；[审查报告](../../reports/adversarial-review/settings-and-status-menu.md)。
+- T12、T13：macOS 14+ 的面板齿轮与菜单栏入口共用 `OpenSettingsButton`，先激活后台 App 再调用 SwiftUI `openSettings`。直接执行 `/tmp/itermate-build/.../iTermate` 后，Accessibility 分别观察到菜单栏入口创建 620×608 Settings 窗口、关闭后面板齿轮再次创建 620×608 Settings 窗口；运行进程路径确认是本次构建产物。
+- T12、T13：`xcodebuild -project iTermate.xcodeproj -scheme iTermate -destination 'platform=macOS' test` 通过 34/34；`swiftc -parse` 与 `git diff --check` 通过。
+- Review gate: Skipped — no explicit user request (Settings opening follow-up).
