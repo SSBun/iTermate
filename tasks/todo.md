@@ -9,7 +9,7 @@
 - [显示 Session 运行与完成时间](todo/session-status-time.md) — Completed (2026-07-30 01:38)
 - [集成 Sparkle 2 自动更新](todo/integrate-sparkle2.md) — Completed (2026-07-30 09:36)
 - [为 Session 单元格添加关闭按钮](todo/close-session-cells.md) — Completed (2026-07-30 22:04)
-- [发布 iTermate v0.1.0](todo/release-v0-1-0.md) — In Progress (2026-08-02 09:30)
+- [发布 iTermate v0.1.0](todo/release-v0-1-0.md) — In Progress (2026-08-02 09:45)
 - [Session 完成通知](todo/session-finish-notifications.md) — Completed (2026-07-30 23:06)
 - [管理 Coding Agent Hooks](todo/agent-integration-management.md) — Completed (2026-07-29 14:56)
 - [观察 Session 命令状态并显示完成图标](todo/session-command-status.md) — In Progress (2026-07-30 22:55)
