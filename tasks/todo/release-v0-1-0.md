@@ -1,6 +1,6 @@
 # 发布 iTermate v0.1.0
 
-Status (2026-07-30 11:43): In Progress
+Status: In Progress (2026-08-02 09:30)
 
 ## Scope
 

@@ -65,6 +65,7 @@ class Bridge:
 
         await asyncio.gather(
             server.serve_forever(),
+            self.monitor_iterm_connection(),
             self.monitor_layout(),
             self.monitor_focus(),
             self.monitor_commands(),
@@ -163,6 +164,10 @@ class Bridge:
         if error:
             message["error"] = error
         await self.send(writer, message)
+
+    async def monitor_iterm_connection(self):
+        await self.connection.websocket.wait_closed()
+        raise ConnectionError("iTerm2 disconnected")
 
     async def monitor_layout(self):
         async with iterm2.LayoutChangeMonitor(self.connection) as monitor:
@@ -438,6 +443,11 @@ class Bridge:
                 names_by_session[session.session_id] = cached_name
             elif isinstance(session.name, str) and session.name.strip():
                 names_by_session[session.session_id] = session.name
+        for _, tab in tab_pairs:
+            if tab.current_session is not None and tab.tab_id in titles_by_tab:
+                names_by_session[tab.current_session.session_id] = titles_by_tab[
+                    tab.tab_id
+                ]
         self.session_names = {
             session.session_id: names_by_session.get(session.session_id, "")
             for _, _, session in session_triplets
@@ -558,10 +568,11 @@ def self_test():
         def __init__(self, session):
             self.all_sessions = [session]
             self.current_session = session
+            self.current_title = ""
 
         async def async_get_variable(self, name):
             assert name == "title"
-            return ""
+            return self.current_title
 
     class FakeWindow:
         window_id = "window-1"
@@ -579,6 +590,13 @@ def self_test():
 
         def get_session_by_id(self, session_id):
             return self.session if session_id == self.session.session_id else None
+
+    class FakeWebSocket:
+        async def wait_closed(self):
+            pass
+
+    class FakeConnection:
+        websocket = FakeWebSocket()
 
     class FakeWriter:
         def __init__(self):
@@ -601,12 +619,23 @@ def self_test():
     window = FakeWindow(tab)
     app = FakeApp(window, session)
     bridge = Bridge(None, app)
+    try:
+        asyncio.run(Bridge(FakeConnection(), app).monitor_iterm_connection())
+        assert False, "Closed iTerm2 connection should stop the Bridge"
+    except ConnectionError:
+        pass
+
     snapshot = asyncio.run(bridge.build_snapshot())
     assert snapshot[0]["tabs"][0]["sessions"][0]["name"] == "Current title"
     assert snapshot[0]["tabs"][0]["title"] == "Current title"
 
     session.current_name = ""
     session.name = "caishilin (python)"
+    snapshot = asyncio.run(bridge.build_snapshot())
+    assert snapshot[0]["tabs"][0]["sessions"][0]["name"] == "Current title"
+
+    session.current_name = "caishilin (zsh)"
+    tab.current_title = "Current title"
     snapshot = asyncio.run(bridge.build_snapshot())
     assert snapshot[0]["tabs"][0]["sessions"][0]["name"] == "Current title"
 

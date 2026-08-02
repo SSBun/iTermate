@@ -140,6 +140,20 @@ final class ItermBridgeTests: XCTestCase {
         XCTAssertEqual(store.windows.first?.tabs.first?.title, "New")
     }
 
+    func testStoreClearsSessionsWhenBridgeDisconnects() throws {
+        let store = ItermStore()
+        store.apply(try hello())
+        store.apply(try snapshot(sequence: 2, title: "Old"))
+
+        store.updateConnectionState(.disconnected("iTerm2 restarted"))
+
+        XCTAssertTrue(store.windows.isEmpty)
+
+        store.apply(try hello())
+        store.apply(try snapshot(sequence: 1, title: "New"))
+        XCTAssertEqual(store.windows.first?.tabs.first?.title, "New")
+    }
+
     func testActionFailureDoesNotDisconnectBridge() throws {
         let store = ItermStore()
         store.apply(try hello())

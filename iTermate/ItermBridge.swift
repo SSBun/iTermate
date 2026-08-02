@@ -290,11 +290,12 @@ final class ItermStore: ObservableObject {
         }
     }
 
-    private func updateConnectionState(_ state: BridgeConnectionState) {
+    func updateConnectionState(_ state: BridgeConnectionState) {
         connectionState = state
         if state != .connected {
             bridgeIsCompatible = false
             latestSequence = 0
+            windows = []
         }
     }
 }
