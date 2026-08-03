@@ -1,5 +1,6 @@
 # Tasks
 
+- [发布 iTermate v0.1.1](todo/release-v0-1-1.md) — In Progress (2026-08-03 14:13)
 - [修复 Session 选择后的标题与状态错配](todo/fix-session-selection-title-status.md) — Completed (2026-07-31 17:53)
 - [从 Section 上下文菜单关闭相关 Sessions](todo/close-section-sessions.md) — Completed (2026-07-30 21:33)
 - [恢复顶部标签式设置窗口](todo/adopt-modern-apple-settings.md) — Completed (2026-07-30 16:39)
@@ -12,7 +13,7 @@
 - [发布 iTermate v0.1.0](todo/release-v0-1-0.md) — In Progress (2026-08-02 09:45)
 - [Session 完成通知](todo/session-finish-notifications.md) — Completed (2026-07-30 23:06)
 - [管理 Coding Agent Hooks](todo/agent-integration-management.md) — Completed (2026-07-29 14:56)
-- [观察 Session 命令状态并显示完成图标](todo/session-command-status.md) — In Progress (2026-07-30 22:55)
+- [观察 Session 命令状态并显示完成图标](todo/session-command-status.md) — Completed (2026-08-03 10:10)
 - [生成 Pi 任务面板不显示任务列表的问题报告](todo/pi-task-overlay-issue-report.md) — Completed (2026-07-29 00:09)
 - [设计 iTermate 菜单栏状态图标](todo/design-itermate-status-icon.md) — Completed (2026-07-29 19:02)
 - [生成四款 App 图标候选](todo/generate-app-icon-variants.md) — Completed (2026-07-28 23:57)

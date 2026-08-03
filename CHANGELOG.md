@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-03
+
+### Fixed
+
+- 修复 Pi 工作状态心跳短连接会短暂清空 `running` 状态、导致工作图标每两秒闪烁的问题。
+
+### Notes
+
+- 这是首个公开 GitHub Release；当前构建使用 ad hoc 签名且未经过 Apple notarization。
+
 ## [0.1.0] - 2026-07-29
 
 ### Added

@@ -223,7 +223,10 @@ class Bridge:
         self.expire_stale_agent_heartbeats(time.monotonic())
         session_ids = self.current_session_ids()
         for session_id, status in list(self.session_statuses.items()):
-            if status.get("status") != "running":
+            if (
+                status.get("status") != "running"
+                or session_id in self.agent_heartbeat_times
+            ):
                 continue
             if not await self.current_prompt_is_running(session_id):
                 self.session_statuses.pop(session_id, None)
@@ -693,6 +696,13 @@ def self_test():
     asyncio.run(wake_bridge.refresh_after_wake())
     assert "session-1" not in wake_bridge.session_statuses
     assert "session-1" not in wake_bridge.agent_managed_session_ids
+
+    heartbeat_wake_bridge = Bridge(None, app)
+    heartbeat_wake_bridge.set_agent_status(
+        "session-1", "running", heartbeat=True
+    )
+    asyncio.run(heartbeat_wake_bridge.refresh_after_wake())
+    assert heartbeat_wake_bridge.session_statuses["session-1"]["status"] == "running"
 
     FakeIterm2.prompt_state = "running"
     wake_bridge = Bridge(None, app)
