@@ -1,6 +1,6 @@
 # Tasks
 
-- [发布 iTermate v0.1.1](todo/release-v0-1-1.md) — In Progress (2026-08-03 14:13)
+- [发布 iTermate v0.1.1](todo/release-v0-1-1.md) — Completed (2026-08-03 14:23)
 - [修复 Session 选择后的标题与状态错配](todo/fix-session-selection-title-status.md) — Completed (2026-07-31 17:53)
 - [从 Section 上下文菜单关闭相关 Sessions](todo/close-section-sessions.md) — Completed (2026-07-30 21:33)
 - [恢复顶部标签式设置窗口](todo/adopt-modern-apple-settings.md) — Completed (2026-07-30 16:39)
