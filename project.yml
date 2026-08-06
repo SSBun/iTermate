@@ -38,8 +38,11 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.caishilin.iTermate
-        MARKETING_VERSION: 0.1.1
-        CURRENT_PROJECT_VERSION: 2
+        MARKETING_VERSION: 0.1.2
+        CURRENT_PROJECT_VERSION: 3
+      configs:
+        Release:
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
   iTermateTests:
     type: bundle.unit-test
     platform: macOS

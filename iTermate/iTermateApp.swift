@@ -66,10 +66,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         panelFollower?.start()
         store.start()
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(workspaceDidWake),
+            name: NSWorkspace.didWakeNotification,
+            object: nil
+        )
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        NSWorkspace.shared.notificationCenter.removeObserver(self)
         store.stop()
+    }
+
+    @objc private func workspaceDidWake(_ notification: Notification) {
+        store.reconnectAfterWake()
     }
 }
 
@@ -305,6 +316,14 @@ private struct PanelContent: View {
                 }
                 .font(panelFont(1.2))
                 Spacer()
+                Button {
+                    store.resetSessionStatuses()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.borderless)
+                .help("Reset all session statuses")
+                .accessibilityLabel("Reset all session statuses")
                 groupingMenu
             }
 

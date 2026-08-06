@@ -17,6 +17,10 @@ SNAPSHOT_INTERVAL = 2
 AGENT_HEARTBEAT_TIMEOUT = 8
 
 
+def heartbeat_time():
+    return time.clock_gettime(time.CLOCK_MONOTONIC_RAW)
+
+
 def is_agent_command(command):
     try:
         executable = shlex.split(command)[0]
@@ -98,7 +102,6 @@ class Bridge:
         request = json.loads(line)
         request_id = request.get("requestId")
         action = request.get("type")
-
 
         session_id = request.get("sessionId")
         if not isinstance(session_id, str) or not session_id or len(session_id) > 512:
@@ -220,7 +223,7 @@ class Bridge:
         return include_agent_commands or not is_agent_command(prompt.command)
 
     async def refresh_after_wake(self):
-        self.expire_stale_agent_heartbeats(time.monotonic())
+        self.expire_stale_agent_heartbeats(heartbeat_time())
         session_ids = self.current_session_ids()
         for session_id, status in list(self.session_statuses.items()):
             if (
@@ -307,7 +310,7 @@ class Bridge:
 
         self.agent_managed_session_ids.add(session_id)
         if heartbeat:
-            self.agent_heartbeat_times[session_id] = time.monotonic()
+            self.agent_heartbeat_times[session_id] = heartbeat_time()
         else:
             self.agent_heartbeat_times.pop(session_id, None)
         if status == "idle":
@@ -370,7 +373,7 @@ class Bridge:
             if now - last_tick > SNAPSHOT_INTERVAL * 2:
                 await self.refresh_after_wake()
             else:
-                self.expire_stale_agent_heartbeats(time.monotonic())
+                self.expire_stale_agent_heartbeats(heartbeat_time())
             last_tick = now
             await self.publish_snapshot()
 
@@ -703,6 +706,20 @@ def self_test():
     )
     asyncio.run(heartbeat_wake_bridge.refresh_after_wake())
     assert heartbeat_wake_bridge.session_statuses["session-1"]["status"] == "running"
+
+    heartbeat_now = [100.0]
+    original_heartbeat_time = globals()["heartbeat_time"]
+    globals()["heartbeat_time"] = lambda: heartbeat_now[0]
+    try:
+        sleeping_heartbeat_bridge = Bridge(None, app)
+        sleeping_heartbeat_bridge.set_agent_status(
+            "session-1", "running", heartbeat=True
+        )
+        heartbeat_now[0] += AGENT_HEARTBEAT_TIMEOUT + 1
+        asyncio.run(sleeping_heartbeat_bridge.refresh_after_wake())
+        assert "session-1" not in sleeping_heartbeat_bridge.session_statuses
+    finally:
+        globals()["heartbeat_time"] = original_heartbeat_time
 
     FakeIterm2.prompt_state = "running"
     wake_bridge = Bridge(None, app)

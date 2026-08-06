@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-06
+
+### Added
+
+- 面板标题栏新增状态刷新按钮；它只重启 Bridge 来清除错误状态，不会重启 iTerm 或任何 Session，真实工作的 Pi 会由 heartbeat 自动恢复。
+
+### Changed
+
+- Pi heartbeat 过期计算改用睡眠期间持续推进的时钟，并在 macOS 唤醒后主动重连 Bridge 以重新验证状态。
+
+### Notes
+
+- 长时间睡眠后状态自动恢复的唯一根因仍在调查；状态刷新按钮是当前的手动兜底。
+- 当前构建使用 ad hoc 签名且未经过 Apple notarization。
+
 ## [0.1.1] - 2026-08-03
 
 ### Fixed

@@ -255,12 +255,20 @@ final class ItermStore: ObservableObject {
         client.stop()
     }
 
+    func reconnectAfterWake() {
+        client.reconnectAfterWake()
+    }
+
     func activate(sessionID: String) {
         client.activate(sessionID: sessionID)
     }
 
     func close(sessionID: String) {
         client.close(sessionID: sessionID)
+    }
+
+    func resetSessionStatuses() {
+        client.resetSessionStatuses()
     }
 
     func apply(_ message: BridgeMessage) {
@@ -344,6 +352,12 @@ final class ItermBridgeClient {
         }
     }
 
+    func reconnectAfterWake() {
+        queue.async { [weak self] in
+            self?.scheduleReconnect(after: nil)
+        }
+    }
+
     func activate(sessionID: String) {
         queue.async { [weak self] in
             self?.send(
@@ -365,6 +379,15 @@ final class ItermBridgeClient {
                     sessionId: sessionID
                 )
             )
+        }
+    }
+
+    func resetSessionStatuses() {
+        queue.async { [weak self] in
+            guard let self else { return }
+            BridgeInstaller.stopRunningBridge()
+            self.lastLaunchDate = .distantPast
+            self.scheduleReconnect(after: nil)
         }
     }
 

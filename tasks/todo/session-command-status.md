@@ -1,6 +1,6 @@
 # 观察 Session 命令状态并显示完成图标
 
-Status: Completed (2026-08-03 10:10)
+Status: In Progress (2026-08-05 16:24)
 
 ## Scope
 
@@ -11,6 +11,9 @@ Status: Completed (2026-08-03 10:10)
 - 本次修正包含：Pi/Codex 长驻进程改用 agent 原生 turn 生命周期，Shell Integration 仅作为普通命令 fallback。
 - 本次跟进包含：Pi 自动重试最终仍失败时显示失败图标，而不是成功完成图标。
 - 本次修正包含：系统唤醒或 Bridge 恢复时，只从 Prompt 恢复命令身份明确的普通 Shell 命令；命令缺失时保持未知，不把长驻 Pi/Codex 外层进程标记为 running。
+- 本次修复包含：电脑长时间睡眠后清除过期的 Pi running 状态，同时保持正常 heartbeat、防闪烁和 Shell PromptMonitor 行为。
+- 本次跟进包含：系统唤醒后无需向任一 Pi Session 发送新 prompt，也能主动刷新并发布已过期状态。
+- 本次兜底包含：面板提供手动刷新入口，清除缓存状态后只恢复当前可确认的普通 Shell running；真实工作的 Pi 由后续 heartbeat 自动恢复，不把该入口表述为根因修复。
 
 ## Target
 
@@ -34,6 +37,15 @@ Status: Completed (2026-08-03 10:10)
 - [x] T18：Bridge 重启后，正在工作的 Pi Session 不得静默丢失 running 状态；集成版本或加载态不满足恢复条件时必须有明确修复路径。
 - [x] T19：唤醒或重连时，命令身份缺失的 RUNNING Prompt 保持未知，不得被恢复为 running。
 - [x] T20：明确的普通 Shell 命令仍可从 Prompt 恢复 running，Pi lifecycle heartbeat 仍可独立上报 running。
+- [x] T21：电脑长时间睡眠后，睡眠前的 Pi heartbeat 能按实际经过时间过期；正常 2 秒 heartbeat、防闪烁、Pi lifecycle 与 Shell PromptMonitor 行为保持不变。
+- [ ] T22：系统唤醒后不依赖新的 Pi prompt 或 inbound heartbeat，Bridge 会在有界时间内主动清理并发布过期 running 状态；正常状态观察逻辑保持不变。
+- [x] T23：面板可手动重置全部 Session 状态；finished 与 stale Agent running 被清除，当前普通 Shell running 可重新确认，真实工作的 heartbeat Agent 会自动恢复，既有观察器保持运行。
+
+## Plan
+
+1. 下一次真实合盖复现时，在手动刷新前保留 stale 窗口的 Bridge publish、heartbeat 与 App apply 证据。
+2. 用现场证据在 Agent lease、Bridge publish/RPC 与 App apply 分支中确定唯一根因。
+3. 仅在根因成立后做局部修复，并重新验证无 prompt 的真实唤醒路径。
 
 ## Result
 
@@ -73,3 +85,10 @@ Status: Completed (2026-08-03 10:10)
 - T20：Bridge self-test 保留了 `python3 build.py` Prompt 恢复 running、`pi` Prompt 不走普通命令 fallback，以及 heartbeat 请求独立建立 running 状态的断言。
 - T19、T20：`python3 iTermateBridge/iTermateBridge.py --self-test`、`python3 -m py_compile iTermateBridge/iTermateBridge.py`、聚焦 `git diff --check` 与完整 Xcode 测试均通过，34/34 测试成功；未修改用户安装态。
 - Review gate: Skipped — no explicit user request (Prompt observation optimization).
+- T21：Bridge heartbeat 记录与过期检查统一改用 macOS 睡眠期间持续推进的 `CLOCK_MONOTONIC_RAW`；确定性自检模拟 heartbeat 时钟推进超过 8 秒，修复前因缺少连续时钟入口以 `KeyError` 失败，修复后旧 running 被清除。Bridge `--self-test`、`py_compile`、`git diff --check` 与完整 Xcode 测试通过，35/35 测试成功；`venom-cli -p "$PWD" build --run` 成功启动 Debug App，源码与已安装 Bridge SHA-256 一致。真实 Bridge 当前只有正在工作的 Pi Session 为 running，连续 10 秒的 12 份快照均保持该状态，未重现 2 秒闪烁；真实长睡眠仍需下一次合盖唤醒观察。
+- Review gate: Skipped — no explicit user request (sleep-aware heartbeat fix).
+- T22 调查：`pmset` 记录本次 Full Wake 为 13:05，App 与 Bridge 仍是 11:16 启动的同一进程；14:09 截图仍保留多项旧 running，排除了“仅等待 2 秒”的解释。Pi 新 prompt 会建立 heartbeat 短连接，而 Bridge 的 `handle_client` 会立即调用既有唤醒刷新，因此新 prompt 能修正全部状态；这证明 T21 的连续时钟修复必要但不足，缺少的是不依赖 inbound Agent 事件的主动唤醒触发。
+- T22 实现与当前证据：App 监听 `NSWorkspace.didWakeNotification` 并让现有 Store 主动重连 Bridge client，复用 `handle_client → refresh_after_wake`，未改 Pi lifecycle、PromptMonitor 或状态判定。Swift parse、Bridge self-test、`py_compile`、`git diff --check` 与完整 Xcode 测试通过，35/35 测试成功；`venom-cli -p "$PWD" build --run` 已启动新 Debug App。通过 LLDB 向真实 App 投递同一个 `NSWorkspace.didWakeNotification` 后，Bridge PID 保持不变而已接受的 App socket 对象发生变化，证明通知已触发重连；随后连续 10 秒的 12 份真实快照只保留当前工作中的 Pi Session 且状态稳定。T22 尚待一次不发送新 prompt 的实机合盖唤醒确认。
+- T23：面板标题栏新增原生 `arrow.clockwise` 按钮，调用 Store 的 `resetSessionStatuses()`；client 复用 `BridgeInstaller.stopRunningBridge()` 与既有重连路径，只重启 Bridge helper，不重启 App、iTerm 或任何 Session。真实链路验证中 Bridge PID 从 33988 变为 34378，App PID 29379 与 iTerm PID 57881 保持不变；3 秒后的面板截图确认旧 Pi Session 图标全部清除，而当前工作的 `iTermate · Pi session wake bug (pi)` 已由 heartbeat 自动恢复 running 图标。
+- T23：Bridge `--self-test`、`py_compile`、Swift parse、`git diff --check`、`venom-cli build --run` 与完整 Xcode 测试通过，35/35 测试成功；真实运行截图确认刷新按钮可见。该入口是手动兜底，不代表 T22 根因已解决。
+- Review gate: Skipped — no explicit user request (manual session status reset fallback).
