@@ -110,6 +110,26 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(unavailableSettings.panelFont.pointSize, fallback.pointSize)
     }
 
+    func testPanelBackgroundStylesMapAndPersist() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+
+        XCTAssertEqual(PanelBackgroundStyle.allCases.count, 6)
+        XCTAssertEqual(settings.panelBackgroundStyle, .systemBlur)
+        XCTAssertTrue(PanelBackgroundStyle.darkBlur.usesBlur)
+        XCTAssertFalse(PanelBackgroundStyle.lightOpaque.usesBlur)
+        XCTAssertNil(PanelBackgroundStyle.systemOpaque.colorScheme)
+        XCTAssertEqual(PanelBackgroundStyle.darkOpaque.colorScheme, .dark)
+        XCTAssertEqual(PanelBackgroundStyle.lightBlur.colorScheme, .light)
+
+        settings.setPanelBackgroundStyle(.darkOpaque)
+
+        XCTAssertEqual(
+            AppSettings(configURL: configURL).panelBackgroundStyle,
+            .darkOpaque
+        )
+    }
+
     func testSessionListStylePersists() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)
@@ -193,6 +213,7 @@ final class PanelLayoutTests: XCTestCase {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)
         settings.setPanelWidth(420)
+        settings.setPanelBackgroundStyle(.lightOpaque)
         settings.setSessionListStyle(.projectPath)
         settings.setSectionTitleStyle(.folderName)
         settings.setShowsTabHeaders(false)
@@ -204,6 +225,7 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertTrue(contents.contains("panel_width = 420"))
         XCTAssertTrue(contents.contains("panel_font_name = \"system\""))
         XCTAssertTrue(contents.contains("panel_font_size = 13"))
+        XCTAssertTrue(contents.contains("panel_background_style = \"lightOpaque\""))
         XCTAssertTrue(contents.contains("session_list_style = \"projectPath\""))
         XCTAssertTrue(contents.contains("section_title_style = \"folderName\""))
         XCTAssertTrue(contents.contains("shows_tab_headers = false"))
@@ -231,6 +253,32 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertFalse(settings.showsSessionTime)
         XCTAssertEqual(settings.sessionTimeFormat, .detailed)
         XCTAssertTrue(settings.completionNotificationsEnabled)
+    }
+
+    func testProjectFolderCustomizationsPersistAndClear() {
+        let configURL = makeConfigURL()
+        let path = "/repo/# Project \"One\""
+        let settings = AppSettings(configURL: configURL)
+
+        settings.togglePinnedProjectFolder(at: path)
+        settings.toggleFavoriteProjectFolder(at: path)
+        settings.setProjectFolderColor(.systemPurple, at: path)
+
+        let restoredSettings = AppSettings(configURL: configURL)
+        let customization = restoredSettings.projectFolderCustomization(at: path)
+        XCTAssertTrue(customization.isPinned)
+        XCTAssertTrue(customization.isFavorite)
+        XCTAssertNotNil(customization.colorHex)
+        XCTAssertNotNil(restoredSettings.projectFolderColor(at: path))
+        XCTAssertEqual(restoredSettings.pinnedProjectFolderPaths, [path])
+
+        restoredSettings.togglePinnedProjectFolder(at: path)
+        restoredSettings.toggleFavoriteProjectFolder(at: path)
+        restoredSettings.setProjectFolderColor(nil, at: path)
+
+        XCTAssertTrue(
+            AppSettings(configURL: configURL).projectFolderCustomization(at: path).isEmpty
+        )
     }
 
     func testPlacesPanelToTheRightAndMatchesWindowHeight() {

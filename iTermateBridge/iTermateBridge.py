@@ -203,24 +203,56 @@ class Bridge:
 
             await asyncio.sleep(1)
 
-    async def current_prompt_is_running(
+    async def current_prompt(self, session_id):
+        try:
+            return await iterm2.async_get_last_prompt(
+                self.connection, session_id
+            )
+        except Exception:
+            return None
+
+    async def current_foreground_job(self, session_id):
+        session = self.app.get_session_by_id(session_id)
+        if session is None:
+            return None
+        try:
+            job_name, command_line, shell = await asyncio.gather(
+                session.async_get_variable("jobName"),
+                session.async_get_variable("commandLine"),
+                session.async_get_variable("shell"),
+            )
+        except Exception:
+            return None
+        if (
+            not isinstance(job_name, str)
+            or not isinstance(command_line, str)
+            or not isinstance(shell, str)
+            or not job_name
+            or not shell
+        ):
+            return None
+        job_name = os.path.basename(job_name).lstrip("-")
+        shell = os.path.basename(shell).lstrip("-")
+        return command_line, job_name != shell
+
+    async def current_command_is_running(
         self,
         session_id,
         include_agent_commands=True,
     ):
-        try:
-            prompt = await iterm2.async_get_last_prompt(
-                self.connection, session_id
-            )
-        except Exception:
-            return False
+        prompt = await self.current_prompt(session_id)
         if (
-            prompt is None
-            or prompt.state != iterm2.PromptState.RUNNING
-            or not prompt.command
+            prompt is not None
+            and prompt.state == iterm2.PromptState.RUNNING
+            and prompt.command
         ):
-            return False
-        return include_agent_commands or not is_agent_command(prompt.command)
+            command = prompt.command
+        else:
+            foreground_job = await self.current_foreground_job(session_id)
+            if foreground_job is None or not foreground_job[1]:
+                return False
+            command = foreground_job[0]
+        return include_agent_commands or not is_agent_command(command)
 
     async def refresh_after_wake(self):
         self.expire_stale_agent_heartbeats(heartbeat_time())
@@ -231,7 +263,7 @@ class Bridge:
                 or session_id in self.agent_heartbeat_times
             ):
                 continue
-            if not await self.current_prompt_is_running(session_id):
+            if not await self.current_command_is_running(session_id):
                 self.session_statuses.pop(session_id, None)
                 self.agent_managed_session_ids.discard(session_id)
                 self.agent_heartbeat_times.pop(session_id, None)
@@ -239,7 +271,7 @@ class Bridge:
         for session_id in session_ids - self.agent_managed_session_ids:
             if (
                 session_id not in self.session_statuses
-                and await self.current_prompt_is_running(
+                and await self.current_command_is_running(
                     session_id,
                     include_agent_commands=False,
                 )
@@ -250,12 +282,28 @@ class Bridge:
 
     async def monitor_session_commands(self, session_id):
         try:
+            prompt = await self.current_prompt(session_id)
+            if prompt is None:
+                await self.monitor_session_foreground_job(session_id)
+                return
+
+            running_command = None
+            if (
+                prompt.state == iterm2.PromptState.RUNNING
+                and prompt.command
+            ):
+                running_command = prompt.command
+            else:
+                foreground_job = await self.current_foreground_job(session_id)
+                if foreground_job is not None and foreground_job[1]:
+                    running_command = foreground_job[0]
+            observing_agent_command = (
+                running_command is not None and is_agent_command(running_command)
+            )
             if (
                 session_id not in self.agent_managed_session_ids
-                and await self.current_prompt_is_running(
-                    session_id,
-                    include_agent_commands=False,
-                )
+                and running_command is not None
+                and not observing_agent_command
             ):
                 # ponytail: recovered commands are timed from observation;
                 # use prompt timestamps if iTerm exposes them later.
@@ -273,25 +321,37 @@ class Bridge:
             ) as monitor:
                 while True:
                     mode, value = await monitor.async_get()
-                    if session_id in self.agent_managed_session_ids:
-                        if mode == iterm2.PromptMonitor.Mode.COMMAND_END:
-                            self.agent_managed_session_ids.discard(session_id)
-                            self.agent_heartbeat_times.pop(session_id, None)
-                            if self.session_statuses.get(session_id, {}).get(
-                                "status"
-                            ) == "running":
-                                self.session_statuses.pop(session_id, None)
-                            await self.publish_snapshot()
-                        continue
                     if mode == iterm2.PromptMonitor.Mode.COMMAND_START:
-                        if is_agent_command(value):
+                        observing_agent_command = is_agent_command(value)
+                        if session_id in self.agent_managed_session_ids:
+                            continue
+                        if observing_agent_command:
                             self.session_statuses.pop(session_id, None)
                         else:
                             self.set_session_status(session_id, "running")
-                    elif mode == iterm2.PromptMonitor.Mode.COMMAND_END:
-                        self.set_session_status(session_id, "finished", int(value))
-                    else:
+                        await self.publish_snapshot()
                         continue
+
+                    if mode != iterm2.PromptMonitor.Mode.COMMAND_END:
+                        continue
+                    if (
+                        observing_agent_command
+                        or session_id in self.agent_managed_session_ids
+                    ):
+                        observing_agent_command = False
+                        was_managed = session_id in self.agent_managed_session_ids
+                        had_running_status = self.session_statuses.get(
+                            session_id, {}
+                        ).get("status") == "running"
+                        self.agent_managed_session_ids.discard(session_id)
+                        self.agent_heartbeat_times.pop(session_id, None)
+                        if had_running_status:
+                            self.session_statuses.pop(session_id, None)
+                        if was_managed or had_running_status:
+                            await self.publish_snapshot()
+                        continue
+
+                    self.set_session_status(session_id, "finished", int(value))
                     await self.publish_snapshot()
         except asyncio.CancelledError:
             raise
@@ -300,6 +360,64 @@ class Bridge:
         finally:
             if self.command_monitor_tasks.get(session_id) is asyncio.current_task():
                 self.command_monitor_tasks.pop(session_id, None)
+
+    async def monitor_session_foreground_job(self, session_id):
+        observing_agent_command = False
+        observing_normal_command = False
+        async with iterm2.VariableMonitor(
+            self.connection,
+            iterm2.VariableScopes.SESSION,
+            "jobPid",
+            session_id,
+        ) as monitor:
+            while True:
+                foreground_job = await self.current_foreground_job(session_id)
+                if foreground_job is not None:
+                    command, is_running = foreground_job
+                    changed = False
+                    if not is_running:
+                        if (
+                            observing_agent_command
+                            or session_id in self.agent_managed_session_ids
+                        ):
+                            was_managed = (
+                                session_id in self.agent_managed_session_ids
+                            )
+                            had_running_status = self.session_statuses.get(
+                                session_id, {}
+                            ).get("status") == "running"
+                            self.agent_managed_session_ids.discard(session_id)
+                            self.agent_heartbeat_times.pop(session_id, None)
+                            if had_running_status:
+                                self.session_statuses.pop(session_id, None)
+                            changed = was_managed or had_running_status
+                        elif observing_normal_command:
+                            self.set_session_status(session_id, "finished")
+                            changed = True
+                        observing_agent_command = False
+                        observing_normal_command = False
+                    elif is_agent_command(command):
+                        observing_agent_command = True
+                        observing_normal_command = False
+                        if (
+                            session_id not in self.agent_managed_session_ids
+                            and session_id in self.session_statuses
+                        ):
+                            self.session_statuses.pop(session_id, None)
+                            changed = True
+                    elif (
+                        session_id not in self.agent_managed_session_ids
+                        and not observing_agent_command
+                    ):
+                        observing_normal_command = True
+                        if self.session_statuses.get(session_id, {}).get(
+                            "status"
+                        ) != "running":
+                            self.set_session_status(session_id, "running")
+                            changed = True
+                    if changed:
+                        await self.publish_snapshot()
+                await monitor.async_get()
 
     def set_agent_status(self, session_id, status, exit_status=0, heartbeat=False):
         if status == "detached":
@@ -321,6 +439,7 @@ class Bridge:
             session_id,
             status,
             exit_status if status == "finished" else None,
+            activity_kind="agent",
         )
 
     def expire_stale_agent_heartbeats(self, now):
@@ -331,7 +450,13 @@ class Bridge:
             if self.session_statuses.get(session_id, {}).get("status") == "running":
                 self.session_statuses.pop(session_id, None)
 
-    def set_session_status(self, session_id, status, exit_status=None):
+    def set_session_status(
+        self,
+        session_id,
+        status,
+        exit_status=None,
+        activity_kind="command",
+    ):
         current_status = self.session_statuses.get(session_id)
         changed_at = (
             current_status["statusChangedAt"]
@@ -340,6 +465,7 @@ class Bridge:
         )
         self.session_statuses[session_id] = {
             "status": status,
+            "activityKind": activity_kind,
             "exitStatus": exit_status,
             "statusChangedAt": changed_at,
         }
@@ -493,6 +619,9 @@ class Bridge:
                         "status": self.session_statuses.get(session.session_id, {}).get(
                             "status"
                         ),
+                        "activityKind": self.session_statuses.get(
+                            session.session_id, {}
+                        ).get("activityKind"),
                         "exitStatus": self.session_statuses.get(
                             session.session_id, {}
                         ).get("exitStatus"),
@@ -555,9 +684,20 @@ def self_test():
         def __init__(self):
             self.closed = False
             self.current_name = "Current title"
+            self.job_name = "zsh"
+            self.command_line = "zsh --login"
+            self.shell = "zsh"
+            self.job_pid = 100
 
         async def async_get_variable(self, name):
-            return {"name": self.current_name, "path": "/tmp"}[name]
+            return {
+                "name": self.current_name,
+                "path": "/tmp",
+                "jobName": self.job_name,
+                "commandLine": self.command_line,
+                "shell": self.shell,
+                "jobPid": self.job_pid,
+            }[name]
 
         async def async_close(self, force=False):
             assert not force
@@ -635,6 +775,14 @@ def self_test():
     assert snapshot[0]["tabs"][0]["sessions"][0]["name"] == "Current title"
     assert snapshot[0]["tabs"][0]["title"] == "Current title"
 
+    bridge.set_session_status("session-1", "running")
+    snapshot = asyncio.run(bridge.build_snapshot())
+    assert snapshot[0]["tabs"][0]["sessions"][0]["activityKind"] == "command"
+    bridge.set_agent_status("session-1", "running")
+    snapshot = asyncio.run(bridge.build_snapshot())
+    assert snapshot[0]["tabs"][0]["sessions"][0]["activityKind"] == "agent"
+    bridge.set_agent_status("session-1", "detached")
+
     session.current_name = ""
     session.name = "caishilin (python)"
     snapshot = asyncio.run(bridge.build_snapshot())
@@ -676,9 +824,12 @@ def self_test():
         PromptMonitor = FakePromptMonitor
         prompt_state = "running"
         prompt_command = "python3 build.py"
+        prompt_available = True
 
         @staticmethod
         async def async_get_last_prompt(_, __):
+            if not FakeIterm2.prompt_available:
+                return None
             return FakePrompt(
                 FakeIterm2.prompt_state,
                 FakeIterm2.prompt_command,
@@ -691,8 +842,127 @@ def self_test():
     except asyncio.CancelledError:
         pass
     assert bridge.session_statuses["session-1"]["status"] == "running"
+    assert bridge.session_statuses["session-1"]["activityKind"] == "command"
 
+    class ScriptedPromptMonitor:
+        Mode = FakePromptMonitor.Mode
+        events = []
+
+        def __init__(self, *_):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return False
+
+        async def async_get(self):
+            if not self.events:
+                raise asyncio.CancelledError
+            return self.events.pop(0)
+
+    class RecordingBridge(Bridge):
+        def __init__(self, connection, app):
+            super().__init__(connection, app)
+            self.published_statuses = []
+
+        async def publish_snapshot(self, target=None):
+            self.published_statuses.append(
+                self.session_statuses.get("session-1", {}).get("status")
+            )
+
+    FakeIterm2.PromptMonitor = ScriptedPromptMonitor
+    FakeIterm2.prompt_command = "pi"
+    agent_command_bridge = RecordingBridge(None, app)
+    agent_command_bridge.set_agent_status("session-1", "idle")
+    agent_command_bridge.set_agent_status("session-1", "detached")
+    ScriptedPromptMonitor.events = [
+        (ScriptedPromptMonitor.Mode.COMMAND_END, 0),
+        (ScriptedPromptMonitor.Mode.COMMAND_START, "npm run dev"),
+        (ScriptedPromptMonitor.Mode.COMMAND_END, 0),
+    ]
+    try:
+        asyncio.run(agent_command_bridge.monitor_session_commands("session-1"))
+    except asyncio.CancelledError:
+        pass
+    assert agent_command_bridge.published_statuses == [
+        "running",
+        "finished",
+    ], agent_command_bridge.published_statuses
+
+    class ScriptedVariableMonitor:
+        events = []
+
+        def __init__(self, *_):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_):
+            return False
+
+        async def async_get(self):
+            if not self.events:
+                raise asyncio.CancelledError
+            update = self.events.pop(0)
+            update()
+            return session.job_pid
+
+    def set_foreground_job(job_name, command_line, job_pid):
+        session.job_name = job_name
+        session.command_line = command_line
+        session.job_pid = job_pid
+
+    FakeIterm2.VariableMonitor = ScriptedVariableMonitor
+    FakeIterm2.VariableScopes = type("VariableScopes", (), {"SESSION": "session"})
+    FakeIterm2.PromptMonitor = FakePromptMonitor
+    FakeIterm2.prompt_available = False
+    set_foreground_job(
+        "node",
+        "node /usr/local/bin/venom-cli build --run --debug",
+        101,
+    )
+    ScriptedVariableMonitor.events = [
+        lambda: set_foreground_job("zsh", "zsh --login", 100),
+    ]
+    foreground_bridge = RecordingBridge(None, app)
+    try:
+        asyncio.run(foreground_bridge.monitor_session_commands("session-1"))
+    except asyncio.CancelledError:
+        pass
+    assert foreground_bridge.published_statuses == [
+        "running",
+        "finished",
+    ], foreground_bridge.published_statuses
+    assert foreground_bridge.session_statuses["session-1"]["exitStatus"] is None
+    assert foreground_bridge.session_statuses["session-1"]["activityKind"] == "command"
+
+    set_foreground_job("node", 'pi ""', 102)
+    ScriptedVariableMonitor.events = [
+        lambda: set_foreground_job("zsh", "zsh --login", 100),
+        lambda: set_foreground_job("node", "npm run dev", 103),
+        lambda: set_foreground_job("zsh", "zsh --login", 100),
+    ]
+    agent_foreground_bridge = RecordingBridge(None, app)
+    agent_foreground_bridge.set_agent_status("session-1", "idle")
+    agent_foreground_bridge.set_agent_status("session-1", "detached")
+    try:
+        asyncio.run(
+            agent_foreground_bridge.monitor_session_commands("session-1")
+        )
+    except asyncio.CancelledError:
+        pass
+    assert agent_foreground_bridge.published_statuses == [
+        "running",
+        "finished",
+    ], agent_foreground_bridge.published_statuses
+
+    FakeIterm2.prompt_available = True
+    FakeIterm2.PromptMonitor = FakePromptMonitor
     FakeIterm2.prompt_state = "finished"
+    FakeIterm2.prompt_command = "python3 build.py"
     wake_bridge = Bridge(None, app)
     wake_bridge.agent_managed_session_ids.add("session-1")
     wake_bridge.set_session_status("session-1", "running")
@@ -786,6 +1056,7 @@ def self_test():
     assert bridge.session_statuses["session-1"]["statusChangedAt"] == started_at
     bridge.expire_stale_agent_heartbeats(time.monotonic() + 100)
     assert bridge.session_statuses["session-1"]["status"] == "running"
+    assert bridge.session_statuses["session-1"]["activityKind"] == "agent"
 
     heartbeat_bridge = Bridge(None, app)
     writer = FakeWriter()

@@ -48,6 +48,11 @@ enum TerminalSessionStatus: String, Codable, Equatable {
     }
 }
 
+enum SessionActivityKind: String, Codable, Equatable {
+    case agent
+    case command
+}
+
 enum SessionTimeFormat: String, CaseIterable, Identifiable {
     case compact
     case detailed
@@ -77,6 +82,7 @@ struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
     let isActive: Bool
     let isMinimized: Bool?
     let status: TerminalSessionStatus?
+    let activityKind: SessionActivityKind?
     let exitStatus: Int?
     let statusChangedAt: TimeInterval?
 }
@@ -170,7 +176,8 @@ struct SessionListGroup: Equatable, Identifiable {
 enum SessionGrouping {
     static func groups(
         from windows: [TerminalWindowSnapshot],
-        style: SessionListStyle
+        style: SessionListStyle,
+        pinnedProjectPaths: Set<String> = []
     ) -> [SessionListGroup] {
         switch style {
         case .window:
@@ -189,7 +196,14 @@ enum SessionGrouping {
                 grouping: windows.flatMap(items(in:)),
                 by: { $0.session.path ?? "" }
             )
-            return grouped.keys.sorted(by: pathComesBefore).map { path in
+            return grouped.keys.sorted { first, second in
+                let firstIsPinned = pinnedProjectPaths.contains(first)
+                let secondIsPinned = pinnedProjectPaths.contains(second)
+                if firstIsPinned != secondIsPinned {
+                    return firstIsPinned
+                }
+                return pathComesBefore(first, second)
+            }.map { path in
                 SessionListGroup(
                     id: "path:\(path)",
                     title: path.isEmpty ? "Unknown Path" : path,

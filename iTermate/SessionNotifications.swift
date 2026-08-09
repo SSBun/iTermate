@@ -81,10 +81,13 @@ final class SessionNotificationController: NSObject, UNUserNotificationCenterDel
         let name = session.name.trimmingCharacters(in: .whitespacesAndNewlines)
         let content = UNMutableNotificationContent()
         content.title = "\(name.isEmpty ? "Session" : name) finished"
-        if let exitStatus = session.exitStatus, exitStatus != 0 {
-            content.body = "Exited with status \(exitStatus)."
-        } else {
+        switch session.exitStatus {
+        case .some(0):
             content.body = "Completed successfully."
+        case let .some(exitStatus):
+            content.body = "Exited with status \(exitStatus)."
+        case .none:
+            content.body = "Command finished."
         }
         content.sound = .default
         content.userInfo = [Self.sessionIDKey: session.id]

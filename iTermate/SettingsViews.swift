@@ -10,16 +10,76 @@ private enum PanelFontDefaults {
     static let size: CGFloat = 13
 }
 
+enum PanelBackgroundStyle: String, CaseIterable, Identifiable {
+    case systemBlur
+    case darkBlur
+    case lightBlur
+    case systemOpaque
+    case darkOpaque
+    case lightOpaque
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .systemBlur:
+            "System Blur"
+        case .darkBlur:
+            "Dark Blur"
+        case .lightBlur:
+            "Light Blur"
+        case .systemOpaque:
+            "System Opaque"
+        case .darkOpaque:
+            "Dark Opaque"
+        case .lightOpaque:
+            "Light Opaque"
+        }
+    }
+
+    var usesBlur: Bool {
+        switch self {
+        case .systemBlur, .darkBlur, .lightBlur:
+            true
+        case .systemOpaque, .darkOpaque, .lightOpaque:
+            false
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .systemBlur, .systemOpaque:
+            nil
+        case .darkBlur, .darkOpaque:
+            .dark
+        case .lightBlur, .lightOpaque:
+            .light
+        }
+    }
+}
+
+struct ProjectFolderCustomization: Codable, Equatable {
+    var isPinned = false
+    var isFavorite = false
+    var colorHex: String?
+
+    var isEmpty: Bool {
+        !isPinned && !isFavorite && colorHex == nil
+    }
+}
+
 private struct AppConfig {
     var panelWidth = PanelLayout.defaultWidth
     var panelFontName = PanelFontDefaults.name
     var panelFontSize = PanelFontDefaults.size
+    var panelBackgroundStyle: PanelBackgroundStyle = .systemBlur
     var sessionListStyle: SessionListStyle = .window
     var sectionTitleStyle: SectionTitleStyle = .fullPath
     var showsTabHeaders = true
     var showsSessionTime = true
     var sessionTimeFormat: SessionTimeFormat = .compact
     var completionNotificationsEnabled = false
+    var projectFolderCustomizations: [String: ProjectFolderCustomization] = [:]
 
     init(contents: String = "") {
         for line in contents.split(whereSeparator: \.isNewline) {
@@ -43,6 +103,13 @@ private struct AppConfig {
             case "panel_font_size":
                 if let size = Double(value), size.isFinite, size > 0 {
                     panelFontSize = CGFloat(size)
+                }
+            case "panel_background_style":
+                if
+                    let style = Self.stringValue(String(value)),
+                    let parsedStyle = PanelBackgroundStyle(rawValue: style)
+                {
+                    panelBackgroundStyle = parsedStyle
                 }
             case "session_list_style":
                 if let style = Self.stringValue(String(value)),
@@ -77,6 +144,17 @@ private struct AppConfig {
                 } else if value == "false" {
                     completionNotificationsEnabled = false
                 }
+            case "project_folder_customizations":
+                if
+                    let encoded = Self.stringValue(String(value)),
+                    let data = Data(base64Encoded: encoded),
+                    let customizations = try? JSONDecoder().decode(
+                        [String: ProjectFolderCustomization].self,
+                        from: data
+                    )
+                {
+                    projectFolderCustomizations = customizations
+                }
             default:
                 continue
             }
@@ -89,13 +167,23 @@ private struct AppConfig {
         panel_width = \(panelWidth)
         panel_font_name = "\(panelFontName)"
         panel_font_size = \(panelFontSize)
+        panel_background_style = "\(panelBackgroundStyle.rawValue)"
         session_list_style = \"\(sessionListStyle.rawValue)\"
         section_title_style = \"\(sectionTitleStyle.rawValue)\"
         shows_tab_headers = \(showsTabHeaders)
         shows_session_time = \(showsSessionTime)
         session_time_format = "\(sessionTimeFormat.rawValue)"
         completion_notifications_enabled = \(completionNotificationsEnabled)
+        project_folder_customizations = "\(encodedProjectFolderCustomizations)"
         """
+    }
+
+    private var encodedProjectFolderCustomizations: String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return (
+            try? encoder.encode(projectFolderCustomizations).base64EncodedString()
+        ) ?? "e30="
     }
 
     private static func stringValue(_ value: String) -> String? {
@@ -112,12 +200,16 @@ final class AppSettings: ObservableObject {
     @Published private(set) var panelWidth: CGFloat
     @Published private(set) var panelFontName: String
     @Published private(set) var panelFontSize: CGFloat
+    @Published private(set) var panelBackgroundStyle: PanelBackgroundStyle
     @Published private(set) var sessionListStyle: SessionListStyle
     @Published private(set) var sectionTitleStyle: SectionTitleStyle
     @Published private(set) var showsTabHeaders: Bool
     @Published private(set) var showsSessionTime: Bool
     @Published private(set) var sessionTimeFormat: SessionTimeFormat
     @Published private(set) var completionNotificationsEnabled: Bool
+    @Published private(set) var projectFolderCustomizations: [
+        String: ProjectFolderCustomization
+    ]
 
     private let configURL: URL
 
@@ -127,12 +219,14 @@ final class AppSettings: ObservableObject {
         panelWidth = config.panelWidth
         panelFontName = config.panelFontName
         panelFontSize = config.panelFontSize
+        panelBackgroundStyle = config.panelBackgroundStyle
         sessionListStyle = config.sessionListStyle
         sectionTitleStyle = config.sectionTitleStyle
         showsTabHeaders = config.showsTabHeaders
         showsSessionTime = config.showsSessionTime
         sessionTimeFormat = config.sessionTimeFormat
         completionNotificationsEnabled = config.completionNotificationsEnabled
+        projectFolderCustomizations = config.projectFolderCustomizations
 
         if !FileManager.default.fileExists(atPath: configURL.path) {
             writeConfig(config)
@@ -174,6 +268,11 @@ final class AppSettings: ObservableObject {
         updateConfig { $0.panelFontSize = panelFontSize }
     }
 
+    func setPanelBackgroundStyle(_ style: PanelBackgroundStyle) {
+        panelBackgroundStyle = style
+        updateConfig { $0.panelBackgroundStyle = style }
+    }
+
     func resetPanelWidth() {
         setPanelWidth(PanelLayout.defaultWidth)
     }
@@ -208,6 +307,48 @@ final class AppSettings: ObservableObject {
         updateConfig { $0.completionNotificationsEnabled = enabled }
     }
 
+    /// Paths of pinned project folders.
+    ///
+    /// - Complexity: O(n), where n is the number of customized project folders.
+    var pinnedProjectFolderPaths: Set<String> {
+        Set(projectFolderCustomizations.compactMap { path, customization in
+            customization.isPinned ? path : nil
+        })
+    }
+
+    func projectFolderCustomization(at path: String) -> ProjectFolderCustomization {
+        projectFolderCustomizations[path] ?? ProjectFolderCustomization()
+    }
+
+    func projectFolderColor(at path: String) -> Color? {
+        guard
+            let hex = projectFolderCustomizations[path]?.colorHex,
+            hex.count == 6,
+            let rgb = UInt64(hex, radix: 16)
+        else {
+            return nil
+        }
+        return Color(
+            red: Double((rgb >> 16) & 0xff) / 255,
+            green: Double((rgb >> 8) & 0xff) / 255,
+            blue: Double(rgb & 0xff) / 255
+        )
+    }
+
+    func togglePinnedProjectFolder(at path: String) {
+        updateProjectFolderCustomization(at: path) { $0.isPinned.toggle() }
+    }
+
+    func toggleFavoriteProjectFolder(at path: String) {
+        updateProjectFolderCustomization(at: path) { $0.isFavorite.toggle() }
+    }
+
+    func setProjectFolderColor(_ color: NSColor?, at path: String) {
+        updateProjectFolderCustomization(at: path) {
+            $0.colorHex = color.flatMap(Self.hexRGB)
+        }
+    }
+
     func requestCompletionNotificationAuthorization(
         using notificationCenter: UNUserNotificationCenter = .current(),
         completion: @escaping (Bool) -> Void = { _ in }
@@ -227,6 +368,33 @@ final class AppSettings: ObservableObject {
             }
             completion(granted)
         }
+    }
+
+    private func updateProjectFolderCustomization(
+        at path: String,
+        _ update: (inout ProjectFolderCustomization) -> Void
+    ) {
+        updateConfig { config in
+            var customization = config.projectFolderCustomizations[path]
+                ?? ProjectFolderCustomization()
+            update(&customization)
+            if customization.isEmpty {
+                config.projectFolderCustomizations.removeValue(forKey: path)
+            } else {
+                config.projectFolderCustomizations[path] = customization
+            }
+            projectFolderCustomizations = config.projectFolderCustomizations
+        }
+    }
+
+    private static func hexRGB(_ color: NSColor) -> String? {
+        guard let color = color.usingColorSpace(.sRGB) else { return nil }
+        return String(
+            format: "%02X%02X%02X",
+            Int((color.redComponent * 255).rounded()),
+            Int((color.greenComponent * 255).rounded()),
+            Int((color.blueComponent * 255).rounded())
+        )
     }
 
     private func updateConfig(_ update: (inout AppConfig) -> Void) {
@@ -304,6 +472,18 @@ private struct GeneralSettingsView: View {
     var body: some View {
         Form {
             Section("Appearance") {
+                Picker(
+                    "Background Style",
+                    selection: Binding(
+                        get: { settings.panelBackgroundStyle },
+                        set: settings.setPanelBackgroundStyle
+                    )
+                ) {
+                    ForEach(PanelBackgroundStyle.allCases) { style in
+                        Text(style.title).tag(style)
+                    }
+                }
+
                 Picker(
                     "Panel Font",
                     selection: Binding(

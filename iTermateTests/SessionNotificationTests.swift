@@ -84,6 +84,7 @@ final class SessionNotificationTests: XCTestCase {
             isActive: false,
             isMinimized: false,
             status: status,
+            activityKind: .command,
             exitStatus: exitStatus,
             statusChangedAt: nil
         )

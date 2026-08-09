@@ -25,6 +25,7 @@ final class ItermBridgeTests: XCTestCase {
                     "isActive": true,
                     "isMinimized": false,
                     "status": "finished",
+                    "activityKind": "agent",
                     "exitStatus": 0,
                     "statusChangedAt": 1753833600
                   }]
@@ -52,6 +53,10 @@ final class ItermBridgeTests: XCTestCase {
             .finished
         )
         XCTAssertEqual(
+            message.windows?.first?.tabs.first?.sessions.first?.activityKind,
+            .agent
+        )
+        XCTAssertEqual(
             message.windows?.first?.tabs.first?.sessions.first?.exitStatus,
             0
         )
@@ -59,6 +64,135 @@ final class ItermBridgeTests: XCTestCase {
             message.windows?.first?.tabs.first?.sessions.first?.statusChangedAt,
             1_753_833_600
         )
+    }
+
+    func testMapsSessionStatusAnimationsByActivityKindAndResult() {
+        func animation(
+            kind: SessionActivityKind,
+            status: TerminalSessionStatus,
+            exitStatus: Int? = nil
+        ) -> SessionStatusAnimation? {
+            SessionStatusAnimation(
+                session: TerminalSessionSnapshot(
+                    id: "session",
+                    name: "Session",
+                    path: nil,
+                    windowId: "window",
+                    tabId: "tab",
+                    isActive: false,
+                    isMinimized: false,
+                    status: status,
+                    activityKind: kind,
+                    exitStatus: exitStatus,
+                    statusChangedAt: nil
+                )
+            )
+        }
+
+        XCTAssertEqual(animation(kind: .agent, status: .running), .agentRunning)
+        XCTAssertEqual(animation(kind: .command, status: .running), .commandRunning)
+        XCTAssertEqual(
+            animation(kind: .agent, status: .finished, exitStatus: 0),
+            .agentSucceeded
+        )
+        XCTAssertEqual(
+            animation(kind: .agent, status: .finished, exitStatus: 1),
+            .agentFailed
+        )
+        XCTAssertEqual(
+            animation(kind: .command, status: .finished, exitStatus: 0),
+            .commandSucceeded
+        )
+        XCTAssertEqual(
+            animation(kind: .command, status: .finished, exitStatus: 1),
+            .commandFailed
+        )
+        XCTAssertEqual(
+            animation(kind: .command, status: .finished),
+            .commandFinished
+        )
+    }
+
+    func testSessionStatusPixelColorsStayOpaqueAndBrighten() throws {
+        for animation in SessionStatusAnimation.allCases {
+            let base = try XCTUnwrap(
+                animation.pixelColor(brightness: 0.35).usingColorSpace(.deviceRGB)
+            )
+            let highlight = try XCTUnwrap(
+                animation.pixelColor(brightness: 1).usingColorSpace(.deviceRGB)
+            )
+
+            XCTAssertEqual(base.alphaComponent, 1, accuracy: 0.001)
+            XCTAssertEqual(highlight.alphaComponent, 1, accuracy: 0.001)
+            XCTAssertGreaterThan(
+                highlight.redComponent
+                    + highlight.greenComponent
+                    + highlight.blueComponent,
+                base.redComponent + base.greenComponent + base.blueComponent,
+                "\(animation)"
+            )
+        }
+    }
+
+    func testEverySessionStatusAnimationKeepsPixelsVisibleAndChangesFrames() {
+        var signatures = Set<[CGFloat]>()
+
+        for animation in SessionStatusAnimation.allCases {
+            let frames = (0..<24).map { frame in
+                (0..<8).flatMap { row in
+                    (0..<18).map {
+                        animation.brightness(column: $0, row: row, frame: frame)
+                    }
+                }
+            }
+
+            XCTAssertTrue(
+                frames.allSatisfy { $0.contains { $0 > 0 } },
+                "\(animation)"
+            )
+            XCTAssertGreaterThan(Set(frames).count, 1, "\(animation)")
+            XCTAssertTrue(
+                signatures.insert(frames.flatMap { $0 }).inserted,
+                "\(animation)"
+            )
+
+            for frame in 0..<24 {
+                XCTAssertTrue(
+                    (0..<8).contains { row in
+                        (0...10).contains {
+                            animation.brightness(
+                                column: $0,
+                                row: row,
+                                frame: frame
+                            ) > 0
+                        }
+                    },
+                    "\(animation) avatar frame \(frame)"
+                )
+                XCTAssertTrue(
+                    (1...6).contains { row in
+                        animation.brightness(
+                            column: 14,
+                            row: row,
+                            frame: frame
+                        ) > 0
+                    },
+                    "\(animation) status bar frame \(frame)"
+                )
+                XCTAssertTrue(
+                    (0..<8).allSatisfy { row in
+                        (11...13).allSatisfy {
+                            animation.brightness(
+                                column: $0,
+                                row: row,
+                                frame: frame
+                            ) == 0
+                        }
+                    },
+                    "\(animation) transparent gap frame \(frame)"
+                )
+            }
+        }
     }
 
     func testFormatsSessionStatusTimes() {
@@ -97,6 +231,11 @@ final class ItermBridgeTests: XCTestCase {
 
         let windowGroups = SessionGrouping.groups(from: windows, style: .window)
         let pathGroups = SessionGrouping.groups(from: windows, style: .projectPath)
+        let pinnedPathGroups = SessionGrouping.groups(
+            from: windows,
+            style: .projectPath,
+            pinnedProjectPaths: ["/repo/subdirectory"]
+        )
 
         XCTAssertEqual(windowGroups.map(\.title), ["Window 1", "Window 2"])
         XCTAssertEqual(
@@ -129,6 +268,10 @@ final class ItermBridgeTests: XCTestCase {
             ["session-1", "session-3"]
         )
         XCTAssertEqual(pathGroups[2].sessions.map(\.session.id), ["session-4"])
+        XCTAssertEqual(
+            pinnedPathGroups.map(\.title),
+            ["/repo/subdirectory", "/repo", "Unknown Path"]
+        )
     }
 
     func testStoreIgnoresOlderSnapshots() throws {

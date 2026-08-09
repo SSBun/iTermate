@@ -6,7 +6,7 @@ Status: In Progress (2026-08-05 16:24)
 
 - 包含：使用 iTerm2 Shell Integration 的 PromptMonitor 观察每个 Session 的命令开始与结束，向 Session 快照传递运行/完成状态及退出码，并在列表中显示状态图标。
 - 包含：完成状态持续显示，直到用户激活对应 Session 后清除。
-- 不包含：未启用 Shell Integration 时对任意终端进程的猜测、系统通知或跨 Bridge 重启持久化命令历史。
+- 不包含：任意 OS 进程树轮询或跨 Bridge 重启持久化命令历史；未启用 Shell Integration 时允许使用 iTerm2 自身的 `jobName`、`commandLine`、`shell` 与 `jobPid` Session 变量观察前台命令，但未知退出码不得伪造成成功或失败。
 - 本次跟进包含：运行中的状态图标持续且稳定地动画，不出现闪烁。
 - 本次修正包含：Pi/Codex 长驻进程改用 agent 原生 turn 生命周期，Shell Integration 仅作为普通命令 fallback。
 - 本次跟进包含：Pi 自动重试最终仍失败时显示失败图标，而不是成功完成图标。
@@ -14,6 +14,7 @@ Status: In Progress (2026-08-05 16:24)
 - 本次修复包含：电脑长时间睡眠后清除过期的 Pi running 状态，同时保持正常 heartbeat、防闪烁和 Shell PromptMonitor 行为。
 - 本次跟进包含：系统唤醒后无需向任一 Pi Session 发送新 prompt，也能主动刷新并发布已过期状态。
 - 本次兜底包含：面板提供手动刷新入口，清除缓存状态后只恢复当前可确认的普通 Shell running；真实工作的 Pi 由后续 heartbeat 自动恢复，不把该入口表述为根因修复。
+- 本次修正包含：把状态观察明确分成 Agent 内部 lifecycle 与普通 Shell Prompt 两条互斥路径；Pi/Codex 不使用外层长驻命令状态，普通命令和前台服务器只按 Prompt 开始/结束更新。
 
 ## Target
 
@@ -40,11 +41,12 @@ Status: In Progress (2026-08-05 16:24)
 - [x] T21：电脑长时间睡眠后，睡眠前的 Pi heartbeat 能按实际经过时间过期；正常 2 秒 heartbeat、防闪烁、Pi lifecycle 与 Shell PromptMonitor 行为保持不变。
 - [ ] T22：系统唤醒后不依赖新的 Pi prompt 或 inbound heartbeat，Bridge 会在有界时间内主动清理并发布过期 running 状态；正常状态观察逻辑保持不变。
 - [x] T23：面板可手动重置全部 Session 状态；finished 与 stale Agent running 被清除，当前普通 Shell running 可重新确认，真实工作的 heartbeat Agent 会自动恢复，既有观察器保持运行。
+- [x] T24：Pi/Codex Session 的可见状态只由内部 Agent lifecycle 驱动；普通命令与前台服务器优先由 Shell PromptMonitor 驱动，在 Prompt 不可用时由 iTerm2 前台任务变量驱动，命令结束后显示真实或未知结果，Agent 退出后普通命令观察仍可接管。
 
 ## Plan
 
 1. 下一次真实合盖复现时，在手动刷新前保留 stale 窗口的 Bridge publish、heartbeat 与 App apply 证据。
-2. 用现场证据在 Agent lease、Bridge publish/RPC 与 App apply 分支中确定唯一根因。
+2. 用现场证据在 Agent lease、Bridge publish/RPC 与 App apply 分支中确定 T22 的唯一根因。
 3. 仅在根因成立后做局部修复，并重新验证无 prompt 的真实唤醒路径。
 
 ## Result
@@ -92,3 +94,8 @@ Status: In Progress (2026-08-05 16:24)
 - T23：面板标题栏新增原生 `arrow.clockwise` 按钮，调用 Store 的 `resetSessionStatuses()`；client 复用 `BridgeInstaller.stopRunningBridge()` 与既有重连路径，只重启 Bridge helper，不重启 App、iTerm 或任何 Session。真实链路验证中 Bridge PID 从 33988 变为 34378，App PID 29379 与 iTerm PID 57881 保持不变；3 秒后的面板截图确认旧 Pi Session 图标全部清除，而当前工作的 `iTermate · Pi session wake bug (pi)` 已由 heartbeat 自动恢复 running 图标。
 - T23：Bridge `--self-test`、`py_compile`、Swift parse、`git diff --check`、`venom-cli build --run` 与完整 Xcode 测试通过，35/35 测试成功；真实运行截图确认刷新按钮可见。该入口是手动兜底，不代表 T22 根因已解决。
 - Review gate: Skipped — no explicit user request (manual session status reset fallback).
+- T24 初始根因：PromptMonitor 只用 `agent_managed_session_ids` 判断状态来源；Agent 的 `detached` lifecycle 若先于外层 Shell `COMMAND_END` 到达，会先释放该集合，随后外层 Pi/Codex 结束被误当成普通命令完成。确定性回归复现错误序列 `finished → running → finished`，独立记录外层 Agent 命令后修正为普通命令的 `running → finished`。
+- T24 实机纠正：用户截图中的 `osee2unified` 正在运行 `venom-cli build --run --debug`，但 Bridge 快照状态持续为 `null`。iTerm2 API 对该 Session 返回 Prompt、command 与 `lastCommand` 全部不可用，同时原生变量明确返回 `jobName=node`、完整 `commandLine`、`shell=zsh` 与前台 `jobPid`；iTerm2 官方 PromptMonitor 文档确认它要求 Shell Integration。故仅修复 PromptMonitor 内部所有权竞态不足以覆盖真实普通命令。
+- T24 修复：Prompt 可用时继续使用 PromptMonitor 并保留真实退出码；Prompt 不可用时订阅 iTerm2 原生 `jobPid`，以 `jobName` 对比 `shell` 判断前台任务、用 `commandLine` 排除 Pi/Codex 外层进程。fallback 命令结束时发布 `finished` 与未知退出码，面板显示中性完成图标，通知不再误报成功；Agent detached 先到也不会生成外层 Shell 完成状态，后续普通命令可立即接管。
+- T24 验证：Bridge self-test 覆盖 Prompt 与原生变量两条路径、正在运行的 `venom-cli`、未知退出码、Agent detached 竞态及后续 `npm run dev` 的 `running → finished`；`py_compile`、Swift parse、`git diff --check` 与完整 Xcode 测试通过，35/35 测试成功。`venom-cli -p "$PWD" build --run` 将 App PID 从 44270 更新为 63250、Bridge PID 从 44276 更新为 63260，源码、bundle 与运行安装脚本哈希一致；真实 Socket 连续快照中截图对应的 `osee2unified (node)` 稳定为 `running`，当前 working Pi 由 lifecycle 显示 running，其余 idle Pi 不显示状态。
+- Review gate: Skipped — no explicit user request (Agent/Shell observation split).

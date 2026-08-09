@@ -299,6 +299,7 @@ private final class ActiveHoverView: NSView {
 }
 
 private struct PanelContent: View {
+    @Environment(\.colorScheme) private var systemColorScheme
     @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
     @State private var collapsedSectionIDs: Set<String> = []
@@ -355,7 +356,9 @@ private struct PanelContent: View {
         .font(panelFont())
         .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(.regularMaterial)
+        .background {
+            panelBackground
+        }
         .overlay {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(.separator.opacity(0.5), lineWidth: 1)
@@ -370,6 +373,7 @@ private struct PanelContent: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(1)
+        .environment(\.colorScheme, effectiveColorScheme)
     }
 
     @ViewBuilder
@@ -456,7 +460,8 @@ private struct PanelContent: View {
     private var sessionGroups: [SessionListGroup] {
         SessionGrouping.groups(
             from: store.windows,
-            style: settings.sessionListStyle
+            style: settings.sessionListStyle,
+            pinnedProjectPaths: settings.pinnedProjectFolderPaths
         )
     }
 
@@ -492,7 +497,7 @@ private struct PanelContent: View {
                             if !showsTabHeaders || !isTabCollapsed(item.tabID) {
                                 sessionButton(item)
                                     .id(
-                                        "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.exitStatus ?? -1)"
+                                        "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1)"
                                     )
                                     .padding(.leading, showsTabHeaders ? 12 : 0)
                             }
@@ -510,19 +515,34 @@ private struct PanelContent: View {
 
     private func groupHeader(_ group: SessionListGroup) -> some View {
         let title = sectionTitle(for: group)
+        let isProjectFolder = settings.sessionListStyle == .projectPath
+            && group.id != "path:"
+        let customization = isProjectFolder
+            ? settings.projectFolderCustomization(at: group.title)
+            : ProjectFolderCustomization()
+        let projectColor = isProjectFolder
+            ? settings.projectFolderColor(at: group.title)
+            : nil
         return Button {
             toggleSection(group.id)
         } label: {
             HStack(spacing: 6) {
                 disclosureIcon(isCollapsed: collapsedSectionIDs.contains(group.id))
-                Image(
-                    systemName: settings.sessionListStyle == .window
-                        ? "macwindow"
-                        : "folder"
-                )
+                Image(systemName: isProjectFolder ? "folder" : "macwindow")
+                    .foregroundStyle(projectColor ?? .secondary)
                 Text(title)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                    .foregroundStyle(projectColor ?? .secondary)
+                if customization.isPinned {
+                    Image(systemName: "pin.fill")
+                        .accessibilityHidden(true)
+                }
+                if customization.isFavorite {
+                    Image(systemName: "star.fill")
+                        .foregroundStyle(.yellow)
+                        .accessibilityHidden(true)
+                }
                 Spacer()
             }
             .contentShape(Rectangle())
@@ -533,8 +553,14 @@ private struct PanelContent: View {
         .padding(.top, 10)
         .accessibilityLabel(
             "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(title)"
+                + (customization.isPinned ? ", pinned" : "")
+                + (customization.isFavorite ? ", favorite" : "")
         )
         .contextMenu {
+            if isProjectFolder {
+                projectFolderActions(for: group.title)
+                Divider()
+            }
             closeAllSessionsButton(for: group.sessions)
         }
     }
@@ -566,6 +592,47 @@ private struct PanelContent: View {
         )
         .contextMenu {
             closeAllSessionsButton(for: sessions)
+        }
+    }
+
+    @ViewBuilder
+    private func projectFolderActions(for path: String) -> some View {
+        let customization = settings.projectFolderCustomization(at: path)
+
+        Button {
+            settings.togglePinnedProjectFolder(at: path)
+        } label: {
+            Label(
+                customization.isPinned ? "Unpin" : "Pin",
+                systemImage: customization.isPinned ? "pin.slash" : "pin"
+            )
+        }
+
+        Button {
+            settings.toggleFavoriteProjectFolder(at: path)
+        } label: {
+            Label(
+                customization.isFavorite ? "Remove from Favorites" : "Add to Favorites",
+                systemImage: customization.isFavorite ? "star.slash" : "star"
+            )
+        }
+
+        ColorPicker(
+            selection: Binding(
+                get: { settings.projectFolderColor(at: path) ?? .accentColor },
+                set: { settings.setProjectFolderColor(NSColor($0), at: path) }
+            ),
+            supportsOpacity: false
+        ) {
+            Label("Custom Color…", systemImage: "paintpalette")
+        }
+
+        if customization.colorHex != nil {
+            Button {
+                settings.setProjectFolderColor(nil, at: path)
+            } label: {
+                Label("Clear Color", systemImage: "xmark.circle")
+            }
         }
     }
 
@@ -615,33 +682,16 @@ private struct PanelContent: View {
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    if let status = item.session.status {
+                    if
+                        let status = item.session.status,
+                        let animation = SessionStatusAnimation(session: item.session)
+                    {
                         HStack(spacing: 4) {
-                            switch status {
-                            case .running:
-                                WorkingStatusIcon()
-                                    .accessibilityHidden(settings.showsSessionTime)
-                            case .finished:
-                                Image(
-                                    systemName: item.session.exitStatus == 0
-                                        ? "checkmark.circle.fill"
-                                        : "xmark.circle.fill"
-                                )
-                                .foregroundStyle(
-                                    item.session.exitStatus == 0 ? .green : .red
-                                )
-                                .help(
-                                    item.session.exitStatus == 0
-                                        ? "Command finished successfully"
-                                        : "Command failed"
-                                )
-                                .accessibilityLabel(
-                                    item.session.exitStatus == 0
-                                        ? "Command finished successfully"
-                                        : "Command failed"
-                                )
+                            SessionStatusMatrix(animation: animation)
+                                .frame(width: 36, height: 16)
+                                .help(animation.accessibilityLabel)
+                                .accessibilityLabel(animation.accessibilityLabel)
                                 .accessibilityHidden(settings.showsSessionTime)
-                            }
 
                             if settings.showsSessionTime {
                                 TimelineView(
@@ -734,6 +784,19 @@ private struct PanelContent: View {
         return name.isEmpty ? "Session" : name
     }
 
+    @ViewBuilder
+    private var panelBackground: some View {
+        if settings.panelBackgroundStyle.usesBlur {
+            Rectangle().fill(.regularMaterial)
+        } else {
+            Color(nsColor: .windowBackgroundColor)
+        }
+    }
+
+    private var effectiveColorScheme: ColorScheme {
+        settings.panelBackgroundStyle.colorScheme ?? systemColorScheme
+    }
+
     private func panelFont(_ scale: CGFloat = 1) -> Font {
         let font = settings.panelFont
         return Font(font.withSize(font.pointSize * scale))
@@ -754,25 +817,378 @@ private struct PanelContent: View {
     }
 }
 
-private struct WorkingStatusIcon: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isFlipping = false
+enum SessionStatusAnimation: CaseIterable, Equatable {
+    case agentRunning
+    case agentSucceeded
+    case agentFailed
+    case commandRunning
+    case commandSucceeded
+    case commandFailed
+    case commandFinished
 
-    var body: some View {
-        Image(systemName: "hourglass")
-            .foregroundStyle(.orange)
-            .rotationEffect(.degrees(reduceMotion ? 0 : (isFlipping ? 180 : 0)))
-            .animation(
-                reduceMotion
-                    ? nil
-                    : .easeInOut(duration: 0.9).repeatForever(autoreverses: true),
-                value: isFlipping
+    init?(session: TerminalSessionSnapshot) {
+        guard let status = session.status else { return nil }
+
+        let kind = session.activityKind ?? .command
+        switch (kind, status, session.exitStatus) {
+        case (.agent, .running, _):
+            self = .agentRunning
+        case (.command, .running, _):
+            self = .commandRunning
+        case (_, .finished, nil):
+            self = .commandFinished
+        case (.agent, .finished, .some(0)):
+            self = .agentSucceeded
+        case (.agent, .finished, .some):
+            self = .agentFailed
+        case (.command, .finished, .some(0)):
+            self = .commandSucceeded
+        case (.command, .finished, .some):
+            self = .commandFailed
+        }
+    }
+
+    var accessibilityLabel: String {
+        switch self {
+        case .agentRunning:
+            "Agent working"
+        case .agentSucceeded:
+            "Agent finished successfully"
+        case .agentFailed:
+            "Agent failed"
+        case .commandRunning:
+            "Command running"
+        case .commandSucceeded:
+            "Command finished successfully"
+        case .commandFailed:
+            "Command failed"
+        case .commandFinished:
+            "Command finished"
+        }
+    }
+
+    var color: NSColor {
+        switch self {
+        case .agentRunning:
+            .systemPurple
+        case .commandRunning:
+            .systemOrange
+        case .agentSucceeded, .commandSucceeded:
+            .systemGreen
+        case .agentFailed, .commandFailed:
+            .systemRed
+        case .commandFinished:
+            .systemBlue
+        }
+    }
+
+    func pixelColor(brightness: CGFloat) -> NSColor {
+        let brightness = min(max(brightness, 0), 1)
+        let highlightFraction = 0.1 + brightness * 0.3
+        return (
+            color.blended(withFraction: highlightFraction, of: .white) ?? color
+        ).withAlphaComponent(1)
+    }
+
+    func brightness(column: Int, row: Int, frame: Int) -> CGFloat {
+        if (14...15).contains(column) {
+            return statusBarBrightness(row: row, frame: frame)
+        }
+
+        switch self {
+        case .agentRunning, .agentSucceeded, .agentFailed:
+            return alienBrightness(column: column, row: row, frame: frame)
+        case .commandRunning, .commandSucceeded, .commandFailed, .commandFinished:
+            return robotBrightness(column: column, row: row, frame: frame)
+        }
+    }
+
+    private func alienBrightness(
+        column: Int,
+        row: Int,
+        frame: Int
+    ) -> CGFloat {
+        guard (0...10).contains(column) else { return 0 }
+
+        let phase = frame / 4 % 4
+        let verticalOffset: Int
+        switch self {
+        case .agentSucceeded:
+            verticalOffset = [1, 0, 0, 1][phase]
+        case .agentFailed:
+            verticalOffset = [1, 2, 2, 1][phase]
+        default:
+            verticalOffset = 1
+        }
+
+        let sourceRow = row - verticalOffset
+        var sourceColumn = column
+        if self == .agentFailed {
+            let direction = sourceRow.isMultiple(of: 2) ? 1 : -1
+            sourceColumn -= [0, 1, -1, 0][phase] * direction
+        }
+
+        let gaze = self == .agentRunning ? [-1, 0, 1, 0][phase] : 0
+        guard Self.isAlienPixel(
+            column: sourceColumn,
+            row: sourceRow,
+            gaze: gaze
+        ) else {
+            return 0
+        }
+
+        switch self {
+        case .agentRunning:
+            return [0.55, 0.7, 1, 0.7][(phase + sourceRow) % 4]
+        case .agentSucceeded:
+            return sourceRow == frame / 2 % 7 ? 1 : 0.65
+        case .agentFailed:
+            return (sourceColumn + sourceRow + frame / 2) % 5 == 0 ? 1 : 0.55
+        default:
+            return 0
+        }
+    }
+
+    private func robotBrightness(
+        column: Int,
+        row: Int,
+        frame: Int
+    ) -> CGFloat {
+        guard (0...10).contains(column) else { return 0 }
+
+        let phase = frame / 4 % 4
+        let verticalOffset = self == .commandSucceeded
+            ? [1, 2, 1, 1][phase]
+            : 1
+        let horizontalOffset = self == .commandFailed
+            ? [-1, 0, 1, 0][phase]
+            : 0
+        let sourceColumn = column - horizontalOffset
+        let sourceRow = row - verticalOffset
+        guard Self.isRobotPixel(column: sourceColumn, row: sourceRow) else {
+            return 0
+        }
+
+        let isEye = sourceRow == 3 && (sourceColumn == 4 || sourceColumn == 6)
+        switch self {
+        case .commandRunning where isEye:
+            let activeEye = phase.isMultiple(of: 2) ? 4 : 6
+            return sourceColumn == activeEye ? 1 : 0.45
+        case .commandSucceeded:
+            return sourceRow == 5 && (4...6).contains(sourceColumn) ? 1 : 0.65
+        case .commandFailed:
+            return (sourceColumn + sourceRow + frame / 2) % 5 == 0 ? 1 : 0.55
+        case .commandFinished where isEye:
+            return phase == 2 ? 0 : 0.9
+        default:
+            return 0.65
+        }
+    }
+
+    private func statusBarBrightness(row: Int, frame: Int) -> CGFloat {
+        guard (1...6).contains(row) else { return 0 }
+
+        let level = row - 1
+        switch self {
+        case .agentRunning:
+            return level == frame / 2 % 6 ? 1 : 0.35
+        case .commandRunning:
+            let filledLevels = frame / 3 % 6 + 1
+            guard level >= 6 - filledLevels else { return 0 }
+            return level == 6 - filledLevels ? 1 : 0.55
+        case .agentSucceeded, .commandSucceeded:
+            return level == frame / 2 % 6 ? 1 : 0.55
+        case .agentFailed:
+            return (level + frame / 3) % 3 == 0 ? 1 : 0
+        case .commandFailed:
+            return (level + frame / 2) % 2 == 0 ? 0.85 : 0
+        case .commandFinished:
+            let pulse: [CGFloat] = [0.35, 0.5, 0.7, 0.9, 1, 0.9, 0.7, 0.5]
+            return pulse[frame / 2 % pulse.count]
+        }
+    }
+
+    private static func isAlienPixel(
+        column: Int,
+        row: Int,
+        gaze: Int
+    ) -> Bool {
+        switch row {
+        case 0:
+            column == 2 || column == 8
+        case 1:
+            column == 3 || column == 7
+        case 2:
+            (2...8).contains(column)
+        case 3:
+            (1...9).contains(column)
+                && column != 3 + gaze
+                && column != 7 + gaze
+        case 4:
+            (0...10).contains(column)
+        case 5:
+            [0, 2, 4, 5, 6, 8, 10].contains(column)
+        case 6:
+            [3, 4, 6, 7].contains(column)
+        default:
+            false
+        }
+    }
+
+    private static func isRobotPixel(column: Int, row: Int) -> Bool {
+        switch row {
+        case 0:
+            (4...6).contains(column)
+        case 1:
+            column == 5
+        case 2:
+            (1...9).contains(column)
+        case 3:
+            [0, 1, 4, 6, 9, 10].contains(column)
+        case 4:
+            [0, 1, 5, 9, 10].contains(column)
+        case 5:
+            column == 1 || (3...7).contains(column) || column == 9
+        case 6:
+            (2...8).contains(column)
+        default:
+            false
+        }
+    }
+}
+
+private struct SessionStatusMatrix: NSViewRepresentable {
+    let animation: SessionStatusAnimation
+
+    func makeNSView(context: Context) -> SessionStatusMatrixView {
+        SessionStatusMatrixView(animation: animation)
+    }
+
+    func updateNSView(_ view: SessionStatusMatrixView, context: Context) {
+        view.animation = animation
+    }
+
+    static func dismantleNSView(
+        _ view: SessionStatusMatrixView,
+        coordinator: Void
+    ) {
+        view.stopAnimating()
+    }
+}
+
+private final class SessionStatusMatrixView: NSView {
+    private static let columns = 18
+    private static let rows = 8
+    private static let pixelPitch: CGFloat = 2
+    private static let pixelSize: CGFloat = 1.75
+    private static let animationInterval: TimeInterval = 1.0 / 20.0
+
+    var animation: SessionStatusAnimation {
+        didSet {
+            guard animation != oldValue else { return }
+            frameIndex = 0
+            needsDisplay = true
+        }
+    }
+
+    private var frameIndex = 0
+    private var timer: Timer?
+    private var accessibilityObserver: NSObjectProtocol?
+
+    init(animation: SessionStatusAnimation) {
+        self.animation = animation
+        super.init(frame: .zero)
+        accessibilityObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateAnimationTimer()
+        }
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        if let accessibilityObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(
+                accessibilityObserver
             )
-            .onAppear {
-                isFlipping = true
+        }
+        timer?.invalidate()
+    }
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: 36, height: 16)
+    }
+
+    override var isFlipped: Bool { true }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        updateAnimationTimer()
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        nil
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+
+        for row in 0..<Self.rows {
+            for column in 0..<Self.columns {
+                let brightness = animation.brightness(
+                    column: column,
+                    row: row,
+                    frame: frameIndex
+                )
+                guard brightness > 0 else { continue }
+                animation.pixelColor(brightness: brightness).setFill()
+                NSBezierPath(
+                    roundedRect: NSRect(
+                        x: CGFloat(column) * Self.pixelPitch + 0.25,
+                        y: CGFloat(row) * Self.pixelPitch + 0.25,
+                        width: Self.pixelSize,
+                        height: Self.pixelSize
+                    ),
+                    xRadius: 0.35,
+                    yRadius: 0.35
+                ).fill()
             }
-            .help("Command running")
-            .accessibilityLabel("Command running")
+        }
+    }
+
+    func stopAnimating() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func updateAnimationTimer() {
+        guard
+            window != nil,
+            !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        else {
+            stopAnimating()
+            frameIndex = 0
+            needsDisplay = true
+            return
+        }
+        guard timer == nil else { return }
+
+        let timer = Timer(
+            timeInterval: Self.animationInterval,
+            repeats: true
+        ) { [weak self] _ in
+            guard let self else { return }
+            frameIndex = (frameIndex + 1) % 240
+            needsDisplay = true
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 }
 

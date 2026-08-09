@@ -4,6 +4,22 @@
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-08-09
+
+### Added
+
+- Session 状态改用点阵动画区分 Agent 与普通命令的运行、成功、失败和未知结果。
+- Project Path 分组支持 Pin、Favorite 与自定义颜色。
+- 面板新增 System/Dark/Light 与 Blur/Opaque 六种背景样式。
+
+### Fixed
+
+- 未启用 Shell Integration 时也能通过 iTerm2 前台任务变量观察普通命令状态，并避免 Agent 外层进程退出被误报为普通命令完成。
+
+### Notes
+
+- 当前构建使用 ad hoc 签名且未经过 Apple notarization。
+
 ## [0.1.2] - 2026-08-06
 
 ### Added
