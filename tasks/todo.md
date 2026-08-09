@@ -1,6 +1,6 @@
 # Tasks
 
-- [发布 iTermate v0.1.3 并清理旧 Bridge helper](todo/release-v0-1-3.md) — In Progress (2026-08-09 10:20)
+- [发布 iTermate v0.1.3 并清理旧 Bridge helper](todo/release-v0-1-3.md) — Completed (2026-08-09 10:36)
 - [配置面板背景样式](todo/panel-background-style.md) — Completed (2026-08-07 11:43)
 - [自定义项目文件夹](todo/project-folder-customization.md) — Completed (2026-08-07 11:08)
 - [使用点阵屏动画展示 Session 状态](todo/session-status-dot-matrix.md) — Completed (2026-08-06 20:41)
