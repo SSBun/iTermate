@@ -1,6 +1,13 @@
 import AppKit
 import CoreGraphics
 
+enum PanelDockingSide: String, CaseIterable {
+    /// Tries the left side before falling back to the right side.
+    case left
+    /// Tries the right side before falling back to the left side.
+    case right
+}
+
 struct PanelLayout {
     static let gap: CGFloat = 8
     static let defaultWidth: CGFloat = 260
@@ -10,7 +17,8 @@ struct PanelLayout {
     static func frame(
         for windowFrame: CGRect,
         in visibleFrame: CGRect,
-        width proposedWidth: CGFloat = defaultWidth
+        width proposedWidth: CGFloat = defaultWidth,
+        preferredSide: PanelDockingSide = .right
     ) -> CGRect {
         let width = clampedWidth(proposedWidth)
         let height = min(windowFrame.height, visibleFrame.height)
@@ -21,12 +29,24 @@ struct PanelLayout {
 
         let rightX = windowFrame.maxX + gap
         let leftX = windowFrame.minX - width - gap
-        let x: CGFloat
+        let preferredX: CGFloat
+        let fallbackX: CGFloat
+        switch preferredSide {
+        case .left:
+            preferredX = leftX
+            fallbackX = rightX
+        case .right:
+            preferredX = rightX
+            fallbackX = leftX
+        }
 
-        if rightX + width <= visibleFrame.maxX {
-            x = rightX
-        } else if leftX >= visibleFrame.minX {
-            x = leftX
+        let x: CGFloat
+        if preferredX >= visibleFrame.minX,
+           preferredX + width <= visibleFrame.maxX {
+            x = preferredX
+        } else if fallbackX >= visibleFrame.minX,
+                  fallbackX + width <= visibleFrame.maxX {
+            x = fallbackX
         } else {
             x = min(
                 max(windowFrame.maxX - width - gap, visibleFrame.minX),

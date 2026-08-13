@@ -70,6 +70,7 @@ struct ProjectFolderCustomization: Codable, Equatable {
 
 private struct AppConfig {
     var panelWidth = PanelLayout.defaultWidth
+    var panelDockingSide: PanelDockingSide = .right
     var panelFontName = PanelFontDefaults.name
     var panelFontSize = PanelFontDefaults.size
     var panelBackgroundStyle: PanelBackgroundStyle = .systemBlur
@@ -95,6 +96,13 @@ private struct AppConfig {
             case "panel_width":
                 if let width = Double(value) {
                     panelWidth = PanelLayout.clampedWidth(CGFloat(width))
+                }
+            case "panel_docking_side":
+                if
+                    let side = Self.stringValue(String(value)),
+                    let parsedSide = PanelDockingSide(rawValue: side)
+                {
+                    panelDockingSide = parsedSide
                 }
             case "panel_font_name":
                 if let fontName = Self.stringValue(String(value)) {
@@ -165,6 +173,7 @@ private struct AppConfig {
         """
         # iTermate user configuration
         panel_width = \(panelWidth)
+        panel_docking_side = "\(panelDockingSide.rawValue)"
         panel_font_name = "\(panelFontName)"
         panel_font_size = \(panelFontSize)
         panel_background_style = "\(panelBackgroundStyle.rawValue)"
@@ -198,6 +207,7 @@ final class AppSettings: ObservableObject {
         .appendingPathComponent("config.toml")
 
     @Published private(set) var panelWidth: CGFloat
+    @Published private(set) var panelDockingSide: PanelDockingSide
     @Published private(set) var panelFontName: String
     @Published private(set) var panelFontSize: CGFloat
     @Published private(set) var panelBackgroundStyle: PanelBackgroundStyle
@@ -217,6 +227,7 @@ final class AppSettings: ObservableObject {
         self.configURL = configURL
         let config = AppConfig(contents: (try? String(contentsOf: configURL)) ?? "")
         panelWidth = config.panelWidth
+        panelDockingSide = config.panelDockingSide
         panelFontName = config.panelFontName
         panelFontSize = config.panelFontSize
         panelBackgroundStyle = config.panelBackgroundStyle
@@ -246,6 +257,11 @@ final class AppSettings: ObservableObject {
     func setPanelWidth(_ width: CGFloat) {
         panelWidth = PanelLayout.clampedWidth(width)
         updateConfig { $0.panelWidth = panelWidth }
+    }
+
+    func setPanelDockingSide(_ side: PanelDockingSide) {
+        panelDockingSide = side
+        updateConfig { $0.panelDockingSide = side }
     }
 
     func setPanelFont(_ font: NSFont) {
@@ -471,6 +487,20 @@ private struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
+            Section("Panel") {
+                Picker(
+                    "Preferred Docking Side",
+                    selection: Binding(
+                        get: { settings.panelDockingSide },
+                        set: settings.setPanelDockingSide
+                    )
+                ) {
+                    ForEach(PanelDockingSide.allCases, id: \.self) { side in
+                        Text(side.rawValue.capitalized).tag(side)
+                    }
+                }
+            }
+
             Section("Appearance") {
                 Picker(
                     "Background Style",

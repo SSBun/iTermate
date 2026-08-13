@@ -2,6 +2,12 @@ import AppKit
 import Darwin
 import Foundation
 import Network
+import OSLog
+
+private let bridgeSnapshotLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "com.caishilin.iTermate",
+    category: "BridgeSnapshot"
+)
 
 enum TerminalSessionStatus: String, Codable, Equatable {
     case running
@@ -260,6 +266,7 @@ final class ItermStore: ObservableObject {
     )
     private var latestSequence = 0
     private var bridgeIsCompatible = false
+    private var lastLoggedSnapshotCounts: [Int]?
 
     func start() {
         client.start()
@@ -301,6 +308,21 @@ final class ItermStore: ObservableObject {
             }
             latestSequence = sequence
             self.windows = windows
+            let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
+            let runningCount = sessions.lazy.filter { $0.status == .running }.count
+            let finishedCount = sessions.lazy.filter { $0.status == .finished }.count
+            let snapshotCounts = [
+                windows.count,
+                sessions.count,
+                runningCount,
+                finishedCount,
+            ]
+            if snapshotCounts != lastLoggedSnapshotCounts {
+                bridgeSnapshotLogger.notice(
+                    "Applied snapshot sequence=\(sequence, privacy: .public) windows=\(windows.count, privacy: .public) sessions=\(sessions.count, privacy: .public) running=\(runningCount, privacy: .public) finished=\(finishedCount, privacy: .public) idle=\(sessions.count - runningCount - finishedCount, privacy: .public)"
+                )
+                lastLoggedSnapshotCounts = snapshotCounts
+            }
             actionError = nil
             connectionState = .connected
         case "actionResult":
@@ -317,6 +339,7 @@ final class ItermStore: ObservableObject {
         if state != .connected {
             bridgeIsCompatible = false
             latestSequence = 0
+            lastLoggedSnapshotCounts = nil
             windows = []
         }
     }

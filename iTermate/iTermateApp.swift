@@ -1,7 +1,17 @@
 import AppKit
 import CoreGraphics
+import OSLog
 import Sparkle
 import SwiftUI
+
+private let panelResizeLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "com.caishilin.iTermate",
+    category: "PanelResize"
+)
+private let sessionStatusViewLogger = Logger(
+    subsystem: Bundle.main.bundleIdentifier ?? "com.caishilin.iTermate",
+    category: "SessionStatusView"
+)
 
 @main
 struct ItermateApplication: App {
@@ -87,6 +97,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 private final class PanelFollower {
     private let panel: ComradePanel
     private var timer: Timer?
+    private var lastWindowSize: CGSize?
+    private var isResizeInProgress = false
+    private var lastResizeChangeTime: TimeInterval = 0
 
     init(store: ItermStore, settings: AppSettings) {
         panel = ComradePanel(store: store, settings: settings)
@@ -112,14 +125,40 @@ private final class PanelFollower {
             return
         }
 
-        guard !panel.inLiveResize else { return }
+        guard !panel.inLiveResize, !panel.isManuallyResizing else { return }
 
         let panelFrame = PanelLayout.frame(
             for: window.frame,
             in: screen.visibleFrame,
-            width: panel.settings.panelWidth
+            width: panel.settings.panelWidth,
+            preferredSide: panel.settings.panelDockingSide
         )
-        panel.setFrame(panelFrame, display: true)
+        let now = ProcessInfo.processInfo.systemUptime
+        if let lastWindowSize, lastWindowSize != window.frame.size {
+            if !isResizeInProgress {
+                panelResizeLogger.notice(
+                    "iTerm resize began from=\(Int(lastWindowSize.width.rounded()), privacy: .public)x\(Int(lastWindowSize.height.rounded()), privacy: .public) to=\(Int(window.frame.width.rounded()), privacy: .public)x\(Int(window.frame.height.rounded()), privacy: .public)"
+                )
+            }
+            isResizeInProgress = true
+            lastResizeChangeTime = now
+        } else if isResizeInProgress, now - lastResizeChangeTime > 0.25 {
+            let side = if panelFrame.maxX <= window.frame.minX {
+                "left"
+            } else if panelFrame.minX >= window.frame.maxX {
+                "right"
+            } else {
+                "overlay"
+            }
+            panelResizeLogger.notice(
+                "iTerm resize settled window=\(Int(window.frame.width.rounded()), privacy: .public)x\(Int(window.frame.height.rounded()), privacy: .public) panelOrigin=(\(Int(panelFrame.minX.rounded()), privacy: .public),\(Int(panelFrame.minY.rounded()), privacy: .public)) panel=\(Int(panelFrame.width.rounded()), privacy: .public)x\(Int(panelFrame.height.rounded()), privacy: .public) side=\(side, privacy: .public)"
+            )
+            isResizeInProgress = false
+        }
+        lastWindowSize = window.frame.size
+        if panel.frame != panelFrame {
+            panel.setFrame(panelFrame, display: true)
+        }
 
         if !panel.isVisible {
             panel.orderFrontRegardless()
@@ -129,6 +168,7 @@ private final class PanelFollower {
 
 final class ComradePanel: NSPanel, NSWindowDelegate {
     let settings: AppSettings
+    fileprivate var isManuallyResizing = false
 
     init(
         store: ItermStore = ItermStore(),
@@ -152,6 +192,7 @@ final class ComradePanel: NSPanel, NSWindowDelegate {
         isOpaque = false
         hasShadow = true
         hidesOnDeactivate = false
+        acceptsMouseMovedEvents = true
         becomesKeyOnlyIfNeeded = true
         isReleasedWhenClosed = false
 
@@ -177,11 +218,31 @@ final class ComradePanel: NSPanel, NSWindowDelegate {
     func windowDidEndLiveResize(_ notification: Notification) {
         settings.setPanelWidth(frame.width)
     }
+
+    func manuallyResizedFrame(
+        from initialFrame: NSRect,
+        leftEdge: Bool,
+        mouseDeltaX: CGFloat
+    ) -> NSRect {
+        let proposedWidth = initialFrame.width + (leftEdge ? -mouseDeltaX : mouseDeltaX)
+        let width = PanelLayout.clampedWidth(proposedWidth)
+        var frame = initialFrame
+        frame.size.width = width
+        if leftEdge {
+            frame.origin.x = initialFrame.maxX - width
+        }
+        return frame
+    }
 }
 
 private final class PanelHostingView: NSHostingView<PanelContent> {
     private let resizeEdgeWidth: CGFloat = 8
     private var resizeTrackingAreas: [NSTrackingArea] = []
+    private var resizeCursorPushed = false
+
+    deinit {
+        popResizeCursor()
+    }
 
     override func updateTrackingAreas() {
         resizeTrackingAreas.forEach(removeTrackingArea)
@@ -222,24 +283,68 @@ private final class PanelHostingView: NSHostingView<PanelContent> {
     }
 
     override func mouseEntered(with event: NSEvent) {
-        if event.trackingArea?.userInfo?["iTermateResizeEdge"] != nil {
-            NSCursor.resizeLeftRight.set()
-        }
         super.mouseEntered(with: event)
+        if event.trackingArea?.userInfo?["iTermateResizeEdge"] != nil {
+            pushResizeCursor()
+        }
     }
 
     override func mouseMoved(with event: NSEvent) {
-        if event.trackingArea?.userInfo?["iTermateResizeEdge"] != nil {
-            NSCursor.resizeLeftRight.set()
-        }
         super.mouseMoved(with: event)
+        let location = convert(event.locationInWindow, from: nil)
+        if location.x <= resizeEdgeWidth || location.x >= bounds.width - resizeEdgeWidth {
+            pushResizeCursor()
+        }
     }
 
     override func mouseExited(with event: NSEvent) {
-        if event.trackingArea?.userInfo?["iTermateResizeEdge"] != nil {
-            NSCursor.arrow.set()
-        }
         super.mouseExited(with: event)
+        popResizeCursor()
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let location = convert(event.locationInWindow, from: nil)
+        let leftEdge = location.x <= resizeEdgeWidth
+        guard
+            leftEdge || location.x >= bounds.width - resizeEdgeWidth,
+            let panel = window as? ComradePanel
+        else {
+            return super.mouseDown(with: event)
+        }
+
+        pushResizeCursor()
+        let initialFrame = panel.frame
+        let initialMouseX = NSEvent.mouseLocation.x
+        panel.isManuallyResizing = true
+        defer {
+            panel.isManuallyResizing = false
+            panel.settings.setPanelWidth(panel.frame.width)
+        }
+
+        while true {
+            guard let nextEvent = panel.nextEvent(
+                matching: [.leftMouseDragged, .leftMouseUp]
+            ) else { break }
+            guard nextEvent.type == .leftMouseDragged else { break }
+            let frame = panel.manuallyResizedFrame(
+                from: initialFrame,
+                leftEdge: leftEdge,
+                mouseDeltaX: NSEvent.mouseLocation.x - initialMouseX
+            )
+            panel.setFrame(frame, display: true)
+        }
+    }
+
+    private func pushResizeCursor() {
+        guard !resizeCursorPushed else { return }
+        NSCursor.resizeLeftRight.push()
+        resizeCursorPushed = true
+    }
+
+    private func popResizeCursor() {
+        guard resizeCursorPushed else { return }
+        NSCursor.pop()
+        resizeCursorPushed = false
     }
 }
 
@@ -1065,7 +1170,7 @@ private struct SessionStatusMatrix: NSViewRepresentable {
     }
 
     func updateNSView(_ view: SessionStatusMatrixView, context: Context) {
-        view.animation = animation
+        view.update(animation: animation)
     }
 
     static func dismantleNSView(
@@ -1076,14 +1181,14 @@ private struct SessionStatusMatrix: NSViewRepresentable {
     }
 }
 
-private final class SessionStatusMatrixView: NSView {
+final class SessionStatusMatrixView: NSView {
     private static let columns = 18
     private static let rows = 8
     private static let pixelPitch: CGFloat = 2
     private static let pixelSize: CGFloat = 1.75
     private static let animationInterval: TimeInterval = 1.0 / 20.0
 
-    var animation: SessionStatusAnimation {
+    private(set) var animation: SessionStatusAnimation {
         didSet {
             guard animation != oldValue else { return }
             frameIndex = 0
@@ -1098,6 +1203,10 @@ private final class SessionStatusMatrixView: NSView {
     init(animation: SessionStatusAnimation) {
         self.animation = animation
         super.init(frame: .zero)
+        let animationName = String(describing: animation)
+        sessionStatusViewLogger.notice(
+            "Status matrix created animation=\(animationName, privacy: .public)"
+        )
         accessibilityObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
             object: nil,
@@ -1110,6 +1219,17 @@ private final class SessionStatusMatrixView: NSView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    func update(animation: SessionStatusAnimation) {
+        if self.animation != animation {
+            let oldAnimationName = String(describing: self.animation)
+            let newAnimationName = String(describing: animation)
+            sessionStatusViewLogger.notice(
+                "Status matrix animation changed from=\(oldAnimationName, privacy: .public) to=\(newAnimationName, privacy: .public)"
+            )
+        }
+        self.animation = animation
     }
 
     deinit {

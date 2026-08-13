@@ -113,6 +113,40 @@ final class ItermBridgeTests: XCTestCase {
         )
     }
 
+    @MainActor
+    func testPanelResizeKeepsStatusAnimationScopedToEachSession() throws {
+        let configURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathComponent("config.toml")
+        defer {
+            try? FileManager.default.removeItem(
+                at: configURL.deletingLastPathComponent()
+            )
+        }
+
+        let store = ItermStore()
+        store.apply(try hello())
+        store.apply(try hierarchyMessage())
+        let panel = ComradePanel(
+            store: store,
+            settings: AppSettings(configURL: configURL)
+        )
+
+        for height in [500, 120, 500] {
+            panel.setFrame(
+                CGRect(x: 20, y: 20, width: 320, height: height),
+                display: true
+            )
+            panel.contentView?.layoutSubtreeIfNeeded()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        }
+
+        let animations = statusAnimations(in: try XCTUnwrap(panel.contentView))
+        XCTAssertEqual(animations.count, 2)
+        XCTAssertEqual(animations.filter { $0 == .agentRunning }.count, 1)
+        XCTAssertEqual(animations.filter { $0 == .commandSucceeded }.count, 1)
+    }
+
     func testSessionStatusPixelColorsStayOpaqueAndBrighten() throws {
         for animation in SessionStatusAnimation.allCases {
             let base = try XCTUnwrap(
@@ -346,6 +380,10 @@ final class ItermBridgeTests: XCTestCase {
     }
 
     private func hierarchySnapshot() throws -> [TerminalWindowSnapshot] {
+        try hierarchyMessage().windows ?? []
+    }
+
+    private func hierarchyMessage() throws -> BridgeMessage {
         let data = Data(
             """
             {
@@ -366,7 +404,9 @@ final class ItermBridgeTests: XCTestCase {
                     "windowId": "window-1",
                     "tabId": "tab-1",
                     "isActive": true,
-                    "isMinimized": false
+                    "isMinimized": false,
+                    "status": "running",
+                    "activityKind": "agent"
                   }]
                 }, {
                   "id": "tab-2",
@@ -379,7 +419,10 @@ final class ItermBridgeTests: XCTestCase {
                     "windowId": "window-1",
                     "tabId": "tab-2",
                     "isActive": true,
-                    "isMinimized": false
+                    "isMinimized": false,
+                    "status": "finished",
+                    "activityKind": "command",
+                    "exitStatus": 0
                   }]
                 }]
               }, {
@@ -412,7 +455,12 @@ final class ItermBridgeTests: XCTestCase {
             }
             """.utf8
         )
-        return try JSONDecoder().decode(BridgeMessage.self, from: data).windows ?? []
+        return try JSONDecoder().decode(BridgeMessage.self, from: data)
+    }
+
+    private func statusAnimations(in view: NSView) -> [SessionStatusAnimation] {
+        let current = (view as? SessionStatusMatrixView).map { [$0.animation] } ?? []
+        return current + view.subviews.flatMap(statusAnimations)
     }
 
     private func snapshot(sequence: Int, title: String) throws -> BridgeMessage {

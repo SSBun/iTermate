@@ -29,6 +29,7 @@ final class PanelLayoutTests: XCTestCase {
         let panel = ComradePanel(settings: AppSettings(configURL: makeConfigURL()))
 
         XCTAssertFalse(panel.ignoresMouseEvents)
+        XCTAssertTrue(panel.acceptsMouseMovedEvents)
         XCTAssertTrue(panel.canBecomeKey)
     }
 
@@ -44,6 +45,52 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(edgeAreas.count, 2)
         XCTAssertTrue(edgeAreas.allSatisfy { $0.options.contains(.activeAlways) })
         XCTAssertTrue(edgeAreas.allSatisfy { $0.options.contains(.mouseEnteredAndExited) })
+    }
+
+    func testResizeTrackingHandlesMouseMovedWithoutTrackingArea() throws {
+        let panel = ComradePanel(settings: AppSettings(configURL: makeConfigURL()))
+        let contentView = try XCTUnwrap(panel.contentView)
+        let event = try XCTUnwrap(
+            NSEvent.mouseEvent(
+                with: .mouseMoved,
+                location: .zero,
+                modifierFlags: [],
+                timestamp: 0,
+                windowNumber: 0,
+                context: nil,
+                eventNumber: 0,
+                clickCount: 0,
+                pressure: 0
+            )
+        )
+
+        NSCursor.arrow.push()
+        defer { NSCursor.pop() }
+        contentView.mouseMoved(with: event)
+
+        XCTAssertEqual(NSCursor.current, .resizeLeftRight)
+    }
+
+    func testManualPanelResizePreservesOppositeEdgeAndClampsWidth() {
+        let panel = ComradePanel(settings: AppSettings(configURL: makeConfigURL()))
+        let initialFrame = NSRect(x: 700, y: 200, width: 260, height: 500)
+
+        XCTAssertEqual(
+            panel.manuallyResizedFrame(
+                from: initialFrame,
+                leftEdge: true,
+                mouseDeltaX: -51
+            ),
+            NSRect(x: 649, y: 200, width: 311, height: 500)
+        )
+        XCTAssertEqual(
+            panel.manuallyResizedFrame(
+                from: initialFrame,
+                leftEdge: false,
+                mouseDeltaX: 500
+            ),
+            NSRect(x: 700, y: 200, width: 600, height: 500)
+        )
     }
 
     func testPanelResizesHorizontallyAndRestoresSavedWidth() {
@@ -130,6 +177,16 @@ final class PanelLayoutTests: XCTestCase {
         )
     }
 
+    func testPanelDockingSideDefaultsAndPersists() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+
+        XCTAssertEqual(settings.panelDockingSide, .right)
+        settings.setPanelDockingSide(.left)
+
+        XCTAssertEqual(AppSettings(configURL: configURL).panelDockingSide, .left)
+    }
+
     func testSessionListStylePersists() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)
@@ -214,6 +271,7 @@ final class PanelLayoutTests: XCTestCase {
         let settings = AppSettings(configURL: configURL)
         settings.setPanelWidth(420)
         settings.setPanelBackgroundStyle(.lightOpaque)
+        settings.setPanelDockingSide(.left)
         settings.setSessionListStyle(.projectPath)
         settings.setSectionTitleStyle(.folderName)
         settings.setShowsTabHeaders(false)
@@ -226,6 +284,7 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertTrue(contents.contains("panel_font_name = \"system\""))
         XCTAssertTrue(contents.contains("panel_font_size = 13"))
         XCTAssertTrue(contents.contains("panel_background_style = \"lightOpaque\""))
+        XCTAssertTrue(contents.contains("panel_docking_side = \"left\""))
         XCTAssertTrue(contents.contains("session_list_style = \"projectPath\""))
         XCTAssertTrue(contents.contains("section_title_style = \"folderName\""))
         XCTAssertTrue(contents.contains("shows_tab_headers = false"))
@@ -238,6 +297,7 @@ final class PanelLayoutTests: XCTestCase {
         let configURL = makeConfigURL()
         try! """
         panel_width = 420.0
+        panel_docking_side = "left"
         session_list_style = "projectPath"
         shows_tab_headers = false
         shows_session_time = false
@@ -248,6 +308,7 @@ final class PanelLayoutTests: XCTestCase {
         let settings = AppSettings(configURL: configURL)
 
         XCTAssertEqual(settings.panelWidth, 420)
+        XCTAssertEqual(settings.panelDockingSide, .left)
         XCTAssertEqual(settings.sessionListStyle, .projectPath)
         XCTAssertFalse(settings.showsTabHeaders)
         XCTAssertFalse(settings.showsSessionTime)
@@ -290,6 +351,19 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(frame, CGRect(x: 908, y: 100, width: 260, height: 600))
     }
 
+    func testPlacesPanelOnPreferredLeftSide() {
+        let visibleFrame = CGRect(x: 0, y: 0, width: 1_440, height: 900)
+        let windowFrame = CGRect(x: 500, y: 100, width: 600, height: 600)
+
+        let frame = PanelLayout.frame(
+            for: windowFrame,
+            in: visibleFrame,
+            preferredSide: .left
+        )
+
+        XCTAssertEqual(frame, CGRect(x: 232, y: 100, width: 260, height: 600))
+    }
+
     func testUsesCurrentPanelWidthWhenFollowingIterm() {
         let visibleFrame = CGRect(x: 0, y: 0, width: 1_440, height: 900)
         let windowFrame = CGRect(x: 100, y: 100, width: 800, height: 600)
@@ -306,6 +380,19 @@ final class PanelLayoutTests: XCTestCase {
         let frame = PanelLayout.frame(for: windowFrame, in: visibleFrame, width: 420)
 
         XCTAssertEqual(frame, CGRect(x: 172, y: 100, width: 420, height: 600))
+    }
+
+    func testPlacesPanelToTheRightWhenPreferredLeftSideIsFull() {
+        let visibleFrame = CGRect(x: 0, y: 0, width: 1_440, height: 900)
+        let windowFrame = CGRect(x: 100, y: 100, width: 800, height: 600)
+
+        let frame = PanelLayout.frame(
+            for: windowFrame,
+            in: visibleFrame,
+            preferredSide: .left
+        )
+
+        XCTAssertEqual(frame, CGRect(x: 908, y: 100, width: 260, height: 600))
     }
 
     func testPlacesPanelToTheLeftWhenTheRightSideIsFull() {
