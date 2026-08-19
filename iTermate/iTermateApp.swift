@@ -676,7 +676,7 @@ private struct PanelContent: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .font(panelFont(0.85))
+        .font(headerFont())
         .foregroundStyle(.secondary)
         .padding(.top, 10)
         .accessibilityLabel(
@@ -724,7 +724,7 @@ private struct PanelContent: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .font(panelFont(0.85))
+        .font(headerFont())
         .foregroundStyle(.secondary)
         .padding(.horizontal, 8)
         .padding(.top, 10)
@@ -941,6 +941,15 @@ private struct PanelContent: View {
     private func panelFont(_ scale: CGFloat = 1) -> Font {
         let font = settings.panelFont
         return Font(font.withSize(font.pointSize * scale))
+    }
+
+    /// Header variant of the panel font with a bold trait so section titles
+    /// stand out from session rows regardless of the selected typeface.
+    private func headerFont(_ scale: CGFloat = 0.85) -> Font {
+        let font = settings.panelFont
+        let sized = font.withSize(font.pointSize * scale)
+        let bold = NSFontManager.shared.convert(sized, toHaveTrait: .boldFontMask)
+        return Font(bold)
     }
 
     private func statusView(_ text: String, showsProgress: Bool) -> some View {
