@@ -308,6 +308,65 @@ final class ItermBridgeTests: XCTestCase {
         )
     }
 
+    func testProjectPathClustersSplitPaneSessionsOfSameTab() throws {
+        let data = Data(
+            """
+            {
+              "type": "snapshot",
+              "sequence": 1,
+              "windows": [{
+                "id": "window-1",
+                "number": 1,
+                "isActive": true,
+                "tabs": [{
+                  "id": "tab-1",
+                  "title": "Splits",
+                  "isSelected": true,
+                  "sessions": [{
+                    "id": "session-a",
+                    "name": "pi one",
+                    "path": "/repo",
+                    "windowId": "window-1",
+                    "tabId": "tab-1",
+                    "isActive": true,
+                    "isMinimized": false
+                  }, {
+                    "id": "session-b",
+                    "name": "pi two",
+                    "path": "/other",
+                    "windowId": "window-1",
+                    "tabId": "tab-1",
+                    "isActive": false,
+                    "isMinimized": false
+                  }, {
+                    "id": "session-c",
+                    "name": "pi three",
+                    "path": "/repo",
+                    "windowId": "window-1",
+                    "tabId": "tab-1",
+                    "isActive": false,
+                    "isMinimized": false
+                  }]
+                }]
+              }]
+            }
+            """.utf8
+        )
+        let windows = try JSONDecoder()
+            .decode(BridgeMessage.self, from: data).windows ?? []
+
+        let pathGroups = SessionGrouping.groups(from: windows, style: .projectPath)
+
+        XCTAssertEqual(pathGroups.map(\.title), ["/other", "/repo"])
+        XCTAssertEqual(
+            pathGroups[1].sessions.map(\.session.id),
+            ["session-a", "session-c"]
+        )
+        XCTAssertTrue(pathGroups[1].startsTab(at: 0))
+        XCTAssertFalse(pathGroups[1].startsTab(at: 1))
+        XCTAssertEqual(pathGroups[1].sessions(inTab: "tab-1").count, 2)
+    }
+
     func testStoreIgnoresOlderSnapshots() throws {
         let store = ItermStore()
         store.apply(try hello())

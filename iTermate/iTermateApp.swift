@@ -535,7 +535,6 @@ private struct PanelContent: View {
                 ) {
                     Label("Show Tab Headers", systemImage: "rectangle.stack")
                 }
-                .disabled(settings.sessionListStyle != .window)
             }
 
             Section("Sections") {
@@ -571,14 +570,18 @@ private struct PanelContent: View {
     }
 
     private var showsTabHeaders: Bool {
-        settings.sessionListStyle == .window && settings.showsTabHeaders
+        settings.showsTabHeaders
     }
 
     private var collapsibleSectionIDs: Set<String> {
         var ids = Set(sessionGroups.map(\.id))
         if showsTabHeaders {
             ids.formUnion(
-                sessionGroups.flatMap(\.sessions).map { tabSectionID($0.tabID) }
+                sessionGroups.flatMap { group in
+                    group.sessions
+                        .filter { tabHeaderSessions(group, tabID: $0.tabID) != nil }
+                        .map { tabSectionID($0.tabID) }
+                }
             )
         }
         return ids
@@ -592,25 +595,40 @@ private struct PanelContent: View {
 
                     if !collapsedSectionIDs.contains(group.id) {
                         ForEach(Array(group.sessions.enumerated()), id: \.element.id) { index, item in
-                            if showsTabHeaders, group.startsTab(at: index) {
+                            let hasTabHeader = tabHeaderSessions(group, tabID: item.tabID) != nil
+                            if hasTabHeader, group.startsTab(at: index) {
                                 tabHeader(
                                     item,
                                     sessions: group.sessions(inTab: item.tabID)
                                 )
                             }
 
-                            if !showsTabHeaders || !isTabCollapsed(item.tabID) {
+                            if !hasTabHeader || !isTabCollapsed(item.tabID) {
                                 sessionButton(item)
                                     .id(
                                         "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1)"
                                     )
-                                    .padding(.leading, showsTabHeaders ? 12 : 0)
+                                    .padding(.leading, hasTabHeader ? 12 : 0)
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    /// Sessions of one tab when its header should render. Window style shows
+    /// every tab; Project Path style only groups tabs split into 2+ sessions.
+    private func tabHeaderSessions(
+        _ group: SessionListGroup,
+        tabID: String
+    ) -> [SessionListItem]? {
+        guard showsTabHeaders else { return nil }
+        let sessions = group.sessions(inTab: tabID)
+        if settings.sessionListStyle == .projectPath, sessions.count < 2 {
+            return nil
+        }
+        return sessions
     }
 
     private func sectionTitle(for group: SessionListGroup) -> String {
@@ -628,17 +646,22 @@ private struct PanelContent: View {
         let projectColor = isProjectFolder
             ? settings.projectFolderColor(at: group.title)
             : nil
+        let containsFocusedSession = settings.sessionListStyle == .projectPath
+            && group.sessions.contains(where: \.isFocused)
+        let headerColor: Color = containsFocusedSession
+            ? .accentColor
+            : (projectColor ?? .secondary)
         return Button {
             toggleSection(group.id)
         } label: {
             HStack(spacing: 6) {
                 disclosureIcon(isCollapsed: collapsedSectionIDs.contains(group.id))
                 Image(systemName: isProjectFolder ? "folder" : "macwindow")
-                    .foregroundStyle(projectColor ?? .secondary)
+                    .foregroundStyle(headerColor)
                 Text(title)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .foregroundStyle(projectColor ?? .secondary)
+                    .foregroundStyle(headerColor)
                 if customization.isPinned {
                     Image(systemName: "pin.fill")
                         .accessibilityHidden(true)
@@ -670,18 +693,31 @@ private struct PanelContent: View {
         }
     }
 
+    /// Project Path style shows "Tab N" (position in its window) instead of
+    /// the tab's dynamic title, which usually repeats the project path.
+    private func tabSubgroupTitle(for item: SessionListItem) -> String {
+        guard settings.sessionListStyle == .projectPath else { return item.tabTitle }
+        for window in store.windows {
+            if let index = window.tabs.firstIndex(where: { $0.id == item.tabID }) {
+                return "Tab \(index + 1)"
+            }
+        }
+        return item.tabTitle
+    }
+
     private func tabHeader(
         _ item: SessionListItem,
         sessions: [SessionListItem]
     ) -> some View {
         let sectionID = tabSectionID(item.tabID)
+        let title = tabSubgroupTitle(for: item)
         return Button {
             toggleSection(sectionID)
         } label: {
             HStack(spacing: 6) {
                 disclosureIcon(isCollapsed: collapsedSectionIDs.contains(sectionID))
                 Image(systemName: "rectangle.stack")
-                Text(item.tabTitle)
+                Text(title)
                     .lineLimit(1)
                 Spacer()
             }
@@ -693,7 +729,7 @@ private struct PanelContent: View {
         .padding(.horizontal, 8)
         .padding(.top, 10)
         .accessibilityLabel(
-            "\(collapsedSectionIDs.contains(sectionID) ? "Expand" : "Collapse") \(item.tabTitle)"
+            "\(collapsedSectionIDs.contains(sectionID) ? "Expand" : "Collapse") \(title)"
         )
         .contextMenu {
             closeAllSessionsButton(for: sessions)

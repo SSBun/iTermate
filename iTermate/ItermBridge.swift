@@ -213,10 +213,22 @@ enum SessionGrouping {
                 SessionListGroup(
                     id: "path:\(path)",
                     title: path.isEmpty ? "Unknown Path" : path,
-                    sessions: grouped[path] ?? []
+                    sessions: clusteredByTab(grouped[path] ?? [])
                 )
             }
         }
+    }
+
+    /// Keeps same-tab sessions contiguous in first-appearance order so tab
+    /// subgroups can render under a project path section.
+    private static func clusteredByTab(_ items: [SessionListItem]) -> [SessionListItem] {
+        var order: [String] = []
+        var buckets: [String: [SessionListItem]] = [:]
+        for item in items {
+            if buckets[item.tabID] == nil { order.append(item.tabID) }
+            buckets[item.tabID, default: []].append(item)
+        }
+        return order.flatMap { buckets[$0] ?? [] }
     }
 
     private static func items(in window: TerminalWindowSnapshot) -> [SessionListItem] {
