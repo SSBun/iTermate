@@ -1,10 +1,10 @@
 # 任务索引
 
-- [发布 iTermate v0.1.5 到 GitHub 与 Sparkle](tasks/publish-release-v0-1-5.md) — Pending (2026-08-19 14:33)
+- [发布 iTermate v0.1.5 到 GitHub 与 Sparkle](tasks/publish-release-v0-1-5.md) — Completed (2026-08-19 14:44)
 
-- [准备 iTermate v0.1.5 本地发布提交与资产](tasks/prepare-release-v0-1-5.md) — In Progress (2026-08-19 14:33)
+- [准备 iTermate v0.1.5 本地发布提交与资产](tasks/prepare-release-v0-1-5.md) — Completed (2026-08-19 14:37)
 
-- [发布 iTermate v0.1.5](tasks/release-v0-1-5.md) — In Progress (2026-08-19 14:33)
+- [发布 iTermate v0.1.5](tasks/release-v0-1-5.md) — Completed (2026-08-19 14:44)
 
 - [Project Path group mode shows Tab subgroups](tasks/project-path-tab-subgroup.md) — Completed (2026-08-19 11:56)
 
