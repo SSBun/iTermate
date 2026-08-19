@@ -1,6 +1,7 @@
 import AppKit
 import Combine
 import Foundation
+import ServiceManagement
 import Sparkle
 import SwiftUI
 import UserNotifications
@@ -483,10 +484,23 @@ struct SettingsView: View {
 
 private struct GeneralSettingsView: View {
     @ObservedObject var settings: AppSettings
+    @State private var launchesAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var loginItemError = ""
+    @State private var showsLoginItemError = false
     @State private var showsNotificationAuthorizationAlert = false
 
     var body: some View {
         Form {
+            Section("Application") {
+                Toggle(
+                    "Launch at Login",
+                    isOn: Binding(
+                        get: { launchesAtLogin },
+                        set: setLaunchesAtLogin
+                    )
+                )
+            }
+
             Section("Panel") {
                 Picker(
                     "Preferred Docking Side",
@@ -601,6 +615,17 @@ private struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .scrollIndicators(.hidden)
+        .onAppear {
+            launchesAtLogin = SMAppService.mainApp.status == .enabled
+        }
+        .alert(
+            "Couldn’t Update Login Item",
+            isPresented: $showsLoginItemError
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(loginItemError)
+        }
         .alert(
             "Notifications Are Disabled",
             isPresented: $showsNotificationAuthorizationAlert
@@ -612,6 +637,20 @@ private struct GeneralSettingsView: View {
                 "Enable notifications for iTermate in System Settings > Notifications."
             )
         }
+    }
+
+    private func setLaunchesAtLogin(_ enabled: Bool) {
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        } catch {
+            loginItemError = error.localizedDescription
+            showsLoginItemError = true
+        }
+        launchesAtLogin = SMAppService.mainApp.status == .enabled
     }
 
     private func setCompletionNotificationsEnabled(_ enabled: Bool) {

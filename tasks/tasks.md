@@ -1,5 +1,7 @@
 # 任务索引
 
+- [添加登录时启动设置](tasks/login-startup-setting.md) — Completed (2026-08-14 10:14)
+
 - [发布 iTermate v0.1.4 到 GitHub 与 Sparkle](tasks/publish-release-v0-1-4.md) — Completed (2026-08-13 14:07)
 
 - [准备 iTermate v0.1.4 本地发布提交与资产](tasks/prepare-release-v0-1-4.md) — Completed (2026-08-13 14:00)
