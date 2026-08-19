@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-08-19
+
+### Added
+
+- General Settings 新增 Launch at Login 开关，通过系统登录项控制开机自启。
+- Project Path 分组模式下，同一 Tab 内两个及以上的 split-pane Session 会以 "Tab N" 子分组标题聚合并缩进显示；当前聚焦 Session 所属的项目组标题会以强调色高亮。
+
+### Changed
+
+- Window/Tab/Project Path 分组标题改为粗体显示。
+
+### Notes
+
+- 当前构建使用 ad hoc 签名且未经过 Apple notarization。
+
 ## [0.1.4] - 2026-08-13
 
 ### Added
