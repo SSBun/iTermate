@@ -1,5 +1,11 @@
 # 任务索引
 
+- [按关注点拆分提交本地改动](tasks/commit-local-changes-by-concern.md) — Completed (2026-08-20 16:22)
+
+- [添加可配置强调色](tasks/configurable-accent-color.md) — In Progress (2026-08-20 15:47)
+
+- [提升选中章节标题对比度](tasks/improve-selected-section-contrast.md) — In Progress (2026-08-20 15:11)
+
 - [发布 iTermate v0.1.5 到 GitHub 与 Sparkle](tasks/publish-release-v0-1-5.md) — Completed (2026-08-19 14:44)
 
 - [准备 iTermate v0.1.5 本地发布提交与资产](tasks/prepare-release-v0-1-5.md) — Completed (2026-08-19 14:37)
