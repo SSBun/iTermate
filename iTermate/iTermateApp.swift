@@ -661,7 +661,7 @@ private struct PanelContent: View {
                 Text(title)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .foregroundStyle(headerColor)
+                    .foregroundStyle(containsFocusedSession ? .primary : headerColor)
                 if customization.isPinned {
                     Image(systemName: "pin.fill")
                         .accessibilityHidden(true)
@@ -674,11 +674,19 @@ private struct PanelContent: View {
                 Spacer()
             }
             .contentShape(Rectangle())
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                containsFocusedSession
+                    ? Color.accentColor.opacity(0.14)
+                    : Color.clear
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
         .font(headerFont())
         .foregroundStyle(.secondary)
-        .padding(.top, 10)
+        .padding(.top, 5)
         .accessibilityLabel(
             "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(title)"
                 + (customization.isPinned ? ", pinned" : "")
