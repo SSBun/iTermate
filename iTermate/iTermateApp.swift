@@ -19,7 +19,7 @@ struct ItermateApplication: App {
 
     var body: some Scene {
         MenuBarExtra {
-            StatusMenuView(store: appDelegate.store)
+            StatusMenuView(store: appDelegate.store, settings: appDelegate.settings)
         } label: {
             statusBarIcon()
                 .renderingMode(.template)
@@ -478,6 +478,7 @@ private struct PanelContent: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(1)
+        .tint(settings.accentColor)
         .environment(\.colorScheme, effectiveColorScheme)
     }
 
@@ -649,7 +650,7 @@ private struct PanelContent: View {
         let containsFocusedSession = settings.sessionListStyle == .projectPath
             && group.sessions.contains(where: \.isFocused)
         let headerColor: Color = containsFocusedSession
-            ? .accentColor
+            ? settings.accentColor
             : (projectColor ?? .secondary)
         return Button {
             toggleSection(group.id)
@@ -678,7 +679,7 @@ private struct PanelContent: View {
             .padding(.vertical, 5)
             .background(
                 containsFocusedSession
-                    ? Color.accentColor.opacity(0.14)
+                    ? settings.accentColor.opacity(0.14)
                     : Color.clear
             )
             .clipShape(RoundedRectangle(cornerRadius: 7))
@@ -768,7 +769,7 @@ private struct PanelContent: View {
 
         ColorPicker(
             selection: Binding(
-                get: { settings.projectFolderColor(at: path) ?? .accentColor },
+                get: { settings.projectFolderColor(at: path) ?? settings.accentColor },
                 set: { settings.setProjectFolderColor(NSColor($0), at: path) }
             ),
             supportsOpacity: false
@@ -824,7 +825,7 @@ private struct PanelContent: View {
                     Image(systemName: item.isFocused ? "circle.fill" : "circle")
                         .font(.system(size: 8))
                         .foregroundStyle(
-                            item.isFocused ? Color.accentColor : .secondary
+                            item.isFocused ? settings.accentColor : .secondary
                         )
 
                     Text(sessionName(item.session))
@@ -912,7 +913,7 @@ private struct PanelContent: View {
         .padding(.trailing, 4)
         .background(
             item.isFocused
-                ? Color.accentColor.opacity(0.14)
+                ? settings.accentColor.opacity(0.14)
                 : Color.clear
         )
         .clipShape(RoundedRectangle(cornerRadius: 7))

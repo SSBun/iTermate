@@ -75,6 +75,7 @@ private struct AppConfig {
     var panelFontName = PanelFontDefaults.name
     var panelFontSize = PanelFontDefaults.size
     var panelBackgroundStyle: PanelBackgroundStyle = .systemBlur
+    var accentColorHex: String?
     var sessionListStyle: SessionListStyle = .window
     var sectionTitleStyle: SectionTitleStyle = .fullPath
     var showsTabHeaders = true
@@ -119,6 +120,14 @@ private struct AppConfig {
                     let parsedStyle = PanelBackgroundStyle(rawValue: style)
                 {
                     panelBackgroundStyle = parsedStyle
+                }
+            case "accent_color":
+                if let color = Self.stringValue(String(value)) {
+                    if color == "system" {
+                        accentColorHex = nil
+                    } else if color.count == 6, UInt64(color, radix: 16) != nil {
+                        accentColorHex = color.uppercased()
+                    }
                 }
             case "session_list_style":
                 if let style = Self.stringValue(String(value)),
@@ -178,6 +187,7 @@ private struct AppConfig {
         panel_font_name = "\(panelFontName)"
         panel_font_size = \(panelFontSize)
         panel_background_style = "\(panelBackgroundStyle.rawValue)"
+        accent_color = "\(accentColorHex ?? "system")"
         session_list_style = \"\(sessionListStyle.rawValue)\"
         section_title_style = \"\(sectionTitleStyle.rawValue)\"
         shows_tab_headers = \(showsTabHeaders)
@@ -212,6 +222,7 @@ final class AppSettings: ObservableObject {
     @Published private(set) var panelFontName: String
     @Published private(set) var panelFontSize: CGFloat
     @Published private(set) var panelBackgroundStyle: PanelBackgroundStyle
+    @Published private(set) var accentColorHex: String?
     @Published private(set) var sessionListStyle: SessionListStyle
     @Published private(set) var sectionTitleStyle: SectionTitleStyle
     @Published private(set) var showsTabHeaders: Bool
@@ -232,6 +243,7 @@ final class AppSettings: ObservableObject {
         panelFontName = config.panelFontName
         panelFontSize = config.panelFontSize
         panelBackgroundStyle = config.panelBackgroundStyle
+        accentColorHex = config.accentColorHex
         sessionListStyle = config.sessionListStyle
         sectionTitleStyle = config.sectionTitleStyle
         showsTabHeaders = config.showsTabHeaders
@@ -253,6 +265,10 @@ final class AppSettings: ObservableObject {
             return .systemFont(ofSize: panelFontSize)
         }
         return font
+    }
+
+    var accentColor: Color {
+        Self.color(hex: accentColorHex) ?? Color(nsColor: .controlAccentColor)
     }
 
     func setPanelWidth(_ width: CGFloat) {
@@ -288,6 +304,11 @@ final class AppSettings: ObservableObject {
     func setPanelBackgroundStyle(_ style: PanelBackgroundStyle) {
         panelBackgroundStyle = style
         updateConfig { $0.panelBackgroundStyle = style }
+    }
+
+    func setAccentColor(_ color: NSColor?) {
+        accentColorHex = color.flatMap(Self.hexRGB)
+        updateConfig { $0.accentColorHex = accentColorHex }
     }
 
     func resetPanelWidth() {
@@ -338,18 +359,7 @@ final class AppSettings: ObservableObject {
     }
 
     func projectFolderColor(at path: String) -> Color? {
-        guard
-            let hex = projectFolderCustomizations[path]?.colorHex,
-            hex.count == 6,
-            let rgb = UInt64(hex, radix: 16)
-        else {
-            return nil
-        }
-        return Color(
-            red: Double((rgb >> 16) & 0xff) / 255,
-            green: Double((rgb >> 8) & 0xff) / 255,
-            blue: Double(rgb & 0xff) / 255
-        )
+        Self.color(hex: projectFolderCustomizations[path]?.colorHex)
     }
 
     func togglePinnedProjectFolder(at path: String) {
@@ -402,6 +412,21 @@ final class AppSettings: ObservableObject {
             }
             projectFolderCustomizations = config.projectFolderCustomizations
         }
+    }
+
+    private static func color(hex: String?) -> Color? {
+        guard
+            let hex,
+            hex.count == 6,
+            let rgb = UInt64(hex, radix: 16)
+        else {
+            return nil
+        }
+        return Color(
+            red: Double((rgb >> 16) & 0xff) / 255,
+            green: Double((rgb >> 8) & 0xff) / 255,
+            blue: Double(rgb & 0xff) / 255
+        )
     }
 
     private static func hexRGB(_ color: NSColor) -> String? {
@@ -478,6 +503,7 @@ struct SettingsView: View {
                     Label("About", systemImage: "info.circle")
                 }
         }
+        .tint(settings.accentColor)
         .frame(width: 520, height: 420)
     }
 }
@@ -525,6 +551,22 @@ private struct GeneralSettingsView: View {
                 ) {
                     ForEach(PanelBackgroundStyle.allCases) { style in
                         Text(style.title).tag(style)
+                    }
+                }
+
+                HStack {
+                    ColorPicker(
+                        "Accent Color",
+                        selection: Binding(
+                            get: { settings.accentColor },
+                            set: { settings.setAccentColor(NSColor($0)) }
+                        ),
+                        supportsOpacity: false
+                    )
+                    if settings.accentColorHex != nil {
+                        Button("Use System") {
+                            settings.setAccentColor(nil)
+                        }
                     }
                 }
 
@@ -725,6 +767,7 @@ private struct AboutSettingsView: View {
 
 struct StatusMenuView: View {
     @ObservedObject var store: ItermStore
+    @ObservedObject var settings: AppSettings
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -762,6 +805,7 @@ struct StatusMenuView: View {
             }
         }
         .padding(14)
+        .tint(settings.accentColor)
         .frame(width: 280)
     }
 
