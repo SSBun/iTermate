@@ -1,6 +1,6 @@
 # 任务索引
 
-- [按关注点提交分组透明度改动](tasks/commit-section-opacity-changes-by-concern.md) — In Progress (2026-08-21 16:53)
+- [按关注点提交分组透明度改动](tasks/commit-section-opacity-changes-by-concern.md) — Completed (2026-08-21 16:54)
 
 - [配置分组背景透明度](tasks/configurable-section-background-opacity.md) — Blocked (2026-08-21 16:42)
 
