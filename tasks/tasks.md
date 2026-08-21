@@ -1,6 +1,6 @@
 # 任务索引
 
-- [提交并推送全部本地改动](tasks/commit-and-push-local-changes.md) — In Progress (2026-08-21 16:15)
+- [提交并推送全部本地改动](tasks/commit-and-push-local-changes.md) — Completed (2026-08-21 16:24)
 
 - [编写项目 README](tasks/add-project-readme.md) — Completed (2026-08-21 16:02)
 
