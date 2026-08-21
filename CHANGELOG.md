@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-21
+
+### Added
+
+- General Settings 的 Appearance 区域新增 Focused Section Opacity 控件，可按 0%–100% 调整当前聚焦 Project Path 分组的强调色背景透明度，并持久化用户选择。
+
+### Notes
+
+- 当前构建使用 ad hoc 签名且未经过 Apple notarization。
+
 ## [0.2.0] - 2026-08-21
 
 ### Added

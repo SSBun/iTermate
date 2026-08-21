@@ -1,5 +1,7 @@
 # 任务索引
 
+- [发布 iTermate v0.2.1](tasks/release-v0-2-1.md) — In Progress (2026-08-21 17:13)
+
 - [按关注点提交分组透明度改动](tasks/commit-section-opacity-changes-by-concern.md) — Completed (2026-08-21 16:54)
 
 - [配置分组背景透明度](tasks/configurable-section-background-opacity.md) — Completed (2026-08-21 17:05)
