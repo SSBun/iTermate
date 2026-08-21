@@ -1,5 +1,7 @@
 # 任务索引
 
+- [发布 iTermate v0.2.0](tasks/release-next-minor-version.md) — In Progress (2026-08-21 14:12)
+
 - [添加低干扰 Agent 空闲状态图标](tasks/add-agent-idle-indicator.md) — In Progress (2026-08-21 13:00)
 
 - [按关注点拆分提交当前本地改动](tasks/commit-current-local-changes-by-concern.md) — Completed (2026-08-21 12:02)

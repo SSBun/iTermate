@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-21
+
+### Added
+
+- Appearance 设置新增全局强调色选择，并支持恢复系统默认颜色。
+- Status Animation 设置可为 Agent 与普通 Shell 的各状态分别选择 Alien、Robot 或 Classic 动画及独立颜色，并显示实时预览。
+- Agent 等待用户输入时显示低干扰的静态空闲状态图标。
+
+### Changed
+
+- Project Path 模式为每个 Tab 显示缩进的子分组标题，包括仅含一个 Session 的 Tab。
+- 当前 Session 所属项目改为使用轻量整组背景，不再单独高亮项目标题。
+
+### Notes
+
+- 当前构建使用 ad hoc 签名且未经过 Apple notarization。
+
 ## [0.1.5] - 2026-08-19
 
 ### Added
