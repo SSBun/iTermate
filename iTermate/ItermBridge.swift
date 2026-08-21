@@ -10,6 +10,7 @@ private let bridgeSnapshotLogger = Logger(
 )
 
 enum TerminalSessionStatus: String, Codable, Equatable {
+    case idle
     case running
     case finished
 
@@ -18,6 +19,7 @@ enum TerminalSessionStatus: String, Codable, Equatable {
         now: Date,
         format: SessionTimeFormat
     ) -> String {
+        guard self != .idle else { return "Idle" }
         let title = self == .running ? "Running" : "Finished"
         guard let changedAt else { return title }
 

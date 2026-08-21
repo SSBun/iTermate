@@ -393,9 +393,8 @@ class Bridge:
                         ).get("status") == "running"
                         self.agent_managed_session_ids.discard(session_id)
                         self.agent_heartbeat_times.pop(session_id, None)
-                        if had_running_status:
-                            self.session_statuses.pop(session_id, None)
                         if was_managed or had_running_status:
+                            self.session_statuses.pop(session_id, None)
                             await self.publish_snapshot()
                         continue
 
@@ -439,7 +438,7 @@ class Bridge:
                             ).get("status") == "running"
                             self.agent_managed_session_ids.discard(session_id)
                             self.agent_heartbeat_times.pop(session_id, None)
-                            if had_running_status:
+                            if was_managed or had_running_status:
                                 self.session_statuses.pop(session_id, None)
                             changed = was_managed or had_running_status
                         elif observing_normal_command:
@@ -482,10 +481,6 @@ class Bridge:
             self.agent_heartbeat_times[session_id] = heartbeat_time()
         else:
             self.agent_heartbeat_times.pop(session_id, None)
-        if status == "idle":
-            self.session_statuses.pop(session_id, None)
-            return
-
         self.set_session_status(
             session_id,
             status,
@@ -537,9 +532,15 @@ class Bridge:
         return session.session_id if session is not None else None
 
     def clear_finished_status(self, session_id):
-        if session_id is not None and self.session_statuses.get(session_id, {}).get(
-            "status"
-        ) == "finished":
+        status = self.session_statuses.get(session_id)
+        if status is None or status.get("status") != "finished":
+            return
+        if (
+            status.get("activityKind") == "agent"
+            and session_id in self.agent_managed_session_ids
+        ):
+            self.set_session_status(session_id, "idle", activity_kind="agent")
+        else:
             self.session_statuses.pop(session_id, None)
 
     async def publish_periodically(self):
@@ -1284,7 +1285,8 @@ def self_test():
     assert bridge.session_statuses["session-1"]["exitStatus"] == 1
     assert writer.messages[0]["ok"]
     bridge.clear_finished_status("session-1")
-    assert "session-1" not in bridge.session_statuses
+    assert bridge.session_statuses["session-1"]["status"] == "idle"
+    assert bridge.session_statuses["session-1"]["activityKind"] == "agent"
     assert "session-1" in bridge.agent_managed_session_ids
     bridge.set_agent_status("session-1", "detached")
     assert "session-1" not in bridge.agent_managed_session_ids

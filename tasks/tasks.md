@@ -1,5 +1,7 @@
 # 任务索引
 
+- [添加低干扰 Agent 空闲状态图标](tasks/add-agent-idle-indicator.md) — In Progress (2026-08-21 13:00)
+
 - [按关注点拆分提交当前本地改动](tasks/commit-current-local-changes-by-concern.md) — Completed (2026-08-21 12:02)
 
 - [添加状态动画设置标签页](tasks/add-status-animation-settings.md) — In Progress (2026-08-21 10:31)

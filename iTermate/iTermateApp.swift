@@ -830,6 +830,11 @@ private struct PanelContent: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
 
                     if
+                        item.session.status == .idle,
+                        item.session.activityKind == .agent
+                    {
+                        AgentIdleStatusView()
+                    } else if
                         let status = item.session.status,
                         let animation = SessionStatusAnimation(session: item.session)
                     {
@@ -1029,6 +1034,8 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
 
         let kind = session.activityKind ?? .command
         switch (kind, status, session.exitStatus) {
+        case (_, .idle, _):
+            return nil
         case (.agent, .running, _):
             self = .agentRunning
         case (.command, .running, _):
@@ -1358,16 +1365,57 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
     }
 }
 
+private struct AgentIdleStatusView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isVisible = false
+
+    var body: some View {
+        SessionStatusMatrix(
+            animation: .agentRunning,
+            style: .alien,
+            customColor: .secondaryLabelColor,
+            animates: false
+        )
+        .frame(width: 36, height: 16)
+        .opacity(isVisible ? 0.3 : 0)
+        .help("Agent idle — waiting for input")
+        .accessibilityLabel("Agent idle — waiting for input")
+        .onAppear {
+            if reduceMotion {
+                isVisible = true
+            } else {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    isVisible = true
+                }
+            }
+        }
+    }
+}
+
 struct SessionStatusMatrix: NSViewRepresentable {
     let animation: SessionStatusAnimation
     let style: SessionStatusAnimationStyle
     let customColor: NSColor?
+    let animates: Bool
+
+    init(
+        animation: SessionStatusAnimation,
+        style: SessionStatusAnimationStyle,
+        customColor: NSColor?,
+        animates: Bool = true
+    ) {
+        self.animation = animation
+        self.style = style
+        self.customColor = customColor
+        self.animates = animates
+    }
 
     func makeNSView(context: Context) -> SessionStatusMatrixView {
         SessionStatusMatrixView(
             animation: animation,
             style: style,
-            customColor: customColor
+            customColor: customColor,
+            animates: animates
         )
     }
 
@@ -1375,7 +1423,8 @@ struct SessionStatusMatrix: NSViewRepresentable {
         view.update(
             animation: animation,
             style: style,
-            customColor: customColor
+            customColor: customColor,
+            animates: animates
         )
     }
 
@@ -1403,6 +1452,7 @@ final class SessionStatusMatrixView: NSView {
     }
     private(set) var style: SessionStatusAnimationStyle
     private(set) var customColor: NSColor?
+    private(set) var animates: Bool
 
     private var frameIndex = 0
     private var timer: Timer?
@@ -1411,11 +1461,13 @@ final class SessionStatusMatrixView: NSView {
     init(
         animation: SessionStatusAnimation,
         style: SessionStatusAnimationStyle,
-        customColor: NSColor?
+        customColor: NSColor?,
+        animates: Bool
     ) {
         self.animation = animation
         self.style = style
         self.customColor = customColor
+        self.animates = animates
         super.init(frame: .zero)
         let animationName = String(describing: animation)
         sessionStatusViewLogger.notice(
@@ -1438,7 +1490,8 @@ final class SessionStatusMatrixView: NSView {
     func update(
         animation: SessionStatusAnimation,
         style: SessionStatusAnimationStyle,
-        customColor: NSColor?
+        customColor: NSColor?,
+        animates: Bool
     ) {
         if self.animation != animation {
             let oldAnimationName = String(describing: self.animation)
@@ -1447,13 +1500,18 @@ final class SessionStatusMatrixView: NSView {
                 "Status matrix animation changed from=\(oldAnimationName, privacy: .public) to=\(newAnimationName, privacy: .public)"
             )
         }
-        if self.style != style {
+        let animationBehaviorChanged = self.animates != animates
+        if self.style != style || animationBehaviorChanged {
             frameIndex = 0
         }
         self.animation = animation
         self.style = style
         self.customColor = customColor
+        self.animates = animates
         needsDisplay = true
+        if animationBehaviorChanged {
+            updateAnimationTimer()
+        }
     }
 
     deinit {
@@ -1517,6 +1575,7 @@ final class SessionStatusMatrixView: NSView {
 
     private func updateAnimationTimer() {
         guard
+            animates,
             window != nil,
             !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         else {
