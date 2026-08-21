@@ -618,18 +618,13 @@ private struct PanelContent: View {
         }
     }
 
-    /// Sessions of one tab when its header should render. Window style shows
-    /// every tab; Project Path style only groups tabs split into 2+ sessions.
+    /// Sessions of one tab when its header should render.
     private func tabHeaderSessions(
         _ group: SessionListGroup,
         tabID: String
     ) -> [SessionListItem]? {
         guard showsTabHeaders else { return nil }
-        let sessions = group.sessions(inTab: tabID)
-        if settings.sessionListStyle == .projectPath, sessions.count < 2 {
-            return nil
-        }
-        return sessions
+        return group.sessions(inTab: tabID)
     }
 
     private func sectionTitle(for group: SessionListGroup) -> String {
@@ -736,6 +731,7 @@ private struct PanelContent: View {
         .font(headerFont())
         .foregroundStyle(.secondary)
         .padding(.horizontal, 8)
+        .padding(.leading, settings.sessionListStyle == .projectPath ? 12 : 0)
         .padding(.top, 10)
         .accessibilityLabel(
             "\(collapsedSectionIDs.contains(sectionID) ? "Expand" : "Collapse") \(title)"

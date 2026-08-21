@@ -12,7 +12,7 @@
 
 - [发布 iTermate v0.1.5](tasks/release-v0-1-5.md) — Completed (2026-08-19 14:44)
 
-- [Project Path group mode shows Tab subgroups](tasks/project-path-tab-subgroup.md) — Completed (2026-08-19 11:56)
+- [Project Path group mode shows Tab subgroups](tasks/project-path-tab-subgroup.md) — In Progress (2026-08-20 16:26)
 
 - [添加登录时启动设置](tasks/login-startup-setting.md) — Completed (2026-08-14 10:14)
 
