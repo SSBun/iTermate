@@ -834,7 +834,13 @@ private struct PanelContent: View {
                         let animation = SessionStatusAnimation(session: item.session)
                     {
                         HStack(spacing: 4) {
-                            SessionStatusMatrix(animation: animation)
+                            SessionStatusMatrix(
+                                animation: animation,
+                                style: settings.statusAnimationStyle(for: animation),
+                                customColor: settings.statusAnimationCustomColor(
+                                    for: animation
+                                ).map { NSColor($0) }
+                            )
                                 .frame(width: 36, height: 16)
                                 .help(animation.accessibilityLabel)
                                 .accessibilityLabel(animation.accessibilityLabel)
@@ -973,14 +979,50 @@ private struct PanelContent: View {
     }
 }
 
-enum SessionStatusAnimation: CaseIterable, Equatable {
-    case agentRunning
-    case agentSucceeded
-    case agentFailed
-    case commandRunning
-    case commandSucceeded
-    case commandFailed
-    case commandFinished
+enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+    case agentRunning = "agent_running"
+    case agentSucceeded = "agent_success"
+    case agentFailed = "agent_failed"
+    case commandRunning = "shell_running"
+    case commandSucceeded = "shell_success"
+    case commandFailed = "shell_failed"
+    case commandFinished = "shell_finished"
+
+    var id: String { rawValue }
+
+    static let agentAnimations: [Self] = [
+        .agentRunning,
+        .agentSucceeded,
+        .agentFailed
+    ]
+    static let shellAnimations: [Self] = [
+        .commandRunning,
+        .commandSucceeded,
+        .commandFailed,
+        .commandFinished
+    ]
+
+    var settingsTitle: String {
+        switch self {
+        case .agentRunning, .commandRunning:
+            "Running"
+        case .agentSucceeded, .commandSucceeded:
+            "Success"
+        case .agentFailed, .commandFailed:
+            "Failed"
+        case .commandFinished:
+            "Finished"
+        }
+    }
+
+    var defaultStyle: SessionStatusAnimationStyle {
+        switch self {
+        case .agentRunning, .agentSucceeded, .agentFailed:
+            .alien
+        case .commandRunning, .commandSucceeded, .commandFailed, .commandFinished:
+            .robot
+        }
+    }
 
     init?(session: TerminalSessionSnapshot) {
         guard let status = session.status else { return nil }
@@ -1038,24 +1080,55 @@ enum SessionStatusAnimation: CaseIterable, Equatable {
         }
     }
 
-    func pixelColor(brightness: CGFloat) -> NSColor {
+    func pixelColor(
+        brightness: CGFloat,
+        customColor: NSColor? = nil
+    ) -> NSColor {
         let brightness = min(max(brightness, 0), 1)
         let highlightFraction = 0.1 + brightness * 0.3
+        let baseColor = customColor ?? color
         return (
-            color.blended(withFraction: highlightFraction, of: .white) ?? color
+            baseColor.blended(withFraction: highlightFraction, of: .white) ?? baseColor
         ).withAlphaComponent(1)
     }
 
-    func brightness(column: Int, row: Int, frame: Int) -> CGFloat {
+    func brightness(
+        column: Int,
+        row: Int,
+        frame: Int,
+        style: SessionStatusAnimationStyle? = nil
+    ) -> CGFloat {
         if (14...15).contains(column) {
             return statusBarBrightness(row: row, frame: frame)
         }
 
-        switch self {
-        case .agentRunning, .agentSucceeded, .agentFailed:
+        switch style ?? defaultStyle {
+        case .alien:
             return alienBrightness(column: column, row: row, frame: frame)
-        case .commandRunning, .commandSucceeded, .commandFailed, .commandFinished:
+        case .robot:
             return robotBrightness(column: column, row: row, frame: frame)
+        case .classic:
+            return classicBrightness(column: column, row: row, frame: frame)
+        }
+    }
+
+    private enum StatusPhase {
+        case running
+        case succeeded
+        case failed
+        case finished
+    }
+
+    private var statusPhase: StatusPhase {
+        switch self {
+        case .agentRunning, .commandRunning:
+            .running
+        case .agentSucceeded, .commandSucceeded:
+            .succeeded
+        case .agentFailed, .commandFailed:
+            .failed
+        case .commandFinished:
+            .finished
         }
     }
 
@@ -1066,25 +1139,27 @@ enum SessionStatusAnimation: CaseIterable, Equatable {
     ) -> CGFloat {
         guard (0...10).contains(column) else { return 0 }
 
-        let phase = frame / 4 % 4
+        let animationPhase = frame / 4 % 4
         let verticalOffset: Int
-        switch self {
-        case .agentSucceeded:
-            verticalOffset = [1, 0, 0, 1][phase]
-        case .agentFailed:
-            verticalOffset = [1, 2, 2, 1][phase]
-        default:
+        switch statusPhase {
+        case .succeeded:
+            verticalOffset = [1, 0, 0, 1][animationPhase]
+        case .failed:
+            verticalOffset = [1, 2, 2, 1][animationPhase]
+        case .running, .finished:
             verticalOffset = 1
         }
 
         let sourceRow = row - verticalOffset
         var sourceColumn = column
-        if self == .agentFailed {
+        if statusPhase == .failed {
             let direction = sourceRow.isMultiple(of: 2) ? 1 : -1
-            sourceColumn -= [0, 1, -1, 0][phase] * direction
+            sourceColumn -= [0, 1, -1, 0][animationPhase] * direction
         }
 
-        let gaze = self == .agentRunning ? [-1, 0, 1, 0][phase] : 0
+        let gaze = statusPhase == .running
+            ? [-1, 0, 1, 0][animationPhase]
+            : 0
         guard Self.isAlienPixel(
             column: sourceColumn,
             row: sourceRow,
@@ -1093,15 +1168,16 @@ enum SessionStatusAnimation: CaseIterable, Equatable {
             return 0
         }
 
-        switch self {
-        case .agentRunning:
-            return [0.55, 0.7, 1, 0.7][(phase + sourceRow) % 4]
-        case .agentSucceeded:
+        switch statusPhase {
+        case .running:
+            return [0.55, 0.7, 1, 0.7][(animationPhase + sourceRow) % 4]
+        case .succeeded:
             return sourceRow == frame / 2 % 7 ? 1 : 0.65
-        case .agentFailed:
+        case .failed:
             return (sourceColumn + sourceRow + frame / 2) % 5 == 0 ? 1 : 0.55
-        default:
-            return 0
+        case .finished:
+            let pulse: [CGFloat] = [0.45, 0.6, 0.8, 1, 0.8, 0.6]
+            return pulse[frame / 2 % pulse.count]
         }
     }
 
@@ -1112,12 +1188,12 @@ enum SessionStatusAnimation: CaseIterable, Equatable {
     ) -> CGFloat {
         guard (0...10).contains(column) else { return 0 }
 
-        let phase = frame / 4 % 4
-        let verticalOffset = self == .commandSucceeded
-            ? [1, 2, 1, 1][phase]
+        let animationPhase = frame / 4 % 4
+        let verticalOffset = statusPhase == .succeeded
+            ? [1, 2, 1, 1][animationPhase]
             : 1
-        let horizontalOffset = self == .commandFailed
-            ? [-1, 0, 1, 0][phase]
+        let horizontalOffset = statusPhase == .failed
+            ? [-1, 0, 1, 0][animationPhase]
             : 0
         let sourceColumn = column - horizontalOffset
         let sourceRow = row - verticalOffset
@@ -1126,18 +1202,87 @@ enum SessionStatusAnimation: CaseIterable, Equatable {
         }
 
         let isEye = sourceRow == 3 && (sourceColumn == 4 || sourceColumn == 6)
-        switch self {
-        case .commandRunning where isEye:
-            let activeEye = phase.isMultiple(of: 2) ? 4 : 6
+        switch statusPhase {
+        case .running where isEye:
+            let activeEye = animationPhase.isMultiple(of: 2) ? 4 : 6
             return sourceColumn == activeEye ? 1 : 0.45
-        case .commandSucceeded:
+        case .succeeded:
             return sourceRow == 5 && (4...6).contains(sourceColumn) ? 1 : 0.65
-        case .commandFailed:
+        case .failed:
             return (sourceColumn + sourceRow + frame / 2) % 5 == 0 ? 1 : 0.55
-        case .commandFinished where isEye:
-            return phase == 2 ? 0 : 0.9
+        case .finished where isEye:
+            return animationPhase == 2 ? 0 : 0.9
         default:
             return 0.65
+        }
+    }
+
+    private enum ClassicGlyph: Equatable {
+        case caret
+        case underscore
+        case x
+    }
+
+    private func classicBrightness(
+        column: Int,
+        row: Int,
+        frame: Int
+    ) -> CGFloat {
+        guard (0...10).contains(column) else { return 0 }
+
+        let glyphs: [ClassicGlyph] = switch statusPhase {
+        case .running:
+            [.caret, .underscore]
+        case .succeeded, .finished:
+            [.caret, .underscore, .caret]
+        case .failed:
+            [.x, .underscore, .x]
+        }
+        let width = glyphs.count * 3 + glyphs.count - 1
+        let position = column - (11 - width) / 2
+        guard position >= 0 else { return 0 }
+
+        let glyphIndex = position / 4
+        let glyphColumn = position % 4
+        guard
+            glyphs.indices.contains(glyphIndex),
+            glyphColumn < 3,
+            Self.isClassicPixel(
+                glyphs[glyphIndex],
+                column: glyphColumn,
+                row: row
+            )
+        else {
+            return 0
+        }
+
+        switch statusPhase {
+        case .running:
+            guard glyphs[glyphIndex] == .underscore else { return 0.7 }
+            return (frame / 6).isMultiple(of: 2) ? 1 : 0.2
+        case .succeeded, .finished:
+            let pulse: [CGFloat] = [0.55, 0.7, 0.85, 1, 0.85, 0.7]
+            return pulse[frame / 3 % pulse.count]
+        case .failed:
+            return (frame / 4).isMultiple(of: 2) ? 1 : 0.3
+        }
+    }
+
+    private static func isClassicPixel(
+        _ glyph: ClassicGlyph,
+        column: Int,
+        row: Int
+    ) -> Bool {
+        switch glyph {
+        case .caret:
+            (row == 2 && column == 1)
+                || (row == 3 && (column == 0 || column == 2))
+        case .underscore:
+            row == 5
+        case .x:
+            (row == 2 && (column == 0 || column == 2))
+                || (row == 3 && column == 1)
+                || (row == 4 && (column == 0 || column == 2))
         }
     }
 
@@ -1213,15 +1358,25 @@ enum SessionStatusAnimation: CaseIterable, Equatable {
     }
 }
 
-private struct SessionStatusMatrix: NSViewRepresentable {
+struct SessionStatusMatrix: NSViewRepresentable {
     let animation: SessionStatusAnimation
+    let style: SessionStatusAnimationStyle
+    let customColor: NSColor?
 
     func makeNSView(context: Context) -> SessionStatusMatrixView {
-        SessionStatusMatrixView(animation: animation)
+        SessionStatusMatrixView(
+            animation: animation,
+            style: style,
+            customColor: customColor
+        )
     }
 
     func updateNSView(_ view: SessionStatusMatrixView, context: Context) {
-        view.update(animation: animation)
+        view.update(
+            animation: animation,
+            style: style,
+            customColor: customColor
+        )
     }
 
     static func dismantleNSView(
@@ -1246,13 +1401,21 @@ final class SessionStatusMatrixView: NSView {
             needsDisplay = true
         }
     }
+    private(set) var style: SessionStatusAnimationStyle
+    private(set) var customColor: NSColor?
 
     private var frameIndex = 0
     private var timer: Timer?
     private var accessibilityObserver: NSObjectProtocol?
 
-    init(animation: SessionStatusAnimation) {
+    init(
+        animation: SessionStatusAnimation,
+        style: SessionStatusAnimationStyle,
+        customColor: NSColor?
+    ) {
         self.animation = animation
+        self.style = style
+        self.customColor = customColor
         super.init(frame: .zero)
         let animationName = String(describing: animation)
         sessionStatusViewLogger.notice(
@@ -1272,7 +1435,11 @@ final class SessionStatusMatrixView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func update(animation: SessionStatusAnimation) {
+    func update(
+        animation: SessionStatusAnimation,
+        style: SessionStatusAnimationStyle,
+        customColor: NSColor?
+    ) {
         if self.animation != animation {
             let oldAnimationName = String(describing: self.animation)
             let newAnimationName = String(describing: animation)
@@ -1280,7 +1447,13 @@ final class SessionStatusMatrixView: NSView {
                 "Status matrix animation changed from=\(oldAnimationName, privacy: .public) to=\(newAnimationName, privacy: .public)"
             )
         }
+        if self.style != style {
+            frameIndex = 0
+        }
         self.animation = animation
+        self.style = style
+        self.customColor = customColor
+        needsDisplay = true
     }
 
     deinit {
@@ -1315,10 +1488,14 @@ final class SessionStatusMatrixView: NSView {
                 let brightness = animation.brightness(
                     column: column,
                     row: row,
-                    frame: frameIndex
+                    frame: frameIndex,
+                    style: style
                 )
                 guard brightness > 0 else { continue }
-                animation.pixelColor(brightness: brightness).setFill()
+                animation.pixelColor(
+                    brightness: brightness,
+                    customColor: customColor
+                ).setFill()
                 NSBezierPath(
                     roundedRect: NSRect(
                         x: CGFloat(column) * Self.pixelPitch + 0.25,

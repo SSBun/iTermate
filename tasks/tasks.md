@@ -1,5 +1,7 @@
 # 任务索引
 
+- [添加状态动画设置标签页](tasks/add-status-animation-settings.md) — In Progress (2026-08-21 10:31)
+
 - [按关注点拆分提交本地改动](tasks/commit-local-changes-by-concern.md) — Completed (2026-08-20 16:22)
 
 - [添加可配置强调色](tasks/configurable-accent-color.md) — In Progress (2026-08-20 15:47)

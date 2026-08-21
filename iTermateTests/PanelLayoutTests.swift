@@ -240,6 +240,39 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertFalse(AppSettings(configURL: configURL).showsTabHeaders)
     }
 
+    func testStatusAnimationPreferencesPersistIndependently() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+        let staleSettings = AppSettings(configURL: configURL)
+
+        XCTAssertEqual(settings.statusAnimationStyle(for: .agentRunning), .alien)
+        XCTAssertEqual(settings.statusAnimationStyle(for: .commandRunning), .robot)
+
+        settings.setStatusAnimationStyle(.classic, for: .agentRunning)
+        settings.setStatusAnimationColor(.systemPink, for: .agentRunning)
+        staleSettings.setStatusAnimationStyle(.alien, for: .commandFailed)
+
+        let restoredSettings = AppSettings(configURL: configURL)
+        XCTAssertEqual(
+            restoredSettings.statusAnimationStyle(for: .agentRunning),
+            .classic
+        )
+        XCTAssertEqual(
+            restoredSettings.statusAnimationStyle(for: .commandFailed),
+            .alien
+        )
+        XCTAssertEqual(
+            restoredSettings.statusAnimationStyle(for: .agentSucceeded),
+            .alien
+        )
+        XCTAssertNotNil(
+            restoredSettings.statusAnimationCustomColor(for: .agentRunning)
+        )
+        XCTAssertNil(
+            restoredSettings.statusAnimationCustomColor(for: .commandFailed)
+        )
+    }
+
     func testSessionTimeDisplayDefaultsAndPersists() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)

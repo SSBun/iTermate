@@ -229,6 +229,35 @@ final class ItermBridgeTests: XCTestCase {
         }
     }
 
+    func testEveryStatusAnimationStyleKeepsPixelsVisibleAndChangesFrames() {
+        for style in SessionStatusAnimationStyle.allCases {
+            for animation in SessionStatusAnimation.allCases {
+                let frames = (0..<24).map { frame in
+                    (0..<8).flatMap { row in
+                        (0..<18).map {
+                            animation.brightness(
+                                column: $0,
+                                row: row,
+                                frame: frame,
+                                style: style
+                            )
+                        }
+                    }
+                }
+
+                XCTAssertTrue(
+                    frames.allSatisfy { $0.contains { $0 > 0 } },
+                    "\(animation) \(style)"
+                )
+                XCTAssertGreaterThan(
+                    Set(frames).count,
+                    1,
+                    "\(animation) \(style)"
+                )
+            }
+        }
+    }
+
     func testFormatsSessionStatusTimes() {
         let now = Date(timeIntervalSince1970: 1_000)
 

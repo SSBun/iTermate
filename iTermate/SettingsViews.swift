@@ -59,6 +59,21 @@ enum PanelBackgroundStyle: String, CaseIterable, Identifiable {
     }
 }
 
+enum SessionStatusAnimationStyle: String, CaseIterable, Identifiable {
+    case alien
+    case robot
+    case classic
+
+    var id: String { rawValue }
+
+    var title: String { rawValue.capitalized }
+}
+
+struct SessionStatusAnimationPreferences: Equatable {
+    var style: SessionStatusAnimationStyle
+    var colorHex: String? = nil
+}
+
 struct ProjectFolderCustomization: Codable, Equatable {
     var isPinned = false
     var isFavorite = false
@@ -76,6 +91,11 @@ private struct AppConfig {
     var panelFontSize = PanelFontDefaults.size
     var panelBackgroundStyle: PanelBackgroundStyle = .systemBlur
     var accentColorHex: String?
+    var statusAnimationPreferences = Dictionary(
+        uniqueKeysWithValues: SessionStatusAnimation.allCases.map {
+            ($0, SessionStatusAnimationPreferences(style: $0.defaultStyle))
+        }
+    )
     var sessionListStyle: SessionListStyle = .window
     var sectionTitleStyle: SectionTitleStyle = .fullPath
     var showsTabHeaders = true
@@ -93,6 +113,36 @@ private struct AppConfig {
             let key = line[..<separator].trimmingCharacters(in: .whitespaces)
             let value = line[line.index(after: separator)...]
                 .trimmingCharacters(in: .whitespaces)
+
+            if let animation = SessionStatusAnimation.allCases.first(where: {
+                key == "status_animation_\($0.rawValue)_style"
+            }) {
+                if
+                    let rawStyle = Self.stringValue(String(value)),
+                    let style = SessionStatusAnimationStyle(rawValue: rawStyle)
+                {
+                    statusAnimationPreferences[
+                        animation,
+                        default: SessionStatusAnimationPreferences(
+                            style: animation.defaultStyle
+                        )
+                    ].style = style
+                }
+                continue
+            }
+
+            if let animation = SessionStatusAnimation.allCases.first(where: {
+                key == "status_animation_\($0.rawValue)_color"
+            }) {
+                if let color = Self.stringValue(String(value)) {
+                    if color == "default" {
+                        statusAnimationPreferences[animation]?.colorHex = nil
+                    } else if color.count == 6, UInt64(color, radix: 16) != nil {
+                        statusAnimationPreferences[animation]?.colorHex = color.uppercased()
+                    }
+                }
+                continue
+            }
 
             switch key {
             case "panel_width":
@@ -180,7 +230,16 @@ private struct AppConfig {
     }
 
     var toml: String {
-        """
+        let statusAnimations = SessionStatusAnimation.allCases.flatMap { animation in
+            let preferences = statusAnimationPreferences[animation]
+                ?? SessionStatusAnimationPreferences(style: animation.defaultStyle)
+            return [
+                "status_animation_\(animation.rawValue)_style = \"\(preferences.style.rawValue)\"",
+                "status_animation_\(animation.rawValue)_color = \"\(preferences.colorHex ?? "default")\""
+            ]
+        }.joined(separator: "\n")
+
+        return """
         # iTermate user configuration
         panel_width = \(panelWidth)
         panel_docking_side = "\(panelDockingSide.rawValue)"
@@ -188,6 +247,7 @@ private struct AppConfig {
         panel_font_size = \(panelFontSize)
         panel_background_style = "\(panelBackgroundStyle.rawValue)"
         accent_color = "\(accentColorHex ?? "system")"
+        \(statusAnimations)
         session_list_style = \"\(sessionListStyle.rawValue)\"
         section_title_style = \"\(sectionTitleStyle.rawValue)\"
         shows_tab_headers = \(showsTabHeaders)
@@ -223,6 +283,9 @@ final class AppSettings: ObservableObject {
     @Published private(set) var panelFontSize: CGFloat
     @Published private(set) var panelBackgroundStyle: PanelBackgroundStyle
     @Published private(set) var accentColorHex: String?
+    @Published private(set) var statusAnimationPreferences: [
+        SessionStatusAnimation: SessionStatusAnimationPreferences
+    ]
     @Published private(set) var sessionListStyle: SessionListStyle
     @Published private(set) var sectionTitleStyle: SectionTitleStyle
     @Published private(set) var showsTabHeaders: Bool
@@ -244,6 +307,7 @@ final class AppSettings: ObservableObject {
         panelFontSize = config.panelFontSize
         panelBackgroundStyle = config.panelBackgroundStyle
         accentColorHex = config.accentColorHex
+        statusAnimationPreferences = config.statusAnimationPreferences
         sessionListStyle = config.sessionListStyle
         sectionTitleStyle = config.sectionTitleStyle
         showsTabHeaders = config.showsTabHeaders
@@ -269,6 +333,29 @@ final class AppSettings: ObservableObject {
 
     var accentColor: Color {
         Self.color(hex: accentColorHex) ?? Color(nsColor: .controlAccentColor)
+    }
+
+    func statusAnimationStyle(
+        for animation: SessionStatusAnimation
+    ) -> SessionStatusAnimationStyle {
+        statusAnimationPreferences[animation]?.style ?? animation.defaultStyle
+    }
+
+    func statusAnimationColor(for animation: SessionStatusAnimation) -> Color {
+        statusAnimationCustomColor(for: animation)
+            ?? Color(nsColor: animation.color)
+    }
+
+    func statusAnimationCustomColor(
+        for animation: SessionStatusAnimation
+    ) -> Color? {
+        Self.color(hex: statusAnimationPreferences[animation]?.colorHex)
+    }
+
+    func hasCustomStatusAnimationColor(
+        for animation: SessionStatusAnimation
+    ) -> Bool {
+        statusAnimationPreferences[animation]?.colorHex != nil
     }
 
     func setPanelWidth(_ width: CGFloat) {
@@ -309,6 +396,22 @@ final class AppSettings: ObservableObject {
     func setAccentColor(_ color: NSColor?) {
         accentColorHex = color.flatMap(Self.hexRGB)
         updateConfig { $0.accentColorHex = accentColorHex }
+    }
+
+    func setStatusAnimationStyle(
+        _ style: SessionStatusAnimationStyle,
+        for animation: SessionStatusAnimation
+    ) {
+        updateStatusAnimationPreferences(for: animation) { $0.style = style }
+    }
+
+    func setStatusAnimationColor(
+        _ color: NSColor?,
+        for animation: SessionStatusAnimation
+    ) {
+        updateStatusAnimationPreferences(for: animation) {
+            $0.colorHex = color.flatMap(Self.hexRGB)
+        }
     }
 
     func resetPanelWidth() {
@@ -394,6 +497,19 @@ final class AppSettings: ObservableObject {
                 NSLog("iTermate notification authorization was not granted")
             }
             completion(granted)
+        }
+    }
+
+    private func updateStatusAnimationPreferences(
+        for animation: SessionStatusAnimation,
+        _ update: (inout SessionStatusAnimationPreferences) -> Void
+    ) {
+        updateConfig { config in
+            var preferences = config.statusAnimationPreferences[animation]
+                ?? SessionStatusAnimationPreferences(style: animation.defaultStyle)
+            update(&preferences)
+            config.statusAnimationPreferences[animation] = preferences
+            statusAnimationPreferences = config.statusAnimationPreferences
         }
     }
 
@@ -498,6 +614,11 @@ struct SettingsView: View {
                     Label("Agents", systemImage: "terminal")
                 }
 
+            StatusAnimationSettingsView(settings: settings)
+                .tabItem {
+                    Label("Status Animation", systemImage: "waveform.path")
+                }
+
             AboutSettingsView(updater: updater)
                 .tabItem {
                     Label("About", systemImage: "info.circle")
@@ -505,6 +626,90 @@ struct SettingsView: View {
         }
         .tint(settings.accentColor)
         .frame(width: 520, height: 420)
+    }
+}
+
+private struct StatusAnimationSettingsView: View {
+    @ObservedObject var settings: AppSettings
+
+    var body: some View {
+        Form {
+            Section("Agent") {
+                ForEach(SessionStatusAnimation.agentAnimations) { animation in
+                    animationRow(animation)
+                }
+            }
+
+            Section("Shell") {
+                ForEach(SessionStatusAnimation.shellAnimations) { animation in
+                    animationRow(animation)
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .scrollIndicators(.hidden)
+    }
+
+    private func animationRow(
+        _ animation: SessionStatusAnimation
+    ) -> some View {
+        LabeledContent(animation.settingsTitle) {
+            HStack(spacing: 10) {
+                SessionStatusMatrix(
+                    animation: animation,
+                    style: settings.statusAnimationStyle(for: animation),
+                    customColor: settings.statusAnimationCustomColor(
+                        for: animation
+                    ).map { NSColor($0) }
+                )
+                .frame(width: 36, height: 16)
+                .accessibilityLabel("\(animation.accessibilityLabel) preview")
+
+                Picker(
+                    "\(animation.accessibilityLabel) Style",
+                    selection: Binding(
+                        get: { settings.statusAnimationStyle(for: animation) },
+                        set: {
+                            settings.setStatusAnimationStyle($0, for: animation)
+                        }
+                    )
+                ) {
+                    ForEach(SessionStatusAnimationStyle.allCases) { style in
+                        Text(style.title).tag(style)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 96)
+
+                ColorPicker(
+                    "\(animation.accessibilityLabel) Color",
+                    selection: Binding(
+                        get: { settings.statusAnimationColor(for: animation) },
+                        set: {
+                            settings.setStatusAnimationColor(
+                                NSColor($0),
+                                for: animation
+                            )
+                        }
+                    ),
+                    supportsOpacity: false
+                )
+                .labelsHidden()
+
+                if settings.hasCustomStatusAnimationColor(for: animation) {
+                    Button {
+                        settings.setStatusAnimationColor(nil, for: animation)
+                    } label: {
+                        Image(systemName: "arrow.uturn.backward.circle")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Use Default Color")
+                    .accessibilityLabel(
+                        "Use default color for \(animation.accessibilityLabel)"
+                    )
+                }
+            }
+        }
     }
 }
 
