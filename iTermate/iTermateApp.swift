@@ -592,25 +592,36 @@ private struct PanelContent: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 2) {
                 ForEach(sessionGroups) { group in
-                    groupHeader(group)
+                    let containsFocusedSession = settings.sessionListStyle == .projectPath
+                        && group.sessions.contains(where: \.isFocused)
+                    VStack(alignment: .leading, spacing: 2) {
+                        groupHeader(group)
 
-                    if !collapsedSectionIDs.contains(group.id) {
-                        ForEach(Array(group.sessions.enumerated()), id: \.element.id) { index, item in
-                            let hasTabHeader = tabHeaderSessions(group, tabID: item.tabID) != nil
-                            if hasTabHeader, group.startsTab(at: index) {
-                                tabHeader(
-                                    item,
-                                    sessions: group.sessions(inTab: item.tabID)
-                                )
-                            }
-
-                            if !hasTabHeader || !isTabCollapsed(item.tabID) {
-                                sessionButton(item)
-                                    .id(
-                                        "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1)"
+                        if !collapsedSectionIDs.contains(group.id) {
+                            ForEach(Array(group.sessions.enumerated()), id: \.element.id) { index, item in
+                                let hasTabHeader = tabHeaderSessions(group, tabID: item.tabID) != nil
+                                if hasTabHeader, group.startsTab(at: index) {
+                                    tabHeader(
+                                        item,
+                                        sessions: group.sessions(inTab: item.tabID)
                                     )
-                                    .padding(.leading, hasTabHeader ? 12 : 0)
+                                }
+
+                                if !hasTabHeader || !isTabCollapsed(item.tabID) {
+                                    sessionButton(item)
+                                        .id(
+                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1)"
+                                        )
+                                        .padding(.leading, hasTabHeader ? 12 : 0)
+                                }
                             }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background {
+                        if containsFocusedSession {
+                            RoundedRectangle(cornerRadius: 9)
+                                .fill(settings.accentColor.opacity(0.05))
                         }
                     }
                 }
@@ -642,11 +653,7 @@ private struct PanelContent: View {
         let projectColor = isProjectFolder
             ? settings.projectFolderColor(at: group.title)
             : nil
-        let containsFocusedSession = settings.sessionListStyle == .projectPath
-            && group.sessions.contains(where: \.isFocused)
-        let headerColor: Color = containsFocusedSession
-            ? settings.accentColor
-            : (projectColor ?? .secondary)
+        let headerColor: Color = projectColor ?? .secondary
         return Button {
             toggleSection(group.id)
         } label: {
@@ -657,7 +664,7 @@ private struct PanelContent: View {
                 Text(title)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .foregroundStyle(containsFocusedSession ? .primary : headerColor)
+                    .foregroundStyle(headerColor)
                 if customization.isPinned {
                     Image(systemName: "pin.fill")
                         .accessibilityHidden(true)
@@ -672,12 +679,6 @@ private struct PanelContent: View {
             .contentShape(Rectangle())
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(
-                containsFocusedSession
-                    ? settings.accentColor.opacity(0.14)
-                    : Color.clear
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
         .font(headerFont())

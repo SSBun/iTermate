@@ -4,7 +4,7 @@
 
 - [添加可配置强调色](tasks/configurable-accent-color.md) — In Progress (2026-08-20 15:47)
 
-- [提升选中章节标题对比度](tasks/improve-selected-section-contrast.md) — In Progress (2026-08-20 15:11)
+- [为选中项目区域添加轻量背景](tasks/improve-selected-section-contrast.md) — In Progress (2026-08-20 15:11)
 
 - [发布 iTermate v0.1.5 到 GitHub 与 Sparkle](tasks/publish-release-v0-1-5.md) — Completed (2026-08-19 14:44)
 
