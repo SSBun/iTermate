@@ -1,6 +1,6 @@
 # 任务索引
 
-- [发布 iTermate v0.2.1](tasks/release-v0-2-1.md) — In Progress (2026-08-21 17:13)
+- [发布 iTermate v0.2.1](tasks/release-v0-2-1.md) — Completed (2026-08-21 17:20)
 
 - [按关注点提交分组透明度改动](tasks/commit-section-opacity-changes-by-concern.md) — Completed (2026-08-21 16:54)
 
