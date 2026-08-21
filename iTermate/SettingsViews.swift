@@ -91,6 +91,7 @@ private struct AppConfig {
     var panelFontSize = PanelFontDefaults.size
     var panelBackgroundStyle: PanelBackgroundStyle = .systemBlur
     var accentColorHex: String?
+    var focusedSectionBackgroundOpacity = 0.05
     var statusAnimationPreferences = Dictionary(
         uniqueKeysWithValues: SessionStatusAnimation.allCases.map {
             ($0, SessionStatusAnimationPreferences(style: $0.defaultStyle))
@@ -179,6 +180,10 @@ private struct AppConfig {
                         accentColorHex = color.uppercased()
                     }
                 }
+            case "focused_section_background_opacity":
+                if let opacity = Double(value), opacity.isFinite {
+                    focusedSectionBackgroundOpacity = min(max(opacity, 0), 1)
+                }
             case "session_list_style":
                 if let style = Self.stringValue(String(value)),
                    let parsedStyle = SessionListStyle(rawValue: style) {
@@ -247,6 +252,7 @@ private struct AppConfig {
         panel_font_size = \(panelFontSize)
         panel_background_style = "\(panelBackgroundStyle.rawValue)"
         accent_color = "\(accentColorHex ?? "system")"
+        focused_section_background_opacity = \(focusedSectionBackgroundOpacity)
         \(statusAnimations)
         session_list_style = \"\(sessionListStyle.rawValue)\"
         section_title_style = \"\(sectionTitleStyle.rawValue)\"
@@ -283,6 +289,7 @@ final class AppSettings: ObservableObject {
     @Published private(set) var panelFontSize: CGFloat
     @Published private(set) var panelBackgroundStyle: PanelBackgroundStyle
     @Published private(set) var accentColorHex: String?
+    @Published private(set) var focusedSectionBackgroundOpacity: Double
     @Published private(set) var statusAnimationPreferences: [
         SessionStatusAnimation: SessionStatusAnimationPreferences
     ]
@@ -307,6 +314,7 @@ final class AppSettings: ObservableObject {
         panelFontSize = config.panelFontSize
         panelBackgroundStyle = config.panelBackgroundStyle
         accentColorHex = config.accentColorHex
+        focusedSectionBackgroundOpacity = config.focusedSectionBackgroundOpacity
         statusAnimationPreferences = config.statusAnimationPreferences
         sessionListStyle = config.sessionListStyle
         sectionTitleStyle = config.sectionTitleStyle
@@ -396,6 +404,13 @@ final class AppSettings: ObservableObject {
     func setAccentColor(_ color: NSColor?) {
         accentColorHex = color.flatMap(Self.hexRGB)
         updateConfig { $0.accentColorHex = accentColorHex }
+    }
+
+    func setFocusedSectionBackgroundOpacity(_ opacity: Double) {
+        guard opacity.isFinite else { return }
+        let opacity = min(max(opacity, 0), 1)
+        focusedSectionBackgroundOpacity = opacity
+        updateConfig { $0.focusedSectionBackgroundOpacity = opacity }
     }
 
     func setStatusAnimationStyle(
@@ -772,6 +787,28 @@ private struct GeneralSettingsView: View {
                         Button("Use System") {
                             settings.setAccentColor(nil)
                         }
+                    }
+                }
+
+                LabeledContent("Focused Section Opacity") {
+                    HStack(spacing: 8) {
+                        Slider(
+                            value: Binding(
+                                get: { settings.focusedSectionBackgroundOpacity },
+                                set: settings.setFocusedSectionBackgroundOpacity
+                            ),
+                            in: 0...1,
+                            step: 0.01
+                        )
+                        .frame(width: 140)
+                        .accessibilityLabel("Focused Section Opacity")
+
+                        Text(
+                            settings.focusedSectionBackgroundOpacity,
+                            format: .percent.precision(.fractionLength(0))
+                        )
+                        .monospacedDigit()
+                        .frame(width: 36, alignment: .trailing)
                     }
                 }
 

@@ -621,7 +621,11 @@ private struct PanelContent: View {
                     .background {
                         if containsFocusedSession {
                             RoundedRectangle(cornerRadius: 9)
-                                .fill(settings.accentColor.opacity(0.05))
+                                .fill(
+                                    settings.accentColor.opacity(
+                                        settings.focusedSectionBackgroundOpacity
+                                    )
+                                )
                         }
                     }
                 }

@@ -177,6 +177,29 @@ final class PanelLayoutTests: XCTestCase {
         )
     }
 
+    func testFocusedSectionBackgroundOpacityDefaultsClampsAndPersists() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+
+        XCTAssertEqual(settings.focusedSectionBackgroundOpacity, 0.05)
+        settings.setFocusedSectionBackgroundOpacity(0.24)
+
+        XCTAssertEqual(
+            AppSettings(configURL: configURL).focusedSectionBackgroundOpacity,
+            0.24
+        )
+
+        try! "focused_section_background_opacity = 2".write(
+            to: configURL,
+            atomically: true,
+            encoding: .utf8
+        )
+        XCTAssertEqual(
+            AppSettings(configURL: configURL).focusedSectionBackgroundOpacity,
+            1
+        )
+    }
+
     func testPanelDockingSideDefaultsAndPersists() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)
