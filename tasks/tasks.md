@@ -1,5 +1,7 @@
 # 任务索引
 
+- [按关注点拆分提交当前本地改动](tasks/commit-current-local-changes-by-concern.md) — Completed (2026-08-21 12:02)
+
 - [添加状态动画设置标签页](tasks/add-status-animation-settings.md) — In Progress (2026-08-21 10:31)
 
 - [按关注点拆分提交本地改动](tasks/commit-local-changes-by-concern.md) — Completed (2026-08-20 16:22)
