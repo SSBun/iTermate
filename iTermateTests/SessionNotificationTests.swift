@@ -79,6 +79,7 @@ final class SessionNotificationTests: XCTestCase {
             id: id,
             name: id.capitalized,
             path: nil,
+            tty: nil,
             windowId: "window",
             tabId: "tab",
             isActive: false,

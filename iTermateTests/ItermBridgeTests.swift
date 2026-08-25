@@ -66,6 +66,91 @@ final class ItermBridgeTests: XCTestCase {
         )
     }
 
+    func testGhosttyStatusRegistryOrdersEventsAndPrioritizesAgents() {
+        var registry = TerminalStatusRegistry()
+        let tty = "/dev/ttys001"
+        XCTAssertFalse(
+            registry.apply(
+                TerminalStatusReport(
+                    tty: tty,
+                    source: .command,
+                    reporterID: "shell",
+                    sequence: 1,
+                    state: .running,
+                    exitStatus: nil,
+                    heartbeat: false
+                )
+            )
+        )
+        registry.reconcile(terminals: [tty: "terminal"])
+
+        XCTAssertTrue(
+            registry.apply(
+                TerminalStatusReport(
+                    tty: tty,
+                    source: .command,
+                    reporterID: "shell",
+                    sequence: 2,
+                    state: .finished,
+                    exitStatus: 1,
+                    heartbeat: false
+                ),
+                now: 20,
+                uptime: 20
+            )
+        )
+        XCTAssertFalse(
+            registry.apply(
+                TerminalStatusReport(
+                    tty: tty,
+                    source: .command,
+                    reporterID: "shell",
+                    sequence: 1,
+                    state: .running,
+                    exitStatus: nil,
+                    heartbeat: false
+                )
+            )
+        )
+        XCTAssertEqual(registry.visibleStatus(for: tty)?.exitStatus, 1)
+
+        XCTAssertTrue(
+            registry.apply(
+                TerminalStatusReport(
+                    tty: tty,
+                    source: .agent,
+                    reporterID: "agent",
+                    sequence: 1,
+                    state: .running,
+                    exitStatus: nil,
+                    heartbeat: false
+                ),
+                now: 30,
+                uptime: 30
+            )
+        )
+        XCTAssertEqual(registry.visibleStatus(for: tty)?.activityKind, .agent)
+        XCTAssertTrue(registry.expireStaleAgentHeartbeats(uptime: 39))
+        XCTAssertEqual(registry.visibleStatus(for: tty)?.activityKind, .command)
+
+        XCTAssertTrue(
+            registry.apply(
+                TerminalStatusReport(
+                    tty: tty,
+                    source: .agent,
+                    reporterID: "agent",
+                    sequence: 2,
+                    state: .running,
+                    exitStatus: nil,
+                    heartbeat: true
+                ),
+                now: 40,
+                uptime: 40
+            )
+        )
+        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .running)
+    }
+
     func testMapsSessionStatusAnimationsByActivityKindAndResult() {
         func animation(
             kind: SessionActivityKind,
@@ -77,6 +162,7 @@ final class ItermBridgeTests: XCTestCase {
                     id: "session",
                     name: "Session",
                     path: nil,
+                    tty: nil,
                     windowId: "window",
                     tabId: "tab",
                     isActive: false,

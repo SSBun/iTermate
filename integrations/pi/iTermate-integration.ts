@@ -1,17 +1,40 @@
 import { randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { connect } from "node:net";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-const socketPath = join(
+const supportDirectory = join(
   homedir(),
-  "Library/Application Support/iTermate/bridge.sock",
+  "Library/Application Support/iTermate",
 );
+const bridgeSocketPath = join(supportDirectory, "bridge.sock");
+const statusSocketPath = join(supportDirectory, "status.sock");
+const reporterId = randomUUID();
+let reportSequence = 0;
 
 function iTermSessionID(): string | undefined {
+  if (process.env.TERM_PROGRAM !== "iTerm.app") return undefined;
   const value = process.env.ITERM_SESSION_ID ?? process.env.TERM_SESSION_ID;
   return value?.split(":").at(-1);
 }
+
+function terminalTTY(): string | undefined {
+  try {
+    const value = execFileSync(
+      "/bin/ps",
+      ["-o", "tty=", "-p", String(process.pid)],
+      { encoding: "utf8", timeout: 1000 },
+    ).trim();
+    if (!value || value === "??") return undefined;
+    const tty = value.startsWith("/dev/") ? value : `/dev/${value}`;
+    return /^\/dev\/tty[^/]{0,119}$/.test(tty) ? tty : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const tty = terminalTTY();
 
 function report(
   status: "idle" | "running" | "finished" | "detached",
@@ -19,13 +42,12 @@ function report(
   heartbeat = false,
 ): Promise<void> {
   const sessionID = iTermSessionID();
-  if (!sessionID) return Promise.resolve();
+  if (!sessionID && !tty) return Promise.resolve();
 
   return new Promise((resolve) => {
     const requestId = randomUUID();
-    const socket = connect(socketPath, () => {
-      socket.write(
-        `${JSON.stringify({
+    const request = sessionID
+      ? {
           version: 7,
           type: "setSessionStatus",
           requestId,
@@ -33,9 +55,23 @@ function report(
           status,
           exitStatus,
           heartbeat,
-        })}\n`,
-      );
-    });
+        }
+      : {
+          version: 1,
+          type: "setTerminalStatus",
+          requestId,
+          tty,
+          source: "agent",
+          reporterId,
+          sequence: ++reportSequence,
+          status,
+          exitStatus,
+          heartbeat,
+        };
+    const socket = connect(
+      sessionID ? bridgeSocketPath : statusSocketPath,
+      () => socket.write(`${JSON.stringify(request)}\n`),
+    );
     let buffer = "";
     let completed = false;
     const complete = () => {
@@ -93,9 +129,12 @@ export default function (pi): void {
     heartbeatTimer = setTimeout(() => void sendHeartbeat(generation), 2000);
   }
 
-  function startHeartbeat(): Promise<void> {
+  async function startHeartbeat(): Promise<void> {
     stopHeartbeat();
-    return sendHeartbeat(heartbeatGeneration);
+    const generation = heartbeatGeneration;
+    await queueReport("running");
+    if (generation !== heartbeatGeneration) return;
+    heartbeatTimer = setTimeout(() => void sendHeartbeat(generation), 2000);
   }
 
   pi.on("session_start", () => queueReport("idle"));

@@ -474,7 +474,7 @@ final class PanelLayoutTests: XCTestCase {
         let modalAlert = CGRect(x: 600, y: 300, width: 520, height: 240)
 
         XCTAssertEqual(
-            ItermWindow.largestWindowFrame(from: [modalAlert, mainWindow]),
+            TerminalAppWindow.largestWindowFrame(from: [modalAlert, mainWindow]),
             mainWindow
         )
     }

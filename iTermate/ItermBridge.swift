@@ -9,6 +9,40 @@ private let bridgeSnapshotLogger = Logger(
     category: "BridgeSnapshot"
 )
 
+enum TerminalApp: Equatable {
+    case iTerm2
+    case ghostty
+
+    init?(bundleIdentifier: String) {
+        switch bundleIdentifier {
+        case "com.googlecode.iterm2":
+            self = .iTerm2
+        case "com.mitchellh.ghostty":
+            self = .ghostty
+        default:
+            return nil
+        }
+    }
+
+    var bundleIdentifier: String {
+        switch self {
+        case .iTerm2:
+            "com.googlecode.iterm2"
+        case .ghostty:
+            "com.mitchellh.ghostty"
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .iTerm2:
+            "iTerm2"
+        case .ghostty:
+            "Ghostty"
+        }
+    }
+}
+
 enum TerminalSessionStatus: String, Codable, Equatable {
     case idle
     case running
@@ -85,6 +119,7 @@ struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
     let id: String
     let name: String
     let path: String?
+    let tty: String?
     let windowId: String?
     let tabId: String?
     let isActive: Bool
@@ -270,47 +305,145 @@ struct BridgeMessage: Decodable {
 }
 
 final class ItermStore: ObservableObject {
+    @Published private(set) var terminalApp: TerminalApp?
     @Published private(set) var connectionState: BridgeConnectionState = .connecting
     @Published private(set) var windows: [TerminalWindowSnapshot] = []
     @Published private(set) var actionError: String?
 
-    private lazy var client = ItermBridgeClient(
+    private lazy var iTermClient = ItermBridgeClient(
         onMessage: { [weak self] message in self?.apply(message) },
         onStateChange: { [weak self] state in self?.updateConnectionState(state) }
+    )
+    private lazy var ghosttyClient = GhosttyClient(
+        onSnapshot: { [weak self] windows in self?.applyGhosttySnapshot(windows) },
+        onStateChange: { [weak self] state in self?.updateGhosttyConnectionState(state) },
+        onActionError: { [weak self] error in self?.updateGhosttyActionError(error) }
+    )
+    private lazy var terminalStatusServer = TerminalStatusServer(
+        onReport: { [weak self] report in self?.applyTerminalStatus(report) },
+        onReset: { [weak self] in self?.resetTerminalStatusTransport() }
     )
     private var latestSequence = 0
     private var bridgeIsCompatible = false
     private var lastLoggedSnapshotCounts: [Int]?
+    private var isStarted = false
+    private var iTermClientIsStarted = false
+    private var lastGhosttyRefresh = Date.distantPast
+    private var ghosttyRefreshIsPending = false
+    private var iTermConnectionState: BridgeConnectionState = .connecting
+    private var iTermWindows: [TerminalWindowSnapshot] = []
+    private var ghosttyConnectionState: BridgeConnectionState = .connecting
+    private var ghosttySourceWindows: [TerminalWindowSnapshot] = []
+    private var ghosttyWindows: [TerminalWindowSnapshot] = []
+    private var terminalStatusRegistry = TerminalStatusRegistry()
+    private var statusExpiryTimer: Timer?
+    private var lastActiveGhosttyTerminalID: String?
 
     func start() {
-        client.start()
+        guard !isStarted else { return }
+        isStarted = true
+        terminalStatusServer.start()
+        let statusExpiryTimer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+            self?.expireTerminalStatuses()
+        }
+        RunLoop.main.add(statusExpiryTimer, forMode: .common)
+        self.statusExpiryTimer = statusExpiryTimer
+        if !NSRunningApplication.runningApplications(
+            withBundleIdentifier: TerminalApp.iTerm2.bundleIdentifier
+        ).isEmpty {
+            startClient(for: .iTerm2)
+        }
+        if terminalApp == .ghostty {
+            startClient(for: .ghostty)
+        }
     }
 
     func stop() {
-        client.stop()
+        isStarted = false
+        statusExpiryTimer?.invalidate()
+        statusExpiryTimer = nil
+        terminalStatusServer.stop()
+        if iTermClientIsStarted {
+            iTermClient.stop()
+            iTermClientIsStarted = false
+        }
+    }
+
+    func setActiveTerminalApp(_ terminalApp: TerminalApp) {
+        if self.terminalApp != terminalApp {
+            self.terminalApp = terminalApp
+            actionError = nil
+            switch terminalApp {
+            case .iTerm2:
+                connectionState = iTermConnectionState
+                windows = iTermWindows
+            case .ghostty:
+                connectionState = ghosttyConnectionState
+                windows = ghosttyWindows
+            }
+        }
+        if isStarted {
+            startClient(for: terminalApp)
+        }
     }
 
     func reconnectAfterWake() {
-        client.reconnectAfterWake()
+        if terminalStatusRegistry.clearRunning() {
+            publishGhosttyWindows()
+        }
+        if iTermClientIsStarted {
+            iTermClient.reconnectAfterWake()
+        }
+        if terminalApp == .ghostty {
+            refreshGhostty(force: true)
+        }
     }
 
     func activate(sessionID: String) {
-        client.activate(sessionID: sessionID)
+        switch terminalApp ?? .iTerm2 {
+        case .iTerm2:
+            iTermClient.activate(sessionID: sessionID)
+        case .ghostty:
+            if
+                let tty = ghosttySourceWindows
+                    .flatMap(\.tabs)
+                    .flatMap(\.sessions)
+                    .first(where: { $0.id == sessionID })?.tty,
+                let tty = TerminalStatusRegistry.normalizedTTY(tty),
+                terminalStatusRegistry.activate(tty: tty)
+            {
+                publishGhosttyWindows()
+            }
+            ghosttyClient.activate(terminalID: sessionID)
+        }
     }
 
     func close(sessionID: String) {
-        client.close(sessionID: sessionID)
+        switch terminalApp ?? .iTerm2 {
+        case .iTerm2:
+            iTermClient.close(sessionID: sessionID)
+        case .ghostty:
+            ghosttyClient.close(terminalID: sessionID)
+        }
     }
 
-    func resetSessionStatuses() {
-        client.resetSessionStatuses()
+    func refreshSessions() {
+        switch terminalApp ?? .iTerm2 {
+        case .iTerm2:
+            iTermClient.resetSessionStatuses()
+        case .ghostty:
+            refreshGhostty(force: true)
+        }
     }
 
     func apply(_ message: BridgeMessage) {
         switch message.type {
         case "hello":
             bridgeIsCompatible = true
-            connectionState = .connected
+            iTermConnectionState = .connected
+            if terminalApp != .ghostty {
+                connectionState = .connected
+            }
         case "snapshot":
             guard
                 bridgeIsCompatible,
@@ -321,7 +454,7 @@ final class ItermStore: ObservableObject {
                 return
             }
             latestSequence = sequence
-            self.windows = windows
+            iTermWindows = windows
             let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
             let runningCount = sessions.lazy.filter { $0.status == .running }.count
             let finishedCount = sessions.lazy.filter { $0.status == .finished }.count
@@ -337,10 +470,14 @@ final class ItermStore: ObservableObject {
                 )
                 lastLoggedSnapshotCounts = snapshotCounts
             }
-            actionError = nil
-            connectionState = .connected
+            iTermConnectionState = .connected
+            if terminalApp != .ghostty {
+                self.windows = windows
+                actionError = nil
+                connectionState = .connected
+            }
         case "actionResult":
-            if message.ok == false {
+            if message.ok == false, terminalApp != .ghostty {
                 actionError = message.error ?? "iTerm action failed"
             }
         default:
@@ -349,13 +486,163 @@ final class ItermStore: ObservableObject {
     }
 
     func updateConnectionState(_ state: BridgeConnectionState) {
-        connectionState = state
+        iTermConnectionState = state
         if state != .connected {
             bridgeIsCompatible = false
             latestSequence = 0
             lastLoggedSnapshotCounts = nil
-            windows = []
+            iTermWindows = []
         }
+        if terminalApp != .ghostty {
+            connectionState = state
+            windows = iTermWindows
+        }
+    }
+
+    private func startClient(for terminalApp: TerminalApp) {
+        switch terminalApp {
+        case .iTerm2 where !iTermClientIsStarted:
+            iTermClientIsStarted = true
+            iTermClient.start()
+        case .ghostty:
+            refreshGhostty(force: false)
+        default:
+            break
+        }
+    }
+
+    private func refreshGhostty(force: Bool) {
+        // ponytail: poll once per second until Ghostty exposes change events.
+        guard
+            !ghosttyRefreshIsPending,
+            force || Date().timeIntervalSince(lastGhosttyRefresh) >= 1
+        else {
+            return
+        }
+        lastGhosttyRefresh = Date()
+        ghosttyRefreshIsPending = true
+        ghosttyClient.refresh()
+    }
+
+    private func applyGhosttySnapshot(_ windows: [TerminalWindowSnapshot]) {
+        ghosttyRefreshIsPending = false
+        ghosttySourceWindows = windows
+
+        let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
+        let sessionsByTTY = Dictionary(
+            grouping: sessions.compactMap { session -> TerminalSessionSnapshot? in
+                guard
+                    let tty = session.tty,
+                    TerminalStatusRegistry.normalizedTTY(tty) != nil
+                else {
+                    return nil
+                }
+                return session
+            },
+            by: { $0.tty ?? "" }
+        )
+        let terminalIDsByTTY = sessionsByTTY.compactMapValues { sessions in
+            sessions.count == 1 ? sessions[0].id : nil
+        }
+        terminalStatusRegistry.reconcile(terminals: terminalIDsByTTY)
+
+        let activeSession = windows.first(where: \.isActive)?
+            .tabs.first(where: \.isSelected)?
+            .sessions.first(where: \.isActive)
+        if
+            let previousID = lastActiveGhosttyTerminalID,
+            activeSession?.id != previousID,
+            let tty = activeSession?.tty,
+            let tty = TerminalStatusRegistry.normalizedTTY(tty)
+        {
+            terminalStatusRegistry.activate(tty: tty)
+        }
+        lastActiveGhosttyTerminalID = activeSession?.id
+
+        ghosttyConnectionState = .connected
+        publishGhosttyWindows()
+        guard terminalApp == .ghostty else { return }
+        actionError = nil
+        connectionState = .connected
+    }
+
+    private func applyTerminalStatus(_ report: TerminalStatusReport) {
+        guard terminalStatusRegistry.apply(report) else { return }
+        publishGhosttyWindows()
+    }
+
+    private func expireTerminalStatuses() {
+        guard terminalStatusRegistry.expireStaleAgentHeartbeats() else { return }
+        publishGhosttyWindows()
+    }
+
+    private func resetTerminalStatusTransport() {
+        guard terminalStatusRegistry.clearRunning() else { return }
+        publishGhosttyWindows()
+    }
+
+    private func publishGhosttyWindows() {
+        ghosttyWindows = ghosttySourceWindows.map { window in
+            TerminalWindowSnapshot(
+                id: window.id,
+                number: window.number,
+                isActive: window.isActive,
+                tabs: window.tabs.map { tab in
+                    TerminalTabSnapshot(
+                        id: tab.id,
+                        title: tab.title,
+                        isSelected: tab.isSelected,
+                        sessions: tab.sessions.map(mergingTerminalStatus)
+                    )
+                }
+            )
+        }
+        guard terminalApp == .ghostty else { return }
+        windows = ghosttyWindows
+    }
+
+    private func mergingTerminalStatus(
+        into session: TerminalSessionSnapshot
+    ) -> TerminalSessionSnapshot {
+        guard
+            let tty = session.tty,
+            let status = terminalStatusRegistry.visibleStatus(for: tty)
+        else {
+            return session
+        }
+        return TerminalSessionSnapshot(
+            id: session.id,
+            name: session.name,
+            path: session.path,
+            tty: session.tty,
+            windowId: session.windowId,
+            tabId: session.tabId,
+            isActive: session.isActive,
+            isMinimized: session.isMinimized,
+            status: status.status,
+            activityKind: status.activityKind,
+            exitStatus: status.exitStatus,
+            statusChangedAt: status.changedAt
+        )
+    }
+
+    private func updateGhosttyConnectionState(_ state: BridgeConnectionState) {
+        ghosttyRefreshIsPending = false
+        ghosttyConnectionState = state
+        if state != .connected {
+            ghosttySourceWindows = []
+            ghosttyWindows = []
+            lastActiveGhosttyTerminalID = nil
+            terminalStatusRegistry.reconcile(terminals: [:])
+        }
+        guard terminalApp == .ghostty else { return }
+        connectionState = state
+        windows = ghosttyWindows
+    }
+
+    private func updateGhosttyActionError(_ error: String?) {
+        guard terminalApp == .ghostty else { return }
+        actionError = error
     }
 }
 
@@ -558,10 +845,10 @@ final class ItermBridgeClient {
             Date().timeIntervalSince(lastLaunchDate) >= 5,
             let installedBridgeURL,
             !NSRunningApplication.runningApplications(
-                withBundleIdentifier: ItermWindow.bundleIdentifier
+                withBundleIdentifier: TerminalApp.iTerm2.bundleIdentifier
             ).isEmpty,
             let iTermURL = NSWorkspace.shared.urlForApplication(
-                withBundleIdentifier: ItermWindow.bundleIdentifier
+                withBundleIdentifier: TerminalApp.iTerm2.bundleIdentifier
             )
         else {
             return
@@ -584,6 +871,222 @@ final class ItermBridgeClient {
     private func publish(state: BridgeConnectionState) {
         DispatchQueue.main.async { [onStateChange] in onStateChange(state) }
     }
+}
+
+final class GhosttyClient {
+    private enum Action: String {
+        case activate = "focus"
+        case close
+    }
+
+    private let queue = DispatchQueue(label: "com.caishilin.iTermate.ghostty")
+    private let onSnapshot: ([TerminalWindowSnapshot]) -> Void
+    private let onStateChange: (BridgeConnectionState) -> Void
+    private let onActionError: (String?) -> Void
+
+    init(
+        onSnapshot: @escaping ([TerminalWindowSnapshot]) -> Void,
+        onStateChange: @escaping (BridgeConnectionState) -> Void,
+        onActionError: @escaping (String?) -> Void
+    ) {
+        self.onSnapshot = onSnapshot
+        self.onStateChange = onStateChange
+        self.onActionError = onActionError
+    }
+
+    func refresh() {
+        queue.async { [weak self] in
+            self?.loadSnapshot()
+        }
+    }
+
+    func activate(terminalID: String) {
+        perform(.activate, terminalID: terminalID)
+    }
+
+    func close(terminalID: String) {
+        perform(.close, terminalID: terminalID)
+    }
+
+    private func loadSnapshot() {
+        do {
+            guard Self.isGhosttyRunning else {
+                throw GhosttyScriptError("Ghostty is not running")
+            }
+            let data = try Self.runScript(
+                language: "JavaScript",
+                script: Self.snapshotScript
+            )
+            let windows = try JSONDecoder().decode(
+                [TerminalWindowSnapshot].self,
+                from: data
+            )
+            DispatchQueue.main.async { [onSnapshot] in onSnapshot(windows) }
+        } catch {
+            publish(
+                state: .disconnected(
+                    "Ghostty connection failed: \(error.localizedDescription)"
+                )
+            )
+        }
+    }
+
+    private func perform(_ action: Action, terminalID: String) {
+        queue.async { [weak self] in
+            guard let self else { return }
+            do {
+                guard Self.isGhosttyRunning else {
+                    throw GhosttyScriptError("Ghostty is not running")
+                }
+                _ = try Self.runScript(
+                    script: Self.actionScript,
+                    arguments: [action.rawValue, terminalID]
+                )
+                DispatchQueue.main.async { [onActionError] in onActionError(nil) }
+                loadSnapshot()
+            } catch {
+                DispatchQueue.main.async { [onActionError] in
+                    onActionError("Ghostty action failed: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    private func publish(state: BridgeConnectionState) {
+        DispatchQueue.main.async { [onStateChange] in onStateChange(state) }
+    }
+
+    private static var isGhosttyRunning: Bool {
+        !NSRunningApplication.runningApplications(
+            withBundleIdentifier: TerminalApp.ghostty.bundleIdentifier
+        ).isEmpty
+    }
+
+    private static func runScript(
+        language: String? = nil,
+        script: String,
+        arguments: [String] = []
+    ) throws -> Data {
+        let outputPipe = Pipe()
+        let errorPipe = Pipe()
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        var processArguments = language.map { ["-l", $0] } ?? []
+        processArguments.append(contentsOf: ["-e", script])
+        if !arguments.isEmpty {
+            processArguments.append("--")
+            processArguments.append(contentsOf: arguments)
+        }
+        process.arguments = processArguments
+        process.standardOutput = outputPipe
+        process.standardError = errorPipe
+        try process.run()
+        let output = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        let errorOutput = errorPipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+
+        guard process.terminationStatus == 0 else {
+            let message = String(data: errorOutput, encoding: .utf8)?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            throw GhosttyScriptError(
+                message.flatMap { $0.isEmpty ? nil : $0 } ?? "AppleScript failed"
+            )
+        }
+        return output
+    }
+
+    private static let snapshotScript = #"""
+    function optional(getter, fallback) {
+        try {
+            var value = getter();
+            return value === null || value === undefined ? fallback : value;
+        } catch (_) {
+            return fallback;
+        }
+    }
+
+    var ghostty = Application("Ghostty");
+    var frontWindowID = optional(function() {
+        return String(ghostty.frontWindow().id());
+    }, null);
+    var result = ghostty.windows().map(function(sourceWindow, windowIndex) {
+        var windowID = String(sourceWindow.id());
+        var selectedTabID = optional(function() {
+            return String(sourceWindow.selectedTab().id());
+        }, null);
+        var tabs = sourceWindow.tabs().map(function(sourceTab, tabIndex) {
+            var tabID = String(sourceTab.id());
+            var focusedTerminalID = optional(function() {
+                return String(sourceTab.focusedTerminal().id());
+            }, null);
+            var sessions = sourceTab.terminals().map(function(sourceTerminal) {
+                var terminalID = String(sourceTerminal.id());
+                var path = String(optional(function() {
+                    return sourceTerminal.workingDirectory();
+                }, ""));
+                return {
+                    id: terminalID,
+                    name: String(optional(function() {
+                        return sourceTerminal.name();
+                    }, "Terminal")),
+                    path: path || null,
+                    tty: optional(function() {
+                        return String(sourceTerminal.tty());
+                    }, null),
+                    isActive: terminalID === focusedTerminalID
+                };
+            });
+            return {
+                id: tabID,
+                title: String(optional(function() {
+                    return sourceTab.name();
+                }, "Tab " + (tabIndex + 1))),
+                isSelected: tabID === selectedTabID,
+                sessions: sessions
+            };
+        });
+        return {
+            id: windowID,
+            number: windowIndex + 1,
+            isActive: windowID === frontWindowID,
+            tabs: tabs
+        };
+    });
+
+    JSON.stringify(result);
+    """#
+
+    private static let actionScript = #"""
+    on run argv
+        if (count of argv) is not 2 then error "Invalid Ghostty action"
+        set actionName to item 1 of argv
+        set terminalID to item 2 of argv
+
+        tell application "Ghostty"
+            set matchingTerminals to every terminal whose id is terminalID
+            if (count of matchingTerminals) is 0 then error "Terminal not found"
+            set targetTerminal to item 1 of matchingTerminals
+
+            if actionName is "focus" then
+                focus targetTerminal
+            else if actionName is "close" then
+                close targetTerminal
+            else
+                error "Unsupported Ghostty action"
+            end if
+        end tell
+    end run
+    """#
+}
+
+private struct GhosttyScriptError: LocalizedError {
+    let message: String
+
+    init(_ message: String) {
+        self.message = message
+    }
+
+    var errorDescription: String? { message }
 }
 
 private struct SessionActionRequest: Encodable {

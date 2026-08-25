@@ -67,7 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApplication.shared.setActivationPolicy(.accessory)
-        AgentIntegrationManager().updateInstalledPiIntegration()
+        AgentIntegrationManager().updateInstalledIntegrations()
         updaterController.startUpdater()
         panelFollower = PanelFollower(store: store, settings: settings)
         notificationController = SessionNotificationController(
@@ -95,6 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 private final class PanelFollower {
+    private let store: ItermStore
     private let panel: ComradePanel
     private var timer: Timer?
     private var lastWindowSize: CGSize?
@@ -102,6 +103,7 @@ private final class PanelFollower {
     private var lastResizeChangeTime: TimeInterval = 0
 
     init(store: ItermStore, settings: AppSettings) {
+        self.store = store
         panel = ComradePanel(store: store, settings: settings)
     }
 
@@ -118,13 +120,14 @@ private final class PanelFollower {
 
     private func updatePanel() {
         guard
-            let window = ItermWindow.frontmost(),
+            let window = TerminalAppWindow.frontmost(),
             let screen = PanelLayout.screen(containing: window.frame)
         else {
             panel.orderOut(nil)
             return
         }
 
+        store.setActiveTerminalApp(window.terminalApp)
         guard !panel.inLiveResize, !panel.isManuallyResizing else { return }
 
         let panelFrame = PanelLayout.frame(
@@ -137,7 +140,7 @@ private final class PanelFollower {
         if let lastWindowSize, lastWindowSize != window.frame.size {
             if !isResizeInProgress {
                 panelResizeLogger.notice(
-                    "iTerm resize began from=\(Int(lastWindowSize.width.rounded()), privacy: .public)x\(Int(lastWindowSize.height.rounded()), privacy: .public) to=\(Int(window.frame.width.rounded()), privacy: .public)x\(Int(window.frame.height.rounded()), privacy: .public)"
+                    "Terminal resize began from=\(Int(lastWindowSize.width.rounded()), privacy: .public)x\(Int(lastWindowSize.height.rounded()), privacy: .public) to=\(Int(window.frame.width.rounded()), privacy: .public)x\(Int(window.frame.height.rounded()), privacy: .public)"
                 )
             }
             isResizeInProgress = true
@@ -151,7 +154,7 @@ private final class PanelFollower {
                 "overlay"
             }
             panelResizeLogger.notice(
-                "iTerm resize settled window=\(Int(window.frame.width.rounded()), privacy: .public)x\(Int(window.frame.height.rounded()), privacy: .public) panelOrigin=(\(Int(panelFrame.minX.rounded()), privacy: .public),\(Int(panelFrame.minY.rounded()), privacy: .public)) panel=\(Int(panelFrame.width.rounded()), privacy: .public)x\(Int(panelFrame.height.rounded()), privacy: .public) side=\(side, privacy: .public)"
+                "Terminal resize settled window=\(Int(window.frame.width.rounded()), privacy: .public)x\(Int(window.frame.height.rounded()), privacy: .public) panelOrigin=(\(Int(panelFrame.minX.rounded()), privacy: .public),\(Int(panelFrame.minY.rounded()), privacy: .public)) panel=\(Int(panelFrame.width.rounded()), privacy: .public)x\(Int(panelFrame.height.rounded()), privacy: .public) side=\(side, privacy: .public)"
             )
             isResizeInProgress = false
         }
@@ -412,6 +415,7 @@ private struct PanelContent: View {
     @State private var hoveredCloseButtonSessionID: String?
 
     var body: some View {
+        let terminalName = store.terminalApp?.displayName ?? "terminal"
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Label {
@@ -423,19 +427,19 @@ private struct PanelContent: View {
                 .font(panelFont(1.2))
                 Spacer()
                 Button {
-                    store.resetSessionStatuses()
+                    store.refreshSessions()
                 } label: {
                     Image(systemName: "arrow.clockwise")
                 }
                 .buttonStyle(.borderless)
-                .help("Reset all session statuses")
-                .accessibilityLabel("Reset all session statuses")
+                .help("Refresh sessions")
+                .accessibilityLabel("Refresh sessions")
                 groupingMenu
             }
 
             switch store.connectionState {
             case .connecting:
-                statusView("Connecting to iTerm2…", showsProgress: true)
+                statusView("Connecting to \(terminalName)…", showsProgress: true)
             case .disconnected(let message):
                 statusView(message, showsProgress: false)
             case .connected:
@@ -445,7 +449,7 @@ private struct PanelContent: View {
                         .foregroundStyle(.red)
                 }
                 if sessionGroups.isEmpty {
-                    statusView("No iTerm sessions", showsProgress: false)
+                    statusView("No \(terminalName) sessions", showsProgress: false)
                 } else {
                     sessionList
                 }
@@ -1603,17 +1607,15 @@ final class SessionStatusMatrixView: NSView {
     }
 }
 
-struct ItermWindow {
-    static let bundleIdentifier = "com.googlecode.iterm2"
-
+struct TerminalAppWindow {
+    let terminalApp: TerminalApp
     let frame: CGRect
 
-    static func frontmost() -> ItermWindow? {
+    static func frontmost() -> TerminalAppWindow? {
         guard
-            let application = NSRunningApplication.runningApplications(
-                withBundleIdentifier: bundleIdentifier
-            ).first,
-            application.isActive,
+            let application = NSWorkspace.shared.frontmostApplication,
+            let bundleIdentifier = application.bundleIdentifier,
+            let terminalApp = TerminalApp(bundleIdentifier: bundleIdentifier),
             let windowInfo = CGWindowListCopyWindowInfo(
                 [.optionOnScreenOnly, .excludeDesktopElements],
                 kCGNullWindowID
@@ -1637,11 +1639,22 @@ struct ItermWindow {
             return quartzFrame
         }
 
-        // ponytail: the largest layer-0 window excludes iTerm modal alerts; use window IDs if multi-window precision is needed.
-        guard let quartzFrame = largestWindowFrame(from: candidateFrames) else {
-            return nil
+        let quartzFrame: CGRect?
+        switch terminalApp {
+        case .iTerm2:
+            // ponytail: the largest layer-0 window excludes iTerm modal alerts;
+            // use window IDs if multi-window precision is needed.
+            quartzFrame = largestWindowFrame(from: candidateFrames)
+        case .ghostty:
+            // CGWindowList is front-to-back, so the first Ghostty window is active.
+            quartzFrame = candidateFrames.first
         }
-        return ItermWindow(frame: PanelLayout.appKitFrame(fromQuartzFrame: quartzFrame))
+        guard let quartzFrame else { return nil }
+
+        return TerminalAppWindow(
+            terminalApp: terminalApp,
+            frame: PanelLayout.appKitFrame(fromQuartzFrame: quartzFrame)
+        )
     }
 
     static func largestWindowFrame(from frames: [CGRect]) -> CGRect? {

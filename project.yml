@@ -20,7 +20,13 @@ targets:
         buildPhase: resources
       - path: integrations/pi/iTermate-integration.ts
         buildPhase: resources
-      - path: integrations/codex/iTermate-hook.py
+      - path: integrations/status/iTermate-status.py
+        buildPhase: resources
+      - path: integrations/shell/iTermate.zsh
+        buildPhase: resources
+      - path: integrations/shell/iTermate.bash
+        buildPhase: resources
+      - path: integrations/shell/iTermate.fish
         buildPhase: resources
     resources:
       - iTermate/Assets.xcassets
@@ -32,7 +38,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSUIElement: true
-        NSAppleEventsUsageDescription: Start the iTermate Bridge inside iTerm2.
+        NSAppleEventsUsageDescription: Read and control terminal windows in iTerm2 and Ghostty.
         SUFeedURL: https://ssbun.github.io/iTermate/appcast.xml
         SUPublicEDKey: L5Q2dHra6pBCxeGReTg3uOslFt/VFO9QVbxM2aCB6XA=
     settings:

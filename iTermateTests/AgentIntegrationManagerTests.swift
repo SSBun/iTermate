@@ -29,7 +29,7 @@ final class AgentIntegrationManagerTests: XCTestCase {
         let installedURL = fixture.homeDirectory
             .appendingPathComponent(".pi/agent/extensions/iTermate-integration.ts")
 
-        manager.updateInstalledPiIntegration()
+        manager.updateInstalledIntegrations()
         XCTAssertFalse(FileManager.default.fileExists(atPath: installedURL.path))
 
         try FileManager.default.createDirectory(
@@ -42,7 +42,7 @@ final class AgentIntegrationManagerTests: XCTestCase {
             encoding: .utf8
         )
 
-        manager.updateInstalledPiIntegration()
+        manager.updateInstalledIntegrations()
 
         XCTAssertEqual(try String(contentsOf: installedURL), "pi integration")
         XCTAssertEqual(try permissions(at: installedURL), 0o600)
@@ -70,7 +70,7 @@ final class AgentIntegrationManagerTests: XCTestCase {
 
         let manager = fixture.makeManager()
         let installedHookURL = fixture.homeDirectory.appendingPathComponent(
-            "Library/Application Support/iTermate/integrations/iTermate-hook.py"
+            "Library/Application Support/iTermate/integrations/iTermate-status.py"
         )
         manager.setInstalled(true, for: .codex)
 
@@ -121,6 +121,87 @@ final class AgentIntegrationManagerTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: hooksURL), "not json")
     }
 
+    @MainActor
+    func testShellIntegrationsPreserveConfigsAndShareReporter() throws {
+        let fixture = try Fixture(testCase: self)
+        let zshConfig = fixture.homeDirectory.appendingPathComponent(".zshrc")
+        let bashRC = fixture.homeDirectory.appendingPathComponent(".bashrc")
+        let profile = fixture.homeDirectory.appendingPathComponent(".profile")
+        try "export KEEP_ZSH=1\n".write(
+            to: zshConfig,
+            atomically: true,
+            encoding: .utf8
+        )
+        try "export KEEP_BASH=1\n".write(
+            to: bashRC,
+            atomically: true,
+            encoding: .utf8
+        )
+        try "export KEEP_PROFILE=1\n".write(
+            to: profile,
+            atomically: true,
+            encoding: .utf8
+        )
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o644],
+            ofItemAtPath: zshConfig.path
+        )
+
+        let manager = fixture.makeManager()
+        for shell in ShellStatusIntegration.allCases {
+            manager.setInstalled(true, for: shell)
+            XCTAssertTrue(manager.isInstalled(shell))
+        }
+        manager.setInstalled(true, for: .zsh)
+
+        let zshContents = try String(contentsOf: zshConfig)
+        XCTAssertTrue(zshContents.contains("export KEEP_ZSH=1"))
+        XCTAssertEqual(
+            zshContents.components(separatedBy: ">>> iTermate shell status >>>").count,
+            2
+        )
+        XCTAssertEqual(try permissions(at: zshConfig), 0o644)
+        XCTAssertTrue(try String(contentsOf: bashRC).contains("export KEEP_BASH=1"))
+        let profileContents = try String(contentsOf: profile)
+        XCTAssertTrue(profileContents.contains("export KEEP_PROFILE=1"))
+        XCTAssertTrue(profileContents.contains("${BASH_VERSION:-}"))
+        XCTAssertFalse(
+            FileManager.default.fileExists(
+                atPath: fixture.homeDirectory.appendingPathComponent(".bash_profile").path
+            )
+        )
+
+        let reporter = fixture.homeDirectory.appendingPathComponent(
+            "Library/Application Support/iTermate/integrations/iTermate-status.py"
+        )
+        manager.setInstalled(false, for: .zsh)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: reporter.path))
+        XCTAssertFalse(try String(contentsOf: zshConfig).contains("iTermate shell status"))
+        manager.setInstalled(false, for: .bash)
+        manager.setInstalled(false, for: .fish)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: reporter.path))
+    }
+
+    @MainActor
+    func testFishInstallDoesNotReplaceAnUnmanagedFile() throws {
+        let fixture = try Fixture(testCase: self)
+        let fishHook = fixture.homeDirectory.appendingPathComponent(
+            ".config/fish/conf.d/iTermate.fish"
+        )
+        try FileManager.default.createDirectory(
+            at: fishHook.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try "user file\n".write(to: fishHook, atomically: true, encoding: .utf8)
+
+        let manager = fixture.makeManager()
+        manager.setInstalled(true, for: .fish)
+
+        XCTAssertFalse(manager.isInstalled(.fish))
+        XCTAssertNotNil(manager.shellErrors[.fish])
+        XCTAssertEqual(try String(contentsOf: fishHook), "user file\n")
+    }
+
     private func jsonObject(at url: URL) throws -> [String: Any] {
         try XCTUnwrap(
             JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any]
@@ -136,7 +217,10 @@ final class AgentIntegrationManagerTests: XCTestCase {
 private struct Fixture {
     let homeDirectory: URL
     let piResourceURL: URL
-    let codexResourceURL: URL
+    let statusResourceURL: URL
+    let zshResourceURL: URL
+    let bashResourceURL: URL
+    let fishResourceURL: URL
 
     init(testCase: XCTestCase) throws {
         let directory = FileManager.default.temporaryDirectory
@@ -145,9 +229,19 @@ private struct Fixture {
         let resources = directory.appendingPathComponent("resources", isDirectory: true)
         try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
         piResourceURL = resources.appendingPathComponent("iTermate-integration.ts")
-        codexResourceURL = resources.appendingPathComponent("iTermate-hook.py")
+        statusResourceURL = resources.appendingPathComponent("iTermate-status.py")
+        zshResourceURL = resources.appendingPathComponent("iTermate.zsh")
+        bashResourceURL = resources.appendingPathComponent("iTermate.bash")
+        fishResourceURL = resources.appendingPathComponent("iTermate.fish")
         try "pi integration".write(to: piResourceURL, atomically: true, encoding: .utf8)
-        try "codex hook".write(to: codexResourceURL, atomically: true, encoding: .utf8)
+        try "status reporter".write(to: statusResourceURL, atomically: true, encoding: .utf8)
+        try "zsh hook".write(to: zshResourceURL, atomically: true, encoding: .utf8)
+        try "bash hook".write(to: bashResourceURL, atomically: true, encoding: .utf8)
+        try "# Managed by iTermate.\nfish hook".write(
+            to: fishResourceURL,
+            atomically: true,
+            encoding: .utf8
+        )
         testCase.addTeardownBlock {
             try? FileManager.default.removeItem(at: directory)
         }
@@ -158,7 +252,10 @@ private struct Fixture {
         AgentIntegrationManager(
             homeDirectory: homeDirectory,
             piResourceURL: piResourceURL,
-            codexResourceURL: codexResourceURL
+            statusResourceURL: statusResourceURL,
+            zshResourceURL: zshResourceURL,
+            bashResourceURL: bashResourceURL,
+            fishResourceURL: fishResourceURL
         )
     }
 }

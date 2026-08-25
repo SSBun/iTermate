@@ -1,5 +1,13 @@
 # 任务索引
 
+- [提交全部本地改动](tasks/commit-all-local-changes.md) — Completed (2026-08-25 14:02)
+
+- [升级 Ghostty 至官方 tip](tasks/upgrade-ghostty-tip.md) — Completed (2026-08-25 13:38)
+
+- [实现 Ghostty 实时 Session 状态](tasks/investigate-ghostty-realtime-status.md) — Blocked (2026-08-25 13:48)
+
+- [添加 Ghostty 基础支持](tasks/add-ghostty-support.md) — Completed (2026-08-24 17:32)
+
 - [发布 iTermate v0.2.1](tasks/release-v0-2-1.md) — Completed (2026-08-21 17:20)
 
 - [按关注点提交分组透明度改动](tasks/commit-section-opacity-changes-by-concern.md) — Completed (2026-08-21 16:54)

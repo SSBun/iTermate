@@ -23,10 +23,27 @@
 - Paths: `iTermate/iTermateApp.swift`, `iTermate/ItermBridge.swift`, `iTermate/SettingsViews.swift`
 - Keywords: Session list, Window, Project Path, Tab header, status animation, style, color, subgroup, collapse, focus, close
 - Authority: `iTermate/iTermateApp.swift`, `iTermate/ItermBridge.swift`, `iTermate/SettingsViews.swift`
-- Recheck: 分组模式、Tab 标题、状态动画设置或渲染、Bridge 快照层级、Session 操作发生变化时复查。
+- Recheck: 分组模式、Tab 标题、状态动画设置或渲染、终端快照层级、数据源或 Session 操作发生变化时复查。
 
 ### Workflows
-- 面板可按 Window 平铺其所有 Session，或按 Session 的精确当前目录跨 Window/Tab 分组；Window 或文件夹路径只显示在 section header，Session 行显示标题与状态图标；由 Agent lifecycle 明确确认的 idle 显示低透明度静止 Agent 像素图标，不纳入状态动画设置，finished 在用户重新激活后才转为 idle，普通命令无 idle 图标；Status Animation Settings 按 Agent 与普通 Shell 的 Running、Success、Failed 以及 Shell Finished 分成七项，每项可独立选择 Alien、Robot、Classic 样式和颜色并显示实际动画预览；Classic 分别使用 `^_`、`^_^`、`x_x` 表达运行、完成与失败，全部偏好由 `AppSettings` 持久化且不改变状态判定；General Settings 可显示/隐藏运行及完成时间，并在按分钟更新的 Compact 与按秒更新的 Detailed 格式间切换。Window 样式默认为每个 Tab 显示弱化小节标题并缩进其 Session，可在 General Settings 中关闭；Project Path 样式同样受该开关控制，启用后每个 Tab 都显示 Tab 子分组标题并缩进，包括在对应 Project Path 组内仅贡献一个 Session 的 Tab；子分组标题显示 "Tab N"（N 为该 Tab 在其 Window 中的位置），不重复动态标题中的路径；当 Bridge 全局当前 Session 属于某 Project Path 组时，整个项目分组区域显示 accentColor 背景；其透明度可在 General Settings 的 Focused Section Opacity 中按 0%–100% 调整，默认 5%，并由 `AppSettings` 持久化；section header 仍按项目自定义颜色或次要色显示，不叠加独立焦点效果，聚焦转移后整体背景自动恢复；同一 Tab 的 Session 在组内聚类相邻；同组 Session 行使用紧凑间距，Window/Tab/Project Path 标题前保留更大垂直留白。标题栏配置菜单按 Group By、Display、Sections 分区，各操作项使用语义图标且分组项保留原生选中标记；Window、Tab 和 Project Path 标题均可临时折叠，并支持全部展开/折叠；各类 section header 的原生上下文菜单可通过 `Close All Sessions` 请求非强制关闭该 Window、Tab 或精确 Project Path 当前包含的全部 Session。样式与 Tab 标题开关持久化，折叠状态仅保存在当前运行时；点击 Session 会选择父 Tab、聚焦 pane 并将 Window 置前，当前聚焦标记由 Bridge 的全局当前 Session ID 生成，保证每份快照最多一个聚焦 Session；每行的独立关闭按钮默认隐藏；非激活面板以唯一的行与关闭按钮悬停 Session ID 配合 `.activeAlways` AppKit tracking area，仅在指针悬停当前行时显示对应按钮，悬停 `xmark` 本身时显示圆形背景反馈，离开按钮、行或面板时清理，并通过 Bridge 请求 iTerm 原生非强制关闭。
+- 面板可按 Window 平铺其所有 Session，或按 Session 的精确当前目录跨 Window/Tab 分组；Window 或文件夹路径只显示在 section header，Session 行显示标题与状态图标；由 Agent lifecycle 明确确认的 idle 显示低透明度静止 Agent 像素图标，不纳入状态动画设置，finished 在用户重新激活后才转为 idle，普通命令无 idle 图标；Status Animation Settings 按 Agent 与普通 Shell 的 Running、Success、Failed 以及 Shell Finished 分成七项，每项可独立选择 Alien、Robot、Classic 样式和颜色并显示实际动画预览；Classic 分别使用 `^_`、`^_^`、`x_x` 表达运行、完成与失败，全部偏好由 `AppSettings` 持久化且不改变状态判定；General Settings 可显示/隐藏运行及完成时间，并在按分钟更新的 Compact 与按秒更新的 Detailed 格式间切换。Window 样式默认为每个 Tab 显示弱化小节标题并缩进其 Session，可在 General Settings 中关闭；Project Path 样式同样受该开关控制，启用后每个 Tab 都显示 Tab 子分组标题并缩进，包括在对应 Project Path 组内仅贡献一个 Session 的 Tab；子分组标题显示 "Tab N"（N 为该 Tab 在其 Window 中的位置），不重复动态标题中的路径；当当前数据源的全局焦点 Session 属于某 Project Path 组时，整个项目分组区域显示 accentColor 背景；其透明度可在 General Settings 的 Focused Section Opacity 中按 0%–100% 调整，默认 5%，并由 `AppSettings` 持久化；section header 仍按项目自定义颜色或次要色显示，不叠加独立焦点效果，聚焦转移后整体背景自动恢复；同一 Tab 的 Session 在组内聚类相邻；同组 Session 行使用紧凑间距，Window/Tab/Project Path 标题前保留更大垂直留白。标题栏配置菜单按 Group By、Display、Sections 分区，各操作项使用语义图标且分组项保留原生选中标记；Window、Tab 和 Project Path 标题均可临时折叠，并支持全部展开/折叠；各类 section header 的原生上下文菜单可通过 `Close All Sessions` 请求非强制关闭该 Window、Tab 或精确 Project Path 当前包含的全部 Session。样式与 Tab 标题开关持久化，折叠状态仅保存在当前运行时；点击 Session 会由当前数据源选择父 Tab、聚焦 pane 并将 Window 置前；当前焦点由快照中的 Window、Tab 与 Session 选中关系共同生成，保证每份快照最多一个聚焦 Session；每行的独立关闭按钮默认隐藏；非激活面板以唯一的行与关闭按钮悬停 Session ID 配合 `.activeAlways` AppKit tracking area，仅在指针悬停当前行时显示对应按钮，悬停 `xmark` 本身时显示圆形背景反馈，离开按钮、行或面板时清理，并通过当前数据源请求原生非强制关闭。
+
+## CTX-terminal-backends — iTerm2 与 Ghostty 数据源
+- Scope: 前台终端识别、面板窗口跟随、Window/Tab/Session 快照与操作路由，以及不同终端的状态能力边界。
+- Paths: `iTermate/iTermateApp.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`
+- Keywords: iTerm2, Ghostty, AppleScript, Bridge, TerminalApp, frontmost, snapshot, tty, telemetry, shell hook, focus, close, session status
+- Authority: `iTermate/iTermateApp.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`, `https://ghostty.org/docs/features/applescript`
+- Recheck: 支持的终端、Ghostty AppleScript 层级或属性、快照轮询、TTY 状态协议、Integration 安装、前台窗口选择或操作路由发生变化时复查。
+
+### Purpose and Boundaries
+- `PanelFollower` 只在 iTerm2 或 Ghostty 是系统前台应用且存在可见 layer-0 窗口时显示面板；iTerm2 保留选择最大窗口以排除模态框的策略，Ghostty 使用 Core Graphics 前后顺序中的首个窗口；无需 Accessibility 权限。
+- iTerm2 继续由 Python Bridge 提供层级、操作、普通命令和 Agent 状态；Ghostty 由官方 AppleScript 提供 Window、Tab、Terminal、工作目录、焦点与关闭操作。运行时能读取 terminal `tty` 时，App 才把本机 Integration 状态合并到唯一匹配的 Ghostty Terminal；缺少 TTY、映射重复或来源未映射时状态保持未知，不根据标题、目录或进程名称猜测。
+
+### Workflows
+- App 启动时仅在 iTerm2 已运行时启动其 Bridge client；否则在 iTerm2 首次成为前台终端时启动。Ghostty 前台期间通过 `osascript` 最多每秒读取一次快照，并把结果复用到同一 Session 分组 UI；切回 iTerm2 时恢复其缓存快照和连接状态。
+- App 自有的本机状态 listener 与 Store 同生命周期；状态按 TTY 独立维护 Agent 与普通命令通道，Agent 优先，并通过 sequence、Agent heartbeat、唤醒清理和 Terminal identity 重建避免显示不可证实的 running 或复用旧状态。
+- Pi 与 Codex 只有在 `TERM_PROGRAM=iTerm.app` 时才信任 iTerm Session ID 并使用 Bridge 协议；Ghostty 从 iTerm2 启动时可能继承陈旧的 `ITERM_SESSION_ID`/`TERM_SESSION_ID`，必须忽略它们并按控制 TTY 改走本机状态 listener。zsh、Bash、fish 普通命令状态必须由用户在设置中显式安装可逆 shell hook 后才报告。
+- 标题栏刷新按钮对 iTerm2 重启 Bridge 并重建状态，对 Ghostty 立即重新读取 AppleScript 快照；两条路径都不重启 App 或用户的终端 Session。
 
 ## 工程与组件
 
