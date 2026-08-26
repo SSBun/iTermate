@@ -8,7 +8,7 @@
 
 - [编写 iTermate 宣讲分享文档](tasks/promo-post-itermate.md) — Completed (2026-08-25 14:39)
 
-- [发布 iTermate v0.3.0](tasks/release-v0-3-0.md) — Cancelled (2026-08-25 15:54)
+- [发布 iTermate v0.3.0](tasks/release-v0-3-0.md) — In Progress (2026-08-26 11:22)
 
 - [提交全部本地改动](tasks/commit-all-local-changes.md) — Completed (2026-08-25 14:02)
 
