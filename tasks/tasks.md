@@ -2,7 +2,7 @@
 
 - [彻底移除 data-in-cli Skill](tasks/remove-data-in-cli-skill.md) — Completed (2026-08-26 11:20)
 
-- [提交 iTermate v0.3.0 全部本地改动](tasks/commit-v0-3-0-local-changes.md) — In Progress (2026-08-26 11:20)
+- [提交 iTermate v0.3.0 全部本地改动](tasks/commit-v0-3-0-local-changes.md) — Completed (2026-08-26 11:21)
 
 - [提交当前改动并发布 iTermate v0.3.0](tasks/commit-and-release-v0-3-0.md) — In Progress (2026-08-26 11:05)
 
