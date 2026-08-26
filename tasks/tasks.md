@@ -4,11 +4,11 @@
 
 - [提交 iTermate v0.3.0 全部本地改动](tasks/commit-v0-3-0-local-changes.md) — Completed (2026-08-26 11:21)
 
-- [提交当前改动并发布 iTermate v0.3.0](tasks/commit-and-release-v0-3-0.md) — In Progress (2026-08-26 11:05)
+- [提交当前改动并发布 iTermate v0.3.0](tasks/commit-and-release-v0-3-0.md) — Completed (2026-08-26 11:35)
 
 - [编写 iTermate 宣讲分享文档](tasks/promo-post-itermate.md) — Completed (2026-08-25 14:39)
 
-- [发布 iTermate v0.3.0](tasks/release-v0-3-0.md) — In Progress (2026-08-26 11:22)
+- [发布 iTermate v0.3.0](tasks/release-v0-3-0.md) — Completed (2026-08-26 11:35)
 
 - [提交全部本地改动](tasks/commit-all-local-changes.md) — Completed (2026-08-25 14:02)
 
