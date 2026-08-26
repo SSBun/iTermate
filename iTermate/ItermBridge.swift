@@ -957,9 +957,12 @@ final class GhosttyClient {
     }
 
     private static var isGhosttyRunning: Bool {
-        !NSRunningApplication.runningApplications(
-            withBundleIdentifier: TerminalApp.ghostty.bundleIdentifier
-        ).isEmpty
+        let workspace = NSWorkspace.shared
+        let bundleIdentifier = TerminalApp.ghostty.bundleIdentifier
+        return workspace.frontmostApplication?.bundleIdentifier == bundleIdentifier
+            || workspace.runningApplications.contains {
+                $0.bundleIdentifier == bundleIdentifier && !$0.isTerminated
+            }
     }
 
     private static func runScript(

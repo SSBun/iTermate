@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-26
+
+### Added
+
+- 支持跟随前台 Ghostty 窗口，通过官方 AppleScript 展示 Window、Tab 与 Terminal，并可聚焦或关闭 Terminal。
+- Pi 与 Codex 可按 TTY 向 Ghostty Terminal 上报实时工作、完成和空闲状态。
+- Agents 设置新增可选的 zsh、Bash 与 fish 集成，为 Ghostty 上报普通 Shell 命令状态。
+
+### Fixed
+
+- Ghostty 从 iTerm2 启动时不再误用继承的旧 iTerm Session ID，并确保 Pi 新一轮工作立即显示运行状态。
+
+### Notes
+
+- Ghostty 实时状态图标需要其 AppleScript Terminal 暴露 `tty`；Ghostty 1.3.1 尚不具备该属性，但仍可使用 Session 浏览与操作功能。
+- 当前构建使用 ad hoc 签名且未经过 Apple notarization。
+
 ## [0.2.1] - 2026-08-21
 
 ### Added

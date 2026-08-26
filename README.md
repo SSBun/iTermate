@@ -2,7 +2,7 @@
 
 # iTermate
 
-**A native macOS companion panel for iTerm2 sessions.**
+**A native macOS companion panel for iTerm2 and Ghostty sessions.**
 
 Keep windows, tabs, projects, shell commands, and coding-agent activity visible at a glance—without leaving your terminal.
 
@@ -23,13 +23,13 @@ Keep windows, tabs, projects, shell commands, and coding-agent activity visible 
 
 ## Overview
 
-iTermate places a lightweight, resizable panel beside the frontmost iTerm2 window. It mirrors iTerm2's Window → Tab → Session hierarchy, can regroup sessions by project directory, and shows whether shells and supported coding agents are running, finished, failed, or waiting for input.
+iTermate places a lightweight, resizable panel beside the frontmost iTerm2 or Ghostty window. It mirrors the terminal's Window → Tab → Session hierarchy, can regroup sessions by project directory, and shows whether shells and supported coding agents are running, finished, failed, or waiting for input.
 
-A bundled Python Bridge reads iTerm2 state through the official iTerm2 API. The native SwiftUI/AppKit app communicates with that Bridge over a local Unix-domain socket, so session navigation and status updates stay on the Mac.
+A bundled Python Bridge reads iTerm2 through its official API, while Ghostty uses its official AppleScript interface. Session navigation and status updates stay on the Mac.
 
 ## Highlights
 
-- **Always in context** — follows the frontmost iTerm2 window and hides when iTerm2 is no longer active.
+- **Always in context** — follows the frontmost iTerm2 or Ghostty window and hides when neither terminal is active.
 - **Flexible organization** — group sessions by Window or Project Path, with collapsible Tab subgroups.
 - **Direct session control** — focus or close a session, close an entire group, and resize the panel from either edge.
 - **Project customization** — pin, favorite, and color-code project folders.
@@ -43,19 +43,21 @@ A bundled Python Bridge reads iTerm2 state through the official iTerm2 API. The 
 
 - macOS 13 Ventura or later
 - Apple Silicon Mac (`arm64`) for the downloadable release
-- [iTerm2](https://iterm2.com/) installed
+- [iTerm2](https://iterm2.com/) or [Ghostty](https://ghostty.org/) installed
+
+> Ghostty activity icons require a build whose AppleScript Terminal exposes `tty`; Ghostty 1.3.1 does not expose this property.
 
 ## Installation
 
 1. Download the latest DMG from [GitHub Releases](https://github.com/SSBun/iTermate/releases/latest).
 2. Open the DMG and drag **iTermate** into **Applications**.
-3. Start iTerm2, then open iTermate.
-4. Approve Automation access when macOS asks iTermate to communicate with iTerm2.
+3. Start iTerm2 or Ghostty, then open iTermate.
+4. Approve Automation access when macOS asks iTermate to communicate with the terminal.
 
 > [!IMPORTANT]
 > Current release builds are ad hoc signed and are **not notarized by Apple**. Verify the published `.sha256` file, then Control-click **iTermate.app** and choose **Open** if macOS blocks the first launch.
 
-On launch, iTermate installs and manages its bundled Bridge in iTerm2's AutoLaunch scripts directory. No separate Python setup is required.
+When iTerm2 is used, iTermate installs and manages its bundled Bridge in iTerm2's AutoLaunch scripts directory. No separate Python setup is required.
 
 ## Usage
 
@@ -85,7 +87,7 @@ Open **Settings → Agents** and enable the integration you use:
 - **Pi:** enable Pi, then run `/reload` in existing Pi sessions.
 - **Codex:** enable Codex, then review and approve the new hooks with `/hooks`.
 
-Pi and Codex are currently the supported agent integrations. Ordinary shell activity is observed independently through iTerm2.
+Pi and Codex are currently the supported agent integrations. For ordinary command status in Ghostty, enable the matching zsh, Bash, or fish toggle in the same settings and restart that shell; iTerm2 continues to observe shell activity through its Bridge.
 
 ## Troubleshooting
 

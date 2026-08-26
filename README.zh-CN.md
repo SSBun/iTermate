@@ -2,7 +2,7 @@
 
 # iTermate
 
-**面向 iTerm2 Session 的原生 macOS 伴随面板。**
+**面向 iTerm2 与 Ghostty Session 的原生 macOS 伴随面板。**
 
 无需离开终端，即可随时掌握 Window、Tab、项目、Shell 命令及编程 Agent 的活动状态。
 
@@ -23,13 +23,13 @@
 
 ## 概览
 
-iTermate 会在当前前台 iTerm2 窗口旁显示轻量、可调整尺寸的浮动面板。它既能呈现 iTerm2 的 Window → Tab → Session 层级，也能按项目目录重新分组，并显示 Shell 与受支持编程 Agent 的运行、完成、失败或等待输入状态。
+iTermate 会在当前前台 iTerm2 或 Ghostty 窗口旁显示轻量、可调整尺寸的浮动面板。它能呈现终端的 Window → Tab → Session 层级，也能按项目目录重新分组，并显示 Shell 与受支持编程 Agent 的运行、完成、失败或等待输入状态。
 
-随 App 分发的 Python Bridge 通过 iTerm2 官方 API 读取状态；原生 SwiftUI/AppKit App 通过本地 Unix Socket 与 Bridge 通信，使 Session 导航与状态更新都在本机完成。
+iTerm2 由随 App 分发的 Python Bridge 通过官方 API 读取，Ghostty 则使用官方 AppleScript 接口；Session 导航与状态更新都在本机完成。
 
 ## 主要功能
 
-- **始终紧随当前工作区**——跟随前台 iTerm2 窗口，并在 iTerm2 不再处于前台时自动隐藏。
+- **始终紧随当前工作区**——跟随前台 iTerm2 或 Ghostty 窗口，并在两者均不处于前台时自动隐藏。
 - **灵活组织 Session**——可按 Window 或 Project Path 分组，并显示可折叠的 Tab 子分组。
 - **直接操作 Session**——聚焦或关闭单个 Session、关闭整个分组，并可从面板两侧调整宽度。
 - **自定义项目分组**——固定、收藏项目目录并为其设置颜色。
@@ -43,19 +43,21 @@ iTermate 会在当前前台 iTerm2 窗口旁显示轻量、可调整尺寸的浮
 
 - macOS 13 Ventura 或更高版本
 - 下载版需要 Apple Silicon Mac（`arm64`）
-- 已安装 [iTerm2](https://iterm2.com/)
+- 已安装 [iTerm2](https://iterm2.com/) 或 [Ghostty](https://ghostty.org/)
+
+> Ghostty 活动状态图标要求其 AppleScript Terminal 暴露 `tty`；Ghostty 1.3.1 尚不具备该属性。
 
 ## 安装
 
 1. 从 [GitHub Releases](https://github.com/SSBun/iTermate/releases/latest) 下载最新 DMG。
 2. 打开 DMG，将 **iTermate** 拖入 **Applications**。
-3. 先启动 iTerm2，再打开 iTermate。
-4. macOS 提示 iTermate 与 iTerm2 通信时，允许自动化权限。
+3. 先启动 iTerm2 或 Ghostty，再打开 iTermate。
+4. macOS 提示 iTermate 与终端通信时，允许自动化权限。
 
 > [!IMPORTANT]
 > 当前公开构建使用 ad hoc 签名，且**未经过 Apple 公证**。请先核对发布页提供的 `.sha256` 文件；若 macOS 阻止首次启动，请按住 Control 点击 **iTermate.app** 并选择**打开**。
 
-启动后，iTermate 会自动将随 App 分发的 Bridge 安装到 iTerm2 AutoLaunch 脚本目录并管理其生命周期，无需单独配置 Python。
+使用 iTerm2 时，iTermate 会自动将随 App 分发的 Bridge 安装到 iTerm2 AutoLaunch 脚本目录并管理其生命周期，无需单独配置 Python。
 
 ## 使用方法
 
@@ -85,7 +87,7 @@ iTermate 会在当前前台 iTerm2 窗口旁显示轻量、可调整尺寸的浮
 - **Pi：**启用 Pi，然后在现有 Pi Session 中执行 `/reload`。
 - **Codex：**启用 Codex，然后通过 `/hooks` 检查并批准新增 Hook。
 
-目前仅 Pi 与 Codex 支持 Agent 集成。普通 Shell 活动由 iTermate 通过 iTerm2 独立观察。
+目前仅 Pi 与 Codex 支持 Agent 集成。在 Ghostty 中如需普通命令状态，请在同一设置页启用对应的 zsh、Bash 或 fish 开关并重启该 Shell；iTerm2 仍由 Bridge 观察普通 Shell 活动。
 
 ## 故障排查
 

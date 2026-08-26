@@ -1,10 +1,20 @@
 # 任务索引
 
+- [彻底移除 data-in-cli Skill](tasks/remove-data-in-cli-skill.md) — Completed (2026-08-26 11:20)
+
+- [提交 iTermate v0.3.0 全部本地改动](tasks/commit-v0-3-0-local-changes.md) — In Progress (2026-08-26 11:20)
+
+- [提交当前改动并发布 iTermate v0.3.0](tasks/commit-and-release-v0-3-0.md) — In Progress (2026-08-26 11:05)
+
+- [编写 iTermate 宣讲分享文档](tasks/promo-post-itermate.md) — Completed (2026-08-25 14:39)
+
+- [发布 iTermate v0.3.0](tasks/release-v0-3-0.md) — Cancelled (2026-08-25 15:54)
+
 - [提交全部本地改动](tasks/commit-all-local-changes.md) — Completed (2026-08-25 14:02)
 
 - [升级 Ghostty 至官方 tip](tasks/upgrade-ghostty-tip.md) — Completed (2026-08-25 13:38)
 
-- [实现 Ghostty 实时 Session 状态](tasks/investigate-ghostty-realtime-status.md) — Blocked (2026-08-25 13:48)
+- [实现 Ghostty 实时 Session 状态](tasks/investigate-ghostty-realtime-status.md) — Completed (2026-08-26 11:20)
 
 - [添加 Ghostty 基础支持](tasks/add-ghostty-support.md) — Completed (2026-08-24 17:32)
 
