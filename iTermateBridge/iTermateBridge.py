@@ -105,6 +105,28 @@ class Bridge:
         request_id = request.get("requestId")
         action = request.get("type")
 
+        if action == "openProject":
+            path = request.get("path")
+            if (
+                not isinstance(path, str)
+                or not path
+                or len(path) > 4096
+                or "\0" in path
+                or not os.path.isabs(path)
+            ):
+                await self.send_action_result(
+                    writer, request_id, False, "Invalid project path"
+                )
+                return
+            try:
+                await self.open_project(path)
+            except Exception as error:
+                await self.send_action_result(writer, request_id, False, str(error))
+                return
+            await self.send_action_result(writer, request_id, True, None)
+            await self.publish_snapshot()
+            return
+
         session_id = request.get("sessionId")
         if not isinstance(session_id, str) or not session_id or len(session_id) > 512:
             await self.send_action_result(writer, request_id, False, "Invalid session ID")
@@ -169,6 +191,46 @@ class Bridge:
         if error:
             message["error"] = error
         await self.send(writer, message)
+
+    async def open_project(self, path):
+        for window in self.app.windows:
+            for tab in window.tabs:
+                for session in tab.all_sessions:
+                    try:
+                        session_path = await session.async_get_variable("path")
+                    except Exception as error:
+                        raise RuntimeError(
+                            "Could not read iTerm2 session paths"
+                        ) from error
+                    if session_path == path:
+                        await session.async_activate()
+                        await self.app.async_activate(raise_all_windows=False)
+                        self.clear_finished_status(session.session_id)
+                        return
+
+        if not os.path.isdir(path):
+            raise ValueError("Favorite project folder no longer exists")
+
+        profile = iterm2.LocalWriteOnlyProfile()
+        profile.set_initial_directory_mode(
+            iterm2.InitialWorkingDirectory.INITIAL_WORKING_DIRECTORY_CUSTOM
+        )
+        profile.set_custom_directory(path)
+
+        window = self.app.current_window
+        if window is None:
+            window = await iterm2.Window.async_create(
+                self.connection,
+                profile_customizations=profile,
+            )
+            tab = window.current_tab if window is not None else None
+        else:
+            tab = await window.async_create_tab(profile_customizations=profile)
+
+        if tab is None or tab.current_session is None:
+            raise RuntimeError("Could not create iTerm2 session")
+        await tab.current_session.async_activate()
+        await self.app.async_activate(raise_all_windows=False)
 
     async def monitor_iterm_connection(self):
         await self.connection.websocket.wait_closed()

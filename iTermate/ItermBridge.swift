@@ -304,11 +304,27 @@ struct BridgeMessage: Decodable {
     let error: String?
 }
 
+struct AgentCompletionStatistics: Equatable {
+    let total: Int
+    let month: Int
+    let week: Int
+    let day: Int
+}
+
 final class ItermStore: ObservableObject {
     @Published private(set) var terminalApp: TerminalApp?
     @Published private(set) var connectionState: BridgeConnectionState = .connecting
     @Published private(set) var windows: [TerminalWindowSnapshot] = []
     @Published private(set) var actionError: String?
+    @Published private(set) var statusMenuConnectionState: BridgeConnectionState = .connecting
+    @Published private(set) var runningAgentSessionCount: Int?
+    @Published private(set) var agentCompletionStatistics: AgentCompletionStatistics
+
+    var completedAgentTurnsToday: Int { agentCompletionStatistics.day }
+
+    private static let completionCountsByDayKey = "agentCompletionCountsByDay"
+    private static let legacyCompletionDayKey = "agentCompletionDayStart"
+    private static let legacyCompletionCountKey = "agentCompletionCount"
 
     private lazy var iTermClient = ItermBridgeClient(
         onMessage: { [weak self] message in self?.apply(message) },
@@ -338,6 +354,21 @@ final class ItermStore: ObservableObject {
     private var terminalStatusRegistry = TerminalStatusRegistry()
     private var statusExpiryTimer: Timer?
     private var lastActiveGhosttyTerminalID: String?
+    private var iTermAgentCompletionTracker = SessionCompletionTracker()
+    private var ghosttyAgentCompletionTracker = SessionCompletionTracker()
+    private var iTermSnapshotIsReady = false
+    private var ghosttySnapshotIsReady = false
+    private let completionDefaults: UserDefaults
+    private var completionCountsByDay: [String: Int]
+
+    init() {
+        let defaults = UserDefaults.standard
+        let counts = Self.loadCompletionCounts(from: defaults)
+        completionDefaults = defaults
+        completionCountsByDay = counts
+        agentCompletionStatistics = Self.statistics(from: counts)
+        updateStatusMenuSummary()
+    }
 
     func start() {
         guard !isStarted else { return }
@@ -348,9 +379,7 @@ final class ItermStore: ObservableObject {
         }
         RunLoop.main.add(statusExpiryTimer, forMode: .common)
         self.statusExpiryTimer = statusExpiryTimer
-        if !NSRunningApplication.runningApplications(
-            withBundleIdentifier: TerminalApp.iTerm2.bundleIdentifier
-        ).isEmpty {
+        if Self.isRunning(.iTerm2) {
             startClient(for: .iTerm2)
         }
         if terminalApp == .ghostty {
@@ -399,6 +428,69 @@ final class ItermStore: ObservableObject {
         }
     }
 
+    func refreshCompletionStatistics() {
+        updateCompletionStatistics()
+    }
+
+    func refreshStatusMenu() {
+        updateCompletionStatistics()
+        if Self.isRunning(.iTerm2) {
+            startClient(for: .iTerm2)
+        }
+        if Self.isRunning(.ghostty) {
+            refreshGhostty(force: true)
+        }
+        updateStatusMenuSummary()
+    }
+
+    func openFavoriteProject(
+        atPath path: String,
+        completion: @escaping (String?) -> Void
+    ) {
+        let finish: (String?) -> Void = { [weak self] error in
+            self?.actionError = error
+            completion(error)
+        }
+        actionError = nil
+        if Self.isRunning(.iTerm2) {
+            startClient(for: .iTerm2)
+            iTermClient.openProject(atPath: path, completion: finish)
+            return
+        }
+
+        var isDirectory: ObjCBool = false
+        guard
+            FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory),
+            isDirectory.boolValue
+        else {
+            finish("Favorite project folder no longer exists")
+            return
+        }
+        guard let applicationURL = NSWorkspace.shared.urlForApplication(
+            withBundleIdentifier: TerminalApp.iTerm2.bundleIdentifier
+        ) else {
+            finish("iTerm2 is not installed")
+            return
+        }
+
+        startClient(for: .iTerm2)
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+        NSWorkspace.shared.openApplication(
+            at: applicationURL,
+            configuration: configuration
+        ) { [weak self] _, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if let error {
+                    finish("Could not open iTerm2: \(error.localizedDescription)")
+                } else {
+                    self.iTermClient.openProject(atPath: path, completion: finish)
+                }
+            }
+        }
+    }
+
     func activate(sessionID: String) {
         switch terminalApp ?? .iTerm2 {
         case .iTerm2:
@@ -441,6 +533,7 @@ final class ItermStore: ObservableObject {
         case "hello":
             bridgeIsCompatible = true
             iTermConnectionState = .connected
+            updateStatusMenuSummary()
             if terminalApp != .ghostty {
                 connectionState = .connected
             }
@@ -455,6 +548,13 @@ final class ItermStore: ObservableObject {
             }
             latestSequence = sequence
             iTermWindows = windows
+            iTermSnapshotIsReady = true
+            let completions = iTermAgentCompletionTracker.completions(
+                in: windows,
+                activityKind: .agent
+            )
+            recordSuccessfulAgentCompletions(completions)
+            updateStatusMenuSummary()
             let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
             let runningCount = sessions.lazy.filter { $0.status == .running }.count
             let finishedCount = sessions.lazy.filter { $0.status == .finished }.count
@@ -492,11 +592,203 @@ final class ItermStore: ObservableObject {
             latestSequence = 0
             lastLoggedSnapshotCounts = nil
             iTermWindows = []
+            iTermSnapshotIsReady = false
+            _ = iTermAgentCompletionTracker.completions(
+                in: [],
+                activityKind: .agent
+            )
         }
+        updateStatusMenuSummary()
         if terminalApp != .ghostty {
             connectionState = state
             windows = iTermWindows
         }
+    }
+
+    private func recordSuccessfulAgentCompletions(
+        _ completions: [TerminalSessionSnapshot]
+    ) {
+        let successCount = completions.lazy.filter { $0.exitStatus == 0 }.count
+        guard successCount > 0 else { return }
+        completionCountsByDay[Self.dayKey(), default: 0] += successCount
+        completionDefaults.set(
+            completionCountsByDay,
+            forKey: Self.completionCountsByDayKey
+        )
+        updateCompletionStatistics()
+    }
+
+    private func updateCompletionStatistics() {
+        let statistics = Self.statistics(from: completionCountsByDay)
+        if agentCompletionStatistics != statistics {
+            agentCompletionStatistics = statistics
+        }
+    }
+
+    private func updateStatusMenuSummary() {
+        updateCompletionStatistics()
+        let iTermIsRunning = Self.isRunning(.iTerm2)
+        let ghosttyIsRunning = Self.isRunning(.ghostty)
+        var sourceStates: [BridgeConnectionState] = []
+        if iTermIsRunning {
+            sourceStates.append(
+                statusMenuSourceState(
+                    connectionState: iTermConnectionState,
+                    hasSnapshot: iTermSnapshotIsReady
+                )
+            )
+        }
+        if ghosttyIsRunning {
+            sourceStates.append(
+                statusMenuSourceState(
+                    connectionState: ghosttyConnectionState,
+                    hasSnapshot: ghosttySnapshotIsReady
+                )
+            )
+        }
+
+        let disconnectedMessage = sourceStates.compactMap { state -> String? in
+            guard case .disconnected(let message) = state else { return nil }
+            return message
+        }.first
+        let newState: BridgeConnectionState
+        if let disconnectedMessage {
+            newState = .disconnected(disconnectedMessage)
+        } else if sourceStates.contains(.connecting) {
+            newState = .connecting
+        } else {
+            newState = .connected
+        }
+        if statusMenuConnectionState != newState {
+            statusMenuConnectionState = newState
+        }
+
+        let newCount: Int?
+        if newState == .connected {
+            newCount = (iTermIsRunning ? runningAgentCount(in: iTermWindows) : 0)
+                + (ghosttyIsRunning ? runningAgentCount(in: ghosttyWindows) : 0)
+        } else {
+            newCount = nil
+        }
+        if runningAgentSessionCount != newCount {
+            runningAgentSessionCount = newCount
+        }
+    }
+
+    private func statusMenuSourceState(
+        connectionState: BridgeConnectionState,
+        hasSnapshot: Bool
+    ) -> BridgeConnectionState {
+        guard !hasSnapshot else { return connectionState }
+        if case .disconnected = connectionState {
+            return connectionState
+        }
+        return .connecting
+    }
+
+    private func runningAgentCount(in windows: [TerminalWindowSnapshot]) -> Int {
+        windows
+            .flatMap(\.tabs)
+            .flatMap(\.sessions)
+            .lazy
+            .filter { $0.activityKind == .agent && $0.status == .running }
+            .count
+    }
+
+    private static func isRunning(_ terminalApp: TerminalApp) -> Bool {
+        NSRunningApplication.runningApplications(
+            withBundleIdentifier: terminalApp.bundleIdentifier
+        ).contains { !$0.isTerminated }
+    }
+
+    private static func dayKey(
+        for date: Date = Date(),
+        calendar: Calendar = .autoupdatingCurrent
+    ) -> String {
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        return String(
+            format: "%04d-%02d-%02d",
+            components.year ?? 0,
+            components.month ?? 0,
+            components.day ?? 0
+        )
+    }
+
+    private static func date(
+        forDayKey key: String,
+        calendar: Calendar
+    ) -> Date? {
+        let values = key.split(separator: "-").compactMap { Int($0) }
+        guard values.count == 3 else { return nil }
+        return calendar.date(
+            from: DateComponents(
+                year: values[0],
+                month: values[1],
+                day: values[2],
+                hour: 12
+            )
+        )
+    }
+
+    private static func statistics(
+        from counts: [String: Int],
+        now: Date = Date(),
+        calendar: Calendar = .autoupdatingCurrent
+    ) -> AgentCompletionStatistics {
+        let todayKey = dayKey(for: now, calendar: calendar)
+        let month = calendar.dateInterval(of: .month, for: now)
+        let week = calendar.dateInterval(of: .weekOfYear, for: now)
+        var totalCount = 0
+        var monthCount = 0
+        var weekCount = 0
+        var dayCount = 0
+
+        for (key, storedCount) in counts {
+            let count = max(0, storedCount)
+            totalCount += count
+            if key == todayKey {
+                dayCount += count
+            }
+            guard let date = date(forDayKey: key, calendar: calendar) else {
+                continue
+            }
+            if month?.contains(date) == true {
+                monthCount += count
+            }
+            if week?.contains(date) == true {
+                weekCount += count
+            }
+        }
+
+        return AgentCompletionStatistics(
+            total: totalCount,
+            month: monthCount,
+            week: weekCount,
+            day: dayCount
+        )
+    }
+
+    private static func loadCompletionCounts(
+        from defaults: UserDefaults
+    ) -> [String: Int] {
+        if let storedCounts = defaults.dictionary(forKey: completionCountsByDayKey) {
+            return storedCounts.reduce(into: [:]) { counts, entry in
+                if let count = entry.value as? NSNumber, count.intValue > 0 {
+                    counts[entry.key] = count.intValue
+                }
+            }
+        }
+
+        var counts: [String: Int] = [:]
+        let legacyCount = max(0, defaults.integer(forKey: legacyCompletionCountKey))
+        let legacyDay = defaults.double(forKey: legacyCompletionDayKey)
+        if legacyCount > 0, legacyDay > 0 {
+            counts[dayKey(for: Date(timeIntervalSince1970: legacyDay))] = legacyCount
+        }
+        defaults.set(counts, forKey: completionCountsByDayKey)
+        defaults.removeObject(forKey: legacyCompletionDayKey)
+        defaults.removeObject(forKey: legacyCompletionCountKey)
+        return counts
     }
 
     private func startClient(for terminalApp: TerminalApp) {
@@ -560,6 +852,7 @@ final class ItermStore: ObservableObject {
         lastActiveGhosttyTerminalID = activeSession?.id
 
         ghosttyConnectionState = .connected
+        ghosttySnapshotIsReady = true
         publishGhosttyWindows()
         guard terminalApp == .ghostty else { return }
         actionError = nil
@@ -597,6 +890,12 @@ final class ItermStore: ObservableObject {
                 }
             )
         }
+        let completions = ghosttyAgentCompletionTracker.completions(
+            in: ghosttyWindows,
+            activityKind: .agent
+        )
+        recordSuccessfulAgentCompletions(completions)
+        updateStatusMenuSummary()
         guard terminalApp == .ghostty else { return }
         windows = ghosttyWindows
     }
@@ -632,9 +931,15 @@ final class ItermStore: ObservableObject {
         if state != .connected {
             ghosttySourceWindows = []
             ghosttyWindows = []
+            ghosttySnapshotIsReady = false
             lastActiveGhosttyTerminalID = nil
             terminalStatusRegistry.reconcile(terminals: [:])
+            _ = ghosttyAgentCompletionTracker.completions(
+                in: [],
+                activityKind: .agent
+            )
         }
+        updateStatusMenuSummary()
         guard terminalApp == .ghostty else { return }
         connectionState = state
         windows = ghosttyWindows
@@ -647,6 +952,8 @@ final class ItermStore: ObservableObject {
 }
 
 final class ItermBridgeClient {
+    private static let actionTimeout: TimeInterval = 15
+
     private let queue = DispatchQueue(label: "com.caishilin.iTermate.bridge")
     private let onMessage: (BridgeMessage) -> Void
     private let onStateChange: (BridgeConnectionState) -> Void
@@ -656,6 +963,8 @@ final class ItermBridgeClient {
     private var installedBridgeURL: URL?
     private var lastLaunchDate = Date.distantPast
     private var isReady = false
+    private var queuedActionRequests: [String: SessionActionRequest] = [:]
+    private var actionCompletions: [String: (String?) -> Void] = [:]
 
     init(
         onMessage: @escaping (BridgeMessage) -> Void,
@@ -686,6 +995,12 @@ final class ItermBridgeClient {
             connection?.stateUpdateHandler = nil
             connection?.cancel()
             connection = nil
+            for requestID in Array(actionCompletions.keys) {
+                finishAction(
+                    requestID: requestID,
+                    error: "iTerm2 Bridge stopped before completing the action"
+                )
+            }
             BridgeInstaller.stopRunningBridge()
         }
     }
@@ -697,27 +1012,35 @@ final class ItermBridgeClient {
     }
 
     func activate(sessionID: String) {
-        queue.async { [weak self] in
-            self?.send(
-                SessionActionRequest(
-                    type: "activateSession",
-                    requestId: UUID().uuidString,
-                    sessionId: sessionID
-                )
-            )
-        }
+        let request = SessionActionRequest(
+            type: "activateSession",
+            requestId: UUID().uuidString,
+            sessionId: sessionID
+        )
+        queue.async { [weak self] in self?.send(request) }
     }
 
     func close(sessionID: String) {
-        queue.async { [weak self] in
-            self?.send(
-                SessionActionRequest(
-                    type: "closeSession",
-                    requestId: UUID().uuidString,
-                    sessionId: sessionID
-                )
-            )
-        }
+        let request = SessionActionRequest(
+            type: "closeSession",
+            requestId: UUID().uuidString,
+            sessionId: sessionID
+        )
+        queue.async { [weak self] in self?.send(request) }
+    }
+
+    func openProject(
+        atPath path: String,
+        completion: @escaping (String?) -> Void
+    ) {
+        perform(
+            SessionActionRequest(
+                type: "openProject",
+                requestId: UUID().uuidString,
+                path: path
+            ),
+            completion: completion
+        )
     }
 
     func resetSessionStatuses() {
@@ -749,6 +1072,7 @@ final class ItermBridgeClient {
             case .ready:
                 self.isReady = true
                 self.reconnectWorkItem?.cancel()
+                self.flushQueuedActions()
                 self.receive(on: connection)
             case .failed(let error):
                 self.scheduleReconnect(after: error)
@@ -797,6 +1121,14 @@ final class ItermBridgeClient {
 
             do {
                 let message = try JSONDecoder().decode(BridgeMessage.self, from: Data(line))
+                if message.type == "actionResult", let requestID = message.requestId {
+                    finishAction(
+                        requestID: requestID,
+                        error: message.ok == true
+                            ? nil
+                            : message.error ?? "iTerm2 action failed"
+                    )
+                }
                 DispatchQueue.main.async { [onMessage] in onMessage(message) }
             } catch {
                 publish(state: .disconnected("Invalid Bridge response"))
@@ -809,8 +1141,56 @@ final class ItermBridgeClient {
         }
     }
 
-    private func send<T: Encodable>(_ value: T) {
-        guard isReady, let connection else { return }
+    private func perform(
+        _ request: SessionActionRequest,
+        completion: @escaping (String?) -> Void
+    ) {
+        queue.async { [weak self] in
+            guard let self else { return }
+            actionCompletions[request.requestId] = completion
+            if isReady {
+                if !send(request) {
+                    finishAction(
+                        requestID: request.requestId,
+                        error: "Could not send iTerm2 action"
+                    )
+                    return
+                }
+            } else {
+                queuedActionRequests[request.requestId] = request
+            }
+            queue.asyncAfter(deadline: .now() + Self.actionTimeout) { [weak self] in
+                guard self?.actionCompletions[request.requestId] != nil else { return }
+                self?.finishAction(
+                    requestID: request.requestId,
+                    error: "iTerm2 action timed out"
+                )
+            }
+        }
+    }
+
+    private func flushQueuedActions() {
+        let requests = Array(queuedActionRequests.values)
+        queuedActionRequests.removeAll()
+        for request in requests where !send(request) {
+            finishAction(
+                requestID: request.requestId,
+                error: "Could not send iTerm2 action"
+            )
+        }
+    }
+
+    private func finishAction(requestID: String, error: String?) {
+        queuedActionRequests.removeValue(forKey: requestID)
+        guard let completion = actionCompletions.removeValue(forKey: requestID) else {
+            return
+        }
+        DispatchQueue.main.async { completion(error) }
+    }
+
+    @discardableResult
+    private func send<T: Encodable>(_ value: T) -> Bool {
+        guard isReady, let connection else { return false }
 
         do {
             var data = try JSONEncoder().encode(value)
@@ -818,8 +1198,10 @@ final class ItermBridgeClient {
             connection.send(content: data, completion: .contentProcessed { [weak self] error in
                 if let error { self?.scheduleReconnect(after: error) }
             })
+            return true
         } catch {
             publish(state: .disconnected("Could not encode Bridge request"))
+            return false
         }
     }
 
@@ -1095,7 +1477,20 @@ private struct GhosttyScriptError: LocalizedError {
 private struct SessionActionRequest: Encodable {
     let type: String
     let requestId: String
-    let sessionId: String
+    let sessionId: String?
+    let path: String?
+
+    init(
+        type: String,
+        requestId: String,
+        sessionId: String? = nil,
+        path: String? = nil
+    ) {
+        self.type = type
+        self.requestId = requestId
+        self.sessionId = sessionId
+        self.path = path
+    }
 }
 
 enum BridgeInstaller {

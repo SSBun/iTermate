@@ -6,9 +6,12 @@ struct SessionCompletionTracker {
     private var previousRunningSessionIDs: Set<String>?
 
     mutating func completions(
-        in windows: [TerminalWindowSnapshot]
+        in windows: [TerminalWindowSnapshot],
+        activityKind: SessionActivityKind? = nil
     ) -> [TerminalSessionSnapshot] {
-        let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
+        let sessions = windows.flatMap(\.tabs).flatMap(\.sessions).filter {
+            activityKind == nil || $0.activityKind == activityKind
+        }
         let runningSessionIDs = Set(
             sessions.lazy.filter { $0.status == .running }.map(\.id)
         )

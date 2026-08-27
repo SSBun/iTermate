@@ -29,6 +29,7 @@ struct ItermateApplication: App {
 
         Settings {
             SettingsView(
+                store: appDelegate.store,
                 settings: appDelegate.settings,
                 updater: appDelegate.updaterController.updater
             )

@@ -614,6 +614,7 @@ struct OpenSettingsButton<Label: View>: View {
 }
 
 struct SettingsView: View {
+    @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
     let updater: SPUUpdater
 
@@ -634,6 +635,11 @@ struct SettingsView: View {
                     Label("Status Animation", systemImage: "waveform.path")
                 }
 
+            StatisticsSettingsView(store: store)
+                .tabItem {
+                    Label("Statistics", systemImage: "chart.bar")
+                }
+
             AboutSettingsView(updater: updater)
                 .tabItem {
                     Label("About", systemImage: "info.circle")
@@ -641,6 +647,33 @@ struct SettingsView: View {
         }
         .tint(settings.accentColor)
         .frame(width: 520, height: 420)
+    }
+}
+
+private struct StatisticsSettingsView: View {
+    @ObservedObject var store: ItermStore
+
+    var body: some View {
+        Form {
+            Section("Agent Completions") {
+                statisticRow("Total", value: store.agentCompletionStatistics.total)
+                statisticRow("This Month", value: store.agentCompletionStatistics.month)
+                statisticRow("This Week", value: store.agentCompletionStatistics.week)
+                statisticRow("Today", value: store.agentCompletionStatistics.day)
+            }
+        }
+        .formStyle(.grouped)
+        .scrollIndicators(.hidden)
+        .onAppear {
+            store.refreshCompletionStatistics()
+        }
+    }
+
+    private func statisticRow(_ title: String, value: Int) -> some View {
+        LabeledContent(title) {
+            Text(value.formatted())
+                .monospacedDigit()
+        }
     }
 }
 
@@ -1008,20 +1041,26 @@ private struct AboutSettingsView: View {
 }
 
 struct StatusMenuView: View {
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
+    @State private var projectActionError: String?
+    @State private var projectActionIsPending = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("iTermate", systemImage: "terminal")
-                .font(.headline)
-
             HStack(spacing: 8) {
-                Circle()
-                    .fill(statusColor)
-                    .frame(width: 8, height: 8)
-                Text(statusTitle)
+                Label("iTermate", systemImage: "terminal")
+                    .font(.headline)
                 Spacer()
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 7, height: 7)
+                    Text(statusTitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             if let statusDetail {
@@ -1031,10 +1070,36 @@ struct StatusMenuView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
+            VStack(spacing: 5) {
+                Text(store.completedAgentTurnsToday.formatted())
+                    .font(.system(size: 40, weight: .semibold, design: .rounded))
+                    .foregroundStyle(completionCountColor)
+                Text("COMPLETED TODAY")
+                    .font(.caption2.weight(.semibold))
+                    .tracking(0.8)
+                    .foregroundStyle(.secondary)
+                Label(runningAgentSummary, systemImage: "bolt.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 2)
+
             Divider()
 
-            LabeledContent("Windows", value: "\(store.windows.count)")
-            LabeledContent("Tabs", value: "\(tabCount)")
+            Text("FAVORITE PROJECTS")
+                .font(.caption2.weight(.semibold))
+                .tracking(0.6)
+                .foregroundStyle(.secondary)
+
+            favoriteProjects
+
+            if let projectActionError {
+                Text(projectActionError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             Divider()
 
@@ -1048,15 +1113,90 @@ struct StatusMenuView: View {
         }
         .padding(14)
         .tint(settings.accentColor)
-        .frame(width: 280)
+        .frame(width: 340)
+        .onAppear {
+            projectActionError = nil
+            store.refreshStatusMenu()
+        }
     }
 
-    private var tabCount: Int {
-        store.windows.reduce(0) { $0 + $1.tabs.count }
+    @ViewBuilder
+    private var favoriteProjects: some View {
+        if favoriteProjectPaths.isEmpty {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("No Favorite Projects")
+                    .foregroundStyle(.secondary)
+                Text("Add favorites from a Project Path section menu.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.vertical, 4)
+        } else if favoriteProjectPaths.count > 5 {
+            ScrollView {
+                favoriteProjectRows
+            }
+            .frame(height: 160)
+        } else {
+            favoriteProjectRows
+        }
+    }
+
+    private var favoriteProjectRows: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(favoriteProjectPaths, id: \.self) { path in
+                Button {
+                    openFavoriteProject(atPath: path)
+                } label: {
+                    HStack(spacing: 12) {
+                        Text(projectTitle(for: path))
+                            .lineLimit(1)
+                            .layoutPriority(1)
+                        Spacer(minLength: 8)
+                        Text(path)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .frame(maxWidth: 210, alignment: .trailing)
+                            .help(path)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .padding(.vertical, 5)
+                }
+                .buttonStyle(.plain)
+                .disabled(projectActionIsPending)
+            }
+        }
+    }
+
+    private var favoriteProjectPaths: [String] {
+        settings.projectFolderCustomizations.compactMap { path, customization in
+            customization.isFavorite ? path : nil
+        }.sorted { first, second in
+            let titleOrder = projectTitle(for: first).localizedStandardCompare(
+                projectTitle(for: second)
+            )
+            if titleOrder == .orderedSame {
+                return first.localizedStandardCompare(second) == .orderedAscending
+            }
+            return titleOrder == .orderedAscending
+        }
+    }
+
+    private var completionCountColor: Color {
+        store.completedAgentTurnsToday > 0 ? settings.accentColor : .primary
+    }
+
+    private var runningAgentSummary: String {
+        guard let count = store.runningAgentSessionCount else {
+            return "Running agents unavailable"
+        }
+        return "\(count) \(count == 1 ? "agent" : "agents") running"
     }
 
     private var statusTitle: String {
-        switch store.connectionState {
+        switch store.statusMenuConnectionState {
         case .connecting:
             "Connecting"
         case .disconnected:
@@ -1067,7 +1207,7 @@ struct StatusMenuView: View {
     }
 
     private var statusColor: Color {
-        switch store.connectionState {
+        switch store.statusMenuConnectionState {
         case .connecting:
             .orange
         case .disconnected:
@@ -1078,10 +1218,28 @@ struct StatusMenuView: View {
     }
 
     private var statusDetail: String? {
-        guard case .disconnected(let message) = store.connectionState else {
+        guard case .disconnected(let message) = store.statusMenuConnectionState else {
             return nil
         }
         return message
+    }
+
+    private func projectTitle(for path: String) -> String {
+        let title = (path as NSString).lastPathComponent
+        return title.isEmpty ? path : title
+    }
+
+    private func openFavoriteProject(atPath path: String) {
+        projectActionError = nil
+        projectActionIsPending = true
+        store.openFavoriteProject(atPath: path) { error in
+            projectActionIsPending = false
+            if let error {
+                projectActionError = error
+            } else {
+                dismiss()
+            }
+        }
     }
 
     @ViewBuilder

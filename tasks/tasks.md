@@ -1,5 +1,11 @@
 # 任务索引
 
+- [添加 Statistics 设置标签页](tasks/add-statistics-settings-tab.md) — Completed (2026-08-27 14:08)
+
+- [实现状态菜单重设计](tasks/implement-status-menu-redesign.md) — Completed (2026-08-27 10:52)
+
+- [重新设计状态菜单视图](tasks/redesign-status-menu-view.md) — Completed (2026-08-26 17:07)
+
 - [彻底移除 data-in-cli Skill](tasks/remove-data-in-cli-skill.md) — Completed (2026-08-26 11:20)
 
 - [提交 iTermate v0.3.0 全部本地改动](tasks/commit-v0-3-0-local-changes.md) — Completed (2026-08-26 11:21)
