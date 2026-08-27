@@ -1,18 +1,18 @@
 # 发布 iTermate v0.3.1 修复版本
 
-Status: In Progress (2026-08-27 14:36)
+Status: Completed (2026-08-27 14:48)
 Kind: Task
 
 ## Target
 
 - [x] T1: 版本升至 0.3.1（build 10），更新 changelog 并由 project.yml 重新生成工程，完成 Release 构建、DMG 打包、签名与 Sparkle appcast 本地验证。
-- [ ] T2: 经用户确认远端操作清单后，按顺序推送 tag、创建已验证资产的 GitHub Release 并发布 appcast。
+- [x] T2: 经用户确认远端操作清单后，按顺序推送 tag、创建已验证资产的 GitHub Release 并发布 appcast。
 
 ## Scope
 
 - 遵循 `github-release-sparkle-macos` SOP；按会话规则未运行测试套件（用户未授权）。
 - 不启动或重启 iTermate、Bridge 或用户终端。
-- 远端 tag、Release、资产与 appcast 的变更须在本地准备完成后再次取得具体操作确认。
+- 远端 tag、Release、资产与 appcast 的变更已按清单取得用户确认（"confirm"）。
 
 ## Plan
 
@@ -28,11 +28,15 @@ Kind: Task
 - Release DMG 构建通过：`dist/iTermate-0.3.1_20260827-143845/iTermate-0.3.1.dmg`，3,924,394 bytes，SHA-256 `c46499315ddd89d0259df38ca64da693a5512299895e95d47da0aebcf0a1427b`，hdiutil verify VALID。
 - 内置 App 验证：0.3.1/build 10、arm64、deep codesign OK、Sparkle 2.9.4 嵌入；沿用既有 ad hoc 签名且未公证限制。
 - Sparkle `sign_update --account SSBun.iTermate` 签名生成并通过 `--verify`；`docs/appcast.xml` 已加入 0.3.1/build 10 条目，xmllint 通过。
+- 用户确认远端清单后：tag `v0.3.1` 已推送；GitHub Release 创建并上传 DMG 与 sha256；独立下载校验 SHA-256 OK；随后才推送 main。
+- GitHub Pages 首次仍返回旧 feed，等待约 60 秒带缓存绕过重试后公开 appcast 首项变为 0.3.1/build 10。
 
 ## Result
 
-- （待远端发布后填写）
+- T1: 发布提交 `7eb9820`（tag `v0.3.1`）包含 0.3.1/build 10、CHANGELOG、重新生成的工程与已签名 appcast 条目。
+- T2: 用户确认清单后按序完成：tag v0.3.1 推送；gh release create --verify-tag 上传 DMG 与 sha256；API 独立下载 SHA-256 校验 OK；最后推送 main 发布 appcast。
+- Review gate: Skipped — 用户未要求独立 Reviewer；发布全程按 SOP 失败处理表执行（Pages 旧缓存等待重试后通过）。
 
 ## Verification
 
-- （待远端发布后填写）
+- Passed: 公开 appcast 首项 0.3.1/build 10；EdDSA 签名验证公开下载资产；资产 HTTP 200 且 SHA-256 一致；tag/Release/main 同为 7eb9820。未运行测试套件（用户规则）。
