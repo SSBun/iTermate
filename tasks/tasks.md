@@ -1,5 +1,7 @@
 # 任务索引
 
+- [发布 iTermate v0.3.1 修复版本](tasks/release-v0-3-1.md) — In Progress (2026-08-27 14:36)
+
 - [添加 Statistics 设置标签页](tasks/add-statistics-settings-tab.md) — Completed (2026-08-27 14:08)
 
 - [实现状态菜单重设计](tasks/implement-status-menu-redesign.md) — Completed (2026-08-27 10:52)

@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-08-27
+
+### Added
+
+- Settings 新增 Statistics 标签页，以 Total、This Month、This Week、Today 汇总展示成功 Agent 完成次数，数据按本地自然日聚合并持久化。
+- 状态菜单新增 Favorite Projects 快捷入口，点击后定位已打开的项目 Session，或以该项目目录新建 Tab/窗口。
+
+### Changed
+
+- 状态菜单重设计：Today 完成次数作为大号主指标，正在运行的 Agent 数量改为次要信息，并显示实时连接状态。
+
+### Notes
+
+- 当前 arm64 构建使用 ad hoc 签名，未经过 Apple notarization。
+
 ## [0.3.0] - 2026-08-26
 
 ### Added
