@@ -31,13 +31,13 @@
 
 ## CTX-terminal-backends — iTerm2 与 Ghostty 数据源
 - Scope: 前台终端识别、面板窗口跟随、Window/Tab/Session 快照与操作路由、跨终端 Agent 摘要，以及不同终端的状态能力边界。
-- Paths: `iTermate/iTermateApp.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`
-- Keywords: iTerm2, Ghostty, AppleScript, Bridge, TerminalApp, frontmost, snapshot, tty, telemetry, shell hook, focus, close, open project, favorite project, agent summary, completion count, session status
-- Authority: `iTermate/iTermateApp.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`, `https://ghostty.org/docs/features/applescript`
-- Recheck: 支持的终端、Ghostty AppleScript 层级或属性、快照轮询、TTY 状态协议、Integration 安装、前台窗口选择、跨终端统计或 Bridge 操作路由发生变化时复查。
+- Paths: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`
+- Keywords: iTerm2, Ghostty, AppleScript, Bridge, TerminalApp, frontmost, panel setting, snapshot, tty, telemetry, shell hook, focus, close, open project, favorite project, agent summary, completion count, session status
+- Authority: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`, `https://ghostty.org/docs/features/applescript`
+- Recheck: 支持的终端、Ghostty AppleScript 层级或属性、面板按终端启用偏好、快照轮询、TTY 状态协议、Integration 安装、前台窗口选择、跨终端统计或 Bridge 操作路由发生变化时复查。
 
 ### Purpose and Boundaries
-- `PanelFollower` 只在 iTerm2 或 Ghostty 是系统前台应用且存在可见 layer-0 窗口时显示面板；iTerm2 保留选择最大窗口以排除模态框的策略，Ghostty 使用 Core Graphics 前后顺序中的首个窗口；无需 Accessibility 权限。
+- `PanelFollower` 只在 iTerm2 或 Ghostty 是系统前台应用、存在可见 layer-0 窗口，且 `AppSettings` 中该终端的独立面板开关启用时显示面板；两个开关默认启用并持久化，关闭仅隐藏对应终端的面板，不阻断 `ItermStore` 的终端切换和状态采集。iTerm2 保留选择最大窗口以排除模态框的策略，Ghostty 使用 Core Graphics 前后顺序中的首个窗口；无需 Accessibility 权限。
 - iTerm2 继续由 Python Bridge 提供层级、操作、普通命令和 Agent 状态；Ghostty 由官方 AppleScript 提供 Window、Tab、Terminal、工作目录、焦点与关闭操作。运行时能读取 terminal `tty` 时，App 才把本机 Integration 状态合并到唯一匹配的 Ghostty Terminal；缺少 TTY、映射重复或来源未映射时状态保持未知，不根据标题、目录或进程名称猜测。
 
 ### Workflows

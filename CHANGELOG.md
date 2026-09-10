@@ -4,6 +4,16 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-10
+
+### Added
+
+- General Settings 新增 iTerm2 与 Ghostty 独立面板开关，可分别控制面板是否在对应终端中显示，并持久化用户选择。
+
+### Notes
+
+- 当前 arm64 构建使用 ad hoc 签名，未经过 Apple notarization。
+
 ## [0.3.1] - 2026-08-27
 
 ### Added

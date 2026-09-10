@@ -97,6 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 private final class PanelFollower {
     private let store: ItermStore
+    private let settings: AppSettings
     private let panel: ComradePanel
     private var timer: Timer?
     private var lastWindowSize: CGSize?
@@ -105,6 +106,7 @@ private final class PanelFollower {
 
     init(store: ItermStore, settings: AppSettings) {
         self.store = store
+        self.settings = settings
         panel = ComradePanel(store: store, settings: settings)
     }
 
@@ -129,6 +131,10 @@ private final class PanelFollower {
         }
 
         store.setActiveTerminalApp(window.terminalApp)
+        guard settings.isPanelEnabled(for: window.terminalApp) else {
+            panel.orderOut(nil)
+            return
+        }
         guard !panel.inLiveResize, !panel.isManuallyResizing else { return }
 
         let panelFrame = PanelLayout.frame(

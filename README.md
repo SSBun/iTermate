@@ -73,6 +73,7 @@ When iTerm2 is used, iTermate installs and manages its bundled Bridge in iTerm2'
 
 Open the gear button in the panel or the iTermate menu-bar item to configure:
 
+- whether the panel appears in iTerm2 and Ghostty independently;
 - preferred left or right docking side;
 - system, light, or dark panel appearance with blur or opaque backgrounds;
 - accent color, font, and font size;

@@ -73,6 +73,7 @@ iTerm2 由随 App 分发的 Python Bridge 通过官方 API 读取，Ghostty 则�
 
 点击面板中的齿轮按钮或 iTermate 菜单栏项目，可配置：
 
+- 分别控制面板是否在 iTerm2 与 Ghostty 中显示；
 - 优先停靠在 iTerm2 左侧或右侧；
 - 系统、浅色或深色外观，以及模糊或不透明背景；
 - 强调色、字体与字号；

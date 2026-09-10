@@ -1,5 +1,15 @@
 # 任务索引
 
+- [发布 iTermate v0.4.0 到 GitHub 与 Sparkle](tasks/publish-v0-4-0-release.md) — In Progress (2026-09-10 11:31)
+
+- [准备 iTermate v0.4.0 本地发布版本与资产](tasks/prepare-v0-4-0-release.md) — Completed (2026-09-10 11:31)
+
+- [提交全部改动并发布 iTermate v0.4.0](tasks/release-v0-4-0.md) — In Progress (2026-09-10 11:04)
+
+- [添加终端独立面板开关](tasks/terminal-specific-panel-switches.md) — Completed (2026-09-10 10:48)
+
+- [修复 Sparkle 更新 feed 的 HTTPS 链路](tasks/fix-sparkle-feed-https.md) — In Progress (2026-08-27 15:12)
+
 - [发布 iTermate v0.3.1 修复版本](tasks/release-v0-3-1.md) — Completed (2026-08-27 14:48)
 
 - [添加 Statistics 设置标签页](tasks/add-statistics-settings-tab.md) — Completed (2026-08-27 14:08)

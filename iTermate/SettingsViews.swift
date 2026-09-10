@@ -90,6 +90,8 @@ private struct AppConfig {
     var panelFontName = PanelFontDefaults.name
     var panelFontSize = PanelFontDefaults.size
     var panelBackgroundStyle: PanelBackgroundStyle = .systemBlur
+    var iTerm2PanelEnabled = true
+    var ghosttyPanelEnabled = true
     var accentColorHex: String?
     var focusedSectionBackgroundOpacity = 0.05
     var statusAnimationPreferences = Dictionary(
@@ -172,6 +174,18 @@ private struct AppConfig {
                 {
                     panelBackgroundStyle = parsedStyle
                 }
+            case "iterm2_panel_enabled":
+                if value == "true" {
+                    iTerm2PanelEnabled = true
+                } else if value == "false" {
+                    iTerm2PanelEnabled = false
+                }
+            case "ghostty_panel_enabled":
+                if value == "true" {
+                    ghosttyPanelEnabled = true
+                } else if value == "false" {
+                    ghosttyPanelEnabled = false
+                }
             case "accent_color":
                 if let color = Self.stringValue(String(value)) {
                     if color == "system" {
@@ -251,6 +265,8 @@ private struct AppConfig {
         panel_font_name = "\(panelFontName)"
         panel_font_size = \(panelFontSize)
         panel_background_style = "\(panelBackgroundStyle.rawValue)"
+        iterm2_panel_enabled = \(iTerm2PanelEnabled)
+        ghostty_panel_enabled = \(ghosttyPanelEnabled)
         accent_color = "\(accentColorHex ?? "system")"
         focused_section_background_opacity = \(focusedSectionBackgroundOpacity)
         \(statusAnimations)
@@ -288,6 +304,8 @@ final class AppSettings: ObservableObject {
     @Published private(set) var panelFontName: String
     @Published private(set) var panelFontSize: CGFloat
     @Published private(set) var panelBackgroundStyle: PanelBackgroundStyle
+    @Published private var iTerm2PanelEnabled: Bool
+    @Published private var ghosttyPanelEnabled: Bool
     @Published private(set) var accentColorHex: String?
     @Published private(set) var focusedSectionBackgroundOpacity: Double
     @Published private(set) var statusAnimationPreferences: [
@@ -313,6 +331,8 @@ final class AppSettings: ObservableObject {
         panelFontName = config.panelFontName
         panelFontSize = config.panelFontSize
         panelBackgroundStyle = config.panelBackgroundStyle
+        iTerm2PanelEnabled = config.iTerm2PanelEnabled
+        ghosttyPanelEnabled = config.ghosttyPanelEnabled
         accentColorHex = config.accentColorHex
         focusedSectionBackgroundOpacity = config.focusedSectionBackgroundOpacity
         statusAnimationPreferences = config.statusAnimationPreferences
@@ -399,6 +419,26 @@ final class AppSettings: ObservableObject {
     func setPanelBackgroundStyle(_ style: PanelBackgroundStyle) {
         panelBackgroundStyle = style
         updateConfig { $0.panelBackgroundStyle = style }
+    }
+
+    func isPanelEnabled(for terminalApp: TerminalApp) -> Bool {
+        switch terminalApp {
+        case .iTerm2:
+            iTerm2PanelEnabled
+        case .ghostty:
+            ghosttyPanelEnabled
+        }
+    }
+
+    func setPanelEnabled(_ isEnabled: Bool, for terminalApp: TerminalApp) {
+        switch terminalApp {
+        case .iTerm2:
+            iTerm2PanelEnabled = isEnabled
+            updateConfig { $0.iTerm2PanelEnabled = isEnabled }
+        case .ghostty:
+            ghosttyPanelEnabled = isEnabled
+            updateConfig { $0.ghosttyPanelEnabled = isEnabled }
+        }
     }
 
     func setAccentColor(_ color: NSColor?) {
@@ -776,6 +816,24 @@ private struct GeneralSettingsView: View {
                     isOn: Binding(
                         get: { launchesAtLogin },
                         set: setLaunchesAtLogin
+                    )
+                )
+            }
+
+            Section("Terminals") {
+                Toggle(
+                    "Show Panel in iTerm2",
+                    isOn: Binding(
+                        get: { settings.isPanelEnabled(for: .iTerm2) },
+                        set: { settings.setPanelEnabled($0, for: .iTerm2) }
+                    )
+                )
+
+                Toggle(
+                    "Show Panel in Ghostty",
+                    isOn: Binding(
+                        get: { settings.isPanelEnabled(for: .ghostty) },
+                        set: { settings.setPanelEnabled($0, for: .ghostty) }
                     )
                 )
             }
