@@ -1,10 +1,10 @@
 # 任务索引
 
-- [发布 iTermate v0.4.0 到 GitHub 与 Sparkle](tasks/publish-v0-4-0-release.md) — In Progress (2026-09-10 11:31)
+- [发布 iTermate v0.4.0 到 GitHub 与 Sparkle](tasks/publish-v0-4-0-release.md) — Completed (2026-09-10 11:51)
 
 - [准备 iTermate v0.4.0 本地发布版本与资产](tasks/prepare-v0-4-0-release.md) — Completed (2026-09-10 11:31)
 
-- [提交全部改动并发布 iTermate v0.4.0](tasks/release-v0-4-0.md) — In Progress (2026-09-10 11:04)
+- [提交全部改动并发布 iTermate v0.4.0](tasks/release-v0-4-0.md) — Completed (2026-09-10 11:51)
 
 - [添加终端独立面板开关](tasks/terminal-specific-panel-switches.md) — Completed (2026-09-10 10:48)
 
