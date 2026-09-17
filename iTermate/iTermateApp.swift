@@ -1021,7 +1021,7 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Waiting is a persistent static indicator rather than activity animation.
+    /// Waiting presets do not animate; the question view owns its reminder shake.
     var isAnimated: Bool { self != .agentAwaitingInput }
 
     static let agentAnimations: [Self] = [
@@ -1440,6 +1440,7 @@ struct AgentWaitingStatusView: View {
 }
 
 private struct AgentQuestionStatusView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let color: Color
 
     // Five columns, seven rows; use the same pitch and dots as the status matrix.
@@ -1454,20 +1455,29 @@ private struct AgentQuestionStatusView: View {
     ]
 
     var body: some View {
-        Canvas { context, size in
-            let origin = CGPoint(x: (size.width - 10) / 2, y: (size.height - 14) / 2)
-            for (row, bits) in Self.glyph.enumerated() {
-                for column in 0..<5 where bits & (1 << (4 - column)) != 0 {
-                    let rect = CGRect(
-                        x: origin.x + CGFloat(column) * 2 + 0.25,
-                        y: origin.y + CGFloat(row) * 2 + 0.25,
-                        width: 1.75,
-                        height: 1.75
-                    )
-                    context.fill(
-                        Path(roundedRect: rect, cornerRadius: 0.35),
-                        with: .color(color)
-                    )
+        TimelineView(.animation(minimumInterval: 0.1, paused: reduceMotion)) { timeline in
+            // Four brief, whole-point shifts every four seconds keep pixels crisp.
+            let step = Int(timeline.date.timeIntervalSinceReferenceDate * 10) % 40
+            let shifts: [CGFloat] = [0, -1, 1, -1, 1, 0]
+            let offset = reduceMotion || step >= shifts.count ? 0 : shifts[step]
+            Canvas { context, size in
+                let origin = CGPoint(
+                    x: (size.width - 10) / 2 + offset,
+                    y: (size.height - 14) / 2
+                )
+                for (row, bits) in Self.glyph.enumerated() {
+                    for column in 0..<5 where bits & (1 << (4 - column)) != 0 {
+                        let rect = CGRect(
+                            x: origin.x + CGFloat(column) * 2 + 0.25,
+                            y: origin.y + CGFloat(row) * 2 + 0.25,
+                            width: 1.75,
+                            height: 1.75
+                        )
+                        context.fill(
+                            Path(roundedRect: rect, cornerRadius: 0.35),
+                            with: .color(color)
+                        )
+                    }
                 }
             }
         }
