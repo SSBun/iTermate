@@ -844,7 +844,15 @@ private struct PanelContent: View {
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    if
+                    if item.session.status == .awaitingInput,
+                       item.session.activityKind == .agent {
+                        Image(systemName: "questionmark.circle")
+                            .font(.system(size: 14))
+                            .foregroundStyle(settings.accentColor)
+                            .frame(width: 36, height: 16)
+                            .help("Waiting for your reply")
+                            .accessibilityLabel("Waiting for your reply")
+                    } else if
                         item.session.status == .idle,
                         item.session.activityKind == .agent
                     {
@@ -1049,7 +1057,7 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
 
         let kind = session.activityKind ?? .command
         switch (kind, status, session.exitStatus) {
-        case (_, .idle, _):
+        case (_, .idle, _), (_, .awaitingInput, _):
             return nil
         case (.agent, .running, _):
             self = .agentRunning

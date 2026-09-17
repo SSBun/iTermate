@@ -134,7 +134,7 @@ class Bridge:
 
         if action == "setSessionStatus":
             status = request.get("status")
-            if status not in {"idle", "running", "finished", "detached"}:
+            if status not in {"idle", "running", "awaitingInput", "finished", "detached"}:
                 await self.send_action_result(writer, request_id, False, "Invalid status")
                 return
             exit_status = request.get("exitStatus", 0)
@@ -147,14 +147,24 @@ class Bridge:
                     writer, request_id, False, "Invalid exit status"
                 )
                 return
+            if status == "awaitingInput" and request.get("exitStatus") is not None:
+                await self.send_action_result(
+                    writer, request_id, False, "Invalid exit status"
+                )
+                return
             heartbeat = request.get("heartbeat", False)
-            if not isinstance(heartbeat, bool) or (heartbeat and status != "running"):
+            if not isinstance(heartbeat, bool) or (
+                heartbeat and status not in {"running", "awaitingInput"}
+            ):
                 await self.send_action_result(
                     writer, request_id, False, "Invalid heartbeat"
                 )
                 return
-            self.set_agent_status(session_id, status, exit_status, heartbeat)
-            await self.send_action_result(writer, request_id, True, None)
+            accepted = self.set_agent_status(session_id, status, exit_status, heartbeat)
+            await self.send_action_result(
+                writer, request_id, accepted,
+                None if accepted else "Stale heartbeat"
+            )
             await self.publish_snapshot()
             return
 
@@ -536,10 +546,13 @@ class Bridge:
             self.agent_managed_session_ids.discard(session_id)
             self.agent_heartbeat_times.pop(session_id, None)
             self.session_statuses.pop(session_id, None)
-            return
+            return True
 
+        current = self.session_statuses.get(session_id)
+        if heartbeat and current is not None and current.get("status") != status:
+            return False
         self.agent_managed_session_ids.add(session_id)
-        if heartbeat:
+        if heartbeat or status == "awaitingInput":
             self.agent_heartbeat_times[session_id] = heartbeat_time()
         else:
             self.agent_heartbeat_times.pop(session_id, None)
@@ -549,13 +562,16 @@ class Bridge:
             exit_status if status == "finished" else None,
             activity_kind="agent",
         )
+        return True
 
     def expire_stale_agent_heartbeats(self, now):
         for session_id, last_heartbeat in list(self.agent_heartbeat_times.items()):
             if now - last_heartbeat <= AGENT_HEARTBEAT_TIMEOUT:
                 continue
             self.agent_heartbeat_times.pop(session_id, None)
-            if self.session_statuses.get(session_id, {}).get("status") == "running":
+            if self.session_statuses.get(session_id, {}).get("status") in {
+                "running", "awaitingInput"
+            }:
                 self.session_statuses.pop(session_id, None)
 
     def set_session_status(
@@ -1316,7 +1332,13 @@ def self_test():
     )
     assert heartbeat_bridge.session_statuses["session-1"]["status"] == "finished"
 
-    heartbeat_bridge.set_agent_status("session-1", "running", heartbeat=True)
+    assert not heartbeat_bridge.set_agent_status(
+        "session-1", "running", heartbeat=True
+    )
+    assert heartbeat_bridge.session_statuses["session-1"]["status"] == "finished"
+    assert "session-1" not in heartbeat_bridge.agent_heartbeat_times
+    assert heartbeat_bridge.set_agent_status("session-1", "running")
+    assert heartbeat_bridge.set_agent_status("session-1", "running", heartbeat=True)
     heartbeat_at = heartbeat_bridge.agent_heartbeat_times["session-1"]
     heartbeat_bridge.expire_stale_agent_heartbeats(
         heartbeat_at + AGENT_HEARTBEAT_TIMEOUT + 1

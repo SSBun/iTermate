@@ -12,6 +12,8 @@ struct TerminalStatusReport {
     enum State: String, Decodable {
         case idle
         case running
+        /// An Agent is explicitly waiting for a user response.
+        case awaitingInput
         case finished
         case detached
     }
@@ -71,6 +73,9 @@ struct TerminalStatusRegistry {
         uptime: TimeInterval = ProcessInfo.processInfo.systemUptime
     ) -> Bool {
         guard terminalIDsByTTY[report.tty] != nil else { return false }
+        guard report.state != .awaitingInput || report.source == .agent else {
+            return false
+        }
         var ttyState = states[report.tty] ?? TTYState()
         let current = report.source == .agent ? ttyState.agent : ttyState.shell
 
@@ -79,7 +84,7 @@ struct TerminalStatusRegistry {
                 guard report.sequence > current.sequence else { return false }
                 if report.heartbeat,
                    current.status != nil,
-                   current.status != .running {
+                   current.status?.rawValue != report.state.rawValue {
                     return false
                 }
             } else {
@@ -101,7 +106,8 @@ struct TerminalStatusRegistry {
             status: status,
             exitStatus: status == .finished ? report.exitStatus : nil,
             changedAt: changedAt,
-            heartbeatAt: report.source == .agent && status == .running
+            heartbeatAt: report.source == .agent
+                && (status == .running || status == .awaitingInput)
                 ? uptime
                 : nil
         )
@@ -124,7 +130,7 @@ struct TerminalStatusRegistry {
             guard
                 var ttyState = states[tty],
                 let agent = ttyState.agent,
-                agent.status == .running,
+                (agent.status == .running || agent.status == .awaitingInput),
                 let heartbeatAt = agent.heartbeatAt,
                 uptime - heartbeatAt > Self.heartbeatTimeout
             else {
@@ -149,7 +155,8 @@ struct TerminalStatusRegistry {
         var changed = false
         for tty in Array(states.keys) {
             guard var ttyState = states[tty] else { continue }
-            if let agent = ttyState.agent, agent.status == .running {
+            if let agent = ttyState.agent,
+               agent.status == .running || agent.status == .awaitingInput {
                 ttyState.agent = cleared(agent)
                 changed = true
             }
@@ -240,7 +247,7 @@ final class TerminalStatusServer {
     private static let maximumRequestSize = 16 * 1_024
 
     private let queue = DispatchQueue(label: "com.caishilin.iTermate.terminal-status")
-    private let onReport: (TerminalStatusReport) -> Void
+    private let onReport: (TerminalStatusReport) -> Bool
     private let onReset: () -> Void
     private var listener: NWListener?
     private var connections: [ObjectIdentifier: NWConnection] = [:]
@@ -250,7 +257,7 @@ final class TerminalStatusServer {
     private var isStarted = false
 
     init(
-        onReport: @escaping (TerminalStatusReport) -> Void,
+        onReport: @escaping (TerminalStatusReport) -> Bool,
         onReset: @escaping () -> Void
     ) {
         self.onReport = onReport
@@ -420,8 +427,12 @@ final class TerminalStatusServer {
         do {
             let request = try JSONDecoder().decode(TerminalStatusRequest.self, from: data)
             let report = try request.validatedReport()
-            DispatchQueue.main.async { [onReport] in onReport(report) }
-            sendResult(request.requestId, succeeded: true, on: connection)
+            DispatchQueue.main.async { [weak self, onReport] in
+                let accepted = onReport(report)
+                self?.queue.async { [weak self] in
+                    self?.sendResult(request.requestId, succeeded: accepted, on: connection)
+                }
+            }
         } catch {
             sendResult(nil, succeeded: false, on: connection)
         }
@@ -500,7 +511,11 @@ private struct TerminalStatusRequest: Decodable {
         }
 
         let heartbeat = heartbeat ?? false
-        guard !heartbeat || (source == .agent && status == .running) else {
+        guard status != .awaitingInput || source == .agent else {
+            throw TerminalStatusServerError.invalidRequest
+        }
+        guard !heartbeat || (source == .agent
+            && (status == .running || status == .awaitingInput)) else {
             throw TerminalStatusServerError.invalidRequest
         }
         if status == .finished {

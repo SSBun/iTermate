@@ -46,6 +46,8 @@ enum TerminalApp: Equatable {
 enum TerminalSessionStatus: String, Codable, Equatable {
     case idle
     case running
+    /// An Agent has requested a user response instead of completing its work.
+    case awaitingInput
     case finished
 
     func label(
@@ -54,6 +56,7 @@ enum TerminalSessionStatus: String, Codable, Equatable {
         format: SessionTimeFormat
     ) -> String {
         guard self != .idle else { return "Idle" }
+        guard self != .awaitingInput else { return "Waiting for your reply" }
         let title = self == .running ? "Running" : "Finished"
         guard let changedAt else { return title }
 
@@ -336,7 +339,7 @@ final class ItermStore: ObservableObject {
         onActionError: { [weak self] error in self?.updateGhosttyActionError(error) }
     )
     private lazy var terminalStatusServer = TerminalStatusServer(
-        onReport: { [weak self] report in self?.applyTerminalStatus(report) },
+        onReport: { [weak self] report in self?.applyTerminalStatus(report) ?? false },
         onReset: { [weak self] in self?.resetTerminalStatusTransport() }
     )
     private var latestSequence = 0
@@ -859,9 +862,11 @@ final class ItermStore: ObservableObject {
         connectionState = .connected
     }
 
-    private func applyTerminalStatus(_ report: TerminalStatusReport) {
-        guard terminalStatusRegistry.apply(report) else { return }
+    /// Applies a report and confirms whether the registry accepted it.
+    private func applyTerminalStatus(_ report: TerminalStatusReport) -> Bool {
+        guard terminalStatusRegistry.apply(report) else { return false }
         publishGhosttyWindows()
+        return true
     }
 
     private func expireTerminalStatuses() {
