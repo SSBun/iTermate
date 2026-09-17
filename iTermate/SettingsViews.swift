@@ -63,10 +63,12 @@ enum SessionStatusAnimationStyle: String, CaseIterable, Identifiable {
     case alien
     case robot
     case classic
+    /// A static pixel question mark for an Agent awaiting a reply.
+    case questionMark = "question_mark"
 
     var id: String { rawValue }
 
-    var title: String { rawValue.capitalized }
+    var title: String { self == .questionMark ? "Question Mark" : rawValue.capitalized }
 }
 
 struct SessionStatusAnimationPreferences: Equatable {
@@ -366,12 +368,13 @@ final class AppSettings: ObservableObject {
     func statusAnimationStyle(
         for animation: SessionStatusAnimation
     ) -> SessionStatusAnimationStyle {
-        statusAnimationPreferences[animation]?.style ?? animation.defaultStyle
+        let style = statusAnimationPreferences[animation]?.style ?? animation.defaultStyle
+        return animation.availableStyles.contains(style) ? style : animation.defaultStyle
     }
 
     func statusAnimationColor(for animation: SessionStatusAnimation) -> Color {
         statusAnimationCustomColor(for: animation)
-            ?? Color(nsColor: animation.color)
+            ?? (animation == .agentAwaitingInput ? accentColor : Color(nsColor: animation.color))
     }
 
     func statusAnimationCustomColor(
@@ -743,13 +746,22 @@ private struct StatusAnimationSettingsView: View {
     ) -> some View {
         LabeledContent(animation.settingsTitle) {
             HStack(spacing: 10) {
-                SessionStatusMatrix(
-                    animation: animation,
-                    style: settings.statusAnimationStyle(for: animation),
-                    customColor: settings.statusAnimationCustomColor(
-                        for: animation
-                    ).map { NSColor($0) }
-                )
+                Group {
+                    if animation == .agentAwaitingInput {
+                        AgentWaitingStatusView(
+                            style: settings.statusAnimationStyle(for: animation),
+                            color: settings.statusAnimationColor(for: animation)
+                        )
+                    } else {
+                        SessionStatusMatrix(
+                            animation: animation,
+                            style: settings.statusAnimationStyle(for: animation),
+                            customColor: settings.statusAnimationCustomColor(
+                                for: animation
+                            ).map { NSColor($0) }
+                        )
+                    }
+                }
                 .frame(width: 36, height: 16)
                 .accessibilityLabel("\(animation.accessibilityLabel) preview")
 
@@ -762,12 +774,12 @@ private struct StatusAnimationSettingsView: View {
                         }
                     )
                 ) {
-                    ForEach(SessionStatusAnimationStyle.allCases) { style in
+                    ForEach(animation.availableStyles) { style in
                         Text(style.title).tag(style)
                     }
                 }
                 .labelsHidden()
-                .frame(width: 96)
+                .frame(width: animation == .agentAwaitingInput ? 124 : 96)
 
                 ColorPicker(
                     "\(animation.accessibilityLabel) Color",

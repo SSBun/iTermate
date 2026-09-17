@@ -296,6 +296,27 @@ final class PanelLayoutTests: XCTestCase {
         )
     }
 
+    func testWaitingStatusPreferencesPersistAndResetColor() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+        let staleSettings = AppSettings(configURL: configURL)
+        XCTAssertEqual(settings.statusAnimationStyle(for: .agentAwaitingInput), .questionMark)
+        settings.setStatusAnimationStyle(.robot, for: .agentAwaitingInput)
+        settings.setStatusAnimationColor(.systemPink, for: .agentAwaitingInput)
+        staleSettings.setStatusAnimationStyle(.classic, for: .agentRunning)
+
+        let restored = AppSettings(configURL: configURL)
+        XCTAssertEqual(restored.statusAnimationStyle(for: .agentAwaitingInput), .robot)
+        XCTAssertNotNil(restored.statusAnimationCustomColor(for: .agentAwaitingInput))
+        XCTAssertEqual(restored.statusAnimationStyle(for: .agentRunning), .classic)
+        restored.setStatusAnimationColor(nil, for: .agentAwaitingInput)
+        let reset = AppSettings(configURL: configURL)
+        XCTAssertNil(reset.statusAnimationCustomColor(for: .agentAwaitingInput))
+        XCTAssertEqual(reset.statusAnimationStyle(for: .agentAwaitingInput), .robot)
+        reset.setStatusAnimationStyle(.questionMark, for: .agentAwaitingInput)
+        XCTAssertEqual(AppSettings(configURL: configURL).statusAnimationStyle(for: .agentAwaitingInput), .questionMark)
+    }
+
     func testSessionTimeDisplayDefaultsAndPersists() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)

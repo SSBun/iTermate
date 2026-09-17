@@ -257,7 +257,7 @@ final class ItermBridgeTests: XCTestCase {
     func testEverySessionStatusAnimationKeepsPixelsVisibleAndChangesFrames() {
         var signatures = Set<[CGFloat]>()
 
-        for animation in SessionStatusAnimation.allCases {
+        for animation in SessionStatusAnimation.allCases where animation.isAnimated {
             let frames = (0..<24).map { frame in
                 (0..<8).flatMap { row in
                     (0..<18).map {
@@ -315,9 +315,28 @@ final class ItermBridgeTests: XCTestCase {
         }
     }
 
+    func testWaitingStylesStayVisibleAndStatic() {
+        let animation = SessionStatusAnimation.agentAwaitingInput
+        XCTAssertFalse(animation.isAnimated)
+        XCTAssertEqual(animation.defaultStyle, .questionMark)
+        XCTAssertTrue(SessionStatusAnimation.agentAnimations.contains(animation))
+        XCTAssertFalse(SessionStatusAnimation.commandRunning.availableStyles.contains(.questionMark))
+        for style in animation.availableStyles {
+            let frames = (0..<24).map { frame in
+                (0..<8).flatMap { row in
+                    (0..<18).map { column in
+                        animation.brightness(column: column, row: row, frame: frame, style: style)
+                    }
+                }
+            }
+            XCTAssertTrue(frames.allSatisfy { $0.contains { $0 > 0 } }, "\(style)")
+            XCTAssertEqual(Set(frames).count, 1, "\(style)")
+        }
+    }
+
     func testEveryStatusAnimationStyleKeepsPixelsVisibleAndChangesFrames() {
-        for style in SessionStatusAnimationStyle.allCases {
-            for animation in SessionStatusAnimation.allCases {
+        for animation in SessionStatusAnimation.allCases where animation.isAnimated {
+            for style in animation.availableStyles {
                 let frames = (0..<24).map { frame in
                     (0..<8).flatMap { row in
                         (0..<18).map {

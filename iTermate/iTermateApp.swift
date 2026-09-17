@@ -846,9 +846,10 @@ private struct PanelContent: View {
 
                     if item.session.status == .awaitingInput,
                        item.session.activityKind == .agent {
-                        Image(systemName: "questionmark.circle")
-                            .font(.system(size: 14))
-                            .foregroundStyle(settings.accentColor)
+                        AgentWaitingStatusView(
+                            style: settings.statusAnimationStyle(for: .agentAwaitingInput),
+                            color: settings.statusAnimationColor(for: .agentAwaitingInput)
+                        )
                             .frame(width: 36, height: 16)
                             .help("Waiting for your reply")
                             .accessibilityLabel("Waiting for your reply")
@@ -1009,6 +1010,8 @@ private struct PanelContent: View {
 
 enum SessionStatusAnimation: String, CaseIterable, Identifiable {
     case agentRunning = "agent_running"
+    /// An Agent is paused for a user response, not a successful completion.
+    case agentAwaitingInput = "agent_awaiting_input"
     case agentSucceeded = "agent_success"
     case agentFailed = "agent_failed"
     case commandRunning = "shell_running"
@@ -1018,8 +1021,12 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Waiting is a persistent static indicator rather than activity animation.
+    var isAnimated: Bool { self != .agentAwaitingInput }
+
     static let agentAnimations: [Self] = [
         .agentRunning,
+        .agentAwaitingInput,
         .agentSucceeded,
         .agentFailed
     ]
@@ -1040,11 +1047,21 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
             "Failed"
         case .commandFinished:
             "Finished"
+        case .agentAwaitingInput:
+            "Waiting for Reply"
         }
+    }
+
+    /// Styles offered for this state; the question glyph belongs only to waiting.
+    var availableStyles: [SessionStatusAnimationStyle] {
+        let presets: [SessionStatusAnimationStyle] = [.alien, .robot, .classic]
+        return self == .agentAwaitingInput ? [.questionMark] + presets : presets
     }
 
     var defaultStyle: SessionStatusAnimationStyle {
         switch self {
+        case .agentAwaitingInput:
+            .questionMark
         case .agentRunning, .agentSucceeded, .agentFailed:
             .alien
         case .commandRunning, .commandSucceeded, .commandFailed, .commandFinished:
@@ -1057,8 +1074,10 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
 
         let kind = session.activityKind ?? .command
         switch (kind, status, session.exitStatus) {
-        case (_, .idle, _), (_, .awaitingInput, _):
+        case (_, .idle, _), (.command, .awaitingInput, _):
             return nil
+        case (.agent, .awaitingInput, _):
+            self = .agentAwaitingInput
         case (.agent, .running, _):
             self = .agentRunning
         case (.command, .running, _):
@@ -1078,6 +1097,8 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
 
     var accessibilityLabel: String {
         switch self {
+        case .agentAwaitingInput:
+            "Waiting for your reply"
         case .agentRunning:
             "Agent working"
         case .agentSucceeded:
@@ -1097,6 +1118,8 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
 
     var color: NSColor {
         switch self {
+        case .agentAwaitingInput:
+            .controlAccentColor
         case .agentRunning:
             .systemPurple
         case .commandRunning:
@@ -1128,6 +1151,11 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
         frame: Int,
         style: SessionStatusAnimationStyle? = nil
     ) -> CGFloat {
+        let frame = isAnimated ? frame : 0
+        if (style ?? defaultStyle) == .questionMark {
+            guard (6..<11).contains(column), (0..<7).contains(row) else { return 0 }
+            return AgentQuestionStatusView.glyph[row] & (1 << (10 - column)) != 0 ? 1 : 0
+        }
         if (14...15).contains(column) {
             return statusBarBrightness(row: row, frame: frame)
         }
@@ -1139,6 +1167,8 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
             return robotBrightness(column: column, row: row, frame: frame)
         case .classic:
             return classicBrightness(column: column, row: row, frame: frame)
+        case .questionMark:
+            return 0 // The question glyph was handled before the status-bar branch.
         }
     }
 
@@ -1157,7 +1187,7 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
             .succeeded
         case .agentFailed, .commandFailed:
             .failed
-        case .commandFinished:
+        case .commandFinished, .agentAwaitingInput:
             .finished
         }
     }
@@ -1333,6 +1363,8 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
             return (level + frame / 3) % 3 == 0 ? 1 : 0
         case .commandFailed:
             return (level + frame / 2) % 2 == 0 ? 0.85 : 0
+        case .agentAwaitingInput:
+            return 0
         case .commandFinished:
             let pulse: [CGFloat] = [0.35, 0.5, 0.7, 0.9, 1, 0.9, 0.7, 0.5]
             return pulse[frame / 2 % pulse.count]
@@ -1388,6 +1420,60 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
     }
 }
 
+/// Shared waiting-state presentation for the session row and settings preview.
+struct AgentWaitingStatusView: View {
+    let style: SessionStatusAnimationStyle
+    let color: Color
+
+    var body: some View {
+        if style == .questionMark {
+            AgentQuestionStatusView(color: color)
+        } else {
+            SessionStatusMatrix(
+                animation: .agentAwaitingInput,
+                style: style,
+                customColor: NSColor(color),
+                animates: false
+            )
+        }
+    }
+}
+
+private struct AgentQuestionStatusView: View {
+    let color: Color
+
+    // Five columns, seven rows; use the same pitch and dots as the status matrix.
+    fileprivate static let glyph = [
+        0b01110,
+        0b10001,
+        0b00001,
+        0b00010,
+        0b00100,
+        0b00000,
+        0b00100,
+    ]
+
+    var body: some View {
+        Canvas { context, size in
+            let origin = CGPoint(x: (size.width - 10) / 2, y: (size.height - 14) / 2)
+            for (row, bits) in Self.glyph.enumerated() {
+                for column in 0..<5 where bits & (1 << (4 - column)) != 0 {
+                    let rect = CGRect(
+                        x: origin.x + CGFloat(column) * 2 + 0.25,
+                        y: origin.y + CGFloat(row) * 2 + 0.25,
+                        width: 1.75,
+                        height: 1.75
+                    )
+                    context.fill(
+                        Path(roundedRect: rect, cornerRadius: 0.35),
+                        with: .color(color)
+                    )
+                }
+            }
+        }
+    }
+}
+
 private struct AgentIdleStatusView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
@@ -1430,7 +1516,7 @@ struct SessionStatusMatrix: NSViewRepresentable {
         self.animation = animation
         self.style = style
         self.customColor = customColor
-        self.animates = animates
+        self.animates = animates && animation.isAnimated
     }
 
     func makeNSView(context: Context) -> SessionStatusMatrixView {
