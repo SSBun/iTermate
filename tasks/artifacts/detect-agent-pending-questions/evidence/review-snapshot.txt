@@ -1,0 +1,11 @@
+审查范围：五个产品源码文件的未暂存改动；无产品新增、删除、重命名或已暂存内容。
+基线 HEAD：0c79ef67e35e86646cf857e954c41c4e4c368002
+产品 git diff SHA256：b7df322f96f9e8304141ab5ec503e8a756d6c7bd0c4d0471b594588c475a4723
+文件 SHA256（相对仓库根目录）：
+6f074143661751119e81bdcc4d0695f4c97eff4dbd84e138e000bbeef00b0929  iTermate/ItermBridge.swift
+ca6ce2175504f23821b219c1f60818b3becd69545ab783df202ee7cc82ebe1ff  iTermate/TerminalStatusServer.swift
+0e79475847862df8441e78c3bf332b2d6bbaccfb7faaf72f27f1e4fdd8125753  iTermate/iTermateApp.swift
+ec74c6aa09ce83d5664b90e8fc56070d8feddf3cdeba10a79bec3349c2f0f290  iTermateBridge/iTermateBridge.py
+17783d87ed036673fb15eaf866bb316c4068318e1fb2db85b36b0cecf5c6653a  integrations/pi/iTermate-integration.ts
+检查：Python AST 语法、TypeScript strict/noEmit、Xcode Debug build、git diff --check 通过。
+限制：未运行测试、事件回放、安装升级或真实 UI；不得将编译结果视为运行效果证明。

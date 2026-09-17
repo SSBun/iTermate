@@ -1,0 +1,14 @@
+第三轮范围：五个产品源码文件的未暂存改动、新增 Pi 测试源码（未执行）、像素问号离屏预览。
+基线 HEAD：0c79ef67e35e86646cf857e954c41c4e4c368002
+product-3.diff SHA256：176e47eee66ae08aa39bf6a516b8ad612f114773c8d3ae32099b718347daf643
+相对仓库根目录的文件 SHA256：
+f9179f56c25f1ee5b21b35e0c22f95d71f23acddd2f639145359b13ebad2e6b8  iTermate/ItermBridge.swift
+b3b63d04579d10a63815993ad6c7beba780d6b2a36c5e0c315a74b885dac06e2  iTermate/TerminalStatusServer.swift
+f06a1a65c392e7b8a18e783cc9fe3c73e4ff926ac736b72f0416902be65700c8  iTermate/iTermateApp.swift
+7d5ec3f413f7e33c0aff3e08df7db437547a6d04f9db1e54d885a452ce80d561  iTermateBridge/iTermateBridge.py
+540c2e17257f8d8020606810020cd67f8be5fbf3dcad62c0f2bae54077d34355  integrations/pi/iTermate-integration.ts
+0eeb0e316ba816858edbeea9f7c65ce422e57d0e46b39973eb88a3589b402b88  integrations/pi/iTermate-integration.test.ts
+7a1907bb5e5f5c99c7a1101cbe770c84bf1c4e69480239823f49f995000db611  tasks/artifacts/detect-agent-pending-questions/evidence/pixel-question-preview.png
+第二轮后产品仅改 Session 问号视觉：系统圆圈问号改为静态像素 Canvas。其余五文件哈希与第二轮一致。
+新增检查：从实际 View 源码离屏 ImageRenderer 渲染并读取 PNG，Debug build 成功，diff/Context 校验通过。
+限制：未运行测试、未启动或替换用户 App。像素预览不是运行截图；之前用户截图已显示旧圆圈问号，原先绿色完成的确切原因未获直接证实。

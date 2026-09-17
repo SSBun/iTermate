@@ -1,5 +1,9 @@
 # 任务索引
 
+- [按独立关注点提交全部本地改动](tasks/commit-pending-question-changes-by-concern.md) — Completed (2026-09-17 15:11)
+
+- [规划 Agent 待回复问题识别与问号状态提示](tasks/detect-agent-pending-questions.md) — Completed (2026-09-17 14:53)
+
 - [发布 iTermate v0.4.0 到 GitHub 与 Sparkle](tasks/publish-v0-4-0-release.md) — Completed (2026-09-10 11:51)
 
 - [准备 iTermate v0.4.0 本地发布版本与资产](tasks/prepare-v0-4-0-release.md) — Completed (2026-09-10 11:31)

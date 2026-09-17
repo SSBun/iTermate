@@ -1,0 +1,851 @@
+diff --git a/iTermate/ItermBridge.swift b/iTermate/ItermBridge.swift
+index d916c1c..9039f4c 100644
+--- a/iTermate/ItermBridge.swift
++++ b/iTermate/ItermBridge.swift
+@@ -46,6 +46,8 @@ enum TerminalApp: Equatable {
+ enum TerminalSessionStatus: String, Codable, Equatable {
+     case idle
+     case running
++    /// An Agent has requested a user response instead of completing its work.
++    case awaitingInput
+     case finished
+ 
+     func label(
+@@ -54,6 +56,7 @@ enum TerminalSessionStatus: String, Codable, Equatable {
+         format: SessionTimeFormat
+     ) -> String {
+         guard self != .idle else { return "Idle" }
++        guard self != .awaitingInput else { return "Waiting for your reply" }
+         let title = self == .running ? "Running" : "Finished"
+         guard let changedAt else { return title }
+ 
+@@ -336,7 +339,7 @@ final class ItermStore: ObservableObject {
+         onActionError: { [weak self] error in self?.updateGhosttyActionError(error) }
+     )
+     private lazy var terminalStatusServer = TerminalStatusServer(
+-        onReport: { [weak self] report in self?.applyTerminalStatus(report) },
++        onReport: { [weak self] report in self?.applyTerminalStatus(report) ?? false },
+         onReset: { [weak self] in self?.resetTerminalStatusTransport() }
+     )
+     private var latestSequence = 0
+@@ -859,9 +862,11 @@ final class ItermStore: ObservableObject {
+         connectionState = .connected
+     }
+ 
+-    private func applyTerminalStatus(_ report: TerminalStatusReport) {
+-        guard terminalStatusRegistry.apply(report) else { return }
++    /// Applies a report and confirms whether the registry accepted it.
++    private func applyTerminalStatus(_ report: TerminalStatusReport) -> Bool {
++        guard terminalStatusRegistry.apply(report) else { return false }
+         publishGhosttyWindows()
++        return true
+     }
+ 
+     private func expireTerminalStatuses() {
+diff --git a/iTermate/SettingsViews.swift b/iTermate/SettingsViews.swift
+index f1a8085..b72e1ff 100644
+--- a/iTermate/SettingsViews.swift
++++ b/iTermate/SettingsViews.swift
+@@ -63,10 +63,12 @@ enum SessionStatusAnimationStyle: String, CaseIterable, Identifiable {
+     case alien
+     case robot
+     case classic
++    /// A static pixel question mark for an Agent awaiting a reply.
++    case questionMark = "question_mark"
+ 
+     var id: String { rawValue }
+ 
+-    var title: String { rawValue.capitalized }
++    var title: String { self == .questionMark ? "Question Mark" : rawValue.capitalized }
+ }
+ 
+ struct SessionStatusAnimationPreferences: Equatable {
+@@ -366,12 +368,13 @@ final class AppSettings: ObservableObject {
+     func statusAnimationStyle(
+         for animation: SessionStatusAnimation
+     ) -> SessionStatusAnimationStyle {
+-        statusAnimationPreferences[animation]?.style ?? animation.defaultStyle
++        let style = statusAnimationPreferences[animation]?.style ?? animation.defaultStyle
++        return animation.availableStyles.contains(style) ? style : animation.defaultStyle
+     }
+ 
+     func statusAnimationColor(for animation: SessionStatusAnimation) -> Color {
+         statusAnimationCustomColor(for: animation)
+-            ?? Color(nsColor: animation.color)
++            ?? (animation == .agentAwaitingInput ? accentColor : Color(nsColor: animation.color))
+     }
+ 
+     func statusAnimationCustomColor(
+@@ -743,13 +746,22 @@ private struct StatusAnimationSettingsView: View {
+     ) -> some View {
+         LabeledContent(animation.settingsTitle) {
+             HStack(spacing: 10) {
+-                SessionStatusMatrix(
+-                    animation: animation,
+-                    style: settings.statusAnimationStyle(for: animation),
+-                    customColor: settings.statusAnimationCustomColor(
+-                        for: animation
+-                    ).map { NSColor($0) }
+-                )
++                Group {
++                    if animation == .agentAwaitingInput {
++                        AgentWaitingStatusView(
++                            style: settings.statusAnimationStyle(for: animation),
++                            color: settings.statusAnimationColor(for: animation)
++                        )
++                    } else {
++                        SessionStatusMatrix(
++                            animation: animation,
++                            style: settings.statusAnimationStyle(for: animation),
++                            customColor: settings.statusAnimationCustomColor(
++                                for: animation
++                            ).map { NSColor($0) }
++                        )
++                    }
++                }
+                 .frame(width: 36, height: 16)
+                 .accessibilityLabel("\(animation.accessibilityLabel) preview")
+ 
+@@ -762,12 +774,12 @@ private struct StatusAnimationSettingsView: View {
+                         }
+                     )
+                 ) {
+-                    ForEach(SessionStatusAnimationStyle.allCases) { style in
++                    ForEach(animation.availableStyles) { style in
+                         Text(style.title).tag(style)
+                     }
+                 }
+                 .labelsHidden()
+-                .frame(width: 96)
++                .frame(width: animation == .agentAwaitingInput ? 124 : 96)
+ 
+                 ColorPicker(
+                     "\(animation.accessibilityLabel) Color",
+diff --git a/iTermate/TerminalStatusServer.swift b/iTermate/TerminalStatusServer.swift
+index 993c167..8650856 100644
+--- a/iTermate/TerminalStatusServer.swift
++++ b/iTermate/TerminalStatusServer.swift
+@@ -12,6 +12,8 @@ struct TerminalStatusReport {
+     enum State: String, Decodable {
+         case idle
+         case running
++        /// An Agent is explicitly waiting for a user response.
++        case awaitingInput
+         case finished
+         case detached
+     }
+@@ -71,6 +73,9 @@ struct TerminalStatusRegistry {
+         uptime: TimeInterval = ProcessInfo.processInfo.systemUptime
+     ) -> Bool {
+         guard terminalIDsByTTY[report.tty] != nil else { return false }
++        guard report.state != .awaitingInput || report.source == .agent else {
++            return false
++        }
+         var ttyState = states[report.tty] ?? TTYState()
+         let current = report.source == .agent ? ttyState.agent : ttyState.shell
+ 
+@@ -79,7 +84,7 @@ struct TerminalStatusRegistry {
+                 guard report.sequence > current.sequence else { return false }
+                 if report.heartbeat,
+                    current.status != nil,
+-                   current.status != .running {
++                   current.status?.rawValue != report.state.rawValue {
+                     return false
+                 }
+             } else {
+@@ -101,7 +106,8 @@ struct TerminalStatusRegistry {
+             status: status,
+             exitStatus: status == .finished ? report.exitStatus : nil,
+             changedAt: changedAt,
+-            heartbeatAt: report.source == .agent && status == .running
++            heartbeatAt: report.source == .agent
++                && (status == .running || status == .awaitingInput)
+                 ? uptime
+                 : nil
+         )
+@@ -124,7 +130,7 @@ struct TerminalStatusRegistry {
+             guard
+                 var ttyState = states[tty],
+                 let agent = ttyState.agent,
+-                agent.status == .running,
++                (agent.status == .running || agent.status == .awaitingInput),
+                 let heartbeatAt = agent.heartbeatAt,
+                 uptime - heartbeatAt > Self.heartbeatTimeout
+             else {
+@@ -149,7 +155,8 @@ struct TerminalStatusRegistry {
+         var changed = false
+         for tty in Array(states.keys) {
+             guard var ttyState = states[tty] else { continue }
+-            if let agent = ttyState.agent, agent.status == .running {
++            if let agent = ttyState.agent,
++               agent.status == .running || agent.status == .awaitingInput {
+                 ttyState.agent = cleared(agent)
+                 changed = true
+             }
+@@ -240,7 +247,7 @@ final class TerminalStatusServer {
+     private static let maximumRequestSize = 16 * 1_024
+ 
+     private let queue = DispatchQueue(label: "com.caishilin.iTermate.terminal-status")
+-    private let onReport: (TerminalStatusReport) -> Void
++    private let onReport: (TerminalStatusReport) -> Bool
+     private let onReset: () -> Void
+     private var listener: NWListener?
+     private var connections: [ObjectIdentifier: NWConnection] = [:]
+@@ -250,7 +257,7 @@ final class TerminalStatusServer {
+     private var isStarted = false
+ 
+     init(
+-        onReport: @escaping (TerminalStatusReport) -> Void,
++        onReport: @escaping (TerminalStatusReport) -> Bool,
+         onReset: @escaping () -> Void
+     ) {
+         self.onReport = onReport
+@@ -420,8 +427,12 @@ final class TerminalStatusServer {
+         do {
+             let request = try JSONDecoder().decode(TerminalStatusRequest.self, from: data)
+             let report = try request.validatedReport()
+-            DispatchQueue.main.async { [onReport] in onReport(report) }
+-            sendResult(request.requestId, succeeded: true, on: connection)
++            DispatchQueue.main.async { [weak self, onReport] in
++                let accepted = onReport(report)
++                self?.queue.async { [weak self] in
++                    self?.sendResult(request.requestId, succeeded: accepted, on: connection)
++                }
++            }
+         } catch {
+             sendResult(nil, succeeded: false, on: connection)
+         }
+@@ -500,7 +511,11 @@ private struct TerminalStatusRequest: Decodable {
+         }
+ 
+         let heartbeat = heartbeat ?? false
+-        guard !heartbeat || (source == .agent && status == .running) else {
++        guard status != .awaitingInput || source == .agent else {
++            throw TerminalStatusServerError.invalidRequest
++        }
++        guard !heartbeat || (source == .agent
++            && (status == .running || status == .awaitingInput)) else {
+             throw TerminalStatusServerError.invalidRequest
+         }
+         if status == .finished {
+diff --git a/iTermate/iTermateApp.swift b/iTermate/iTermateApp.swift
+index d7bb024..11a53d5 100644
+--- a/iTermate/iTermateApp.swift
++++ b/iTermate/iTermateApp.swift
+@@ -844,7 +844,16 @@ private struct PanelContent: View {
+                         .lineLimit(1)
+                         .frame(maxWidth: .infinity, alignment: .leading)
+ 
+-                    if
++                    if item.session.status == .awaitingInput,
++                       item.session.activityKind == .agent {
++                        AgentWaitingStatusView(
++                            style: settings.statusAnimationStyle(for: .agentAwaitingInput),
++                            color: settings.statusAnimationColor(for: .agentAwaitingInput)
++                        )
++                            .frame(width: 36, height: 16)
++                            .help("Waiting for your reply")
++                            .accessibilityLabel("Waiting for your reply")
++                    } else if
+                         item.session.status == .idle,
+                         item.session.activityKind == .agent
+                     {
+@@ -1001,6 +1010,8 @@ private struct PanelContent: View {
+ 
+ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+     case agentRunning = "agent_running"
++    /// An Agent is paused for a user response, not a successful completion.
++    case agentAwaitingInput = "agent_awaiting_input"
+     case agentSucceeded = "agent_success"
+     case agentFailed = "agent_failed"
+     case commandRunning = "shell_running"
+@@ -1010,8 +1021,12 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+ 
+     var id: String { rawValue }
+ 
++    /// Waiting presets do not animate; the question view owns its reminder shake.
++    var isAnimated: Bool { self != .agentAwaitingInput }
++
+     static let agentAnimations: [Self] = [
+         .agentRunning,
++        .agentAwaitingInput,
+         .agentSucceeded,
+         .agentFailed
+     ]
+@@ -1032,11 +1047,21 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+             "Failed"
+         case .commandFinished:
+             "Finished"
++        case .agentAwaitingInput:
++            "Waiting for Reply"
+         }
+     }
+ 
++    /// Styles offered for this state; the question glyph belongs only to waiting.
++    var availableStyles: [SessionStatusAnimationStyle] {
++        let presets: [SessionStatusAnimationStyle] = [.alien, .robot, .classic]
++        return self == .agentAwaitingInput ? [.questionMark] + presets : presets
++    }
++
+     var defaultStyle: SessionStatusAnimationStyle {
+         switch self {
++        case .agentAwaitingInput:
++            .questionMark
+         case .agentRunning, .agentSucceeded, .agentFailed:
+             .alien
+         case .commandRunning, .commandSucceeded, .commandFailed, .commandFinished:
+@@ -1049,8 +1074,10 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+ 
+         let kind = session.activityKind ?? .command
+         switch (kind, status, session.exitStatus) {
+-        case (_, .idle, _):
++        case (_, .idle, _), (.command, .awaitingInput, _):
+             return nil
++        case (.agent, .awaitingInput, _):
++            self = .agentAwaitingInput
+         case (.agent, .running, _):
+             self = .agentRunning
+         case (.command, .running, _):
+@@ -1070,6 +1097,8 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+ 
+     var accessibilityLabel: String {
+         switch self {
++        case .agentAwaitingInput:
++            "Waiting for your reply"
+         case .agentRunning:
+             "Agent working"
+         case .agentSucceeded:
+@@ -1089,6 +1118,8 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+ 
+     var color: NSColor {
+         switch self {
++        case .agentAwaitingInput:
++            .controlAccentColor
+         case .agentRunning:
+             .systemPurple
+         case .commandRunning:
+@@ -1120,6 +1151,11 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+         frame: Int,
+         style: SessionStatusAnimationStyle? = nil
+     ) -> CGFloat {
++        let frame = isAnimated ? frame : 0
++        if (style ?? defaultStyle) == .questionMark {
++            guard (6..<11).contains(column), (0..<7).contains(row) else { return 0 }
++            return AgentQuestionStatusView.glyph[row] & (1 << (10 - column)) != 0 ? 1 : 0
++        }
+         if (14...15).contains(column) {
+             return statusBarBrightness(row: row, frame: frame)
+         }
+@@ -1131,6 +1167,8 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+             return robotBrightness(column: column, row: row, frame: frame)
+         case .classic:
+             return classicBrightness(column: column, row: row, frame: frame)
++        case .questionMark:
++            return 0 // The question glyph was handled before the status-bar branch.
+         }
+     }
+ 
+@@ -1149,7 +1187,7 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+             .succeeded
+         case .agentFailed, .commandFailed:
+             .failed
+-        case .commandFinished:
++        case .commandFinished, .agentAwaitingInput:
+             .finished
+         }
+     }
+@@ -1325,6 +1363,8 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+             return (level + frame / 3) % 3 == 0 ? 1 : 0
+         case .commandFailed:
+             return (level + frame / 2) % 2 == 0 ? 0.85 : 0
++        case .agentAwaitingInput:
++            return 0
+         case .commandFinished:
+             let pulse: [CGFloat] = [0.35, 0.5, 0.7, 0.9, 1, 0.9, 0.7, 0.5]
+             return pulse[frame / 2 % pulse.count]
+@@ -1380,6 +1420,70 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+     }
+ }
+ 
++/// Shared waiting-state presentation for the session row and settings preview.
++struct AgentWaitingStatusView: View {
++    let style: SessionStatusAnimationStyle
++    let color: Color
++
++    var body: some View {
++        if style == .questionMark {
++            AgentQuestionStatusView(color: color)
++        } else {
++            SessionStatusMatrix(
++                animation: .agentAwaitingInput,
++                style: style,
++                customColor: NSColor(color),
++                animates: false
++            )
++        }
++    }
++}
++
++private struct AgentQuestionStatusView: View {
++    @Environment(\.accessibilityReduceMotion) private var reduceMotion
++    let color: Color
++
++    // Five columns, seven rows; use the same pitch and dots as the status matrix.
++    fileprivate static let glyph = [
++        0b01110,
++        0b10001,
++        0b00001,
++        0b00010,
++        0b00100,
++        0b00000,
++        0b00100,
++    ]
++
++    var body: some View {
++        TimelineView(.animation(minimumInterval: 0.1, paused: reduceMotion)) { timeline in
++            // Four brief, whole-point shifts every four seconds keep pixels crisp.
++            let step = Int(timeline.date.timeIntervalSinceReferenceDate * 10) % 40
++            let shifts: [CGFloat] = [0, -1, 1, -1, 1, 0]
++            let offset = reduceMotion || step >= shifts.count ? 0 : shifts[step]
++            Canvas { context, size in
++                let origin = CGPoint(
++                    x: (size.width - 10) / 2 + offset,
++                    y: (size.height - 14) / 2
++                )
++                for (row, bits) in Self.glyph.enumerated() {
++                    for column in 0..<5 where bits & (1 << (4 - column)) != 0 {
++                        let rect = CGRect(
++                            x: origin.x + CGFloat(column) * 2 + 0.25,
++                            y: origin.y + CGFloat(row) * 2 + 0.25,
++                            width: 1.75,
++                            height: 1.75
++                        )
++                        context.fill(
++                            Path(roundedRect: rect, cornerRadius: 0.35),
++                            with: .color(color)
++                        )
++                    }
++                }
++            }
++        }
++    }
++}
++
+ private struct AgentIdleStatusView: View {
+     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+     @State private var isVisible = false
+@@ -1422,7 +1526,7 @@ struct SessionStatusMatrix: NSViewRepresentable {
+         self.animation = animation
+         self.style = style
+         self.customColor = customColor
+-        self.animates = animates
++        self.animates = animates && animation.isAnimated
+     }
+ 
+     func makeNSView(context: Context) -> SessionStatusMatrixView {
+diff --git a/iTermateBridge/iTermateBridge.py b/iTermateBridge/iTermateBridge.py
+index 1ede767..5bf8bbc 100644
+--- a/iTermateBridge/iTermateBridge.py
++++ b/iTermateBridge/iTermateBridge.py
+@@ -134,7 +134,7 @@ class Bridge:
+ 
+         if action == "setSessionStatus":
+             status = request.get("status")
+-            if status not in {"idle", "running", "finished", "detached"}:
++            if status not in {"idle", "running", "awaitingInput", "finished", "detached"}:
+                 await self.send_action_result(writer, request_id, False, "Invalid status")
+                 return
+             exit_status = request.get("exitStatus", 0)
+@@ -147,14 +147,24 @@ class Bridge:
+                     writer, request_id, False, "Invalid exit status"
+                 )
+                 return
++            if status == "awaitingInput" and request.get("exitStatus") is not None:
++                await self.send_action_result(
++                    writer, request_id, False, "Invalid exit status"
++                )
++                return
+             heartbeat = request.get("heartbeat", False)
+-            if not isinstance(heartbeat, bool) or (heartbeat and status != "running"):
++            if not isinstance(heartbeat, bool) or (
++                heartbeat and status not in {"running", "awaitingInput"}
++            ):
+                 await self.send_action_result(
+                     writer, request_id, False, "Invalid heartbeat"
+                 )
+                 return
+-            self.set_agent_status(session_id, status, exit_status, heartbeat)
+-            await self.send_action_result(writer, request_id, True, None)
++            accepted = self.set_agent_status(session_id, status, exit_status, heartbeat)
++            await self.send_action_result(
++                writer, request_id, accepted,
++                None if accepted else "Stale heartbeat"
++            )
+             await self.publish_snapshot()
+             return
+ 
+@@ -536,10 +546,13 @@ class Bridge:
+             self.agent_managed_session_ids.discard(session_id)
+             self.agent_heartbeat_times.pop(session_id, None)
+             self.session_statuses.pop(session_id, None)
+-            return
++            return True
+ 
++        current = self.session_statuses.get(session_id)
++        if heartbeat and current is not None and current.get("status") != status:
++            return False
+         self.agent_managed_session_ids.add(session_id)
+-        if heartbeat:
++        if heartbeat or status == "awaitingInput":
+             self.agent_heartbeat_times[session_id] = heartbeat_time()
+         else:
+             self.agent_heartbeat_times.pop(session_id, None)
+@@ -549,13 +562,16 @@ class Bridge:
+             exit_status if status == "finished" else None,
+             activity_kind="agent",
+         )
++        return True
+ 
+     def expire_stale_agent_heartbeats(self, now):
+         for session_id, last_heartbeat in list(self.agent_heartbeat_times.items()):
+             if now - last_heartbeat <= AGENT_HEARTBEAT_TIMEOUT:
+                 continue
+             self.agent_heartbeat_times.pop(session_id, None)
+-            if self.session_statuses.get(session_id, {}).get("status") == "running":
++            if self.session_statuses.get(session_id, {}).get("status") in {
++                "running", "awaitingInput"
++            }:
+                 self.session_statuses.pop(session_id, None)
+ 
+     def set_session_status(
+@@ -1316,7 +1332,13 @@ def self_test():
+     )
+     assert heartbeat_bridge.session_statuses["session-1"]["status"] == "finished"
+ 
+-    heartbeat_bridge.set_agent_status("session-1", "running", heartbeat=True)
++    assert not heartbeat_bridge.set_agent_status(
++        "session-1", "running", heartbeat=True
++    )
++    assert heartbeat_bridge.session_statuses["session-1"]["status"] == "finished"
++    assert "session-1" not in heartbeat_bridge.agent_heartbeat_times
++    assert heartbeat_bridge.set_agent_status("session-1", "running")
++    assert heartbeat_bridge.set_agent_status("session-1", "running", heartbeat=True)
+     heartbeat_at = heartbeat_bridge.agent_heartbeat_times["session-1"]
+     heartbeat_bridge.expire_stale_agent_heartbeats(
+         heartbeat_at + AGENT_HEARTBEAT_TIMEOUT + 1
+diff --git a/iTermateTests/ItermBridgeTests.swift b/iTermateTests/ItermBridgeTests.swift
+index 585b130..02f16b7 100644
+--- a/iTermateTests/ItermBridgeTests.swift
++++ b/iTermateTests/ItermBridgeTests.swift
+@@ -257,7 +257,7 @@ final class ItermBridgeTests: XCTestCase {
+     func testEverySessionStatusAnimationKeepsPixelsVisibleAndChangesFrames() {
+         var signatures = Set<[CGFloat]>()
+ 
+-        for animation in SessionStatusAnimation.allCases {
++        for animation in SessionStatusAnimation.allCases where animation.isAnimated {
+             let frames = (0..<24).map { frame in
+                 (0..<8).flatMap { row in
+                     (0..<18).map {
+@@ -315,9 +315,28 @@ final class ItermBridgeTests: XCTestCase {
+         }
+     }
+ 
++    func testWaitingStylesStayVisibleAndStatic() {
++        let animation = SessionStatusAnimation.agentAwaitingInput
++        XCTAssertFalse(animation.isAnimated)
++        XCTAssertEqual(animation.defaultStyle, .questionMark)
++        XCTAssertTrue(SessionStatusAnimation.agentAnimations.contains(animation))
++        XCTAssertFalse(SessionStatusAnimation.commandRunning.availableStyles.contains(.questionMark))
++        for style in animation.availableStyles {
++            let frames = (0..<24).map { frame in
++                (0..<8).flatMap { row in
++                    (0..<18).map { column in
++                        animation.brightness(column: column, row: row, frame: frame, style: style)
++                    }
++                }
++            }
++            XCTAssertTrue(frames.allSatisfy { $0.contains { $0 > 0 } }, "\(style)")
++            XCTAssertEqual(Set(frames).count, 1, "\(style)")
++        }
++    }
++
+     func testEveryStatusAnimationStyleKeepsPixelsVisibleAndChangesFrames() {
+-        for style in SessionStatusAnimationStyle.allCases {
+-            for animation in SessionStatusAnimation.allCases {
++        for animation in SessionStatusAnimation.allCases where animation.isAnimated {
++            for style in animation.availableStyles {
+                 let frames = (0..<24).map { frame in
+                     (0..<8).flatMap { row in
+                         (0..<18).map {
+diff --git a/iTermateTests/PanelLayoutTests.swift b/iTermateTests/PanelLayoutTests.swift
+index 9c64673..c9b512d 100644
+--- a/iTermateTests/PanelLayoutTests.swift
++++ b/iTermateTests/PanelLayoutTests.swift
+@@ -296,6 +296,27 @@ final class PanelLayoutTests: XCTestCase {
+         )
+     }
+ 
++    func testWaitingStatusPreferencesPersistAndResetColor() {
++        let configURL = makeConfigURL()
++        let settings = AppSettings(configURL: configURL)
++        let staleSettings = AppSettings(configURL: configURL)
++        XCTAssertEqual(settings.statusAnimationStyle(for: .agentAwaitingInput), .questionMark)
++        settings.setStatusAnimationStyle(.robot, for: .agentAwaitingInput)
++        settings.setStatusAnimationColor(.systemPink, for: .agentAwaitingInput)
++        staleSettings.setStatusAnimationStyle(.classic, for: .agentRunning)
++
++        let restored = AppSettings(configURL: configURL)
++        XCTAssertEqual(restored.statusAnimationStyle(for: .agentAwaitingInput), .robot)
++        XCTAssertNotNil(restored.statusAnimationCustomColor(for: .agentAwaitingInput))
++        XCTAssertEqual(restored.statusAnimationStyle(for: .agentRunning), .classic)
++        restored.setStatusAnimationColor(nil, for: .agentAwaitingInput)
++        let reset = AppSettings(configURL: configURL)
++        XCTAssertNil(reset.statusAnimationCustomColor(for: .agentAwaitingInput))
++        XCTAssertEqual(reset.statusAnimationStyle(for: .agentAwaitingInput), .robot)
++        reset.setStatusAnimationStyle(.questionMark, for: .agentAwaitingInput)
++        XCTAssertEqual(AppSettings(configURL: configURL).statusAnimationStyle(for: .agentAwaitingInput), .questionMark)
++    }
++
+     func testSessionTimeDisplayDefaultsAndPersists() {
+         let configURL = makeConfigURL()
+         let settings = AppSettings(configURL: configURL)
+diff --git a/integrations/pi/iTermate-integration.ts b/integrations/pi/iTermate-integration.ts
+index c1ec422..73d0626 100644
+--- a/integrations/pi/iTermate-integration.ts
++++ b/integrations/pi/iTermate-integration.ts
+@@ -1,6 +1,7 @@
++import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+ import { randomUUID } from "node:crypto";
+ import { execFileSync } from "node:child_process";
+-import { connect } from "node:net";
++import { connect, type Socket } from "node:net";
+ import { homedir } from "node:os";
+ import { join } from "node:path";
+ 
+@@ -36,13 +37,43 @@ function terminalTTY(): string | undefined {
+ 
+ const tty = terminalTTY();
+ 
++type Status = "idle" | "running" | "awaitingInput" | "finished" | "detached";
++
++// Deliberately prefer missed questions over interpreting examples as requests.
++export function needsReply(text: string): boolean {
++  let fence: string | undefined;
++  const prose: string[] = [];
++  for (const line of text.split("\n")) {
++    const marker = line.match(/^\s*(`{3,}|~{3,})/);
++    if (marker) {
++      if (!fence) fence = marker[1];
++      else if (marker[1][0] === fence[0] && marker[1].length >= fence.length) {
++        fence = undefined;
++      }
++      prose.push("");
++      continue;
++    }
++    if (fence || /^\s*>|^(?: {4}|\t)/.test(line)) continue;
++    prose.push(line.replace(/`[^`]*`|“[^”]*”|「[^」]*」|"[^"\n]*"/g, ""));
++  }
++  if (fence) return false;
++  const tail = prose.join("\n").trim().split(/\n\s*\n/).slice(-2).join("\n");
++  if (!tail || tail.length > 1200) return false;
++  if (/示例|例如|比如|举例|\bexample\b|\be\.g\.|无需|不需要|不用|不必|如果需要|如有需要|不(?:会|再|要|用)?\s*(?:等待|等你|等您)|\b(?:not|never|without)\s+waiting\b|\b(?:won't|will not|don't|do not)\s+wait\b|\bif (?:you (?:want|like|need)|needed)\b|\b(?:no need|do not need|don't need)\b/i.test(tail)) {
++    return false;
++  }
++  const request = /(?:是否|能否)[^。！？\n]{0,80}[？?]|\b(?:can|could|would|will) you (?:confirm|choose|select|provide)\b|请(?:你|您)?[^。！？\n]{0,30}(?:确认|选择|回复|提供|补充)|(?:你|您)(?:更希望|希望|选择|倾向)[^。！？\n]{0,80}[？?]|\bplease\s+(?:confirm|choose|select|reply|provide)\b/i.test(tail);
++  const waiting = /(?:确认|选择|回复|回答|提供|补充)[^。！？\n]{0,20}(?:后|之后)[^。！？\n]{0,20}(?:开始|继续|执行|进行)|(?:等待|等你|等您)[^。！？\n]{0,20}(?:确认|选择|回复|回答)|\b(?:before I (?:begin|start|continue|proceed)|(?:once|after) you (?:confirm|choose|reply)|waiting for your (?:reply|confirmation|answer))\b/i.test(tail);
++  return request && waiting;
++}
++
+ function report(
+-  status: "idle" | "running" | "finished" | "detached",
++  status: Status,
+   exitStatus?: number,
+   heartbeat = false,
+-): Promise<void> {
++): Promise<boolean> {
+   const sessionID = iTermSessionID();
+-  if (!sessionID && !tty) return Promise.resolve();
++  if (!sessionID && !tty) return Promise.resolve(false);
+ 
+   return new Promise((resolve) => {
+     const requestId = randomUUID();
+@@ -68,20 +99,20 @@ function report(
+           exitStatus,
+           heartbeat,
+         };
+-    const socket = connect(
++    const socket: Socket = connect(
+       sessionID ? bridgeSocketPath : statusSocketPath,
+       () => socket.write(`${JSON.stringify(request)}\n`),
+     );
+     let buffer = "";
+     let completed = false;
+-    const complete = () => {
++    const complete = (accepted: boolean) => {
+       if (completed) return;
+       completed = true;
+       socket.destroy();
+-      resolve();
++      resolve(accepted);
+     };
+ 
+-    socket.setTimeout(3000, complete);
++    socket.setTimeout(3000, () => complete(false));
+     socket.on("data", (data) => {
+       buffer += data.toString();
+       const lines = buffer.split("\n");
+@@ -90,29 +121,37 @@ function report(
+         try {
+           const message = JSON.parse(line);
+           if (message.type === "actionResult" && message.requestId === requestId) {
+-            complete();
++            complete(message.ok === true);
+             return;
+           }
+         } catch {}
+       }
+     });
+-    socket.on("error", complete);
+-    socket.on("close", complete);
++    socket.on("error", () => complete(false));
++    socket.on("close", () => complete(false));
+   });
+ }
+ 
+-export default function (pi): void {
++export default function (pi: ExtensionAPI): void {
+   let agentFailed = false;
++  let agentRunning = false;
++  let replyPending = false;
++  let promptOpen = false;
++  let baseStatus: Status = "idle";
++  let active = false;
+   let heartbeatGeneration = 0;
+   let heartbeatTimer: ReturnType<typeof setTimeout> | undefined;
+-  let reportQueue = Promise.resolve();
++  let reportQueue = Promise.resolve(true);
+ 
+   function queueReport(
+-    status: "idle" | "running" | "finished" | "detached",
++    status: Status,
+     exitStatus?: number,
+     heartbeat = false,
+-  ): Promise<void> {
+-    const send = () => report(status, exitStatus, heartbeat);
++    generation = heartbeatGeneration,
++  ): Promise<boolean> {
++    const send = () => generation === heartbeatGeneration
++      ? report(status, exitStatus, heartbeat)
++      : Promise.resolve(false);
+     reportQueue = reportQueue.then(send, send);
+     return reportQueue;
+   }
+@@ -123,35 +162,93 @@ export default function (pi): void {
+     heartbeatTimer = undefined;
+   }
+ 
+-  async function sendHeartbeat(generation: number): Promise<void> {
+-    await queueReport("running", undefined, true);
++  function visibleStatus(): Status {
++    return promptOpen ? "awaitingInput" : baseStatus;
++  }
++
++  async function sendHeartbeat(
++    generation: number,
++    confirmed: boolean,
++    retries = 3,
++  ): Promise<void> {
++    if (!active || generation !== heartbeatGeneration) return;
++    const status = visibleStatus();
++    const leased = status === "running" || status === "awaitingInput";
++    const accepted = await queueReport(
++      status,
++      status === "finished" ? (agentFailed ? 1 : 0) : undefined,
++      leased && confirmed,
++      generation,
++    );
+     if (generation !== heartbeatGeneration) return;
+-    heartbeatTimer = setTimeout(() => void sendHeartbeat(generation), 2000);
++    // Retry the full transition until acknowledged, not a heartbeat that the
++    // receiver might reject against its previous idle/finished state.
++    if (leased || (!accepted && retries > 0)) {
++      heartbeatTimer = setTimeout(
++        () => void sendHeartbeat(generation, accepted, leased ? 3 : retries - 1), 2000,
++      );
++    }
+   }
+ 
+-  async function startHeartbeat(): Promise<void> {
++  function publish(): Promise<void> {
++    if (!active) return Promise.resolve();
+     stopHeartbeat();
+-    const generation = heartbeatGeneration;
+-    await queueReport("running");
+-    if (generation !== heartbeatGeneration) return;
+-    heartbeatTimer = setTimeout(() => void sendHeartbeat(generation), 2000);
++    return sendHeartbeat(heartbeatGeneration, false);
+   }
+ 
+-  pi.on("session_start", () => queueReport("idle"));
++  pi.on("session_start", (_event, ctx) => {
++    active = ctx.mode === "tui";
++    baseStatus = "idle";
++    agentRunning = false;
++    replyPending = false;
++    promptOpen = false;
++    return publish();
++  });
+   pi.on("agent_start", () => {
+     agentFailed = false;
+-    return startHeartbeat();
++    agentRunning = true;
++    replyPending = false;
++    baseStatus = "running";
++    return publish();
+   });
+   pi.on("agent_end", (event) => {
++    agentRunning = false;
+     const message = event.messages.findLast(({ role }) => role === "assistant");
+-    agentFailed = message?.stopReason === "error";
++    if (message?.role !== "assistant") {
++      replyPending = false;
++      return;
++    }
++    agentFailed = message.stopReason === "error";
++    replyPending = message.stopReason === "stop" && needsReply(
++      message.content.flatMap((block) => block.type === "text" ? [block.text] : [])
++        .join("\n"),
++    );
+   });
+-  pi.on("agent_settled", () => {
+-    stopHeartbeat();
+-    return queueReport("finished", agentFailed ? 1 : 0);
++  pi.on("agent_settled", (_event, ctx) => {
++    if (!ctx.isIdle()) return;
++    baseStatus = replyPending ? "awaitingInput" : "finished";
++    return publish();
++  });
++  pi.on("ui_prompt_start", (event, ctx) => {
++    if (!active || ctx.mode !== "tui" || event.kind === "custom") return;
++    promptOpen = true;
++    return publish();
++  });
++  pi.on("ui_prompt_end", () => {
++    if (!promptOpen) return;
++    promptOpen = false;
++    return publish();
++  });
++  pi.on("session_tree", () => {
++    replyPending = false;
++    // Pi still holds its branch-navigation busy flag during this event.
++    baseStatus = agentRunning ? "running" : "idle";
++    return publish();
+   });
+   pi.on("session_shutdown", () => {
++    if (!active) return;
++    active = false;
+     stopHeartbeat();
+-    return queueReport("detached");
++    return queueReport("detached").then(() => {});
+   });
+ }

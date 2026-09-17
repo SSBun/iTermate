@@ -1,0 +1,12 @@
+审查范围：五个产品源码文件的未暂存改动，以及新增的 Pi 测试源文件（未执行）。无产品删除、重命名或已暂存内容。
+基线 HEAD：0c79ef67e35e86646cf857e954c41c4e4c368002
+product-2.diff SHA256：0db2113c9398fe24114436833199e2f59bfdf531bdf6f1f1aff98d0b6e8dc40f
+文件 SHA256（相对仓库根目录）：
+f9179f56c25f1ee5b21b35e0c22f95d71f23acddd2f639145359b13ebad2e6b8  iTermate/ItermBridge.swift
+b3b63d04579d10a63815993ad6c7beba780d6b2a36c5e0c315a74b885dac06e2  iTermate/TerminalStatusServer.swift
+0e79475847862df8441e78c3bf332b2d6bbaccfb7faaf72f27f1e4fdd8125753  iTermate/iTermateApp.swift
+7d5ec3f413f7e33c0aff3e08df7db437547a6d04f9db1e54d885a452ce80d561  iTermateBridge/iTermateBridge.py
+540c2e17257f8d8020606810020cd67f8be5fbf3dcad62c0f2bae54077d34355  integrations/pi/iTermate-integration.ts
+0eeb0e316ba816858edbeea9f7c65ce422e57d0e46b39973eb88a3589b402b88  integrations/pi/iTermate-integration.test.ts
+检查：修改后 Python AST、TypeScript strict/noEmit（包含新增测试源码）、Xcode Debug build、git diff --check 再次通过。
+限制：未执行任何测试、事件回放、安装升级或真实 UI。首轮审查报告位于 ../reports/review-1.md，待复核 TR-1 至 TR-4。
