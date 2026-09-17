@@ -1,5 +1,7 @@
 # 任务索引
 
+- [升级 minor 版本并公开发布待回复提醒功能](tasks/release-pending-questions-minor.md) — In Progress (2026-09-17 15:43)
+
 - [按独立关注点提交全部本地改动](tasks/commit-pending-question-changes-by-concern.md) — Completed (2026-09-17 15:11)
 
 - [规划 Agent 待回复问题识别与问号状态提示](tasks/detect-agent-pending-questions.md) — Completed (2026-09-17 14:53)

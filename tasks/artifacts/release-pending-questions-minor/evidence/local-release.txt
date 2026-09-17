@@ -1,0 +1,20 @@
+本地发布准备：iTermate 0.5.0 / build 12
+版本权威：project.yml；xcodegen 已同步工程，Info.plist 沿用构建变量。
+产物：dist/iTermate-0.5.0_20260917-154718/iTermate-0.5.0.dmg
+大小：3963748 bytes
+SHA256：5bf1d471a3545fcd40647a29a6d299cbf345e5e256082cd90f8a434d3446da0f
+平台：arm64 / macOS 13.0+
+代码签名：ad hoc；无 Developer ID Application；未公证、未提交 Apple notary service。
+
+通过的检查：
+- 既有 create-dmg.sh 完成 Release clean build、打包与 hdiutil verify。
+- DMG 只读挂载，包内展示版本0.5.0、构建号12、Applications链接、Sparkle框架/辅助资源确认；codesign --verify --deep --strict 通过。
+- 包内 Pi 集成与 Python Bridge 字节与仓库源码一致。
+- checksum文件与最终DMG一致，签名后未重新打包。
+- 通过项目既有 Keychain account SSBun.iTermate 读取公钥，与包内 SUPublicEDKey 一致；未导出私钥。默认 account 查询无密钥，随后依据项目历史权威记录改用项目 account，未创建或轮换密钥。
+- generate_appcast 生成一项新版本；检查新item总数=旧item总数+1，旧items逐项保持不变。
+- XML的0.5.0/build12、macOS13、arm64、未来GitHub资产URL、长度正确；Sparkle sign_update --verify通过。
+
+未来资产URL：https://github.com/SSBun/iTermate/releases/download/v0.5.0/iTermate-0.5.0.dmg
+公开feed：https://ssbun.github.io/iTermate/appcast.xml
+限制：未运行任何测试、未启动发布App、未替换安装态、未实测客户端自动升级。远端发布仍待独立安全确认。
