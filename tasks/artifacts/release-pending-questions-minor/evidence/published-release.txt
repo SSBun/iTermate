@@ -1,0 +1,23 @@
+公开版本：iTermate 0.5.0 / build 12
+用户在完整Safety Confirmation后明确回复confirm publish，接受公开发布及ad hoc/未公证限制；测试按既定边界未运行。
+
+Release：https://github.com/SSBun/iTermate/releases/tag/v0.5.0
+发布提交：33e4e87868e739fd425ed6b5b1aa0b35778c47cb
+Annotated tag对象：03aa37bf515e510791105306439acc8cff1d4f3b
+Tag解引用提交：33e4e87868e739fd425ed6b5b1aa0b35778c47cb
+发布时main同样指向发布提交，后续仅允许任务记录提交推进，不改变发布字节。
+GitHub Release：非draft、非prerelease；publishedAt=2026-09-17T07:59:58Z。
+
+资产：
+- iTermate-0.5.0.dmg：3963748 bytes，HTTP 200
+- iTermate-0.5.0.dmg.sha256：85 bytes，HTTP 200
+DMG SHA256：5bf1d471a3545fcd40647a29a6d299cbf345e5e256082cd90f8a434d3446da0f
+独立下载到临时目录后，校验和、逐字节比较、hdiutil verify均通过。
+
+安全顺序已执行：先推tag → 创建Release并上传两项资产 → 独立下载和HTTP校验 → 推main/feed。
+GitHub Pages部署：https://github.com/SSBun/iTermate/actions/runs/35197434874，success。
+公开feed：https://ssbun.github.io/iTermate/appcast.xml
+无缓存重新获取feed，0.5.0/build12、macOS13、arm64、资产URL、长度及EdDSA签名与本地一致；用公开feed签名验证独立下载DMG通过。
+Pages仅提示上游action Node20弃用兼容告警，部署成功；未顺手修改无关发布基础设施。
+
+限制：arm64、ad hoc、未经Apple公证。未运行测试、未实测客户端下载安装与重启，没有覆盖或启动本机App、Bridge或Pi集成。

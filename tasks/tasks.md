@@ -1,6 +1,6 @@
 # 任务索引
 
-- [升级 minor 版本并公开发布待回复提醒功能](tasks/release-pending-questions-minor.md) — In Progress (2026-09-17 15:43)
+- [升级 minor 版本并公开发布待回复提醒功能](tasks/release-pending-questions-minor.md) — Completed (2026-09-17 16:03)
 
 - [按独立关注点提交全部本地改动](tasks/commit-pending-question-changes-by-concern.md) — Completed (2026-09-17 15:11)
 
