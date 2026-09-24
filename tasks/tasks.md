@@ -2,7 +2,7 @@
 
 - [记录发布签名限制的长期接受规则](tasks/accept-release-signing-limit.md) — Completed (2026-09-24 15:26)
 
-- [发布下一个 minor 版本](tasks/release-next-minor.md) — In Progress (2026-09-24 15:30)
+- [发布下一个 minor 版本](tasks/release-next-minor.md) — Completed (2026-09-24 15:40)
 
 - [提交全部本地改动并推送远端](tasks/commit-and-push-local-updates.md) — Completed (2026-09-24 15:08)
 
