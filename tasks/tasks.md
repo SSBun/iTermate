@@ -1,6 +1,6 @@
 # 任务索引
 
-- [提交全部本地改动并推送远端](tasks/commit-and-push-local-updates.md) — In Progress (2026-09-24 15:05)
+- [提交全部本地改动并推送远端](tasks/commit-and-push-local-updates.md) — Completed (2026-09-24 15:08)
 
 - [将子代理状态图标改为像素 Canvas 动画](tasks/animate-pixel-subagent-icon.md) — Completed (2026-09-24 15:02)
 
