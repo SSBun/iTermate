@@ -1,0 +1,661 @@
+diff --git a/iTermate.xcodeproj/project.pbxproj b/iTermate.xcodeproj/project.pbxproj
+index e405796..2dd2b4c 100644
+--- a/iTermate.xcodeproj/project.pbxproj
++++ b/iTermate.xcodeproj/project.pbxproj
+@@ -10,11 +10,13 @@
+ 		5B5F89FB907820C9055C9184 /* iTermate.bash in Resources */ = {isa = PBXBuildFile; fileRef = 0448C28D1F048069AA0A0D18 /* iTermate.bash */; };
+ 		5FB71DAE674AB719CA12F02B /* iTermate.fish in Resources */ = {isa = PBXBuildFile; fileRef = 2754035B6E0A92CE752D09E5 /* iTermate.fish */; };
+ 		854F100B60C750D06E8DF1EC /* iTermateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8719B6809A3EC4D52A306 /* iTermateApp.swift */; };
++		85814D5023E76DE82EB7F95C /* agent-connection-prompt.md in Resources */ = {isa = PBXBuildFile; fileRef = EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */; };
+ 		8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8A8790CA418B304742A10E /* AgentIntegrations.swift */; };
+ 		94B162FBE46FC4FD4E2DF794 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 877F89ED3A45C6F8DF3B44C1 /* Sparkle */; };
+ 		9EA014E904BFB2839F940EBA /* SessionNotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */; };
+ 		AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */; };
+ 		B3841525F058DCEF4B08CC48 /* TerminalStatusServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */; };
++		BEEB853D6C906357937B0DAF /* iTermate-laya.py in Resources */ = {isa = PBXBuildFile; fileRef = 778A5491FBE924DD5E2ED781 /* iTermate-laya.py */; };
+ 		C7E944908DE9ED9089171685 /* iTermateBridge.py in Resources */ = {isa = PBXBuildFile; fileRef = 98A663F51BCEE90A4D694DFD /* iTermateBridge.py */; };
+ 		CD6C91A30902A7FCEE57204D /* PanelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */; };
+ 		CF61D396BC472AA8FE36FF58 /* iTermate-status.py in Resources */ = {isa = PBXBuildFile; fileRef = 88ED6137D49AA3F3F967AC35 /* iTermate-status.py */; };
+@@ -24,6 +26,7 @@
+ 		F1BACAA2BF873D0423D5D029 /* iTermate-integration.ts in Resources */ = {isa = PBXBuildFile; fileRef = 455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */; };
+ 		F3A0DE6F13889CD5EB0312AD /* iTermate.zsh in Resources */ = {isa = PBXBuildFile; fileRef = 05A3AA7BB59AC8672303E16B /* iTermate.zsh */; };
+ 		F8C2B099533A5060DD6FF222 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 26707EC6497714316C11E6B6 /* Assets.xcassets */; };
++		F8FB3990DA0A51BF7DD6065B /* LocalModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */; };
+ 		FBA2C09664EC79CCE097AE9C /* AgentIntegrationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */; };
+ 		FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC44468A07DBECAD73989BA /* ItermBridge.swift */; };
+ /* End PBXBuildFile section */
+@@ -50,6 +53,8 @@
+ 		455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */ = {isa = PBXFileReference; path = "iTermate-integration.ts"; sourceTree = "<group>"; };
+ 		4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIntegrationManagerTests.swift; sourceTree = "<group>"; };
+ 		5AC44468A07DBECAD73989BA /* ItermBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItermBridge.swift; sourceTree = "<group>"; };
++		778A5491FBE924DD5E2ED781 /* iTermate-laya.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-laya.py"; sourceTree = "<group>"; };
++		7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelService.swift; sourceTree = "<group>"; };
+ 		88ED6137D49AA3F3F967AC35 /* iTermate-status.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-status.py"; sourceTree = "<group>"; };
+ 		8F8A8790CA418B304742A10E /* AgentIntegrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIntegrations.swift; sourceTree = "<group>"; };
+ 		8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNotificationTests.swift; sourceTree = "<group>"; };
+@@ -58,6 +63,7 @@
+ 		AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelLayoutTests.swift; sourceTree = "<group>"; };
+ 		E19ED60DFB350BCCD35BB7D4 /* iTermateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iTermateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+ 		EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItermBridgeTests.swift; sourceTree = "<group>"; };
++		EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "agent-connection-prompt.md"; sourceTree = "<group>"; };
+ 		F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalStatusServer.swift; sourceTree = "<group>"; };
+ 		FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNotifications.swift; sourceTree = "<group>"; };
+ /* End PBXFileReference section */
+@@ -89,6 +95,7 @@
+ 				9D8AD233E03307791188C9BA /* iTermate */,
+ 				AB381789852D8FBBEF03E620 /* iTermateBridge */,
+ 				E983C73C444786BC354E7A8A /* iTermateTests */,
++				EABF8A1EEF5EE7C774797170 /* laya */,
+ 				B116C045A938ACC98A870800 /* pi */,
+ 				6265AB239F8D9AC12E6BF1F9 /* shell */,
+ 				377849C3113349301ACDBD92 /* status */,
+@@ -124,6 +131,7 @@
+ 				9BF8CFF4C87D1CF8C9E3F93E /* Info.plist */,
+ 				44F8719B6809A3EC4D52A306 /* iTermateApp.swift */,
+ 				5AC44468A07DBECAD73989BA /* ItermBridge.swift */,
++				7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */,
+ 				2964CC35CF647092E51DBA87 /* PanelLayout.swift */,
+ 				FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */,
+ 				06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */,
+@@ -160,6 +168,16 @@
+ 			path = iTermateTests;
+ 			sourceTree = "<group>";
+ 		};
++		EABF8A1EEF5EE7C774797170 /* laya */ = {
++			isa = PBXGroup;
++			children = (
++				EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */,
++				778A5491FBE924DD5E2ED781 /* iTermate-laya.py */,
++			);
++			name = laya;
++			path = integrations/laya;
++			sourceTree = "<group>";
++		};
+ /* End PBXGroup section */
+ 
+ /* Begin PBXNativeTarget section */
+@@ -241,7 +259,9 @@
+ 			buildActionMask = 2147483647;
+ 			files = (
+ 				F8C2B099533A5060DD6FF222 /* Assets.xcassets in Resources */,
++				85814D5023E76DE82EB7F95C /* agent-connection-prompt.md in Resources */,
+ 				F1BACAA2BF873D0423D5D029 /* iTermate-integration.ts in Resources */,
++				BEEB853D6C906357937B0DAF /* iTermate-laya.py in Resources */,
+ 				CF61D396BC472AA8FE36FF58 /* iTermate-status.py in Resources */,
+ 				5B5F89FB907820C9055C9184 /* iTermate.bash in Resources */,
+ 				5FB71DAE674AB719CA12F02B /* iTermate.fish in Resources */,
+@@ -270,6 +290,7 @@
+ 			files = (
+ 				8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */,
+ 				FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */,
++				F8FB3990DA0A51BF7DD6065B /* LocalModelService.swift in Sources */,
+ 				D2C6987CA2110DB3371B778F /* PanelLayout.swift in Sources */,
+ 				AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */,
+ 				EAECC190D6FF2D443E6ABD91 /* SettingsViews.swift in Sources */,
+diff --git a/iTermate/ItermBridge.swift b/iTermate/ItermBridge.swift
+index 9039f4c..d0b4caa 100644
+--- a/iTermate/ItermBridge.swift
++++ b/iTermate/ItermBridge.swift
+@@ -131,6 +131,8 @@ struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
+     let activityKind: SessionActivityKind?
+     let exitStatus: Int?
+     let statusChangedAt: TimeInterval?
++    /// A short-lived estimate, never used for lifecycle notifications or completion counts.
++    var modelState: TerminalSessionStatus? = nil
+ }
+ 
+ struct TerminalTabSnapshot: Codable, Equatable, Identifiable {
+diff --git a/iTermate/SettingsViews.swift b/iTermate/SettingsViews.swift
+index b72e1ff..c761030 100644
+--- a/iTermate/SettingsViews.swift
++++ b/iTermate/SettingsViews.swift
+@@ -659,6 +659,7 @@ struct OpenSettingsButton<Label: View>: View {
+ struct SettingsView: View {
+     @ObservedObject var store: ItermStore
+     @ObservedObject var settings: AppSettings
++    @ObservedObject var localModel: LocalModelService
+     let updater: SPUUpdater
+ 
+     var body: some View {
+@@ -673,6 +674,11 @@ struct SettingsView: View {
+                     Label("Agents", systemImage: "terminal")
+                 }
+ 
++            LocalModelSettingsView(service: localModel)
++                .tabItem {
++                    Label("Local Model", systemImage: "brain")
++                }
++
+             StatusAnimationSettingsView(settings: settings)
+                 .tabItem {
+                     Label("Status Animation", systemImage: "waveform.path")
+@@ -689,7 +695,7 @@ struct SettingsView: View {
+                 }
+         }
+         .tint(settings.accentColor)
+-        .frame(width: 520, height: 420)
++        .frame(width: 640, height: 520)
+     }
+ }
+ 
+diff --git a/iTermate/iTermateApp.swift b/iTermate/iTermateApp.swift
+index 11a53d5..c987664 100644
+--- a/iTermate/iTermateApp.swift
++++ b/iTermate/iTermateApp.swift
+@@ -31,6 +31,7 @@ struct ItermateApplication: App {
+             SettingsView(
+                 store: appDelegate.store,
+                 settings: appDelegate.settings,
++                localModel: appDelegate.localModel,
+                 updater: appDelegate.updaterController.updater
+             )
+         }
+@@ -50,9 +51,11 @@ private func statusBarIcon() -> Image {
+     return Image(nsImage: image)
+ }
+ 
++@MainActor
+ final class AppDelegate: NSObject, NSApplicationDelegate {
+     let settings = AppSettings()
+     let store = ItermStore()
++    let localModel = LocalModelService()
+     let updaterController = SPUStandardUpdaterController(
+         startingUpdater: false,
+         updaterDelegate: nil,
+@@ -77,6 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
+         )
+         panelFollower?.start()
+         store.start()
++        localModel.startIfEnabled()
+         NSWorkspace.shared.notificationCenter.addObserver(
+             self,
+             selector: #selector(workspaceDidWake),
+@@ -87,6 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
+ 
+     func applicationWillTerminate(_ notification: Notification) {
+         NSWorkspace.shared.notificationCenter.removeObserver(self)
++        localModel.stop()
+         store.stop()
+     }
+ 
+@@ -621,7 +626,7 @@ private struct PanelContent: View {
+                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
+                                     sessionButton(item)
+                                         .id(
+-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1)"
++                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none")"
+                                         )
+                                         .padding(.leading, hasTabHeader ? 12 : 0)
+                                 }
+@@ -898,6 +903,17 @@ private struct PanelContent: View {
+                         .accessibilityElement(children: .combine)
+                     }
+ 
++                    if item.session.status == nil, let estimate = item.session.modelState {
++                        Label(
++                            estimate == .awaitingInput ? "Reply?" : (estimate == .running ? "Running?" : "Idle?"),
++                            systemImage: "brain"
++                        )
++                        .font(panelFont(0.8))
++                        .foregroundStyle(.secondary)
++                        .help("Local model estimate, not a confirmed lifecycle state")
++                        .accessibilityLabel("Local model estimate: \(estimate.rawValue)")
++                    }
++
+                     if item.session.isMinimized == true {
+                         Image(systemName: "rectangle.compress.vertical")
+                             .foregroundStyle(.secondary)
+diff --git a/iTermateBridge/iTermateBridge.py b/iTermateBridge/iTermateBridge.py
+index 5bf8bbc..c6440f2 100644
+--- a/iTermateBridge/iTermateBridge.py
++++ b/iTermateBridge/iTermateBridge.py
+@@ -7,6 +7,8 @@ import os
+ import shlex
+ import sys
+ import time
++import urllib.request
++import urllib.parse
+ 
+ SUPPORT_DIRECTORY = os.path.expanduser(
+     "~/Library/Application Support/iTermate"
+@@ -54,6 +56,9 @@ class Bridge:
+         self.clients = set()
+         self.sequence = 0
+         self.snapshot_lock = asyncio.Lock()
++        self.model_observations = {}
++        self.model_task = None
++        self.model_cursor = 0
+         self.command_monitor_tasks = {}
+         self.command_monitor_unavailable = set()
+         self.agent_managed_session_ids = set()
+@@ -631,8 +636,83 @@ class Bridge:
+             else:
+                 self.expire_stale_agent_heartbeats(heartbeat_time())
+             last_tick = now
++            if self.model_task is None or self.model_task.done():
++                self.model_task = asyncio.create_task(self.update_model_observation())
+             await self.publish_snapshot()
+ 
++    async def update_model_observation(self):
++        """仅在没有真实状态时，从可见文本产生短期辅助标签。"""
++        directory = os.path.join(SUPPORT_DIRECTORY, "Laya")
++        if not os.path.exists(os.path.join(directory, "analysis-enabled")):
++            self.model_observations.clear()
++            return
++        sessions = [
++            session for window in self.app.windows for tab in window.tabs
++            for session in tab.all_sessions
++            if not self.session_statuses.get(session.session_id, {}).get("status")
++        ]
++        now = time.monotonic()
++        live_ids = {session.session_id for session in sessions}
++        self.model_observations = {
++            key: value for key, value in self.model_observations.items()
++            if key in live_ids and now - value[1] < 8
++        }
++        if not sessions:
++            return
++        self.model_cursor %= len(sessions)
++        session = sessions[self.model_cursor]
++        self.model_cursor += 1
++        try:
++            screen = await asyncio.wait_for(session.async_get_screen_contents(), 1)
++            text = "\n".join(screen.line(index).string for index in range(screen.number_of_lines))[-1500:]
++            if not text.strip():
++                return
++            answer = await asyncio.to_thread(self.request_model_observation, directory, text)
++            if self.session_statuses.get(session.session_id, {}).get("status"):
++                return
++            state = answer.get("state", {})
++            choice = state.get("choice")
++            probability = state.get("probabilities", {}).get(choice, 0)
++            if choice not in {"running", "awaitingInput", "idle"} or probability < 0.85:
++                self.model_observations.pop(session.session_id, None)
++                return
++            if choice == "awaitingInput" and answer.get("needs_reply", {}).get("noul", 0) < 0.6:
++                return
++            self.model_observations[session.session_id] = (choice, time.monotonic())
++        except Exception:
++            self.model_observations.pop(session.session_id, None)
++
++    @staticmethod
++    def request_model_observation(directory, text):
++        with open(os.path.join(directory, "endpoint.json")) as stream:
++            endpoint = json.load(stream)
++        url = urllib.parse.urlparse(endpoint["url"])
++        if url.scheme != "http" or url.hostname != "127.0.0.1" or not url.port:
++            raise ValueError("Invalid local endpoint")
++        with open(os.path.join(directory, "api-token")) as stream:
++            token = stream.read().strip()
++        request = urllib.request.Request(
++            f"http://127.0.0.1:{url.port}/v1/session",
++            data=json.dumps({"state": text}).encode(),
++            headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"},
++        )
++        class NoRedirect(urllib.request.HTTPRedirectHandler):
++            def redirect_request(self, *args, **kwargs):
++                return None
++        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
++        with opener.open(request, timeout=0.8) as response:
++            return json.loads(response.read(16384))["answers"]
++
++    def model_state(self, session_id):
++        if self.session_statuses.get(session_id, {}).get("status"):
++            return None
++        if not os.path.exists(os.path.join(SUPPORT_DIRECTORY, "Laya", "analysis-enabled")):
++            return None
++        observation = self.model_observations.get(session_id)
++        if observation and time.monotonic() - observation[1] < 8:
++            return observation[0]
++        return None
++
+     async def publish_snapshot(self, target=None):
+         if target is None and not self.clients:
+             return
+@@ -755,6 +835,7 @@ class Bridge:
+                         "exitStatus": self.session_statuses.get(
+                             session.session_id, {}
+                         ).get("exitStatus"),
++                        "modelState": self.model_state(session.session_id),
+                         "statusChangedAt": self.session_statuses.get(
+                             session.session_id, {}
+                         ).get("statusChangedAt"),
+diff --git a/integrations/pi/iTermate-integration.test.ts b/integrations/pi/iTermate-integration.test.ts
+index 05a02f2..092f6e0 100644
+--- a/integrations/pi/iTermate-integration.test.ts
++++ b/integrations/pi/iTermate-integration.test.ts
+@@ -1,18 +1,88 @@
+ import assert from "node:assert/strict";
+ import { test } from "node:test";
+-import { needsReply } from "./iTermate-integration";
++import { modelReplyDecision, needsReply } from "./iTermate-integration";
++
++function modelAnswers(choice: string, probability: unknown, noul: unknown) {
++  return {
++    state: { type: "choice", choice, probabilities: { [choice]: probability } },
++    needs_reply: { type: "noul", noul },
++  };
++}
++
++test("confident model decisions take precedence in both directions", () => {
++  const positive = modelReplyDecision(modelAnswers("awaitingInput", 0.95, 0.8));
++  const negative = modelReplyDecision(modelAnswers("idle", 0.95, 0.1));
++  assert.equal(positive, true);
++  assert.equal(negative, false);
++  assert.equal(positive ?? needsReply("Which option do you prefer?"), true);
++  assert.equal(negative ?? needsReply("Please confirm before I proceed."), false);
++});
++
++test("uncertain or malformed model output falls back instead of becoming false", () => {
++  for (const answer of [
++    undefined, null, {},
++    modelAnswers("unknown", 0.99, 0.1),
++    modelAnswers("running", 0.99, 0.1),
++    modelAnswers("awaitingInput", 0.5, 0.8),
++    modelAnswers("awaitingInput", 0.95, 0.2),
++    modelAnswers("idle", 0.95, 0.8),
++    modelAnswers("idle", NaN, 0.1),
++    modelAnswers("idle", 1.1, 0.1),
++    modelAnswers("idle", 0.95, -0.1),
++    modelAnswers("idle", "0.95", 0.1),
++    { state: { choice: "idle", probabilities: { idle: 0.99 } }, needs_reply: { noul: 0 } },
++  ]) {
++    const result = modelReplyDecision(answer);
++    assert.equal(result, undefined);
++    assert.equal(result ?? needsReply("Please confirm before I proceed."), true);
++    assert.equal(result ?? needsReply("Work is complete."), false);
++  }
++});
+ 
+ test("recognizes explicit confirmation gates", () => {
+   assert.equal(needsReply("这是否准确表达你的目标？确认后开始检查和提交。"), true);
+   assert.equal(needsReply("Please confirm the configuration before I proceed."), true);
+ });
+ 
++test("recognizes approval, selection, and clarification gates", () => {
++  for (const text of [
++    "请批准这个方案，批准后我再开始执行。",
++    "请授权这次操作，收到你的授权再执行。",
++    "请告知你的决定，等待你的答复。",
++    "请告诉我目标平台，收到你的回复再继续。",
++    "Please let me know your choice. Awaiting your decision.",
++    "Could you tell me the target platform? Waiting for your input.",
++    "请选定一个方案，选定后继续进行。",
++    "你更偏好哪个方案？等待你的选择。",
++    "请补充目标平台，等你提供后继续。",
++    "请确认目标，收到你的确认再开始。",
++    "请确认目标，确认之前不会继续执行。",
++    "Please approve this change. Awaiting your approval.",
++    "Could you authorize this operation? Once you authorize it, I will proceed.",
++    "Please pick an option. Waiting for your choice.",
++    "Please clarify the target platform before I can proceed.",
++    "Please specify the directory. I cannot proceed without your input.",
++    "Which option do you prefer? Waiting for your decision.",
++    "What would you like to use? Awaiting your response.",
++    "May I proceed with this change? Waiting for your authorization.",
++    "Please answer the question. I can't continue until you reply.",
++    "Please confirm the scope before we continue.",
++  ]) {
++    assert.equal(needsReply(text), true, text);
++  }
++});
++
+ test("rejects negated waiting in both languages", () => {
+   for (const text of [
+     "Please confirm the configuration. I am not waiting for your reply.",
+     "Please confirm the configuration. I will not wait for your reply.",
+     "请确认配置是否正确。我不会等待你的回复，会直接继续执行。",
+     "请确认配置是否正确，不用等待你的回复。",
++    "Please approve the change. I am not awaiting your approval.",
++    "Please specify the directory. No input is required before I proceed.",
++    "Please confirm the scope. No response needed before I continue.",
++    "请批准方案，我不会等候你的批准，批准后开始执行只是旧流程。",
++    "Please approve the change. I won't await your approval.",
+   ]) {
+     assert.equal(needsReply(text), false, text);
+   }
+@@ -26,6 +96,22 @@ test("does not treat examples, code, or optional offers as blocking questions",
+     "如果需要，我可以继续。请确认后再开始。",
+     "是否要继续？",
+     "The configuration is complete.",
++    "Please approve the change whenever convenient.",
++    "Which option do you prefer?",
++    "May I proceed?",
++    "请授权这次操作。",
++    "请补充说明（如有需要）。补充后继续。",
++    "Example: Please approve the change before I proceed.",
++    "If you like, please clarify the platform before I proceed.",
++    "No need to reply. Please approve the change before I proceed.",
++    "> Please approve the change. Awaiting your approval.",
++    "    请授权操作，授权后继续执行。",
++    "~~~text\nPlease approve the change before I proceed.\n~~~",
++    "```text\nPlease approve the change before I proceed.",
++    "`Please approve the change before I proceed.`",
++    "“请授权操作，授权后继续执行。”",
++    "Suggested wording: \"Please approve the change before I proceed.\"",
++    "我们对这份 RFC 的写法已对齐：\n\n- 读者：熟悉短篇阅读容器的客户端同事。\n- 目的：评审模块设计与接入方案是否合理。\n\n建议正文结构：\n\n1. 背景与目标。\n2. 模块结构。\n3. 待确认事项：集中保留会影响模块或 API 的问题，并给出建议行为。",
+   ]) {
+     assert.equal(needsReply(text), false, text);
+   }
+diff --git a/integrations/pi/iTermate-integration.ts b/integrations/pi/iTermate-integration.ts
+index 73d0626..40aa18e 100644
+--- a/integrations/pi/iTermate-integration.ts
++++ b/integrations/pi/iTermate-integration.ts
+@@ -1,5 +1,8 @@
+ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+ import { randomUUID } from "node:crypto";
++import { readFile, access } from "node:fs/promises";
++import { existsSync } from "node:fs";
++import { request as httpRequest } from "node:http";
+ import { execFileSync } from "node:child_process";
+ import { connect, type Socket } from "node:net";
+ import { homedir } from "node:os";
+@@ -62,8 +65,22 @@ export function needsReply(text: string): boolean {
+   if (/示例|例如|比如|举例|\bexample\b|\be\.g\.|无需|不需要|不用|不必|如果需要|如有需要|不(?:会|再|要|用)?\s*(?:等待|等你|等您)|\b(?:not|never|without)\s+waiting\b|\b(?:won't|will not|don't|do not)\s+wait\b|\bif (?:you (?:want|like|need)|needed)\b|\b(?:no need|do not need|don't need)\b/i.test(tail)) {
+     return false;
+   }
+-  const request = /(?:是否|能否)[^。！？\n]{0,80}[？?]|\b(?:can|could|would|will) you (?:confirm|choose|select|provide)\b|请(?:你|您)?[^。！？\n]{0,30}(?:确认|选择|回复|提供|补充)|(?:你|您)(?:更希望|希望|选择|倾向)[^。！？\n]{0,80}[？?]|\bplease\s+(?:confirm|choose|select|reply|provide)\b/i.test(tail);
+-  const waiting = /(?:确认|选择|回复|回答|提供|补充)[^。！？\n]{0,20}(?:后|之后)[^。！？\n]{0,20}(?:开始|继续|执行|进行)|(?:等待|等你|等您)[^。！？\n]{0,20}(?:确认|选择|回复|回答)|\b(?:before I (?:begin|start|continue|proceed)|(?:once|after) you (?:confirm|choose|reply)|waiting for your (?:reply|confirmation|answer))\b/i.test(tail);
++  if (/不(?:会|再)?\s*(?:等待|等候)[^。！？\n]{0,20}(?:批准|授权|答复)|\b(?:not|never|without)\s+(?:awaiting|await)\b|\b(?:won't|won’t|will not|don't|don’t|do not)\s+await\b|\bno\s+(?:reply|response|confirmation|approval|input)\s+(?:is\s+)?(?:needed|required)\b/i.test(tail)) {
++    return false;
++  }
++  const request = [
++    /(?:是否|能否)[^。！？\n]{0,80}[？?]|\b(?:can|could|would|will) you (?:confirm|choose|select|provide)\b|请(?:你|您)?[^。！？\n]{0,30}(?:确认|选择|回复|提供|补充)|(?:你|您)(?:更希望|希望|选择|倾向)[^。！？\n]{0,80}[？?]|\bplease\s+(?:confirm|choose|select|reply|provide)\b/i,
++    /请(?:你|您)?[^。！？\n]{0,30}(?:批准|授权|决定|告知|告诉我|回答|选定)|(?:你|您)(?:更偏好|更倾向于?|想要)[^。！？\n]{0,80}[？?]/,
++    /\b(?:please|(?:can|could|would|will) you)\s+(?:approve|authorize|pick|decide|answer|clarify|specify|tell me|let me know)\b/i,
++    /\b(?:which|what)\b[^.!?\n]{0,60}\b(?:do|would) you\s+(?:prefer|choose|want|like)\b[^.!?\n]{0,40}\?|\b(?:may|should|can) I\s+(?:proceed|continue|start|begin)\b[^.!?\n]{0,40}\?/i,
++  ].some((pattern) => pattern.test(tail));
++  const waiting = [
++    /(?:确认|选择|回复|回答|提供|补充)[^。！？\n]{0,20}(?:后|之后)[^。！？\n]{0,20}(?:开始|继续|执行|进行)|(?:等待|等你|等您)[^。！？\n]{0,20}(?:确认|选择|回复|回答)|\b(?:before I (?:begin|start|continue|proceed)|(?:once|after) you (?:confirm|choose|reply)|waiting for your (?:reply|confirmation|answer))\b/i,
++    /(?:批准|授权|决定|选定|答复)[^。！？\n]{0,20}(?:后|之后)[^。！？\n]{0,20}(?:开始|继续|执行|进行)|(?:等待|等候|等你|等您)[^。！？\n]{0,20}(?:批准|授权|决定|选定|答复|补充|提供)/,
++    /(?:收到|得到)[^。！？\n]{0,20}(?:确认|回复|批准|授权|答复)[^。！？\n]{0,12}(?:再|才)(?:开始|继续|执行|进行)|(?:确认|回复|批准|授权|答复)(?:前|之前)[^。！？\n]{0,20}(?:不会|不再|暂停)(?:开始|继续|执行|进行)/,
++    /\b(?:waiting for|awaiting) your (?:response|approval|authorization|decision|choice|input|reply|confirmation|answer)\b|\b(?:once|after) you (?:approve|authorize|select|pick|decide|answer|respond|provide|clarify|specify)\b|\b(?:before I can|before we|until you (?:confirm|approve|authorize|choose|select|reply|respond|provide))\b[^.!?\n]{0,40}\b(?:begin|start|continue|proceed)\b/i,
++    /\b(?:cannot|can't|can’t)\s+(?:continue|proceed|start|begin)\s+(?:without your (?:confirmation|approval|authorization|reply|response|input)|until you (?:confirm|approve|authorize|choose|select|reply|respond|provide))\b/i,
++  ].some((pattern) => pattern.test(tail));
+   return request && waiting;
+ }
+ 
+@@ -132,10 +149,77 @@ function report(
+   });
+ }
+ 
++// Undefined means unavailable or uncertain, not a negative classification.
++export function modelReplyDecision(answers: unknown): boolean | undefined {
++  if (!answers || typeof answers !== "object") return undefined;
++  const value = answers as {
++    state?: { type?: unknown; choice?: unknown; probabilities?: Record<string, unknown> };
++    needs_reply?: { type?: unknown; noul?: unknown };
++  };
++  if (value.state?.type !== "choice" || value.needs_reply?.type !== "noul") return undefined;
++  const choice = value.state?.choice;
++  if (choice !== "awaitingInput" && choice !== "idle") return undefined;
++  const probability = value.state?.probabilities?.[choice];
++  const needsReplyProbability = value.needs_reply?.noul;
++  if (typeof probability !== "number" || !Number.isFinite(probability)
++    || probability < 0.85 || probability > 1
++    || typeof needsReplyProbability !== "number" || !Number.isFinite(needsReplyProbability)
++    || needsReplyProbability < 0 || needsReplyProbability > 1) return undefined;
++  if (choice === "awaitingInput" && needsReplyProbability >= 0.6) return true;
++  if (choice === "idle" && needsReplyProbability <= 0.4) return false;
++  return undefined;
++}
++
++// The optional HTTP inference request has an 800 ms deadline.
++async function classifyReplyWithModel(text: string): Promise<boolean | undefined> {
++  if (!text.trim()) return undefined;
++  try {
++    const directory = join(supportDirectory, "Laya");
++    await access(join(directory, "analysis-enabled"));
++    const endpoint = JSON.parse(await readFile(join(directory, "endpoint.json"), "utf8"));
++    const url = new URL(endpoint.url);
++    if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || !url.port) return undefined;
++    const token = (await readFile(join(directory, "api-token"), "utf8")).trim();
++    const body = JSON.stringify({ state: text.slice(-1500) });
++    return await new Promise<boolean | undefined>((resolve) => {
++      let finished = false;
++      const finish = (value: boolean | undefined) => {
++        if (finished) return;
++        finished = true;
++        clearTimeout(timer);
++        request.destroy();
++        resolve(value);
++      };
++      const request = httpRequest({
++        hostname: "127.0.0.1", port: url.port, path: "/v1/session", method: "POST",
++        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
++      }, (response) => {
++        let result = "";
++        response.on("data", (data) => {
++          result += data.toString();
++          if (result.length > 16384) finish(undefined);
++        });
++        response.on("error", () => finish(undefined));
++        response.on("end", () => {
++          try {
++            finish(response.statusCode === 200
++              ? modelReplyDecision(JSON.parse(result).answers) : undefined);
++          } catch { finish(undefined); }
++        });
++      });
++      const timer = setTimeout(() => finish(undefined), 800);
++      request.on("error", () => finish(undefined));
++      request.end(body);
++    });
++  } catch { return undefined; }
++}
++
+ export default function (pi: ExtensionAPI): void {
+   let agentFailed = false;
+   let agentRunning = false;
+   let replyPending = false;
++  let lastAssistantText = "";
++  let modelDecision: boolean | undefined;
+   let promptOpen = false;
+   let baseStatus: Status = "idle";
+   let active = false;
+@@ -172,9 +256,16 @@ export default function (pi: ExtensionAPI): void {
+     retries = 3,
+   ): Promise<void> {
+     if (!active || generation !== heartbeatGeneration) return;
++    if (modelDecision !== undefined && !existsSync(join(supportDirectory, "Laya", "analysis-enabled"))) {
++      modelDecision = undefined;
++      baseStatus = replyPending ? "awaitingInput" : "finished";
++      confirmed = false; // A changed classification needs a full transition, not a lease renewal.
++    }
+     const status = visibleStatus();
+     const leased = status === "running" || status === "awaitingInput";
+-    const accepted = await queueReport(
++    // A model-derived negative decision watches the enable marker without
++    // repeatedly reporting completion or changing its timestamp.
++    const accepted = !leased && confirmed ? true : await queueReport(
+       status,
+       status === "finished" ? (agentFailed ? 1 : 0) : undefined,
+       leased && confirmed,
+@@ -183,7 +274,7 @@ export default function (pi: ExtensionAPI): void {
+     if (generation !== heartbeatGeneration) return;
+     // Retry the full transition until acknowledged, not a heartbeat that the
+     // receiver might reject against its previous idle/finished state.
+-    if (leased || (!accepted && retries > 0)) {
++    if (leased || modelDecision !== undefined || (!accepted && retries > 0)) {
+       heartbeatTimer = setTimeout(
+         () => void sendHeartbeat(generation, accepted, leased ? 3 : retries - 1), 2000,
+       );
+@@ -199,6 +290,8 @@ export default function (pi: ExtensionAPI): void {
+   pi.on("session_start", (_event, ctx) => {
+     active = ctx.mode === "tui";
+     baseStatus = "idle";
++    lastAssistantText = "";
++    modelDecision = undefined;
+     agentRunning = false;
+     replyPending = false;
+     promptOpen = false;
+@@ -207,6 +300,8 @@ export default function (pi: ExtensionAPI): void {
+   pi.on("agent_start", () => {
+     agentFailed = false;
+     agentRunning = true;
++    modelDecision = undefined;
++    lastAssistantText = "";
+     replyPending = false;
+     baseStatus = "running";
+     return publish();
+@@ -215,18 +310,30 @@ export default function (pi: ExtensionAPI): void {
+     agentRunning = false;
+     const message = event.messages.findLast(({ role }) => role === "assistant");
+     if (message?.role !== "assistant") {
++      lastAssistantText = "";
+       replyPending = false;
+       return;
+     }
+     agentFailed = message.stopReason === "error";
+-    replyPending = message.stopReason === "stop" && needsReply(
+-      message.content.flatMap((block) => block.type === "text" ? [block.text] : [])
+-        .join("\n"),
+-    );
++    lastAssistantText = message.stopReason === "stop"
++      ? message.content.flatMap((block) => block.type === "text" ? [block.text] : []).join("\n")
++      : "";
++    replyPending = needsReply(lastAssistantText); // Cached fallback, not the primary decision.
+   });
+-  pi.on("agent_settled", (_event, ctx) => {
+-    if (!ctx.isIdle()) return;
++  pi.on("agent_settled", async (_event, ctx) => {
++    if (!active || !ctx.isIdle()) return;
++    stopHeartbeat();
++    // Establish the lifecycle fallback before awaiting optional inference so UI
++    // prompt events during that wait cannot restore the old running state.
++    modelDecision = undefined;
+     baseStatus = replyPending ? "awaitingInput" : "finished";
++    const generation = heartbeatGeneration;
++    const decision = !agentFailed && !promptOpen
++      ? await classifyReplyWithModel(lastAssistantText) : undefined;
++    if (!active || !ctx.isIdle() || generation !== heartbeatGeneration) return;
++    modelDecision = existsSync(join(supportDirectory, "Laya", "analysis-enabled"))
++      ? decision : undefined;
++    baseStatus = (modelDecision ?? replyPending) ? "awaitingInput" : "finished";
+     return publish();
+   });
+   pi.on("ui_prompt_start", (event, ctx) => {
+@@ -240,6 +347,8 @@ export default function (pi: ExtensionAPI): void {
+     return publish();
+   });
+   pi.on("session_tree", () => {
++    modelDecision = undefined;
++    lastAssistantText = "";
+     replyPending = false;
+     // Pi still holds its branch-navigation busy flag during this event.
+     baseStatus = agentRunning ? "running" : "idle";
+diff --git a/project.yml b/project.yml
+index 9de461c..12b2adf 100644
+--- a/project.yml
++++ b/project.yml
+@@ -18,6 +18,10 @@ targets:
+       - iTermate
+       - path: iTermateBridge/iTermateBridge.py
+         buildPhase: resources
++      - path: integrations/laya/iTermate-laya.py
++        buildPhase: resources
++      - path: integrations/laya/agent-connection-prompt.md
++        buildPhase: resources
+       - path: integrations/pi/iTermate-integration.ts
+         buildPhase: resources
+       - path: integrations/status/iTermate-status.py

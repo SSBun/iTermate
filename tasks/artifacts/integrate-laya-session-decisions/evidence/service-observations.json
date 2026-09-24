@@ -1,0 +1,172 @@
+{
+  "health": {
+    "status": 200,
+    "body": {
+      "ready": true,
+      "model": "aac6fef/laya-multilingual-mlx"
+    }
+  },
+  "unauthenticated": {
+    "status": 401,
+    "body": {
+      "error": "Bearer token required"
+    }
+  },
+  "origin": {
+    "status": 403,
+    "body": {
+      "error": "Loopback clients only"
+    }
+  },
+  "invalid": {
+    "status": 400,
+    "body": {
+      "error": "Invalid request; see API documentation and size limits"
+    }
+  },
+  "oversized": {
+    "status": 413,
+    "body": {
+      "error": "Body limit is 16384 bytes"
+    }
+  },
+  "billing": {
+    "status": 200,
+    "body": {
+      "model": "laya-rl-agent",
+      "answers": {
+        "department": {
+          "type": "choice",
+          "confidence": 1.0,
+          "action": {
+            "act_probability": 1.0
+          },
+          "choice": "billing",
+          "probabilities": {
+            "technical_support": 0.0,
+            "billing": 1.0,
+            "account_management": 0.0
+          }
+        }
+      },
+      "usage": {
+        "input_tokens": 71,
+        "output_tokens": 0
+      },
+      "elapsed_ms": 38.402
+    }
+  },
+  "question": {
+    "status": 200,
+    "body": {
+      "model": "laya-rl-agent",
+      "answers": {
+        "state": {
+          "type": "choice",
+          "confidence": 0.9473,
+          "action": {
+            "act_probability": 1.0
+          },
+          "choice": "awaitingInput",
+          "probabilities": {
+            "running": 0.0037,
+            "awaitingInput": 0.9888,
+            "idle": 0.0054,
+            "unknown": 0.0021
+          }
+        },
+        "needs_reply": {
+          "type": "noul",
+          "confidence": 0.6765,
+          "action": {
+            "act_probability": 1.0
+          },
+          "noul": 0.6765
+        }
+      },
+      "usage": {
+        "input_tokens": 171,
+        "output_tokens": 0
+      },
+      "elapsed_ms": 29.413
+    }
+  },
+  "question_zh": {
+    "status": 200,
+    "body": {
+      "model": "laya-rl-agent",
+      "answers": {
+        "state": {
+          "type": "choice",
+          "confidence": 0.1168,
+          "action": {
+            "act_probability": 1.0
+          },
+          "choice": "awaitingInput",
+          "probabilities": {
+            "running": 0.1873,
+            "awaitingInput": 0.5,
+            "idle": 0.1065,
+            "unknown": 0.2062
+          }
+        },
+        "needs_reply": {
+          "type": "noul",
+          "confidence": 0.6765,
+          "action": {
+            "act_probability": 1.0
+          },
+          "noul": 0.6765
+        }
+      },
+      "usage": {
+        "input_tokens": 169,
+        "output_tokens": 0
+      },
+      "elapsed_ms": 27.181
+    }
+  },
+  "complete": {
+    "status": 200,
+    "body": {
+      "model": "laya-rl-agent",
+      "answers": {
+        "state": {
+          "type": "choice",
+          "confidence": 0.0789,
+          "action": {
+            "act_probability": 1.0
+          },
+          "choice": "idle",
+          "probabilities": {
+            "running": 0.3264,
+            "awaitingInput": 0.1234,
+            "idle": 0.3979,
+            "unknown": 0.1523
+          }
+        },
+        "needs_reply": {
+          "type": "noul",
+          "confidence": 0.9751,
+          "action": {
+            "act_probability": 1.0
+          },
+          "noul": 0.0249
+        }
+      },
+      "usage": {
+        "input_tokens": 177,
+        "output_tokens": 0
+      },
+      "elapsed_ms": 26.193
+    }
+  },
+  "permissions": {
+    "directory": "0o700",
+    "token": "0o600"
+  },
+  "shutdown": {
+    "exit": 0,
+    "endpoint_removed": true
+  }
+}

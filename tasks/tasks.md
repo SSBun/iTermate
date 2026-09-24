@@ -1,5 +1,29 @@
 # 任务索引
 
+- [提交全部本地改动并推送远端](tasks/commit-and-push-local-updates.md) — In Progress (2026-09-24 15:05)
+
+- [将子代理状态图标改为像素 Canvas 动画](tasks/animate-pixel-subagent-icon.md) — Completed (2026-09-24 15:02)
+
+- [规定状态图标统一使用像素 Canvas 动画](tasks/require-animated-pixel-status-icons.md) — Completed (2026-09-24 14:56)
+
+- [提交本地模型与快捷键等全部本地改动](tasks/commit-local-model-and-shortcut-changes.md) — In Progress (2026-09-24 11:45)
+
+- [增加子代理运行中的 Session 状态图标](tasks/show-running-subagent-status.md) — Completed (2026-09-24 14:25)
+
+- [增加全局快捷键切换到下一个已结束 Session](tasks/global-next-finished-session.md) — In Progress (2026-09-23 17:22)
+
+- [增加 Session 模型语义状态标签](tasks/add-session-semantic-status.md) — In Progress (2026-09-23 14:41)
+
+- [集成 Laya-MLX Session 状态判断与设置页](tasks/integrate-laya-session-decisions.md) — In Progress (2026-09-22 16:55)
+
+- [安装 Laya-MLX 并复测客服分类示例](tasks/install-laya-mlx-compare.md) — Completed (2026-09-22 14:36)
+
+- [执行 Jev 真实 API 冒烟验证](tasks/run-jev-live-smoke.md) — Completed (2026-09-22 14:14)
+
+- [编写 Jev 模型调用验证脚本](tasks/test-jev-model-script.md) — Completed (2026-09-22 14:10)
+
+- [增强 Agent 待回复消息的正则识别](tasks/refine-agent-reply-regex.md) — Completed (2026-09-20 17:16)
+
 - [升级 minor 版本并公开发布待回复提醒功能](tasks/release-pending-questions-minor.md) — Completed (2026-09-17 16:03)
 
 - [按独立关注点提交全部本地改动](tasks/commit-pending-question-changes-by-concern.md) — Completed (2026-09-17 15:11)

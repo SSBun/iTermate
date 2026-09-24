@@ -7,6 +7,8 @@ import os
 import shlex
 import sys
 import time
+import urllib.request
+import urllib.parse
 
 SUPPORT_DIRECTORY = os.path.expanduser(
     "~/Library/Application Support/iTermate"
@@ -54,6 +56,10 @@ class Bridge:
         self.clients = set()
         self.sequence = 0
         self.snapshot_lock = asyncio.Lock()
+        self.finished_navigation_lock = asyncio.Lock()
+        self.model_observations = {}
+        self.model_task = None
+        self.model_cursor = 0
         self.command_monitor_tasks = {}
         self.command_monitor_unavailable = set()
         self.agent_managed_session_ids = set()
@@ -104,6 +110,16 @@ class Bridge:
         request = json.loads(line)
         request_id = request.get("requestId")
         action = request.get("type")
+
+        if action == "activateNextFinishedSession":
+            try:
+                await self.activate_next_finished_session()
+            except Exception as error:
+                await self.send_action_result(writer, request_id, False, str(error))
+                return
+            await self.send_action_result(writer, request_id, True, None)
+            await self.publish_snapshot()
+            return
 
         if action == "openProject":
             path = request.get("path")
@@ -160,7 +176,17 @@ class Bridge:
                     writer, request_id, False, "Invalid heartbeat"
                 )
                 return
-            accepted = self.set_agent_status(session_id, status, exit_status, heartbeat)
+            has_running_subagents = request.get("hasRunningSubagents", False)
+            if not isinstance(has_running_subagents, bool) or (
+                has_running_subagents and status not in {"running", "awaitingInput"}
+            ):
+                await self.send_action_result(
+                    writer, request_id, False, "Invalid subagent activity"
+                )
+                return
+            accepted = self.set_agent_status(
+                session_id, status, exit_status, heartbeat, has_running_subagents
+            )
             await self.send_action_result(
                 writer, request_id, accepted,
                 None if accepted else "Stale heartbeat"
@@ -191,6 +217,32 @@ class Bridge:
             self.clear_finished_status(session_id)
         await self.send_action_result(writer, request_id, True, None)
         await self.publish_snapshot()
+
+    async def activate_next_finished_session(self):
+        """仅在真实 Agent Session 间循环：等待回复、已结束、运行中、空闲依次优先。"""
+        async with self.finished_navigation_lock:
+            sessions = [
+                session for window in self.app.windows for tab in window.tabs
+                for session in tab.all_sessions
+            ]
+            current_id = self.current_active_session_id()
+            current_index = next(
+                (index for index, session in enumerate(sessions) if session.session_id == current_id),
+                None,
+            )
+            candidates = sessions if current_index is None else (
+                sessions[current_index + 1:] + sessions[:current_index]
+            )
+            for desired_status in ("awaitingInput", "finished", "running", "idle"):
+                for session in candidates:
+                    status = self.session_statuses.get(session.session_id, {})
+                    if status.get("activityKind") != "agent" or status.get("status") != desired_status:
+                        continue
+                    await session.async_activate()
+                    await self.app.async_activate(raise_all_windows=False)
+                    if desired_status == "finished":
+                        self.clear_finished_status(session.session_id)
+                    return
 
     async def send_action_result(self, writer, request_id, succeeded, error):
         message = {
@@ -541,7 +593,10 @@ class Bridge:
                         await self.publish_snapshot()
                 await monitor.async_get()
 
-    def set_agent_status(self, session_id, status, exit_status=0, heartbeat=False):
+    def set_agent_status(
+        self, session_id, status, exit_status=0, heartbeat=False,
+        has_running_subagents=False,
+    ):
         if status == "detached":
             self.agent_managed_session_ids.discard(session_id)
             self.agent_heartbeat_times.pop(session_id, None)
@@ -552,7 +607,7 @@ class Bridge:
         if heartbeat and current is not None and current.get("status") != status:
             return False
         self.agent_managed_session_ids.add(session_id)
-        if heartbeat or status == "awaitingInput":
+        if heartbeat or status == "awaitingInput" or has_running_subagents:
             self.agent_heartbeat_times[session_id] = heartbeat_time()
         else:
             self.agent_heartbeat_times.pop(session_id, None)
@@ -562,6 +617,8 @@ class Bridge:
             exit_status if status == "finished" else None,
             activity_kind="agent",
         )
+        if has_running_subagents:
+            self.session_statuses[session_id]["hasRunningSubagents"] = True
         return True
 
     def expire_stale_agent_heartbeats(self, now):
@@ -631,7 +688,82 @@ class Bridge:
             else:
                 self.expire_stale_agent_heartbeats(heartbeat_time())
             last_tick = now
+            if self.model_task is None or self.model_task.done():
+                self.model_task = asyncio.create_task(self.update_model_observation())
             await self.publish_snapshot()
+
+    async def update_model_observation(self):
+        """仅在没有真实状态时，从可见文本产生短期辅助标签。"""
+        directory = os.path.join(SUPPORT_DIRECTORY, "Laya")
+        if not os.path.exists(os.path.join(directory, "analysis-enabled")):
+            self.model_observations.clear()
+            return
+        sessions = [
+            session for window in self.app.windows for tab in window.tabs
+            for session in tab.all_sessions
+            if not self.session_statuses.get(session.session_id, {}).get("status")
+        ]
+        now = time.monotonic()
+        live_ids = {session.session_id for session in sessions}
+        self.model_observations = {
+            key: value for key, value in self.model_observations.items()
+            if key in live_ids and now - value[1] < 8
+        }
+        if not sessions:
+            return
+        self.model_cursor %= len(sessions)
+        session = sessions[self.model_cursor]
+        self.model_cursor += 1
+        try:
+            screen = await asyncio.wait_for(session.async_get_screen_contents(), 1)
+            text = "\n".join(screen.line(index).string for index in range(screen.number_of_lines))[-1500:]
+            if not text.strip():
+                return
+            answer = await asyncio.to_thread(self.request_model_observation, directory, text)
+            if self.session_statuses.get(session.session_id, {}).get("status"):
+                return
+            state = answer.get("state", {})
+            choice = state.get("choice")
+            probability = state.get("probabilities", {}).get(choice, 0)
+            if choice not in {"running", "awaitingInput", "idle"} or probability < 0.85:
+                self.model_observations.pop(session.session_id, None)
+                return
+            if choice == "awaitingInput" and answer.get("needs_reply", {}).get("noul", 0) < 0.6:
+                return
+            self.model_observations[session.session_id] = (choice, time.monotonic())
+        except Exception:
+            self.model_observations.pop(session.session_id, None)
+
+    @staticmethod
+    def request_model_observation(directory, text):
+        with open(os.path.join(directory, "endpoint.json")) as stream:
+            endpoint = json.load(stream)
+        url = urllib.parse.urlparse(endpoint["url"])
+        if url.scheme != "http" or url.hostname != "127.0.0.1" or not url.port:
+            raise ValueError("Invalid local endpoint")
+        with open(os.path.join(directory, "api-token")) as stream:
+            token = stream.read().strip()
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{url.port}/v1/session",
+            data=json.dumps({"state": text}).encode(),
+            headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"},
+        )
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, *args, **kwargs):
+                return None
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+        with opener.open(request, timeout=0.8) as response:
+            return json.loads(response.read(16384))["answers"]
+
+    def model_state(self, session_id):
+        if self.session_statuses.get(session_id, {}).get("status"):
+            return None
+        if not os.path.exists(os.path.join(SUPPORT_DIRECTORY, "Laya", "analysis-enabled")):
+            return None
+        observation = self.model_observations.get(session_id)
+        if observation and time.monotonic() - observation[1] < 8:
+            return observation[0]
+        return None
 
     async def publish_snapshot(self, target=None):
         if target is None and not self.clients:
@@ -755,6 +887,10 @@ class Bridge:
                         "exitStatus": self.session_statuses.get(
                             session.session_id, {}
                         ).get("exitStatus"),
+                        "modelState": self.model_state(session.session_id),
+                        "hasRunningSubagents": self.session_statuses.get(
+                            session.session_id, {}
+                        ).get("hasRunningSubagents", False),
                         "statusChangedAt": self.session_statuses.get(
                             session.session_id, {}
                         ).get("statusChangedAt"),
@@ -1374,6 +1510,107 @@ def self_test():
     assert "session-1" in bridge.agent_managed_session_ids
     bridge.set_agent_status("session-1", "detached")
     assert "session-1" not in bridge.agent_managed_session_ids
+
+    async def check_finished_navigation():
+        from types import SimpleNamespace
+
+        activated = []
+
+        class NavigationSession:
+            def __init__(self, session_id):
+                self.session_id = session_id
+
+            async def async_activate(self):
+                activated.append(self.session_id)
+
+        class NavigationApp:
+            async def async_activate(self, raise_all_windows=False):
+                assert not raise_all_windows
+
+        first, split, other_tab, other_window, command, untyped = [NavigationSession(str(i)) for i in range(6)]
+        tab_one = SimpleNamespace(all_sessions=[first, command, untyped, split], current_session=first)
+        tab_two = SimpleNamespace(all_sessions=[other_tab], current_session=other_tab)
+        tab_three = SimpleNamespace(all_sessions=[other_window], current_session=other_window)
+        window_one = SimpleNamespace(tabs=[tab_one, tab_two], current_tab=tab_one)
+        window_two = SimpleNamespace(tabs=[tab_three], current_tab=tab_three)
+        navigation_app = NavigationApp()
+        navigation_app.windows = [window_one, window_two]
+        navigation_app.current_window = window_one
+        navigation = Bridge(None, navigation_app)
+        navigation.session_statuses = {
+            "1": {"status": "running", "activityKind": "agent"},
+            "2": {"status": "finished", "activityKind": "agent", "exitStatus": 1},
+            "3": {"status": "finished", "activityKind": "agent", "exitStatus": 0},
+            "4": {"status": "awaitingInput", "activityKind": "command"},
+            "5": {"status": "finished"},
+        }
+        await navigation.activate_next_finished_session()
+        assert activated == ["2"]  # Finished Agent beats running Agent, command and unknown kind.
+        navigation.session_statuses["1"] = {"status": "finished", "activityKind": "agent"}
+        await navigation.activate_next_finished_session()
+        assert activated == ["2", "1"]  # A split Session is individually selectable.
+        navigation_app.current_window = window_two
+        navigation.session_statuses["0"] = {"status": "finished", "activityKind": "agent"}
+        await navigation.activate_next_finished_session()
+        assert activated == ["2", "1", "0"]  # Wrap across windows.
+        navigation.session_statuses = {"3": {"status": "finished", "activityKind": "agent"}}
+        await navigation.activate_next_finished_session()
+        assert activated == ["2", "1", "0"]  # Do not reselect the current Session.
+        navigation_app.current_window = None
+        await navigation.activate_next_finished_session()
+        assert activated == ["2", "1", "0", "3"]
+        navigation.session_statuses.clear()
+        await navigation.activate_next_finished_session()
+        assert len(activated) == 4  # No eligible Agent means no activation.
+        navigation_app.current_window = window_two
+        navigation.session_statuses = {
+            "0": {"status": "running", "activityKind": "agent", "statusChangedAt": 123},
+            "1": {"status": "awaitingInput", "activityKind": "agent", "statusChangedAt": 456},
+            "2": {"status": "finished", "activityKind": "agent"},
+            "3": {"status": "finished", "activityKind": "agent"},
+        }
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "1"  # Waiting outranks both finished and running.
+        assert navigation.session_statuses["1"] == {"status": "awaitingInput", "activityKind": "agent", "statusChangedAt": 456}
+        navigation_app.current_window = window_one
+        tab_one.current_session = split
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "2"  # Skip the current waiting Agent, then choose finished.
+        navigation_app.current_window = window_two
+        navigation.session_statuses["1"] = {"status": "idle", "activityKind": "agent", "statusChangedAt": 789}
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "0"  # Current finished is excluded; wrap to running.
+        assert navigation.session_statuses["0"] == {"status": "running", "activityKind": "agent", "statusChangedAt": 123}
+        navigation.session_statuses.pop("0")
+        navigation.model_observations["0"] = ("running", time.monotonic())
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "1"  # Idle is eligible only after higher-priority Agents are absent.
+        assert navigation.session_statuses["1"] == {"status": "idle", "activityKind": "agent", "statusChangedAt": 789}
+        navigation.session_statuses.pop("3")
+        navigation_app.current_window = window_one
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "2"  # Skip the current idle Agent; cycle to the next idle Agent.
+        navigation_app.current_window = window_two
+        navigation.session_statuses = {
+            "0": {"status": "finished", "activityKind": "command"},
+            "1": {"status": "running", "activityKind": "agent"},
+            "2": {"status": "running", "activityKind": "command"},
+        }
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "1"  # Finished commands do not prevent the running-Agent fallback.
+        navigation.session_statuses["1"]["activityKind"] = "command"
+        before = len(activated)
+        await navigation.activate_next_finished_session()
+        assert len(activated) == before  # An all-command workload must not switch.
+        navigation.session_statuses = {
+            "0": {"status": "idle", "activityKind": "command"},
+            "1": {"status": "idle"},
+            "3": {"status": "idle", "activityKind": "agent"},
+        }
+        await navigation.activate_next_finished_session()
+        assert len(activated) == before  # Current idle, ordinary shell and unknown kind are excluded.
+
+    asyncio.run(check_finished_navigation())
 
 
 if __name__ == "__main__":

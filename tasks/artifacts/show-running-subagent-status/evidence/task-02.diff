@@ -1,0 +1,660 @@
+--- a/integrations/pi/iTermate-integration.ts
++++ b/integrations/pi/iTermate-integration.ts
+@@ -91,6 +91,7 @@
+   status: Status,
+   exitStatus?: number,
+   heartbeat = false,
++  hasRunningSubagents = false,
+ ): Promise<boolean> {
+   const sessionID = iTermSessionID();
+   if (!sessionID && !tty) return Promise.resolve(false);
+@@ -106,6 +107,7 @@
+           status,
+           exitStatus,
+           heartbeat,
++          hasRunningSubagents,
+         }
+       : {
+           version: 1,
+@@ -118,6 +120,7 @@
+           status,
+           exitStatus,
+           heartbeat,
++          hasRunningSubagents,
+         };
+     const socket: Socket = connect(
+       sessionID ? bridgeSocketPath : statusSocketPath,
+@@ -229,6 +232,71 @@
+   let heartbeatGeneration = 0;
+   let heartbeatTimer: ReturnType<typeof setTimeout> | undefined;
+   let reportQueue = Promise.resolve(true);
++  let hasRunningSubagents = false;
++  let heartbeatPausedForFleet = false;
++  let fleetObservedAt = 0;
++  let fleetGeneration = 0;
++  let fleetTimer: ReturnType<typeof setTimeout> | undefined;
++  let fleetRequest: Promise<void> | undefined;
++  let cancelFleetRequest: (() => void) | undefined;
++
++  // Query the public, current-session DTO, not tool text or historical messages.
++  function refreshFleet(): Promise<void> {
++    if (!active) return Promise.resolve();
++    if (fleetRequest) return fleetRequest;
++    const generation = fleetGeneration;
++    fleetRequest = new Promise<void>((resolve) => {
++      const requestId = randomUUID();
++      let unsubscribe = () => {};
++      const finish = () => {
++        clearTimeout(timer);
++        unsubscribe();
++        cancelFleetRequest = undefined;
++        resolve();
++      };
++      const timer = setTimeout(finish, 1000);
++      cancelFleetRequest = finish;
++      unsubscribe = pi.events.on(`subagents:rpc:v1:reply:${requestId}`, (raw) => {
++        const reply = raw as {
++          version?: unknown; requestId?: unknown; success?: unknown;
++          data?: { fleet?: { version?: unknown; totalActive?: unknown } };
++        } | null;
++        const fleet = reply?.data?.fleet;
++        if (active && generation === fleetGeneration
++          && reply?.version === 1 && reply.requestId === requestId
++          && reply.success === true && fleet?.version === 1
++          && typeof fleet.totalActive === "number"
++          && Number.isSafeInteger(fleet.totalActive) && fleet.totalActive >= 0) {
++          hasRunningSubagents = fleet.totalActive > 0;
++          fleetObservedAt = performance.now();
++        }
++        finish();
++      });
++      try {
++        pi.events.emit("subagents:rpc:v1:request", {
++          version: 1, requestId, method: "status", params: {},
++        });
++      } catch {
++        finish();
++      }
++    }).finally(() => { fleetRequest = undefined; });
++    return fleetRequest;
++  }
++
++  async function pollFleet(generation: number): Promise<void> {
++    const previous = hasRunningSubagents;
++    await refreshFleet();
++    if (!active || generation !== fleetGeneration) return;
++    // The heartbeat can pause while this RPC is pending, including across the
++    // expiry boundary. Inspect its actual state after the reply, not before it.
++    if (previous !== hasRunningSubagents
++      || (heartbeatPausedForFleet && performance.now() - fleetObservedAt <= 6000)) {
++      await publish();
++    }
++    if (active && generation === fleetGeneration) {
++      fleetTimer = setTimeout(() => void pollFleet(generation), 2000);
++    }
++  }
+ 
+   function queueReport(
+     status: Status,
+@@ -236,8 +304,10 @@
+     heartbeat = false,
+     generation = heartbeatGeneration,
+   ): Promise<boolean> {
++    const subagents = hasRunningSubagents && performance.now() - fleetObservedAt <= 6000
++      && (status === "running" || status === "awaitingInput");
+     const send = () => generation === heartbeatGeneration
+-      ? report(status, exitStatus, heartbeat)
++      ? report(status, exitStatus, heartbeat, subagents)
+       : Promise.resolve(false);
+     reportQueue = reportQueue.then(send, send);
+     return reportQueue;
+@@ -250,7 +320,8 @@
+   }
+ 
+   function visibleStatus(): Status {
+-    return promptOpen ? "awaitingInput" : baseStatus;
++    if (promptOpen || baseStatus === "awaitingInput") return "awaitingInput";
++    return hasRunningSubagents ? "running" : baseStatus;
+   }
+ 
+   async function sendHeartbeat(
+@@ -259,6 +330,14 @@
+     retries = 3,
+   ): Promise<void> {
+     if (!active || generation !== heartbeatGeneration) return;
++    // Unknown is not completion: stop renewing an unconfirmed run and let the
++    // receiver's lease expire rather than emitting a false success.
++    if (hasRunningSubagents && performance.now() - fleetObservedAt > 6000
++      && baseStatus !== "running" && baseStatus !== "awaitingInput" && !promptOpen) {
++      heartbeatPausedForFleet = true;
++      return;
++    }
++    heartbeatPausedForFleet = false;
+     if (modelDecision !== undefined && !existsSync(join(supportDirectory, "Laya", "analysis-enabled"))) {
+       modelDecision = undefined;
+       baseStatus = replyPending ? "awaitingInput" : "finished";
+@@ -298,7 +377,19 @@
+     agentRunning = false;
+     replyPending = false;
+     promptOpen = false;
+-    return publish();
++    hasRunningSubagents = false;
++    heartbeatPausedForFleet = false;
++    fleetObservedAt = 0;
++    fleetGeneration += 1;
++    // Let other extensions restore their state before the first observation.
++    if (active) fleetTimer = setTimeout(() => void pollFleet(fleetGeneration), 0);
++    return publish();
++  });
++  pi.on("tool_execution_end", async (event) => {
++    if (event.toolName !== "subagent") return;
++    const previous = hasRunningSubagents;
++    await refreshFleet();
++    if (previous !== hasRunningSubagents) await publish();
+   });
+   pi.on("agent_start", () => {
+     agentFailed = false;
+@@ -331,6 +422,7 @@
+     modelDecision = undefined;
+     baseStatus = replyPending ? "awaitingInput" : "finished";
+     const generation = heartbeatGeneration;
++    await refreshFleet();
+     const decision = !agentFailed && !promptOpen
+       ? await classifyReplyWithModel(lastAssistantText) : undefined;
+     if (!active || !ctx.isIdle() || generation !== heartbeatGeneration) return;
+@@ -360,6 +452,11 @@
+   pi.on("session_shutdown", () => {
+     if (!active) return;
+     active = false;
++    fleetGeneration += 1;
++    clearTimeout(fleetTimer);
++    cancelFleetRequest?.();
++    hasRunningSubagents = false;
++    heartbeatPausedForFleet = false;
+     stopHeartbeat();
+     return queueReport("detached").then(() => {});
+   });
+--- a/iTermate/ItermBridge.swift
++++ b/iTermate/ItermBridge.swift
+@@ -133,6 +133,8 @@
+     let statusChangedAt: TimeInterval?
+     /// A short-lived estimate, never used for lifecycle notifications or completion counts.
+     var modelState: TerminalSessionStatus? = nil
++    /// Confirmed Pi child activity; absent for integrations without this signal.
++    var hasRunningSubagents: Bool? = nil
+ }
+ 
+ struct TerminalTabSnapshot: Codable, Equatable, Identifiable {
+@@ -937,7 +939,8 @@
+             status: status.status,
+             activityKind: status.activityKind,
+             exitStatus: status.exitStatus,
+-            statusChangedAt: status.changedAt
++            statusChangedAt: status.changedAt,
++            hasRunningSubagents: status.hasRunningSubagents
+         )
+     }
+ 
+--- a/iTermate/TerminalStatusServer.swift
++++ b/iTermate/TerminalStatusServer.swift
+@@ -25,6 +25,7 @@
+     let state: State
+     let exitStatus: Int?
+     let heartbeat: Bool
++    var hasRunningSubagents: Bool = false
+ }
+ 
+ struct VisibleTerminalStatus {
+@@ -32,6 +33,7 @@
+     let activityKind: SessionActivityKind
+     let exitStatus: Int?
+     let changedAt: TimeInterval
++    var hasRunningSubagents: Bool = false
+ }
+ 
+ struct TerminalStatusRegistry {
+@@ -42,6 +44,7 @@
+         let exitStatus: Int?
+         let changedAt: TimeInterval
+         let heartbeatAt: TimeInterval?
++        var hasRunningSubagents: Bool = false
+     }
+ 
+     private struct TTYState {
+@@ -74,6 +77,10 @@
+     ) -> Bool {
+         guard terminalIDsByTTY[report.tty] != nil else { return false }
+         guard report.state != .awaitingInput || report.source == .agent else {
++            return false
++        }
++        guard !report.hasRunningSubagents || (report.source == .agent
++            && (report.state == .running || report.state == .awaitingInput)) else {
+             return false
+         }
+         var ttyState = states[report.tty] ?? TTYState()
+@@ -109,7 +116,8 @@
+             heartbeatAt: report.source == .agent
+                 && (status == .running || status == .awaitingInput)
+                 ? uptime
+-                : nil
++                : nil,
++            hasRunningSubagents: report.hasRunningSubagents
+         )
+ 
+         if report.source == .agent {
+@@ -213,7 +221,8 @@
+                 status: status,
+                 activityKind: .agent,
+                 exitStatus: agent.exitStatus,
+-                changedAt: agent.changedAt
++                changedAt: agent.changedAt,
++                hasRunningSubagents: agent.hasRunningSubagents
+             )
+         }
+         if let shell = ttyState.shell, let status = shell.status {
+@@ -496,6 +505,7 @@
+     let status: TerminalStatusReport.State
+     let exitStatus: Int?
+     let heartbeat: Bool?
++    let hasRunningSubagents: Bool?
+ 
+     func validatedReport() throws -> TerminalStatusReport {
+         guard
+@@ -511,6 +521,11 @@
+         }
+ 
+         let heartbeat = heartbeat ?? false
++        let hasRunningSubagents = hasRunningSubagents ?? false
++        guard !hasRunningSubagents || (source == .agent
++            && (status == .running || status == .awaitingInput)) else {
++            throw TerminalStatusServerError.invalidRequest
++        }
+         guard status != .awaitingInput || source == .agent else {
+             throw TerminalStatusServerError.invalidRequest
+         }
+@@ -533,7 +548,8 @@
+             sequence: sequence,
+             state: status,
+             exitStatus: exitStatus,
+-            heartbeat: heartbeat
++            heartbeat: heartbeat,
++            hasRunningSubagents: hasRunningSubagents
+         )
+     }
+ }
+--- a/iTermate/iTermateApp.swift
++++ b/iTermate/iTermateApp.swift
+@@ -632,7 +632,7 @@
+                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
+                                     sessionButton(item)
+                                         .id(
+-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none")"
++                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none"):\(item.session.hasRunningSubagents == true)"
+                                         )
+                                         .padding(.leading, hasTabHeader ? 12 : 0)
+                                 }
+@@ -855,6 +855,17 @@
+                         .lineLimit(1)
+                         .frame(maxWidth: .infinity, alignment: .leading)
+ 
++                    if item.session.hasRunningSubagents == true,
++                       item.session.activityKind == .agent,
++                       item.session.status == .running || item.session.status == .awaitingInput {
++                        Image(systemName: "arrow.triangle.branch")
++                            .font(.system(size: 13, weight: .semibold))
++                            .foregroundStyle(.purple)
++                            .frame(width: 16, height: 16)
++                            .help("Subagents are still running")
++                            .accessibilityLabel("Subagents are still running")
++                    }
++
+                     if item.session.status == .awaitingInput,
+                        item.session.activityKind == .agent {
+                         AgentWaitingStatusView(
+--- a/iTermateBridge/iTermateBridge.py
++++ b/iTermateBridge/iTermateBridge.py
+@@ -176,7 +176,17 @@
+                     writer, request_id, False, "Invalid heartbeat"
+                 )
+                 return
+-            accepted = self.set_agent_status(session_id, status, exit_status, heartbeat)
++            has_running_subagents = request.get("hasRunningSubagents", False)
++            if not isinstance(has_running_subagents, bool) or (
++                has_running_subagents and status not in {"running", "awaitingInput"}
++            ):
++                await self.send_action_result(
++                    writer, request_id, False, "Invalid subagent activity"
++                )
++                return
++            accepted = self.set_agent_status(
++                session_id, status, exit_status, heartbeat, has_running_subagents
++            )
+             await self.send_action_result(
+                 writer, request_id, accepted,
+                 None if accepted else "Stale heartbeat"
+@@ -583,7 +593,10 @@
+                         await self.publish_snapshot()
+                 await monitor.async_get()
+ 
+-    def set_agent_status(self, session_id, status, exit_status=0, heartbeat=False):
++    def set_agent_status(
++        self, session_id, status, exit_status=0, heartbeat=False,
++        has_running_subagents=False,
++    ):
+         if status == "detached":
+             self.agent_managed_session_ids.discard(session_id)
+             self.agent_heartbeat_times.pop(session_id, None)
+@@ -594,7 +607,7 @@
+         if heartbeat and current is not None and current.get("status") != status:
+             return False
+         self.agent_managed_session_ids.add(session_id)
+-        if heartbeat or status == "awaitingInput":
++        if heartbeat or status == "awaitingInput" or has_running_subagents:
+             self.agent_heartbeat_times[session_id] = heartbeat_time()
+         else:
+             self.agent_heartbeat_times.pop(session_id, None)
+@@ -604,6 +617,8 @@
+             exit_status if status == "finished" else None,
+             activity_kind="agent",
+         )
++        if has_running_subagents:
++            self.session_statuses[session_id]["hasRunningSubagents"] = True
+         return True
+ 
+     def expire_stale_agent_heartbeats(self, now):
+@@ -873,6 +888,9 @@
+                             session.session_id, {}
+                         ).get("exitStatus"),
+                         "modelState": self.model_state(session.session_id),
++                        "hasRunningSubagents": self.session_statuses.get(
++                            session.session_id, {}
++                        ).get("hasRunningSubagents", False),
+                         "statusChangedAt": self.session_statuses.get(
+                             session.session_id, {}
+                         ).get("statusChangedAt"),
+--- a/integrations/pi/subagent-lifecycle.test.mjs
++++ b/integrations/pi/subagent-lifecycle.test.mjs
+@@ -0,0 +1,283 @@
++// Run with Node 22.13+: node --experimental-vm-modules --test integrations/pi/subagent-lifecycle.test.mjs
++import assert from "node:assert/strict";
++import { test } from "node:test";
++import { readFile } from "node:fs/promises";
++import { stripTypeScriptTypes } from "node:module";
++import { EventEmitter } from "node:events";
++import { randomUUID } from "node:crypto";
++import { join } from "node:path";
++import { SourceTextModule, SyntheticModule, createContext } from "node:vm";
++
++const source = stripTypeScriptTypes(await readFile(
++  new URL("./iTermate-integration.ts", import.meta.url), "utf8",
++));
++
++async function harness({ count = 2, terminal = "iTerm.app", mode = "tui" } = {}) {
++  let now = 10000;
++  let timerID = 0;
++  let idle = true;
++  const timers = new Map();
++  const handlers = new Map();
++  const events = new EventEmitter();
++  const reports = [];
++  const queries = [];
++  const responses = [];
++  let defaultResponse = { count };
++  const flush = async () => {
++    for (let index = 0; index < 30; index += 1) await Promise.resolve();
++  };
++  const setTimeout = (callback, delay = 0) => {
++    const id = ++timerID;
++    timers.set(id, { at: now + delay, callback });
++    return id;
++  };
++  const clearTimeout = (id) => timers.delete(id);
++  async function advance(milliseconds) {
++    const target = now + milliseconds;
++    await flush();
++    for (;;) {
++      const next = [...timers].sort((a, b) => a[1].at - b[1].at || a[0] - b[0])
++        .find(([, timer]) => timer.at <= target);
++      if (!next) break;
++      now = Math.max(now, next[1].at);
++      timers.delete(next[0]);
++      next[1].callback();
++      await flush();
++    }
++    now = target;
++    await flush();
++  }
++  const context = createContext({
++    process: { pid: 123, env: { TERM_PROGRAM: terminal, ITERM_SESSION_ID: "w0:session-1" } },
++    performance: { now: () => now }, setTimeout, clearTimeout, Buffer, URL,
++  });
++  const unavailable = async () => { throw new Error("Optional model is disabled"); };
++  const mocks = {
++    "node:crypto": { randomUUID },
++    "node:fs/promises": { readFile: unavailable, access: unavailable },
++    "node:fs": { existsSync: () => false },
++    "node:http": { request: () => { throw new Error("Unexpected network request"); } },
++    "node:child_process": { execFileSync: () => "ttys001" },
++    "node:net": {
++      connect: (path, connected) => {
++        const socket = new EventEmitter();
++        socket.setTimeout = () => socket;
++        socket.destroy = () => {};
++        socket.write = (line) => {
++          const request = JSON.parse(line);
++          reports.push({ at: now, path, ...request });
++          queueMicrotask(() => socket.emit("data", Buffer.from(JSON.stringify({
++            type: "actionResult", requestId: request.requestId, ok: true,
++          }) + "\n")));
++        };
++        queueMicrotask(connected);
++        return socket;
++      },
++    },
++    "node:os": { homedir: () => "/isolated-home" },
++    "node:path": { join },
++  };
++  const module = new SourceTextModule(source, { context });
++  await module.link((specifier) => {
++    assert.ok(mocks[specifier], `Unexpected import: ${specifier}`);
++    const values = mocks[specifier];
++    return new SyntheticModule(Object.keys(values), function () {
++      for (const [key, value] of Object.entries(values)) this.setExport(key, value);
++    }, { context });
++  });
++  await module.evaluate();
++  module.namespace.default({
++    on: (name, handler) => handlers.set(name, handler),
++    events: {
++      on: (name, handler) => {
++        events.on(name, handler);
++        return () => events.off(name, handler);
++      },
++      emit: (name, request) => {
++        assert.equal(name, "subagents:rpc:v1:request");
++        assert.equal(request.method, "status");
++        queries.push({ at: now, request });
++        const response = responses.shift() ?? defaultResponse;
++        if (response.drop) return;
++        const reply = () => events.emit(`subagents:rpc:v1:reply:${request.requestId}`, {
++          version: 1, requestId: request.requestId, success: response.success ?? true,
++          data: { fleet: { version: response.version ?? 1, totalActive: response.count } },
++        });
++        if (response.delay) setTimeout(reply, response.delay);
++        else queueMicrotask(reply);
++      },
++    },
++  });
++  const ctx = { mode, isIdle: () => idle };
++  async function emit(name, event = {}) {
++    if (name === "agent_start") idle = false;
++    if (name === "agent_settled") idle = true;
++    await handlers.get(name)?.(event, ctx);
++    await flush();
++  }
++  return {
++    reports, queries, responses, advance, emit,
++    elapseWithoutCallbacks: (milliseconds) => { now += milliseconds; },
++    setResponse: (response) => { defaultResponse = response; },
++    get now() { return now; },
++    get replyListeners() { return events.eventNames().length; },
++    get pendingTimers() { return timers.size; },
++  };
++}
++
++async function settledHarness(options) {
++  const h = await harness(options);
++  await h.emit("session_start");
++  await h.advance(0);
++  await h.emit("agent_start");
++  await h.emit("agent_end", {
++    messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text: "Work complete." }] }],
++  });
++  await h.emit("agent_settled");
++  return h;
++}
++
++test("active children keep a settled parent running; only zero completes", async () => {
++  const h = await settledHarness();
++  assert.equal(h.reports.at(-1).status, "running");
++  assert.equal(h.reports.at(-1).hasRunningSubagents, true);
++  h.setResponse({ count: 1 });
++  await h.advance(2000);
++  assert.equal(h.reports.at(-1).status, "running");
++  h.setResponse({ count: 0 });
++  await h.advance(2000);
++  assert.equal(h.reports.at(-1).status, "finished");
++  assert.equal(h.reports.at(-1).hasRunningSubagents, false);
++  assert.equal(h.reports.filter((report) => report.status === "finished").length, 1);
++  await h.emit("session_shutdown");
++  assert.equal(h.replyListeners, 0);
++  assert.equal(h.pendingTimers, 0);
++});
++
++test("TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged positive count", async () => {
++  const h = await settledHarness();
++  // Last confirmation: 10s. Shift heartbeat cadence to 12.1/14.1/16.1s.
++  await h.advance(100);
++  await h.emit("ui_prompt_start", { kind: "confirm" });
++  await h.emit("ui_prompt_end");
++  h.setResponse({ drop: true });
++  await h.advance(4700); // Poll at 12s times out at 13s; next poll is due at 15s.
++  h.responses.push({ count: 2, delay: 900 });
++  // A busy event loop delays that poll until 15.8s (confirmation age 5.8s).
++  h.elapseWithoutCallbacks(1000);
++  await h.advance(0);
++  assert.equal(h.queries.at(-1).at, 15800);
++  await h.advance(300); // 16.1s: heartbeat pauses while the RPC is pending.
++  assert.equal(h.reports.at(-1).at, 14100);
++  await h.advance(600); // 16.7s: unchanged positive reply must fully republish.
++  assert.equal(h.reports.at(-1).at, 16700);
++  assert.equal(h.reports.at(-1).heartbeat, false);
++  h.setResponse({ count: 2 });
++  const recoveredAt = h.now;
++  await h.advance(12000);
++  const heartbeats = h.reports.filter((report) => report.at > recoveredAt && report.heartbeat);
++  assert.ok(heartbeats.length >= 4, JSON.stringify(h.reports));
++  assert.equal(h.reports.at(-1).hasRunningSubagents, true);
++  assert.ok(h.now - h.reports.at(-1).at <= 2000);
++  await h.emit("session_shutdown");
++});
++
++test("unavailable fleet expires child-only reporting without false completion, then recovers", async () => {
++  const h = await settledHarness();
++  h.setResponse({ drop: true });
++  await h.advance(16000);
++  const pausedReports = h.reports.length;
++  assert.ok(h.now - h.reports.at(-1).at > 8000);
++  assert.equal(h.reports.some((report) => report.status === "finished"), false);
++  h.setResponse({ count: 2 });
++  await h.advance(6000);
++  assert.ok(h.reports.length > pausedReports);
++  assert.equal(h.reports.at(-1).hasRunningSubagents, true);
++  await h.emit("session_shutdown");
++});
++
++test("explicit questions retain awaitingInput alongside child activity", async () => {
++  const h = await settledHarness();
++  await h.emit("ui_prompt_start", { kind: "confirm" });
++  assert.equal(h.reports.at(-1).status, "awaitingInput");
++  assert.equal(h.reports.at(-1).hasRunningSubagents, true);
++  h.setResponse({ count: 0 });
++  await h.advance(2000);
++  assert.equal(h.reports.at(-1).status, "awaitingInput");
++  assert.equal(h.reports.at(-1).hasRunningSubagents, false);
++  await h.emit("ui_prompt_end");
++  assert.equal(h.reports.at(-1).status, "finished");
++  await h.emit("session_shutdown");
++});
++
++test("Ghostty uses TTY and ignores inherited iTerm session identity", async () => {
++  const h = await settledHarness({ terminal: "ghostty" });
++  const report = h.reports.at(-1);
++  assert.equal(report.type, "setTerminalStatus");
++  assert.equal(report.tty, "/dev/ttys001");
++  assert.equal(report.sessionId, undefined);
++  assert.equal(report.hasRunningSubagents, true);
++  await h.emit("session_shutdown");
++});
++
++test("shutdown cancels in-flight observation and prevents stale replies from publishing", async () => {
++  const h = await settledHarness();
++  h.setResponse({ count: 2, delay: 500 });
++  await h.advance(2000);
++  assert.equal(h.replyListeners, 1);
++  await h.emit("session_shutdown");
++  const reports = h.reports.length;
++  assert.equal(h.reports.at(-1).status, "detached");
++  assert.equal(h.replyListeners, 0);
++  await h.advance(10000);
++  assert.equal(h.reports.length, reports);
++  assert.equal(h.pendingTimers, 0);
++});
++
++test("session startup restores active child work without replaying conversation history", async () => {
++  const h = await harness();
++  await h.emit("session_start");
++  await h.advance(0);
++  assert.equal(h.reports.at(-1).status, "running");
++  assert.equal(h.reports.at(-1).hasRunningSubagents, true);
++  h.setResponse({ count: 0 });
++  await h.advance(2000);
++  assert.equal(h.reports.at(-1).status, "idle");
++  assert.equal(h.reports.at(-1).hasRunningSubagents, false);
++  await h.emit("session_shutdown");
++});
++
++test("malformed or failed observations cannot clear active children or fabricate success", async () => {
++  const h = await settledHarness();
++  for (const response of [
++    { count: -1 }, { count: 0.5 }, { count: "0" },
++    { count: 0, version: 2 }, { count: 0, success: false },
++  ]) {
++    h.responses.push(response);
++    await h.emit("tool_execution_end", { toolName: "subagent" });
++    assert.equal(h.reports.at(-1).status, "running");
++    assert.equal(h.reports.at(-1).hasRunningSubagents, true);
++  }
++  await h.emit("session_shutdown");
++});
++
++test("known parent activity remains leased when only the child observation becomes unavailable", async () => {
++  const h = await settledHarness();
++  await h.emit("agent_start");
++  h.setResponse({ drop: true });
++  await h.advance(16000);
++  assert.equal(h.reports.at(-1).status, "running");
++  assert.equal(h.reports.at(-1).hasRunningSubagents, false);
++  assert.ok(h.now - h.reports.at(-1).at <= 2000);
++  await h.emit("session_shutdown");
++});
++
++test("non-TUI child runtimes do not query or report parent terminal activity", async () => {
++  const h = await harness({ mode: "json" });
++  await h.emit("session_start");
++  await h.emit("agent_start");
++  await h.advance(10000);
++  assert.equal(h.queries.length, 0);
++  assert.equal(h.reports.length, 0);
++  await h.emit("session_shutdown");
++});

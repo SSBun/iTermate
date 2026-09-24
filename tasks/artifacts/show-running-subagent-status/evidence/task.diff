@@ -1,0 +1,365 @@
+--- a/integrations/pi/iTermate-integration.ts
++++ b/integrations/pi/iTermate-integration.ts
+@@ -91,6 +91,7 @@
+   status: Status,
+   exitStatus?: number,
+   heartbeat = false,
++  hasRunningSubagents = false,
+ ): Promise<boolean> {
+   const sessionID = iTermSessionID();
+   if (!sessionID && !tty) return Promise.resolve(false);
+@@ -106,6 +107,7 @@
+           status,
+           exitStatus,
+           heartbeat,
++          hasRunningSubagents,
+         }
+       : {
+           version: 1,
+@@ -118,6 +120,7 @@
+           status,
+           exitStatus,
+           heartbeat,
++          hasRunningSubagents,
+         };
+     const socket: Socket = connect(
+       sessionID ? bridgeSocketPath : statusSocketPath,
+@@ -229,6 +232,68 @@
+   let heartbeatGeneration = 0;
+   let heartbeatTimer: ReturnType<typeof setTimeout> | undefined;
+   let reportQueue = Promise.resolve(true);
++  let hasRunningSubagents = false;
++  let fleetObservedAt = 0;
++  let fleetGeneration = 0;
++  let fleetTimer: ReturnType<typeof setTimeout> | undefined;
++  let fleetRequest: Promise<void> | undefined;
++  let cancelFleetRequest: (() => void) | undefined;
++
++  // Query the public, current-session DTO, not tool text or historical messages.
++  function refreshFleet(): Promise<void> {
++    if (!active) return Promise.resolve();
++    if (fleetRequest) return fleetRequest;
++    const generation = fleetGeneration;
++    fleetRequest = new Promise<void>((resolve) => {
++      const requestId = randomUUID();
++      let unsubscribe = () => {};
++      const finish = () => {
++        clearTimeout(timer);
++        unsubscribe();
++        cancelFleetRequest = undefined;
++        resolve();
++      };
++      const timer = setTimeout(finish, 1000);
++      cancelFleetRequest = finish;
++      unsubscribe = pi.events.on(`subagents:rpc:v1:reply:${requestId}`, (raw) => {
++        const reply = raw as {
++          version?: unknown; requestId?: unknown; success?: unknown;
++          data?: { fleet?: { version?: unknown; totalActive?: unknown } };
++        } | null;
++        const fleet = reply?.data?.fleet;
++        if (active && generation === fleetGeneration
++          && reply?.version === 1 && reply.requestId === requestId
++          && reply.success === true && fleet?.version === 1
++          && typeof fleet.totalActive === "number"
++          && Number.isSafeInteger(fleet.totalActive) && fleet.totalActive >= 0) {
++          hasRunningSubagents = fleet.totalActive > 0;
++          fleetObservedAt = performance.now();
++        }
++        finish();
++      });
++      try {
++        pi.events.emit("subagents:rpc:v1:request", {
++          version: 1, requestId, method: "status", params: {},
++        });
++      } catch {
++        finish();
++      }
++    }).finally(() => { fleetRequest = undefined; });
++    return fleetRequest;
++  }
++
++  async function pollFleet(generation: number): Promise<void> {
++    const previous = hasRunningSubagents;
++    const wasStale = hasRunningSubagents && performance.now() - fleetObservedAt > 6000;
++    await refreshFleet();
++    if (!active || generation !== fleetGeneration) return;
++    if (previous !== hasRunningSubagents || (wasStale && performance.now() - fleetObservedAt <= 6000)) {
++      await publish();
++    }
++    if (active && generation === fleetGeneration) {
++      fleetTimer = setTimeout(() => void pollFleet(generation), 2000);
++    }
++  }
+ 
+   function queueReport(
+     status: Status,
+@@ -236,8 +301,10 @@
+     heartbeat = false,
+     generation = heartbeatGeneration,
+   ): Promise<boolean> {
++    const subagents = hasRunningSubagents && performance.now() - fleetObservedAt <= 6000
++      && (status === "running" || status === "awaitingInput");
+     const send = () => generation === heartbeatGeneration
+-      ? report(status, exitStatus, heartbeat)
++      ? report(status, exitStatus, heartbeat, subagents)
+       : Promise.resolve(false);
+     reportQueue = reportQueue.then(send, send);
+     return reportQueue;
+@@ -250,7 +317,8 @@
+   }
+ 
+   function visibleStatus(): Status {
+-    return promptOpen ? "awaitingInput" : baseStatus;
++    if (promptOpen || baseStatus === "awaitingInput") return "awaitingInput";
++    return hasRunningSubagents ? "running" : baseStatus;
+   }
+ 
+   async function sendHeartbeat(
+@@ -259,6 +327,10 @@
+     retries = 3,
+   ): Promise<void> {
+     if (!active || generation !== heartbeatGeneration) return;
++    // Unknown is not completion: stop renewing an unconfirmed run and let the
++    // receiver's lease expire rather than emitting a false success.
++    if (hasRunningSubagents && performance.now() - fleetObservedAt > 6000
++      && baseStatus !== "running" && baseStatus !== "awaitingInput" && !promptOpen) return;
+     if (modelDecision !== undefined && !existsSync(join(supportDirectory, "Laya", "analysis-enabled"))) {
+       modelDecision = undefined;
+       baseStatus = replyPending ? "awaitingInput" : "finished";
+@@ -298,7 +370,18 @@
+     agentRunning = false;
+     replyPending = false;
+     promptOpen = false;
+-    return publish();
++    hasRunningSubagents = false;
++    fleetObservedAt = 0;
++    fleetGeneration += 1;
++    // Let other extensions restore their state before the first observation.
++    if (active) fleetTimer = setTimeout(() => void pollFleet(fleetGeneration), 0);
++    return publish();
++  });
++  pi.on("tool_execution_end", async (event) => {
++    if (event.toolName !== "subagent") return;
++    const previous = hasRunningSubagents;
++    await refreshFleet();
++    if (previous !== hasRunningSubagents) await publish();
+   });
+   pi.on("agent_start", () => {
+     agentFailed = false;
+@@ -331,6 +414,7 @@
+     modelDecision = undefined;
+     baseStatus = replyPending ? "awaitingInput" : "finished";
+     const generation = heartbeatGeneration;
++    await refreshFleet();
+     const decision = !agentFailed && !promptOpen
+       ? await classifyReplyWithModel(lastAssistantText) : undefined;
+     if (!active || !ctx.isIdle() || generation !== heartbeatGeneration) return;
+@@ -360,6 +444,10 @@
+   pi.on("session_shutdown", () => {
+     if (!active) return;
+     active = false;
++    fleetGeneration += 1;
++    clearTimeout(fleetTimer);
++    cancelFleetRequest?.();
++    hasRunningSubagents = false;
+     stopHeartbeat();
+     return queueReport("detached").then(() => {});
+   });
+--- a/iTermate/ItermBridge.swift
++++ b/iTermate/ItermBridge.swift
+@@ -133,6 +133,8 @@
+     let statusChangedAt: TimeInterval?
+     /// A short-lived estimate, never used for lifecycle notifications or completion counts.
+     var modelState: TerminalSessionStatus? = nil
++    /// Confirmed Pi child activity; absent for integrations without this signal.
++    var hasRunningSubagents: Bool? = nil
+ }
+ 
+ struct TerminalTabSnapshot: Codable, Equatable, Identifiable {
+@@ -937,7 +939,8 @@
+             status: status.status,
+             activityKind: status.activityKind,
+             exitStatus: status.exitStatus,
+-            statusChangedAt: status.changedAt
++            statusChangedAt: status.changedAt,
++            hasRunningSubagents: status.hasRunningSubagents
+         )
+     }
+ 
+--- a/iTermate/TerminalStatusServer.swift
++++ b/iTermate/TerminalStatusServer.swift
+@@ -25,6 +25,7 @@
+     let state: State
+     let exitStatus: Int?
+     let heartbeat: Bool
++    var hasRunningSubagents: Bool = false
+ }
+ 
+ struct VisibleTerminalStatus {
+@@ -32,6 +33,7 @@
+     let activityKind: SessionActivityKind
+     let exitStatus: Int?
+     let changedAt: TimeInterval
++    var hasRunningSubagents: Bool = false
+ }
+ 
+ struct TerminalStatusRegistry {
+@@ -42,6 +44,7 @@
+         let exitStatus: Int?
+         let changedAt: TimeInterval
+         let heartbeatAt: TimeInterval?
++        var hasRunningSubagents: Bool = false
+     }
+ 
+     private struct TTYState {
+@@ -74,6 +77,10 @@
+     ) -> Bool {
+         guard terminalIDsByTTY[report.tty] != nil else { return false }
+         guard report.state != .awaitingInput || report.source == .agent else {
++            return false
++        }
++        guard !report.hasRunningSubagents || (report.source == .agent
++            && (report.state == .running || report.state == .awaitingInput)) else {
+             return false
+         }
+         var ttyState = states[report.tty] ?? TTYState()
+@@ -109,7 +116,8 @@
+             heartbeatAt: report.source == .agent
+                 && (status == .running || status == .awaitingInput)
+                 ? uptime
+-                : nil
++                : nil,
++            hasRunningSubagents: report.hasRunningSubagents
+         )
+ 
+         if report.source == .agent {
+@@ -213,7 +221,8 @@
+                 status: status,
+                 activityKind: .agent,
+                 exitStatus: agent.exitStatus,
+-                changedAt: agent.changedAt
++                changedAt: agent.changedAt,
++                hasRunningSubagents: agent.hasRunningSubagents
+             )
+         }
+         if let shell = ttyState.shell, let status = shell.status {
+@@ -496,6 +505,7 @@
+     let status: TerminalStatusReport.State
+     let exitStatus: Int?
+     let heartbeat: Bool?
++    let hasRunningSubagents: Bool?
+ 
+     func validatedReport() throws -> TerminalStatusReport {
+         guard
+@@ -511,6 +521,11 @@
+         }
+ 
+         let heartbeat = heartbeat ?? false
++        let hasRunningSubagents = hasRunningSubagents ?? false
++        guard !hasRunningSubagents || (source == .agent
++            && (status == .running || status == .awaitingInput)) else {
++            throw TerminalStatusServerError.invalidRequest
++        }
+         guard status != .awaitingInput || source == .agent else {
+             throw TerminalStatusServerError.invalidRequest
+         }
+@@ -533,7 +548,8 @@
+             sequence: sequence,
+             state: status,
+             exitStatus: exitStatus,
+-            heartbeat: heartbeat
++            heartbeat: heartbeat,
++            hasRunningSubagents: hasRunningSubagents
+         )
+     }
+ }
+--- a/iTermate/iTermateApp.swift
++++ b/iTermate/iTermateApp.swift
+@@ -632,7 +632,7 @@
+                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
+                                     sessionButton(item)
+                                         .id(
+-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none")"
++                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none"):\(item.session.hasRunningSubagents == true)"
+                                         )
+                                         .padding(.leading, hasTabHeader ? 12 : 0)
+                                 }
+@@ -855,6 +855,17 @@
+                         .lineLimit(1)
+                         .frame(maxWidth: .infinity, alignment: .leading)
+ 
++                    if item.session.hasRunningSubagents == true,
++                       item.session.activityKind == .agent,
++                       item.session.status == .running || item.session.status == .awaitingInput {
++                        Image(systemName: "arrow.triangle.branch")
++                            .font(.system(size: 13, weight: .semibold))
++                            .foregroundStyle(.purple)
++                            .frame(width: 16, height: 16)
++                            .help("Subagents are still running")
++                            .accessibilityLabel("Subagents are still running")
++                    }
++
+                     if item.session.status == .awaitingInput,
+                        item.session.activityKind == .agent {
+                         AgentWaitingStatusView(
+--- a/iTermateBridge/iTermateBridge.py
++++ b/iTermateBridge/iTermateBridge.py
+@@ -176,7 +176,17 @@
+                     writer, request_id, False, "Invalid heartbeat"
+                 )
+                 return
+-            accepted = self.set_agent_status(session_id, status, exit_status, heartbeat)
++            has_running_subagents = request.get("hasRunningSubagents", False)
++            if not isinstance(has_running_subagents, bool) or (
++                has_running_subagents and status not in {"running", "awaitingInput"}
++            ):
++                await self.send_action_result(
++                    writer, request_id, False, "Invalid subagent activity"
++                )
++                return
++            accepted = self.set_agent_status(
++                session_id, status, exit_status, heartbeat, has_running_subagents
++            )
+             await self.send_action_result(
+                 writer, request_id, accepted,
+                 None if accepted else "Stale heartbeat"
+@@ -583,7 +593,10 @@
+                         await self.publish_snapshot()
+                 await monitor.async_get()
+ 
+-    def set_agent_status(self, session_id, status, exit_status=0, heartbeat=False):
++    def set_agent_status(
++        self, session_id, status, exit_status=0, heartbeat=False,
++        has_running_subagents=False,
++    ):
+         if status == "detached":
+             self.agent_managed_session_ids.discard(session_id)
+             self.agent_heartbeat_times.pop(session_id, None)
+@@ -594,7 +607,7 @@
+         if heartbeat and current is not None and current.get("status") != status:
+             return False
+         self.agent_managed_session_ids.add(session_id)
+-        if heartbeat or status == "awaitingInput":
++        if heartbeat or status == "awaitingInput" or has_running_subagents:
+             self.agent_heartbeat_times[session_id] = heartbeat_time()
+         else:
+             self.agent_heartbeat_times.pop(session_id, None)
+@@ -604,6 +617,8 @@
+             exit_status if status == "finished" else None,
+             activity_kind="agent",
+         )
++        if has_running_subagents:
++            self.session_statuses[session_id]["hasRunningSubagents"] = True
+         return True
+ 
+     def expire_stale_agent_heartbeats(self, now):
+@@ -873,6 +888,9 @@
+                             session.session_id, {}
+                         ).get("exitStatus"),
+                         "modelState": self.model_state(session.session_id),
++                        "hasRunningSubagents": self.session_statuses.get(
++                            session.session_id, {}
++                        ).get("hasRunningSubagents", False),
+                         "statusChangedAt": self.session_statuses.get(
+                             session.session_id, {}
+                         ).get("statusChangedAt"),

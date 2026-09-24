@@ -107,6 +107,7 @@ private struct AppConfig {
     var showsSessionTime = true
     var sessionTimeFormat: SessionTimeFormat = .compact
     var completionNotificationsEnabled = false
+    var nextFinishedSessionShortcut: SessionShortcut?
     var projectFolderCustomizations: [String: ProjectFolderCustomization] = [:]
 
     init(contents: String = "") {
@@ -233,6 +234,13 @@ private struct AppConfig {
                 } else if value == "false" {
                     completionNotificationsEnabled = false
                 }
+            case "next_finished_session_shortcut":
+                if let encoded = Self.stringValue(String(value)),
+                   let data = Data(base64Encoded: encoded),
+                   let shortcut = try? JSONDecoder().decode(SessionShortcut.self, from: data),
+                   shortcut.isValid {
+                    nextFinishedSessionShortcut = shortcut
+                }
             case "project_folder_customizations":
                 if
                     let encoded = Self.stringValue(String(value)),
@@ -278,8 +286,14 @@ private struct AppConfig {
         shows_session_time = \(showsSessionTime)
         session_time_format = "\(sessionTimeFormat.rawValue)"
         completion_notifications_enabled = \(completionNotificationsEnabled)
+        next_finished_session_shortcut = "\(encodedNextFinishedSessionShortcut)"
         project_folder_customizations = "\(encodedProjectFolderCustomizations)"
         """
+    }
+
+    private var encodedNextFinishedSessionShortcut: String {
+        guard let nextFinishedSessionShortcut else { return "" }
+        return (try? JSONEncoder().encode(nextFinishedSessionShortcut).base64EncodedString()) ?? ""
     }
 
     private var encodedProjectFolderCustomizations: String {
@@ -319,6 +333,7 @@ final class AppSettings: ObservableObject {
     @Published private(set) var showsSessionTime: Bool
     @Published private(set) var sessionTimeFormat: SessionTimeFormat
     @Published private(set) var completionNotificationsEnabled: Bool
+    @Published private(set) var nextFinishedSessionShortcut: SessionShortcut?
     @Published private(set) var projectFolderCustomizations: [
         String: ProjectFolderCustomization
     ]
@@ -344,6 +359,7 @@ final class AppSettings: ObservableObject {
         showsSessionTime = config.showsSessionTime
         sessionTimeFormat = config.sessionTimeFormat
         completionNotificationsEnabled = config.completionNotificationsEnabled
+        nextFinishedSessionShortcut = config.nextFinishedSessionShortcut
         projectFolderCustomizations = config.projectFolderCustomizations
 
         if !FileManager.default.fileExists(atPath: configURL.path) {
@@ -499,6 +515,20 @@ final class AppSettings: ObservableObject {
     func setSessionTimeFormat(_ format: SessionTimeFormat) {
         sessionTimeFormat = format
         updateConfig { $0.sessionTimeFormat = format }
+    }
+
+    /// Saves the binding atomically without overwriting another instance's newer preferences.
+    func setNextFinishedSessionShortcut(_ shortcut: SessionShortcut?) throws {
+        if let shortcut, !shortcut.isValid {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        let contents = FileManager.default.fileExists(atPath: configURL.path)
+            ? try String(contentsOf: configURL) : ""
+        var config = AppConfig(contents: contents)
+        config.nextFinishedSessionShortcut = shortcut
+        try FileManager.default.createDirectory(at: configURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try config.toml.write(to: configURL, atomically: true, encoding: .utf8)
+        nextFinishedSessionShortcut = shortcut
     }
 
     func setCompletionNotificationsEnabled(_ enabled: Bool) {
@@ -659,11 +689,13 @@ struct OpenSettingsButton<Label: View>: View {
 struct SettingsView: View {
     @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
+    @ObservedObject var localModel: LocalModelService
+    @ObservedObject var finishedSessionShortcut: FinishedSessionShortcut
     let updater: SPUUpdater
 
     var body: some View {
         TabView {
-            GeneralSettingsView(settings: settings)
+            GeneralSettingsView(settings: settings, shortcut: finishedSessionShortcut)
                 .tabItem {
                     Label("General", systemImage: "gearshape")
                 }
@@ -671,6 +703,11 @@ struct SettingsView: View {
             AgentSettingsView()
                 .tabItem {
                     Label("Agents", systemImage: "terminal")
+                }
+
+            LocalModelSettingsView(service: localModel)
+                .tabItem {
+                    Label("Local Model", systemImage: "brain")
                 }
 
             StatusAnimationSettingsView(settings: settings)
@@ -689,7 +726,7 @@ struct SettingsView: View {
                 }
         }
         .tint(settings.accentColor)
-        .frame(width: 520, height: 420)
+        .frame(width: 640, height: 520)
     }
 }
 
@@ -815,6 +852,7 @@ private struct StatusAnimationSettingsView: View {
 
 private struct GeneralSettingsView: View {
     @ObservedObject var settings: AppSettings
+    @ObservedObject var shortcut: FinishedSessionShortcut
     @State private var launchesAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginItemError = ""
     @State private var showsLoginItemError = false
@@ -831,6 +869,8 @@ private struct GeneralSettingsView: View {
                     )
                 )
             }
+
+            FinishedSessionShortcutSettingsView(settings: settings, shortcut: shortcut)
 
             Section("Terminals") {
                 Toggle(

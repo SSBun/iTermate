@@ -1,0 +1,616 @@
+diff --git a/iTermate.xcodeproj/project.pbxproj b/iTermate.xcodeproj/project.pbxproj
+index e405796..9e88843 100644
+--- a/iTermate.xcodeproj/project.pbxproj
++++ b/iTermate.xcodeproj/project.pbxproj
+@@ -10,20 +10,25 @@
+ 		5B5F89FB907820C9055C9184 /* iTermate.bash in Resources */ = {isa = PBXBuildFile; fileRef = 0448C28D1F048069AA0A0D18 /* iTermate.bash */; };
+ 		5FB71DAE674AB719CA12F02B /* iTermate.fish in Resources */ = {isa = PBXBuildFile; fileRef = 2754035B6E0A92CE752D09E5 /* iTermate.fish */; };
+ 		854F100B60C750D06E8DF1EC /* iTermateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8719B6809A3EC4D52A306 /* iTermateApp.swift */; };
++		85814D5023E76DE82EB7F95C /* agent-connection-prompt.md in Resources */ = {isa = PBXBuildFile; fileRef = EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */; };
++		897BF8EC3951B3FE3BB72763 /* FinishedSessionShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C38928251D32A7255116F91 /* FinishedSessionShortcutTests.swift */; };
+ 		8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8A8790CA418B304742A10E /* AgentIntegrations.swift */; };
+ 		94B162FBE46FC4FD4E2DF794 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 877F89ED3A45C6F8DF3B44C1 /* Sparkle */; };
+ 		9EA014E904BFB2839F940EBA /* SessionNotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */; };
+ 		AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */; };
+ 		B3841525F058DCEF4B08CC48 /* TerminalStatusServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */; };
++		BEEB853D6C906357937B0DAF /* iTermate-laya.py in Resources */ = {isa = PBXBuildFile; fileRef = 778A5491FBE924DD5E2ED781 /* iTermate-laya.py */; };
+ 		C7E944908DE9ED9089171685 /* iTermateBridge.py in Resources */ = {isa = PBXBuildFile; fileRef = 98A663F51BCEE90A4D694DFD /* iTermateBridge.py */; };
+ 		CD6C91A30902A7FCEE57204D /* PanelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */; };
+ 		CF61D396BC472AA8FE36FF58 /* iTermate-status.py in Resources */ = {isa = PBXBuildFile; fileRef = 88ED6137D49AA3F3F967AC35 /* iTermate-status.py */; };
+ 		D2C6987CA2110DB3371B778F /* PanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2964CC35CF647092E51DBA87 /* PanelLayout.swift */; };
+ 		D70EAEE488EDDDCA530D505D /* ItermBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */; };
+ 		EAECC190D6FF2D443E6ABD91 /* SettingsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */; };
++		EB587179278E9117F362FB84 /* FinishedSessionShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */; };
+ 		F1BACAA2BF873D0423D5D029 /* iTermate-integration.ts in Resources */ = {isa = PBXBuildFile; fileRef = 455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */; };
+ 		F3A0DE6F13889CD5EB0312AD /* iTermate.zsh in Resources */ = {isa = PBXBuildFile; fileRef = 05A3AA7BB59AC8672303E16B /* iTermate.zsh */; };
+ 		F8C2B099533A5060DD6FF222 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 26707EC6497714316C11E6B6 /* Assets.xcassets */; };
++		F8FB3990DA0A51BF7DD6065B /* LocalModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */; };
+ 		FBA2C09664EC79CCE097AE9C /* AgentIntegrationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */; };
+ 		FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC44468A07DBECAD73989BA /* ItermBridge.swift */; };
+ /* End PBXBuildFile section */
+@@ -43,6 +48,7 @@
+ 		05A3AA7BB59AC8672303E16B /* iTermate.zsh */ = {isa = PBXFileReference; path = iTermate.zsh; sourceTree = "<group>"; };
+ 		06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViews.swift; sourceTree = "<group>"; };
+ 		0A5616016F9CC20D9F3ADD3E /* iTermate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iTermate.app; sourceTree = BUILT_PRODUCTS_DIR; };
++		1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinishedSessionShortcut.swift; sourceTree = "<group>"; };
+ 		26707EC6497714316C11E6B6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+ 		2754035B6E0A92CE752D09E5 /* iTermate.fish */ = {isa = PBXFileReference; path = iTermate.fish; sourceTree = "<group>"; };
+ 		2964CC35CF647092E51DBA87 /* PanelLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelLayout.swift; sourceTree = "<group>"; };
+@@ -50,7 +56,10 @@
+ 		455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */ = {isa = PBXFileReference; path = "iTermate-integration.ts"; sourceTree = "<group>"; };
+ 		4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIntegrationManagerTests.swift; sourceTree = "<group>"; };
+ 		5AC44468A07DBECAD73989BA /* ItermBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItermBridge.swift; sourceTree = "<group>"; };
++		778A5491FBE924DD5E2ED781 /* iTermate-laya.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-laya.py"; sourceTree = "<group>"; };
++		7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelService.swift; sourceTree = "<group>"; };
+ 		88ED6137D49AA3F3F967AC35 /* iTermate-status.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-status.py"; sourceTree = "<group>"; };
++		8C38928251D32A7255116F91 /* FinishedSessionShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinishedSessionShortcutTests.swift; sourceTree = "<group>"; };
+ 		8F8A8790CA418B304742A10E /* AgentIntegrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIntegrations.swift; sourceTree = "<group>"; };
+ 		8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNotificationTests.swift; sourceTree = "<group>"; };
+ 		98A663F51BCEE90A4D694DFD /* iTermateBridge.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = iTermateBridge.py; sourceTree = "<group>"; };
+@@ -58,6 +67,7 @@
+ 		AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelLayoutTests.swift; sourceTree = "<group>"; };
+ 		E19ED60DFB350BCCD35BB7D4 /* iTermateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iTermateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+ 		EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItermBridgeTests.swift; sourceTree = "<group>"; };
++		EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "agent-connection-prompt.md"; sourceTree = "<group>"; };
+ 		F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalStatusServer.swift; sourceTree = "<group>"; };
+ 		FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNotifications.swift; sourceTree = "<group>"; };
+ /* End PBXFileReference section */
+@@ -89,6 +99,7 @@
+ 				9D8AD233E03307791188C9BA /* iTermate */,
+ 				AB381789852D8FBBEF03E620 /* iTermateBridge */,
+ 				E983C73C444786BC354E7A8A /* iTermateTests */,
++				EABF8A1EEF5EE7C774797170 /* laya */,
+ 				B116C045A938ACC98A870800 /* pi */,
+ 				6265AB239F8D9AC12E6BF1F9 /* shell */,
+ 				377849C3113349301ACDBD92 /* status */,
+@@ -121,9 +132,11 @@
+ 			children = (
+ 				8F8A8790CA418B304742A10E /* AgentIntegrations.swift */,
+ 				26707EC6497714316C11E6B6 /* Assets.xcassets */,
++				1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */,
+ 				9BF8CFF4C87D1CF8C9E3F93E /* Info.plist */,
+ 				44F8719B6809A3EC4D52A306 /* iTermateApp.swift */,
+ 				5AC44468A07DBECAD73989BA /* ItermBridge.swift */,
++				7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */,
+ 				2964CC35CF647092E51DBA87 /* PanelLayout.swift */,
+ 				FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */,
+ 				06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */,
+@@ -153,6 +166,7 @@
+ 			isa = PBXGroup;
+ 			children = (
+ 				4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */,
++				8C38928251D32A7255116F91 /* FinishedSessionShortcutTests.swift */,
+ 				EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */,
+ 				AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */,
+ 				8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */,
+@@ -160,6 +174,16 @@
+ 			path = iTermateTests;
+ 			sourceTree = "<group>";
+ 		};
++		EABF8A1EEF5EE7C774797170 /* laya */ = {
++			isa = PBXGroup;
++			children = (
++				EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */,
++				778A5491FBE924DD5E2ED781 /* iTermate-laya.py */,
++			);
++			name = laya;
++			path = integrations/laya;
++			sourceTree = "<group>";
++		};
+ /* End PBXGroup section */
+ 
+ /* Begin PBXNativeTarget section */
+@@ -241,7 +265,9 @@
+ 			buildActionMask = 2147483647;
+ 			files = (
+ 				F8C2B099533A5060DD6FF222 /* Assets.xcassets in Resources */,
++				85814D5023E76DE82EB7F95C /* agent-connection-prompt.md in Resources */,
+ 				F1BACAA2BF873D0423D5D029 /* iTermate-integration.ts in Resources */,
++				BEEB853D6C906357937B0DAF /* iTermate-laya.py in Resources */,
+ 				CF61D396BC472AA8FE36FF58 /* iTermate-status.py in Resources */,
+ 				5B5F89FB907820C9055C9184 /* iTermate.bash in Resources */,
+ 				5FB71DAE674AB719CA12F02B /* iTermate.fish in Resources */,
+@@ -258,6 +284,7 @@
+ 			buildActionMask = 2147483647;
+ 			files = (
+ 				FBA2C09664EC79CCE097AE9C /* AgentIntegrationManagerTests.swift in Sources */,
++				897BF8EC3951B3FE3BB72763 /* FinishedSessionShortcutTests.swift in Sources */,
+ 				D70EAEE488EDDDCA530D505D /* ItermBridgeTests.swift in Sources */,
+ 				CD6C91A30902A7FCEE57204D /* PanelLayoutTests.swift in Sources */,
+ 				9EA014E904BFB2839F940EBA /* SessionNotificationTests.swift in Sources */,
+@@ -269,7 +296,9 @@
+ 			buildActionMask = 2147483647;
+ 			files = (
+ 				8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */,
++				EB587179278E9117F362FB84 /* FinishedSessionShortcut.swift in Sources */,
+ 				FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */,
++				F8FB3990DA0A51BF7DD6065B /* LocalModelService.swift in Sources */,
+ 				D2C6987CA2110DB3371B778F /* PanelLayout.swift in Sources */,
+ 				AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */,
+ 				EAECC190D6FF2D443E6ABD91 /* SettingsViews.swift in Sources */,
+diff --git a/iTermate/ItermBridge.swift b/iTermate/ItermBridge.swift
+index 9039f4c..4e07125 100644
+--- a/iTermate/ItermBridge.swift
++++ b/iTermate/ItermBridge.swift
+@@ -131,6 +131,8 @@ struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
+     let activityKind: SessionActivityKind?
+     let exitStatus: Int?
+     let statusChangedAt: TimeInterval?
++    /// A short-lived estimate, never used for lifecycle notifications or completion counts.
++    var modelState: TerminalSessionStatus? = nil
+ }
+ 
+ struct TerminalTabSnapshot: Codable, Equatable, Identifiable {
+@@ -494,6 +496,15 @@ final class ItermStore: ObservableObject {
+         }
+     }
+ 
++    /// Routes the global shortcut to iTerm2 regardless of the foreground terminal.
++    func activateNextFinishedSession() {
++        guard Self.isRunning(.iTerm2) else { return }
++        startClient(for: .iTerm2)
++        iTermClient.activateNextFinishedSession { [weak self] error in
++            self?.actionError = error
++        }
++    }
++
+     func activate(sessionID: String) {
+         switch terminalApp ?? .iTerm2 {
+         case .iTerm2:
+@@ -1048,6 +1059,13 @@ final class ItermBridgeClient {
+         )
+     }
+ 
++    func activateNextFinishedSession(completion: @escaping (String?) -> Void) {
++        perform(
++            SessionActionRequest(type: "activateNextFinishedSession", requestId: UUID().uuidString),
++            completion: completion
++        )
++    }
++
+     func resetSessionStatuses() {
+         queue.async { [weak self] in
+             guard let self else { return }
+diff --git a/iTermate/SettingsViews.swift b/iTermate/SettingsViews.swift
+index b72e1ff..5933356 100644
+--- a/iTermate/SettingsViews.swift
++++ b/iTermate/SettingsViews.swift
+@@ -107,6 +107,7 @@ private struct AppConfig {
+     var showsSessionTime = true
+     var sessionTimeFormat: SessionTimeFormat = .compact
+     var completionNotificationsEnabled = false
++    var nextFinishedSessionShortcut: SessionShortcut?
+     var projectFolderCustomizations: [String: ProjectFolderCustomization] = [:]
+ 
+     init(contents: String = "") {
+@@ -233,6 +234,13 @@ private struct AppConfig {
+                 } else if value == "false" {
+                     completionNotificationsEnabled = false
+                 }
++            case "next_finished_session_shortcut":
++                if let encoded = Self.stringValue(String(value)),
++                   let data = Data(base64Encoded: encoded),
++                   let shortcut = try? JSONDecoder().decode(SessionShortcut.self, from: data),
++                   shortcut.isValid {
++                    nextFinishedSessionShortcut = shortcut
++                }
+             case "project_folder_customizations":
+                 if
+                     let encoded = Self.stringValue(String(value)),
+@@ -278,10 +286,16 @@ private struct AppConfig {
+         shows_session_time = \(showsSessionTime)
+         session_time_format = "\(sessionTimeFormat.rawValue)"
+         completion_notifications_enabled = \(completionNotificationsEnabled)
++        next_finished_session_shortcut = "\(encodedNextFinishedSessionShortcut)"
+         project_folder_customizations = "\(encodedProjectFolderCustomizations)"
+         """
+     }
+ 
++    private var encodedNextFinishedSessionShortcut: String {
++        guard let nextFinishedSessionShortcut else { return "" }
++        return (try? JSONEncoder().encode(nextFinishedSessionShortcut).base64EncodedString()) ?? ""
++    }
++
+     private var encodedProjectFolderCustomizations: String {
+         let encoder = JSONEncoder()
+         encoder.outputFormatting = [.sortedKeys]
+@@ -319,6 +333,7 @@ final class AppSettings: ObservableObject {
+     @Published private(set) var showsSessionTime: Bool
+     @Published private(set) var sessionTimeFormat: SessionTimeFormat
+     @Published private(set) var completionNotificationsEnabled: Bool
++    @Published private(set) var nextFinishedSessionShortcut: SessionShortcut?
+     @Published private(set) var projectFolderCustomizations: [
+         String: ProjectFolderCustomization
+     ]
+@@ -344,6 +359,7 @@ final class AppSettings: ObservableObject {
+         showsSessionTime = config.showsSessionTime
+         sessionTimeFormat = config.sessionTimeFormat
+         completionNotificationsEnabled = config.completionNotificationsEnabled
++        nextFinishedSessionShortcut = config.nextFinishedSessionShortcut
+         projectFolderCustomizations = config.projectFolderCustomizations
+ 
+         if !FileManager.default.fileExists(atPath: configURL.path) {
+@@ -501,6 +517,20 @@ final class AppSettings: ObservableObject {
+         updateConfig { $0.sessionTimeFormat = format }
+     }
+ 
++    /// Saves the binding atomically without overwriting another instance's newer preferences.
++    func setNextFinishedSessionShortcut(_ shortcut: SessionShortcut?) throws {
++        if let shortcut, !shortcut.isValid {
++            throw CocoaError(.validationMissingMandatoryProperty)
++        }
++        let contents = FileManager.default.fileExists(atPath: configURL.path)
++            ? try String(contentsOf: configURL) : ""
++        var config = AppConfig(contents: contents)
++        config.nextFinishedSessionShortcut = shortcut
++        try FileManager.default.createDirectory(at: configURL.deletingLastPathComponent(), withIntermediateDirectories: true)
++        try config.toml.write(to: configURL, atomically: true, encoding: .utf8)
++        nextFinishedSessionShortcut = shortcut
++    }
++
+     func setCompletionNotificationsEnabled(_ enabled: Bool) {
+         completionNotificationsEnabled = enabled
+         updateConfig { $0.completionNotificationsEnabled = enabled }
+@@ -659,11 +689,13 @@ struct OpenSettingsButton<Label: View>: View {
+ struct SettingsView: View {
+     @ObservedObject var store: ItermStore
+     @ObservedObject var settings: AppSettings
++    @ObservedObject var localModel: LocalModelService
++    @ObservedObject var finishedSessionShortcut: FinishedSessionShortcut
+     let updater: SPUUpdater
+ 
+     var body: some View {
+         TabView {
+-            GeneralSettingsView(settings: settings)
++            GeneralSettingsView(settings: settings, shortcut: finishedSessionShortcut)
+                 .tabItem {
+                     Label("General", systemImage: "gearshape")
+                 }
+@@ -673,6 +705,11 @@ struct SettingsView: View {
+                     Label("Agents", systemImage: "terminal")
+                 }
+ 
++            LocalModelSettingsView(service: localModel)
++                .tabItem {
++                    Label("Local Model", systemImage: "brain")
++                }
++
+             StatusAnimationSettingsView(settings: settings)
+                 .tabItem {
+                     Label("Status Animation", systemImage: "waveform.path")
+@@ -689,7 +726,7 @@ struct SettingsView: View {
+                 }
+         }
+         .tint(settings.accentColor)
+-        .frame(width: 520, height: 420)
++        .frame(width: 640, height: 520)
+     }
+ }
+ 
+@@ -815,6 +852,7 @@ private struct StatusAnimationSettingsView: View {
+ 
+ private struct GeneralSettingsView: View {
+     @ObservedObject var settings: AppSettings
++    @ObservedObject var shortcut: FinishedSessionShortcut
+     @State private var launchesAtLogin = SMAppService.mainApp.status == .enabled
+     @State private var loginItemError = ""
+     @State private var showsLoginItemError = false
+@@ -832,6 +870,8 @@ private struct GeneralSettingsView: View {
+                 )
+             }
+ 
++            FinishedSessionShortcutSettingsView(settings: settings, shortcut: shortcut)
++
+             Section("Terminals") {
+                 Toggle(
+                     "Show Panel in iTerm2",
+diff --git a/iTermate/iTermateApp.swift b/iTermate/iTermateApp.swift
+index 11a53d5..23c0414 100644
+--- a/iTermate/iTermateApp.swift
++++ b/iTermate/iTermateApp.swift
+@@ -31,6 +31,8 @@ struct ItermateApplication: App {
+             SettingsView(
+                 store: appDelegate.store,
+                 settings: appDelegate.settings,
++                localModel: appDelegate.localModel,
++                finishedSessionShortcut: appDelegate.finishedSessionShortcut,
+                 updater: appDelegate.updaterController.updater
+             )
+         }
+@@ -50,9 +52,14 @@ private func statusBarIcon() -> Image {
+     return Image(nsImage: image)
+ }
+ 
++@MainActor
+ final class AppDelegate: NSObject, NSApplicationDelegate {
+     let settings = AppSettings()
+     let store = ItermStore()
++    let localModel = LocalModelService()
++    lazy var finishedSessionShortcut = FinishedSessionShortcut(settings: settings) { [weak self] in
++        self?.store.activateNextFinishedSession()
++    }
+     let updaterController = SPUStandardUpdaterController(
+         startingUpdater: false,
+         updaterDelegate: nil,
+@@ -77,6 +84,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
+         )
+         panelFollower?.start()
+         store.start()
++        localModel.startIfEnabled()
++        finishedSessionShortcut.start()
+         NSWorkspace.shared.notificationCenter.addObserver(
+             self,
+             selector: #selector(workspaceDidWake),
+@@ -87,6 +96,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
+ 
+     func applicationWillTerminate(_ notification: Notification) {
+         NSWorkspace.shared.notificationCenter.removeObserver(self)
++        finishedSessionShortcut.stop()
++        localModel.stop()
+         store.stop()
+     }
+ 
+@@ -621,7 +632,7 @@ private struct PanelContent: View {
+                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
+                                     sessionButton(item)
+                                         .id(
+-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1)"
++                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none")"
+                                         )
+                                         .padding(.leading, hasTabHeader ? 12 : 0)
+                                 }
+@@ -898,6 +909,17 @@ private struct PanelContent: View {
+                         .accessibilityElement(children: .combine)
+                     }
+ 
++                    if item.session.status == nil, let estimate = item.session.modelState {
++                        Label(
++                            estimate == .awaitingInput ? "Reply?" : (estimate == .running ? "Running?" : "Idle?"),
++                            systemImage: "brain"
++                        )
++                        .font(panelFont(0.8))
++                        .foregroundStyle(.secondary)
++                        .help("Local model estimate, not a confirmed lifecycle state")
++                        .accessibilityLabel("Local model estimate: \(estimate.rawValue)")
++                    }
++
+                     if item.session.isMinimized == true {
+                         Image(systemName: "rectangle.compress.vertical")
+                             .foregroundStyle(.secondary)
+diff --git a/iTermateBridge/iTermateBridge.py b/iTermateBridge/iTermateBridge.py
+index 5bf8bbc..459d533 100644
+--- a/iTermateBridge/iTermateBridge.py
++++ b/iTermateBridge/iTermateBridge.py
+@@ -7,6 +7,8 @@ import os
+ import shlex
+ import sys
+ import time
++import urllib.request
++import urllib.parse
+ 
+ SUPPORT_DIRECTORY = os.path.expanduser(
+     "~/Library/Application Support/iTermate"
+@@ -54,6 +56,10 @@ class Bridge:
+         self.clients = set()
+         self.sequence = 0
+         self.snapshot_lock = asyncio.Lock()
++        self.finished_navigation_lock = asyncio.Lock()
++        self.model_observations = {}
++        self.model_task = None
++        self.model_cursor = 0
+         self.command_monitor_tasks = {}
+         self.command_monitor_unavailable = set()
+         self.agent_managed_session_ids = set()
+@@ -105,6 +111,16 @@ class Bridge:
+         request_id = request.get("requestId")
+         action = request.get("type")
+ 
++        if action == "activateNextFinishedSession":
++            try:
++                await self.activate_next_finished_session()
++            except Exception as error:
++                await self.send_action_result(writer, request_id, False, str(error))
++                return
++            await self.send_action_result(writer, request_id, True, None)
++            await self.publish_snapshot()
++            return
++
+         if action == "openProject":
+             path = request.get("path")
+             if (
+@@ -192,6 +208,31 @@ class Bridge:
+         await self.send_action_result(writer, request_id, True, None)
+         await self.publish_snapshot()
+ 
++    async def activate_next_finished_session(self):
++        """按层级循环查找：已结束优先，无已结束目标时选择运行中 Session。"""
++        async with self.finished_navigation_lock:
++            sessions = [
++                session for window in self.app.windows for tab in window.tabs
++                for session in tab.all_sessions
++            ]
++            current_id = self.current_active_session_id()
++            current_index = next(
++                (index for index, session in enumerate(sessions) if session.session_id == current_id),
++                None,
++            )
++            candidates = sessions if current_index is None else (
++                sessions[current_index + 1:] + sessions[:current_index]
++            )
++            for desired_status in ("finished", "running"):
++                for session in candidates:
++                    if self.session_statuses.get(session.session_id, {}).get("status") != desired_status:
++                        continue
++                    await session.async_activate()
++                    await self.app.async_activate(raise_all_windows=False)
++                    if desired_status == "finished":
++                        self.clear_finished_status(session.session_id)
++                    return
++
+     async def send_action_result(self, writer, request_id, succeeded, error):
+         message = {
+             "type": "actionResult",
+@@ -631,8 +672,83 @@ class Bridge:
+             else:
+                 self.expire_stale_agent_heartbeats(heartbeat_time())
+             last_tick = now
++            if self.model_task is None or self.model_task.done():
++                self.model_task = asyncio.create_task(self.update_model_observation())
+             await self.publish_snapshot()
+ 
++    async def update_model_observation(self):
++        """仅在没有真实状态时，从可见文本产生短期辅助标签。"""
++        directory = os.path.join(SUPPORT_DIRECTORY, "Laya")
++        if not os.path.exists(os.path.join(directory, "analysis-enabled")):
++            self.model_observations.clear()
++            return
++        sessions = [
++            session for window in self.app.windows for tab in window.tabs
++            for session in tab.all_sessions
++            if not self.session_statuses.get(session.session_id, {}).get("status")
++        ]
++        now = time.monotonic()
++        live_ids = {session.session_id for session in sessions}
++        self.model_observations = {
++            key: value for key, value in self.model_observations.items()
++            if key in live_ids and now - value[1] < 8
++        }
++        if not sessions:
++            return
++        self.model_cursor %= len(sessions)
++        session = sessions[self.model_cursor]
++        self.model_cursor += 1
++        try:
++            screen = await asyncio.wait_for(session.async_get_screen_contents(), 1)
++            text = "\n".join(screen.line(index).string for index in range(screen.number_of_lines))[-1500:]
++            if not text.strip():
++                return
++            answer = await asyncio.to_thread(self.request_model_observation, directory, text)
++            if self.session_statuses.get(session.session_id, {}).get("status"):
++                return
++            state = answer.get("state", {})
++            choice = state.get("choice")
++            probability = state.get("probabilities", {}).get(choice, 0)
++            if choice not in {"running", "awaitingInput", "idle"} or probability < 0.85:
++                self.model_observations.pop(session.session_id, None)
++                return
++            if choice == "awaitingInput" and answer.get("needs_reply", {}).get("noul", 0) < 0.6:
++                return
++            self.model_observations[session.session_id] = (choice, time.monotonic())
++        except Exception:
++            self.model_observations.pop(session.session_id, None)
++
++    @staticmethod
++    def request_model_observation(directory, text):
++        with open(os.path.join(directory, "endpoint.json")) as stream:
++            endpoint = json.load(stream)
++        url = urllib.parse.urlparse(endpoint["url"])
++        if url.scheme != "http" or url.hostname != "127.0.0.1" or not url.port:
++            raise ValueError("Invalid local endpoint")
++        with open(os.path.join(directory, "api-token")) as stream:
++            token = stream.read().strip()
++        request = urllib.request.Request(
++            f"http://127.0.0.1:{url.port}/v1/session",
++            data=json.dumps({"state": text}).encode(),
++            headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"},
++        )
++        class NoRedirect(urllib.request.HTTPRedirectHandler):
++            def redirect_request(self, *args, **kwargs):
++                return None
++        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
++        with opener.open(request, timeout=0.8) as response:
++            return json.loads(response.read(16384))["answers"]
++
++    def model_state(self, session_id):
++        if self.session_statuses.get(session_id, {}).get("status"):
++            return None
++        if not os.path.exists(os.path.join(SUPPORT_DIRECTORY, "Laya", "analysis-enabled")):
++            return None
++        observation = self.model_observations.get(session_id)
++        if observation and time.monotonic() - observation[1] < 8:
++            return observation[0]
++        return None
++
+     async def publish_snapshot(self, target=None):
+         if target is None and not self.clients:
+             return
+@@ -755,6 +871,7 @@ class Bridge:
+                         "exitStatus": self.session_statuses.get(
+                             session.session_id, {}
+                         ).get("exitStatus"),
++                        "modelState": self.model_state(session.session_id),
+                         "statusChangedAt": self.session_statuses.get(
+                             session.session_id, {}
+                         ).get("statusChangedAt"),
+@@ -1375,6 +1492,71 @@ def self_test():
+     bridge.set_agent_status("session-1", "detached")
+     assert "session-1" not in bridge.agent_managed_session_ids
+ 
++    async def check_finished_navigation():
++        from types import SimpleNamespace
++
++        activated = []
++
++        class NavigationSession:
++            def __init__(self, session_id):
++                self.session_id = session_id
++
++            async def async_activate(self):
++                activated.append(self.session_id)
++
++        class NavigationApp:
++            async def async_activate(self, raise_all_windows=False):
++                assert not raise_all_windows
++
++        first, split, other_tab, other_window = [NavigationSession(str(i)) for i in range(4)]
++        tab_one = SimpleNamespace(all_sessions=[first, split], current_session=first)
++        tab_two = SimpleNamespace(all_sessions=[other_tab], current_session=other_tab)
++        tab_three = SimpleNamespace(all_sessions=[other_window], current_session=other_window)
++        window_one = SimpleNamespace(tabs=[tab_one, tab_two], current_tab=tab_one)
++        window_two = SimpleNamespace(tabs=[tab_three], current_tab=tab_three)
++        navigation_app = NavigationApp()
++        navigation_app.windows = [window_one, window_two]
++        navigation_app.current_window = window_one
++        navigation = Bridge(None, navigation_app)
++        navigation.session_statuses = {
++            "1": {"status": "running"},
++            "2": {"status": "finished", "exitStatus": 1},
++            "3": {"status": "finished", "exitStatus": 0},
++        }
++        await navigation.activate_next_finished_session()
++        assert activated == ["2"]  # Failed finished beats a closer running Session.
++        navigation.session_statuses["1"] = {"status": "finished"}
++        await navigation.activate_next_finished_session()
++        assert activated == ["2", "1"]  # A split Session is individually selectable.
++        navigation_app.current_window = window_two
++        navigation.session_statuses["0"] = {"status": "finished"}
++        await navigation.activate_next_finished_session()
++        assert activated == ["2", "1", "0"]  # Wrap across windows.
++        navigation.session_statuses = {"3": {"status": "finished"}}
++        await navigation.activate_next_finished_session()
++        assert activated == ["2", "1", "0"]  # Do not reselect the current Session.
++        navigation_app.current_window = None
++        await navigation.activate_next_finished_session()
++        assert activated == ["2", "1", "0", "3"]
++        await navigation.activate_next_finished_session()
++        assert len(activated) == 4  # Neither finished nor running means no activation.
++        navigation_app.current_window = window_two
++        navigation.session_statuses = {
++            "0": {"status": "running", "statusChangedAt": 123},
++            "1": {"status": "awaitingInput"},
++            "2": {"status": "idle"},
++            "3": {"status": "finished"},
++        }
++        await navigation.activate_next_finished_session()
++        assert activated[-1] == "0"  # Current finished is excluded; wrap to running.
++        assert navigation.session_statuses["0"] == {"status": "running", "statusChangedAt": 123}
++        navigation.session_statuses.pop("0")
++        navigation.model_observations["0"] = ("running", time.monotonic())
++        await navigation.activate_next_finished_session()
++        assert len(activated) == 5  # Waiting, idle and model estimates are not candidates.
++
++    asyncio.run(check_finished_navigation())
++
+ 
+ if __name__ == "__main__":
+     if "--self-test" in sys.argv:

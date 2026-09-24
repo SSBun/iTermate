@@ -31,6 +31,8 @@ struct ItermateApplication: App {
             SettingsView(
                 store: appDelegate.store,
                 settings: appDelegate.settings,
+                localModel: appDelegate.localModel,
+                finishedSessionShortcut: appDelegate.finishedSessionShortcut,
                 updater: appDelegate.updaterController.updater
             )
         }
@@ -50,9 +52,14 @@ private func statusBarIcon() -> Image {
     return Image(nsImage: image)
 }
 
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings = AppSettings()
     let store = ItermStore()
+    let localModel = LocalModelService()
+    lazy var finishedSessionShortcut = FinishedSessionShortcut(settings: settings) { [weak self] in
+        self?.store.activateNextFinishedSession()
+    }
     let updaterController = SPUStandardUpdaterController(
         startingUpdater: false,
         updaterDelegate: nil,
@@ -77,6 +84,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         panelFollower?.start()
         store.start()
+        localModel.startIfEnabled()
+        finishedSessionShortcut.start()
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
             selector: #selector(workspaceDidWake),
@@ -87,6 +96,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         NSWorkspace.shared.notificationCenter.removeObserver(self)
+        finishedSessionShortcut.stop()
+        localModel.stop()
         store.stop()
     }
 
@@ -621,7 +632,7 @@ private struct PanelContent: View {
                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
                                     sessionButton(item)
                                         .id(
-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1)"
+                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none"):\(item.session.hasRunningSubagents == true)"
                                         )
                                         .padding(.leading, hasTabHeader ? 12 : 0)
                                 }
@@ -844,6 +855,15 @@ private struct PanelContent: View {
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
+                    if item.session.hasRunningSubagents == true,
+                       item.session.activityKind == .agent,
+                       item.session.status == .running || item.session.status == .awaitingInput {
+                        SubagentStatusView(color: .purple)
+                            .frame(width: 16, height: 16)
+                            .help("Subagents are still running")
+                            .accessibilityLabel("Subagents are still running")
+                    }
+
                     if item.session.status == .awaitingInput,
                        item.session.activityKind == .agent {
                         AgentWaitingStatusView(
@@ -896,6 +916,17 @@ private struct PanelContent: View {
                             }
                         }
                         .accessibilityElement(children: .combine)
+                    }
+
+                    if item.session.status == nil, let estimate = item.session.modelState {
+                        Label(
+                            estimate == .awaitingInput ? "Reply?" : (estimate == .running ? "Running?" : "Idle?"),
+                            systemImage: "brain"
+                        )
+                        .font(panelFont(0.8))
+                        .foregroundStyle(.secondary)
+                        .help("Local model estimate, not a confirmed lifecycle state")
+                        .accessibilityLabel("Local model estimate: \(estimate.rawValue)")
                     }
 
                     if item.session.isMinimized == true {
@@ -1435,6 +1466,49 @@ struct AgentWaitingStatusView: View {
                 customColor: NSColor(color),
                 animates: false
             )
+        }
+    }
+}
+
+private struct SubagentStatusView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let color: Color
+
+    // Two child nodes share a stem; match the question glyph's two-point pitch.
+    private static let glyph = [
+        0b1100011,
+        0b1100011,
+        0b0100010,
+        0b0010100,
+        0b0001000,
+        0b0001000,
+        0b0011100,
+    ]
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 0.14, paused: reduceMotion)) { timeline in
+            let highlightedRow = 6 - Int(timeline.date.timeIntervalSinceReferenceDate / 0.14) % 7
+            Canvas { context, size in
+                let origin = CGPoint(
+                    x: (size.width - 14) / 2,
+                    y: (size.height - 14) / 2
+                )
+                for (row, bits) in Self.glyph.enumerated() {
+                    let opacity = reduceMotion ? 1.0 : (row == highlightedRow ? 1.0 : 0.45)
+                    for column in 0..<7 where bits & (1 << (6 - column)) != 0 {
+                        let rect = CGRect(
+                            x: origin.x + CGFloat(column) * 2 + 0.25,
+                            y: origin.y + CGFloat(row) * 2 + 0.25,
+                            width: 1.75,
+                            height: 1.75
+                        )
+                        context.fill(
+                            Path(roundedRect: rect, cornerRadius: 0.35),
+                            with: .color(color.opacity(opacity))
+                        )
+                    }
+                }
+            }
         }
     }
 }

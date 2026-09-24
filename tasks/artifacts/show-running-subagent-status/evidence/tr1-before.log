@@ -1,0 +1,36 @@
+被审版本 SHA256: fd8b7f33a5b664c9e076a185472e063ff581d119d4d16652c710264c9afba8c4
+TAP version 13
+# (node:45204) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:45204) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+# Subtest: TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged positive count
+not ok 1 - TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged positive count
+  ---
+  duration_ms: 11.860959
+  type: 'test'
+  location: '/private/var/folders/lr/zrjft2s57_38p9t1ctj4_57m0000gn/T/itermate-tr1-before-p6l7h8ck/subagent-lifecycle.test.mjs:157:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    14100 !== 16700
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 16700
+  actual: 14100
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///private/var/folders/lr/zrjft2s57_38p9t1ctj4_57m0000gn/T/itermate-tr1-before-p6l7h8ck/subagent-lifecycle.test.mjs:173:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 87.034

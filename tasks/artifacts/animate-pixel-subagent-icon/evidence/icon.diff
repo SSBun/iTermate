@@ -1,0 +1,63 @@
+--- /tmp/itermate-pixel-icon-before.swift	2026-09-24 14:59:59
++++ iTermate/iTermateApp.swift	2026-09-24 15:00:19
+@@ -858,9 +858,7 @@
+                     if item.session.hasRunningSubagents == true,
+                        item.session.activityKind == .agent,
+                        item.session.status == .running || item.session.status == .awaitingInput {
+-                        Image(systemName: "arrow.triangle.branch")
+-                            .font(.system(size: 13, weight: .semibold))
+-                            .foregroundStyle(.purple)
++                        SubagentStatusView(color: .purple)
+                             .frame(width: 16, height: 16)
+                             .help("Subagents are still running")
+                             .accessibilityLabel("Subagents are still running")
+@@ -1472,6 +1470,49 @@
+     }
+ }
+ 
++private struct SubagentStatusView: View {
++    @Environment(\.accessibilityReduceMotion) private var reduceMotion
++    let color: Color
++
++    // Two child nodes share a stem; match the question glyph's two-point pitch.
++    private static let glyph = [
++        0b1100011,
++        0b1100011,
++        0b0100010,
++        0b0010100,
++        0b0001000,
++        0b0001000,
++        0b0011100,
++    ]
++
++    var body: some View {
++        TimelineView(.animation(minimumInterval: 0.14, paused: reduceMotion)) { timeline in
++            let highlightedRow = 6 - Int(timeline.date.timeIntervalSinceReferenceDate / 0.14) % 7
++            Canvas { context, size in
++                let origin = CGPoint(
++                    x: (size.width - 14) / 2,
++                    y: (size.height - 14) / 2
++                )
++                for (row, bits) in Self.glyph.enumerated() {
++                    let opacity = reduceMotion ? 1.0 : (row == highlightedRow ? 1.0 : 0.45)
++                    for column in 0..<7 where bits & (1 << (6 - column)) != 0 {
++                        let rect = CGRect(
++                            x: origin.x + CGFloat(column) * 2 + 0.25,
++                            y: origin.y + CGFloat(row) * 2 + 0.25,
++                            width: 1.75,
++                            height: 1.75
++                        )
++                        context.fill(
++                            Path(roundedRect: rect, cornerRadius: 0.35),
++                            with: .color(color.opacity(opacity))
++                        )
++                    }
++                }
++            }
++        }
++    }
++}
++
+ private struct AgentQuestionStatusView: View {
+     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+     let color: Color

@@ -1,0 +1,1 @@
+- Render every status icon using the pixel Canvas and give it an animation.

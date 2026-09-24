@@ -131,6 +131,10 @@ struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
     let activityKind: SessionActivityKind?
     let exitStatus: Int?
     let statusChangedAt: TimeInterval?
+    /// A short-lived estimate, never used for lifecycle notifications or completion counts.
+    var modelState: TerminalSessionStatus? = nil
+    /// Confirmed Pi child activity; absent for integrations without this signal.
+    var hasRunningSubagents: Bool? = nil
 }
 
 struct TerminalTabSnapshot: Codable, Equatable, Identifiable {
@@ -491,6 +495,15 @@ final class ItermStore: ObservableObject {
                     self.iTermClient.openProject(atPath: path, completion: finish)
                 }
             }
+        }
+    }
+
+    /// Routes the global shortcut to iTerm2 regardless of the foreground terminal.
+    func activateNextFinishedSession() {
+        guard Self.isRunning(.iTerm2) else { return }
+        startClient(for: .iTerm2)
+        iTermClient.activateNextFinishedSession { [weak self] error in
+            self?.actionError = error
         }
     }
 
@@ -926,7 +939,8 @@ final class ItermStore: ObservableObject {
             status: status.status,
             activityKind: status.activityKind,
             exitStatus: status.exitStatus,
-            statusChangedAt: status.changedAt
+            statusChangedAt: status.changedAt,
+            hasRunningSubagents: status.hasRunningSubagents
         )
     }
 
@@ -1044,6 +1058,13 @@ final class ItermBridgeClient {
                 requestId: UUID().uuidString,
                 path: path
             ),
+            completion: completion
+        )
+    }
+
+    func activateNextFinishedSession(completion: @escaping (String?) -> Void) {
+        perform(
+            SessionActionRequest(type: "activateNextFinishedSession", requestId: UUID().uuidString),
             completion: completion
         )
     }

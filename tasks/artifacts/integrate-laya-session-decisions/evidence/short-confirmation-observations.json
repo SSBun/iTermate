@@ -1,0 +1,11 @@
+{
+  "symptom": "用户截图中最后消息询问按这个范围实现，可以吗，但Session显示完成图标",
+  "local_api_observation": {
+    "full_message": {"choice": "unknown", "unknown_probability": 0.4698, "awaiting_input_probability": 0.1307, "needs_reply_probability": 0.5396},
+    "last_paragraph": {"choice": "unknown", "unknown_probability": 0.4812, "awaiting_input_probability": 0.2183, "needs_reply_probability": 0.0434}
+  },
+  "installed_integration_observation": "已安装Pi扩展仍包含modelNeedsReply布尔判定，不是仓库中的模型优先三态实现；未修改安装态扩展，也不能仅凭磁盘版本证明正在运行的Pi已加载哪个版本。",
+  "remediation": "模型优先保持不变，明确的简短行动确认句增加正则兜底；保留示例、代码、引用及否定等待过滤。",
+  "verification": "两份TS语法检查、Debug构建及git diff --check通过；新增回归用例未运行。",
+  "limitations": "需要用户自行构建运行App并重载Pi扩展后，观察真实awaitingInput问号图标。"
+}

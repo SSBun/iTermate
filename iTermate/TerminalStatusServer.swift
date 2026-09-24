@@ -25,6 +25,7 @@ struct TerminalStatusReport {
     let state: State
     let exitStatus: Int?
     let heartbeat: Bool
+    var hasRunningSubagents: Bool = false
 }
 
 struct VisibleTerminalStatus {
@@ -32,6 +33,7 @@ struct VisibleTerminalStatus {
     let activityKind: SessionActivityKind
     let exitStatus: Int?
     let changedAt: TimeInterval
+    var hasRunningSubagents: Bool = false
 }
 
 struct TerminalStatusRegistry {
@@ -42,6 +44,7 @@ struct TerminalStatusRegistry {
         let exitStatus: Int?
         let changedAt: TimeInterval
         let heartbeatAt: TimeInterval?
+        var hasRunningSubagents: Bool = false
     }
 
     private struct TTYState {
@@ -74,6 +77,10 @@ struct TerminalStatusRegistry {
     ) -> Bool {
         guard terminalIDsByTTY[report.tty] != nil else { return false }
         guard report.state != .awaitingInput || report.source == .agent else {
+            return false
+        }
+        guard !report.hasRunningSubagents || (report.source == .agent
+            && (report.state == .running || report.state == .awaitingInput)) else {
             return false
         }
         var ttyState = states[report.tty] ?? TTYState()
@@ -109,7 +116,8 @@ struct TerminalStatusRegistry {
             heartbeatAt: report.source == .agent
                 && (status == .running || status == .awaitingInput)
                 ? uptime
-                : nil
+                : nil,
+            hasRunningSubagents: report.hasRunningSubagents
         )
 
         if report.source == .agent {
@@ -213,7 +221,8 @@ struct TerminalStatusRegistry {
                 status: status,
                 activityKind: .agent,
                 exitStatus: agent.exitStatus,
-                changedAt: agent.changedAt
+                changedAt: agent.changedAt,
+                hasRunningSubagents: agent.hasRunningSubagents
             )
         }
         if let shell = ttyState.shell, let status = shell.status {
@@ -496,6 +505,7 @@ private struct TerminalStatusRequest: Decodable {
     let status: TerminalStatusReport.State
     let exitStatus: Int?
     let heartbeat: Bool?
+    let hasRunningSubagents: Bool?
 
     func validatedReport() throws -> TerminalStatusReport {
         guard
@@ -511,6 +521,11 @@ private struct TerminalStatusRequest: Decodable {
         }
 
         let heartbeat = heartbeat ?? false
+        let hasRunningSubagents = hasRunningSubagents ?? false
+        guard !hasRunningSubagents || (source == .agent
+            && (status == .running || status == .awaitingInput)) else {
+            throw TerminalStatusServerError.invalidRequest
+        }
         guard status != .awaitingInput || source == .agent else {
             throw TerminalStatusServerError.invalidRequest
         }
@@ -533,7 +548,8 @@ private struct TerminalStatusRequest: Decodable {
             sequence: sequence,
             state: status,
             exitStatus: exitStatus,
-            heartbeat: heartbeat
+            heartbeat: heartbeat,
+            hasRunningSubagents: hasRunningSubagents
         )
     }
 }
