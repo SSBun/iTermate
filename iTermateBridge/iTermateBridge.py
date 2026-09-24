@@ -1587,9 +1587,16 @@ def self_test():
         assert activated[-1] == "1"  # Idle is eligible only after higher-priority Agents are absent.
         assert navigation.session_statuses["1"] == {"status": "idle", "activityKind": "agent", "statusChangedAt": 789}
         navigation.session_statuses.pop("3")
+        # Earlier finished fixtures had no lifecycle ownership and were cleared.
+        # Explicitly register the second idle Agent required by this scenario.
+        navigation.set_agent_status("2", "idle")
+        idle_status = dict(navigation.session_statuses["2"])
         navigation_app.current_window = window_one
+        before = len(activated)
         await navigation.activate_next_finished_session()
+        assert len(activated) == before + 1
         assert activated[-1] == "2"  # Skip the current idle Agent; cycle to the next idle Agent.
+        assert navigation.session_statuses["2"] == idle_status
         navigation_app.current_window = window_two
         navigation.session_statuses = {
             "0": {"status": "finished", "activityKind": "command"},

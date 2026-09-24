@@ -6,6 +6,34 @@
         <description>iTermate update feed</description>
         <language>en</language>
         <item>
+            <title>0.6.0</title>
+            <pubDate>Thu, 24 Sep 2026 15:32:34 +0800</pubDate>
+            <sparkle:version>13</sparkle:version>
+            <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[## 新增
+
+- **全局 Session 快捷键**：在设置中录入组合键，即可从其他 App 切换到 iTerm2 Agent Session，依次优先等待回复、已结束、运行中及空闲状态。
+- **可选本地模型**：Local Model 设置页支持下载 Laya 多语言模型、启动本地决策 API、辅助识别 Session 状态与待回复消息，并复制 Agent 连接说明。
+- **子代理运行提示**：Pi 子代理仍有工作时显示像素分支动画；主 Agent 回复结束不再代表整个 Session 已完成。需要用户回复时，问号提示仍保留。
+
+## 修复
+
+- 改进中英文确认、授权、补充信息和简短执行确认问题的保守识别。
+- 修复子代理状态查询恢复时心跳可能未恢复的问题，避免运行标识错误消失。
+
+## 升级说明与限制
+
+- 请通过 App 的现有集成入口更新 Pi 集成，并在已运行的 Pi 会话中执行 `/reload`。子代理提示需要支持 Fleet RPC 的 pi-subagents。
+- 本地模型是可选功能，不随安装包附带，不会首次启动即自动下载。需 Apple Silicon、macOS 14+、`uv`，以及约 650 MB 模型和额外依赖空间。
+- 本地推断仅作辅助，不代表生命周期事实；本地 API 凭据只应交给可信客户端，不要公开分享。
+- 安装包支持 Apple Silicon（arm64），最低 macOS 13；全局快捷键目前仅作用于 iTerm2。
+- 使用 ad hoc 签名，**未经 Apple 公证（notarization）**；首次打开可能需要通过系统安全设置允许运行。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.6.0/iTermate-0.6.0.dmg" length="4087624" type="application/octet-stream" sparkle:edSignature="SUllHatyu8KP48BDEzrj2FWgaund+rvo0HDN0SPrKjIr/EFrs8xw6QQeufkFBg/sdE1bhUasDXNlHQmBjoVzBA=="/>
+        </item>
+        <item>
             <title>0.5.0</title>
             <pubDate>Thu, 17 Sep 2026 15:47:36 +0800</pubDate>
             <sparkle:version>12</sparkle:version>

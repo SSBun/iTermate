@@ -1,1 +1,2 @@
 - Render every status icon using the pixel Canvas and give it an animation.
+- For iTermate releases, treat ad hoc signing without Apple notarization as an accepted project limitation; do not ask again solely to accept that limitation. Continue to disclose it accurately and obtain separate confirmation for concrete remote publication actions.
