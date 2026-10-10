@@ -31,16 +31,17 @@
 
 ## CTX-terminal-backends — iTerm2 与 Ghostty 数据源
 - Scope: 前台终端识别、面板窗口跟随、Window/Tab/Session 快照与操作路由、跨终端 Agent 摘要，以及不同终端的状态能力边界。
-- Paths: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`
-- Keywords: iTerm2, Ghostty, AppleScript, Bridge, TerminalApp, frontmost, panel setting, snapshot, tty, telemetry, shell hook, focus, close, open project, favorite project, agent summary, completion count, session status
-- Authority: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/FinishedSessionShortcut.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`, `https://ghostty.org/docs/features/applescript`
-- Recheck: 支持的终端、Ghostty AppleScript 层级或属性、面板按终端启用偏好、快照轮询、TTY 状态协议、Integration 安装、前台窗口选择、跨终端统计或 Bridge 操作路由发生变化时复查。
+- Paths: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/ItermBridge.swift`, `iTermate/VenomDebugMonitor.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`
+- Keywords: iTerm2, Ghostty, AppleScript, Bridge, TerminalApp, frontmost, panel setting, snapshot, tty, telemetry, shell hook, focus, close, open project, favorite project, agent summary, completion count, session status, venom-cli, debug monitoring, radar
+- Authority: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/FinishedSessionShortcut.swift`, `iTermate/ItermBridge.swift`, `iTermate/VenomDebugMonitor.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`, `https://ghostty.org/docs/features/applescript`
+- Recheck: 支持的终端、Ghostty AppleScript 层级或属性、面板按终端启用偏好、快照轮询、TTY 状态协议、Integration 安装、前台窗口选择、跨终端统计、venom-cli 调试子进程结构或 Bridge 操作路由发生变化时复查。
 
 ### Purpose and Boundaries
 - `PanelFollower` 只在 iTerm2 或 Ghostty 是系统前台应用、存在可见 layer-0 窗口，且 `AppSettings` 中该终端的独立面板开关启用时显示面板；两个开关默认启用并持久化，关闭仅隐藏对应终端的面板，不阻断 `ItermStore` 的终端切换和状态采集。iTerm2 保留选择最大窗口以排除模态框的策略，Ghostty 使用 Core Graphics 前后顺序中的首个窗口；无需 Accessibility 权限。
 - iTerm2 继续由 Python Bridge 提供层级、操作、普通命令和 Agent 状态；Ghostty 由官方 AppleScript 提供 Window、Tab、Terminal、工作目录、焦点与关闭操作。运行时能读取 terminal `tty` 时，App 才把本机 Integration 状态合并到唯一匹配的 Ghostty Terminal；缺少 TTY、映射重复或来源未映射时状态保持未知，不根据标题、目录或进程名称猜测。
 
 ### Workflows
+- venom-cli 调试雷达由 `iTermate/VenomDebugMonitor.swift` 读取 macOS 原生进程信息确认：iTerm2 Bridge 从动态 `tty` 变量提供真实设备路径；唯一 TTY 的普通 running 命令、该终端前台进程树中的前台 venom-cli debug build 与它仍存活的直接日志采集子进程必须同时成立；通过真实父子关系追踪终端包装器的嵌套 PTY，不按终端名称或相邻 TTY 编号猜测；支持 macOS log stream、模拟器 simctl、设备 devicectl 和 Android adb logcat。共享 Store 每两秒重新观察，仅细化状态图标，不更改命令生命周期、Agent 优先级或完成统计；无日志子进程的构建阶段、未知权限或 TTY 不显示雷达。Canvas 绘制青绿色 7×7 雷达，扫描点沿轮廓循环，减少动态效果时静止；实际面板生效仍需用户运行新构建。
 - Pi 子代理活动通过进程内 `subagents:rpc:v1:request` 的 `status` 方法读取当前会话 Fleet v1 `totalActive`；只传布尔 `hasRunningSubagents`，不解析终端文字或子代理历史。子代理存在时维持 running，明确待回复仍为 awaitingInput，两种情况都显示像素 Canvas 分支图标：7×7 点阵、2pt 间距、每 0.14 秒高亮一行，从底部沿两支向上流动；开启减少动态效果时暂停时间线并显示完整静态图形。活动观察失败不等同完成；失去确认后停止续报仅由子代理支撑的运行状态，由接收端租约清理。主 Agent 的真实运行与待回复仍独立上报。随 App 分发的源码改变不等于用户已经安装新集成，生效需通过既有安装入口更新并在 Pi 中重新加载。
 - Pi 待回复只在交互 TUI 上报：明确 confirm/select/input/editor UI 事件或 `agent_settled` 后的保守中英文末尾文字识别产生 `awaitingInput`，custom UI 不默认视为提问。两端等待状态通过续报维持有限租约，重复续报不改变起始时间；Pi 重启不从历史文字恢复问题，仍活跃 Pi 可以续报恢复 App/Bridge 重建后的状态。识别与生命周期权威为 `integrations/pi/iTermate-integration.ts`，接收与失效权威为 `TerminalStatusServer.swift` 和 Python Bridge。
 - App 启动时仅在 iTerm2 已运行时启动其 Bridge client；否则在 iTerm2 首次成为前台终端时启动。Ghostty 前台期间通过 `osascript` 最多每秒读取一次快照，并把结果复用到同一 Session 分组 UI；切回 iTerm2 时恢复其缓存快照和连接状态。

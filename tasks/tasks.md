@@ -1,5 +1,7 @@
 # 任务索引
 
+- [为 venom-cli 调试监控显示专属状态图标](tasks/distinguish-venom-debug-monitor.md) — Completed (2026-10-10 15:18)
+
 - [记录发布签名限制的长期接受规则](tasks/accept-release-signing-limit.md) — Completed (2026-09-24 15:26)
 
 - [发布下一个 minor 版本](tasks/release-next-minor.md) — Completed (2026-09-24 15:40)

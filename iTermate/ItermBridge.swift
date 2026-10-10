@@ -326,6 +326,7 @@ final class ItermStore: ObservableObject {
     @Published private(set) var statusMenuConnectionState: BridgeConnectionState = .connecting
     @Published private(set) var runningAgentSessionCount: Int?
     @Published private(set) var agentCompletionStatistics: AgentCompletionStatistics
+    @Published private var venomDebugMonitoringSessions: [String: TerminalSessionSnapshot] = [:]
 
     var completedAgentTurnsToday: Int { agentCompletionStatistics.day }
 
@@ -360,6 +361,7 @@ final class ItermStore: ObservableObject {
     private var ghosttyWindows: [TerminalWindowSnapshot] = []
     private var terminalStatusRegistry = TerminalStatusRegistry()
     private var statusExpiryTimer: Timer?
+    private var venomMonitorScanID: UUID?
     private var lastActiveGhosttyTerminalID: String?
     private var iTermAgentCompletionTracker = SessionCompletionTracker()
     private var ghosttyAgentCompletionTracker = SessionCompletionTracker()
@@ -383,6 +385,7 @@ final class ItermStore: ObservableObject {
         terminalStatusServer.start()
         let statusExpiryTimer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
             self?.expireTerminalStatuses()
+            self?.refreshVenomDebugMonitoring()
         }
         RunLoop.main.add(statusExpiryTimer, forMode: .common)
         self.statusExpiryTimer = statusExpiryTimer
@@ -398,6 +401,8 @@ final class ItermStore: ObservableObject {
         isStarted = false
         statusExpiryTimer?.invalidate()
         statusExpiryTimer = nil
+        venomMonitorScanID = nil
+        venomDebugMonitoringSessions = [:]
         terminalStatusServer.stop()
         if iTermClientIsStarted {
             iTermClient.stop()
@@ -408,6 +413,8 @@ final class ItermStore: ObservableObject {
     func setActiveTerminalApp(_ terminalApp: TerminalApp) {
         if self.terminalApp != terminalApp {
             self.terminalApp = terminalApp
+            venomMonitorScanID = nil
+            venomDebugMonitoringSessions = [:]
             actionError = nil
             switch terminalApp {
             case .iTerm2:
@@ -424,6 +431,8 @@ final class ItermStore: ObservableObject {
     }
 
     func reconnectAfterWake() {
+        venomMonitorScanID = nil
+        venomDebugMonitoringSessions = [:]
         if terminalStatusRegistry.clearRunning() {
             publishGhosttyWindows()
         }
@@ -880,6 +889,42 @@ final class ItermStore: ObservableObject {
         guard terminalStatusRegistry.apply(report) else { return false }
         publishGhosttyWindows()
         return true
+    }
+
+    /// A presentation-only refinement; Agent lifecycle and completion tracking remain authoritative.
+    func isVenomDebugMonitoring(_ session: TerminalSessionSnapshot) -> Bool {
+        guard session.status == .running, session.activityKind == .command,
+              let observed = venomDebugMonitoringSessions[session.id] else { return false }
+        return observed.tty == session.tty && observed.statusChangedAt == session.statusChangedAt
+            && windows.flatMap(\.tabs).flatMap(\.sessions).filter { $0.tty == session.tty }.count == 1
+    }
+
+    private func refreshVenomDebugMonitoring() {
+        guard isStarted, venomMonitorScanID == nil else { return }
+        let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
+        let ttyCounts = Dictionary(grouping: sessions.compactMap(\.tty), by: { $0 }).mapValues(\.count)
+        let candidates = sessions.filter {
+            $0.status == .running && $0.activityKind == .command
+                && $0.tty.map { ttyCounts[$0] == 1 } == true
+        }
+        guard !candidates.isEmpty else {
+            if !venomDebugMonitoringSessions.isEmpty { venomDebugMonitoringSessions = [:] }
+            return
+        }
+        let scanID = UUID()
+        venomMonitorScanID = scanID
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            let monitoringTTYs = VenomDebugMonitor.monitoringTTYs(in: Set(candidates.compactMap(\.tty)))
+            DispatchQueue.main.async { [weak self] in
+                guard let self, isStarted, venomMonitorScanID == scanID else { return }
+                venomMonitorScanID = nil
+                let observed = candidates.filter { $0.tty.map(monitoringTTYs.contains) == true }
+                let updated = Dictionary(uniqueKeysWithValues: observed.map { ($0.id, $0) })
+                if venomDebugMonitoringSessions != updated {
+                    venomDebugMonitoringSessions = updated
+                }
+            }
+        }
     }
 
     private func expireTerminalStatuses() {

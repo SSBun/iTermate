@@ -819,6 +819,19 @@ class Bridge:
             ),
             return_exceptions=True,
         )
+        ttys = await asyncio.gather(
+            *(
+                session.async_get_variable("tty")
+                for _, _, session in session_triplets
+            ),
+            return_exceptions=True,
+        )
+        ttys_by_session = {
+            session.session_id: tty
+            for (_, _, session), tty in zip(session_triplets, ttys)
+            if isinstance(tty, str) and tty.startswith("/dev/tty")
+            and 8 < len(tty) <= 128 and "/" not in tty[5:]
+        }
         titles_by_tab = {
             tab.tab_id: title
             for (_, tab), title in zip(tab_pairs, titles)
@@ -874,6 +887,7 @@ class Bridge:
                         "id": session.session_id,
                         "name": self.session_names[session.session_id],
                         "path": paths_by_session.get(session.session_id),
+                        "tty": ttys_by_session.get(session.session_id),
                         "windowId": window.window_id,
                         "tabId": tab.tab_id,
                         "isActive": session.session_id == active_session_id,

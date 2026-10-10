@@ -632,7 +632,7 @@ private struct PanelContent: View {
                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
                                     sessionButton(item)
                                         .id(
-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none"):\(item.session.hasRunningSubagents == true)"
+                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none"):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
                                         )
                                         .padding(.leading, hasTabHeader ? 12 : 0)
                                 }
@@ -883,17 +883,24 @@ private struct PanelContent: View {
                         let animation = SessionStatusAnimation(session: item.session)
                     {
                         HStack(spacing: 4) {
-                            SessionStatusMatrix(
-                                animation: animation,
-                                style: settings.statusAnimationStyle(for: animation),
-                                customColor: settings.statusAnimationCustomColor(
-                                    for: animation
-                                ).map { NSColor($0) }
-                            )
-                                .frame(width: 36, height: 16)
-                                .help(animation.accessibilityLabel)
-                                .accessibilityLabel(animation.accessibilityLabel)
-                                .accessibilityHidden(settings.showsSessionTime)
+                            let isMonitoring = store.isVenomDebugMonitoring(item.session)
+                            Group {
+                                if isMonitoring {
+                                    VenomDebugStatusView()
+                                } else {
+                                    SessionStatusMatrix(
+                                        animation: animation,
+                                        style: settings.statusAnimationStyle(for: animation),
+                                        customColor: settings.statusAnimationCustomColor(
+                                            for: animation
+                                        ).map { NSColor($0) }
+                                    )
+                                }
+                            }
+                            .frame(width: 36, height: 16)
+                            .help(isMonitoring ? "venom-cli debug monitoring" : animation.accessibilityLabel)
+                            .accessibilityLabel(isMonitoring ? "venom-cli debug monitoring" : animation.accessibilityLabel)
+                            .accessibilityHidden(settings.showsSessionTime && !isMonitoring)
 
                             if settings.showsSessionTime {
                                 TimelineView(
@@ -1466,6 +1473,40 @@ struct AgentWaitingStatusView: View {
                 customColor: NSColor(color),
                 animates: false
             )
+        }
+    }
+}
+
+private struct VenomDebugStatusView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    // Clockwise ring on a 7×7 grid, using the existing status glyph's two-point pitch.
+    private static let ring = [
+        (3, 0), (4, 0), (5, 1), (6, 2), (6, 3), (6, 4), (5, 5), (4, 6),
+        (3, 6), (2, 6), (1, 5), (0, 4), (0, 3), (0, 2), (1, 1), (2, 0),
+    ]
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 0.12, paused: reduceMotion)) { timeline in
+            let frame = Int(timeline.date.timeIntervalSinceReferenceDate / 0.12) % Self.ring.count
+            Canvas { context, size in
+                let origin = CGPoint(x: (size.width - 14) / 2, y: (size.height - 14) / 2)
+                for (index, point) in (Self.ring + [(3, 3)]).enumerated() {
+                    let distance = (frame - index + Self.ring.count) % Self.ring.count
+                    let opacity: Double = index == Self.ring.count ? 1
+                        : (reduceMotion ? 0.7 : (distance < 3 ? [1.0, 0.65, 0.45][distance] : 0.25))
+                    let rect = CGRect(
+                        x: origin.x + CGFloat(point.0) * 2 + 0.25,
+                        y: origin.y + CGFloat(point.1) * 2 + 0.25,
+                        width: 1.75,
+                        height: 1.75
+                    )
+                    context.fill(
+                        Path(roundedRect: rect, cornerRadius: 0.35),
+                        with: .color(.teal.opacity(opacity))
+                    )
+                }
+            }
         }
     }
 }

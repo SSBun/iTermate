@@ -1,0 +1,467 @@
+--- baseline/iTermate/ItermBridge.swift
++++ current/iTermate/ItermBridge.swift
+@@ -327,6 +327,7 @@
+     @Published private(set) var statusMenuConnectionState: BridgeConnectionState = .connecting
+     @Published private(set) var runningAgentSessionCount: Int?
+     @Published private(set) var agentCompletionStatistics: AgentCompletionStatistics
++    @Published private var venomDebugMonitoringSessions: [String: TerminalSessionSnapshot] = [:]
+ 
+     var completedAgentTurnsToday: Int { agentCompletionStatistics.day }
+ 
+@@ -361,6 +362,7 @@
+     private var ghosttyWindows: [TerminalWindowSnapshot] = []
+     private var terminalStatusRegistry = TerminalStatusRegistry()
+     private var statusExpiryTimer: Timer?
++    private var venomMonitorScanID: UUID?
+     private var lastActiveGhosttyTerminalID: String?
+     private var iTermAgentCompletionTracker = SessionCompletionTracker()
+     private var ghosttyAgentCompletionTracker = SessionCompletionTracker()
+@@ -385,6 +387,7 @@
+         piArchives.start()
+         let statusExpiryTimer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+             self?.expireTerminalStatuses()
++            self?.refreshVenomDebugMonitoring()
+         }
+         RunLoop.main.add(statusExpiryTimer, forMode: .common)
+         self.statusExpiryTimer = statusExpiryTimer
+@@ -400,6 +403,8 @@
+         isStarted = false
+         statusExpiryTimer?.invalidate()
+         statusExpiryTimer = nil
++        venomMonitorScanID = nil
++        venomDebugMonitoringSessions = [:]
+         terminalStatusServer.stop()
+         piArchives.stop()
+         if iTermClientIsStarted {
+@@ -411,6 +416,8 @@
+     func setActiveTerminalApp(_ terminalApp: TerminalApp) {
+         if self.terminalApp != terminalApp {
+             self.terminalApp = terminalApp
++            venomMonitorScanID = nil
++            venomDebugMonitoringSessions = [:]
+             actionError = nil
+             switch terminalApp {
+             case .iTerm2:
+@@ -427,6 +434,8 @@
+     }
+ 
+     func reconnectAfterWake() {
++        venomMonitorScanID = nil
++        venomDebugMonitoringSessions = [:]
+         if terminalStatusRegistry.clearRunning() {
+             publishGhosttyWindows()
+         }
+@@ -946,6 +955,42 @@
+         guard terminalStatusRegistry.apply(report) else { return false }
+         publishGhosttyWindows()
+         return true
++    }
++
++    /// A presentation-only refinement; Agent lifecycle and completion tracking remain authoritative.
++    func isVenomDebugMonitoring(_ session: TerminalSessionSnapshot) -> Bool {
++        guard session.status == .running, session.activityKind == .command,
++              let observed = venomDebugMonitoringSessions[session.id] else { return false }
++        return observed.tty == session.tty && observed.statusChangedAt == session.statusChangedAt
++            && windows.flatMap(\.tabs).flatMap(\.sessions).filter { $0.tty == session.tty }.count == 1
++    }
++
++    private func refreshVenomDebugMonitoring() {
++        guard isStarted, venomMonitorScanID == nil else { return }
++        let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
++        let ttyCounts = Dictionary(grouping: sessions.compactMap(\.tty), by: { $0 }).mapValues(\.count)
++        let candidates = sessions.filter {
++            $0.status == .running && $0.activityKind == .command
++                && $0.tty.map { ttyCounts[$0] == 1 } == true
++        }
++        guard !candidates.isEmpty else {
++            if !venomDebugMonitoringSessions.isEmpty { venomDebugMonitoringSessions = [:] }
++            return
++        }
++        let scanID = UUID()
++        venomMonitorScanID = scanID
++        DispatchQueue.global(qos: .utility).async { [weak self] in
++            let monitoringTTYs = VenomDebugMonitor.monitoringTTYs(in: Set(candidates.compactMap(\.tty)))
++            DispatchQueue.main.async { [weak self] in
++                guard let self, isStarted, venomMonitorScanID == scanID else { return }
++                venomMonitorScanID = nil
++                let observed = candidates.filter { $0.tty.map(monitoringTTYs.contains) == true }
++                let updated = Dictionary(uniqueKeysWithValues: observed.map { ($0.id, $0) })
++                if venomDebugMonitoringSessions != updated {
++                    venomDebugMonitoringSessions = updated
++                }
++            }
++        }
+     }
+ 
+     private func expireTerminalStatuses() {
+--- baseline/iTermate/iTermateApp.swift
++++ current/iTermate/iTermateApp.swift
+@@ -641,7 +641,7 @@
+                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
+                                     sessionButton(item)
+                                         .id(
+-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none"):\(item.session.hasRunningSubagents == true)"
++                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none"):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                         )
+                                         .padding(.leading, hasTabHeader ? 12 : 0)
+                                 }
+@@ -961,17 +961,24 @@
+                         let animation = SessionStatusAnimation(session: item.session)
+                     {
+                         HStack(spacing: 4) {
+-                            SessionStatusMatrix(
+-                                animation: animation,
+-                                style: settings.statusAnimationStyle(for: animation),
+-                                customColor: settings.statusAnimationCustomColor(
+-                                    for: animation
+-                                ).map { NSColor($0) }
+-                            )
+-                                .frame(width: 36, height: 16)
+-                                .help(animation.accessibilityLabel)
+-                                .accessibilityLabel(animation.accessibilityLabel)
+-                                .accessibilityHidden(settings.showsSessionTime)
++                            let isMonitoring = store.isVenomDebugMonitoring(item.session)
++                            Group {
++                                if isMonitoring {
++                                    VenomDebugStatusView()
++                                } else {
++                                    SessionStatusMatrix(
++                                        animation: animation,
++                                        style: settings.statusAnimationStyle(for: animation),
++                                        customColor: settings.statusAnimationCustomColor(
++                                            for: animation
++                                        ).map { NSColor($0) }
++                                    )
++                                }
++                            }
++                            .frame(width: 36, height: 16)
++                            .help(isMonitoring ? "venom-cli debug monitoring" : animation.accessibilityLabel)
++                            .accessibilityLabel(isMonitoring ? "venom-cli debug monitoring" : animation.accessibilityLabel)
++                            .accessibilityHidden(settings.showsSessionTime && !isMonitoring)
+ 
+                             if settings.showsSessionTime {
+                                 TimelineView(
+@@ -1554,6 +1561,40 @@
+     }
+ }
+ 
++private struct VenomDebugStatusView: View {
++    @Environment(\.accessibilityReduceMotion) private var reduceMotion
++
++    // Clockwise ring on a 7×7 grid, using the existing status glyph's two-point pitch.
++    private static let ring = [
++        (3, 0), (4, 0), (5, 1), (6, 2), (6, 3), (6, 4), (5, 5), (4, 6),
++        (3, 6), (2, 6), (1, 5), (0, 4), (0, 3), (0, 2), (1, 1), (2, 0),
++    ]
++
++    var body: some View {
++        TimelineView(.animation(minimumInterval: 0.12, paused: reduceMotion)) { timeline in
++            let frame = Int(timeline.date.timeIntervalSinceReferenceDate / 0.12) % Self.ring.count
++            Canvas { context, size in
++                let origin = CGPoint(x: (size.width - 14) / 2, y: (size.height - 14) / 2)
++                for (index, point) in (Self.ring + [(3, 3)]).enumerated() {
++                    let distance = (frame - index + Self.ring.count) % Self.ring.count
++                    let opacity: Double = index == Self.ring.count ? 1
++                        : (reduceMotion ? 0.7 : (distance < 3 ? [1.0, 0.65, 0.45][distance] : 0.25))
++                    let rect = CGRect(
++                        x: origin.x + CGFloat(point.0) * 2 + 0.25,
++                        y: origin.y + CGFloat(point.1) * 2 + 0.25,
++                        width: 1.75,
++                        height: 1.75
++                    )
++                    context.fill(
++                        Path(roundedRect: rect, cornerRadius: 0.35),
++                        with: .color(.teal.opacity(opacity))
++                    )
++                }
++            }
++        }
++    }
++}
++
+ private struct SubagentStatusView: View {
+     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+     let color: Color
+--- baseline/iTermate.xcodeproj/project.pbxproj
++++ current/iTermate.xcodeproj/project.pbxproj
+@@ -33,6 +33,7 @@
+ 		F8FB3990DA0A51BF7DD6065B /* LocalModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */; };
+ 		FBA2C09664EC79CCE097AE9C /* AgentIntegrationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */; };
+ 		FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC44468A07DBECAD73989BA /* ItermBridge.swift */; };
++		FE4669F91E4913024CB8720C /* VenomDebugMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0D84FD9AD3EC207067EAD7 /* VenomDebugMonitor.swift */; };
+ /* End PBXBuildFile section */
+ 
+ /* Begin PBXContainerItemProxy section */
+@@ -51,6 +52,7 @@
+ 		06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViews.swift; sourceTree = "<group>"; };
+ 		0A5616016F9CC20D9F3ADD3E /* iTermate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iTermate.app; sourceTree = BUILT_PRODUCTS_DIR; };
+ 		0B64B776E9CA4A9EFBFB2C08 /* PiSessionArchives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiSessionArchives.swift; sourceTree = "<group>"; };
++		1A0D84FD9AD3EC207067EAD7 /* VenomDebugMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenomDebugMonitor.swift; sourceTree = "<group>"; };
+ 		1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinishedSessionShortcut.swift; sourceTree = "<group>"; };
+ 		26707EC6497714316C11E6B6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+ 		2754035B6E0A92CE752D09E5 /* iTermate.fish */ = {isa = PBXFileReference; path = iTermate.fish; sourceTree = "<group>"; };
+@@ -146,6 +148,7 @@
+ 				FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */,
+ 				06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */,
+ 				F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */,
++				1A0D84FD9AD3EC207067EAD7 /* VenomDebugMonitor.swift */,
+ 			);
+ 			path = iTermate;
+ 			sourceTree = "<group>";
+@@ -311,6 +314,7 @@
+ 				AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */,
+ 				EAECC190D6FF2D443E6ABD91 /* SettingsViews.swift in Sources */,
+ 				B3841525F058DCEF4B08CC48 /* TerminalStatusServer.swift in Sources */,
++				FE4669F91E4913024CB8720C /* VenomDebugMonitor.swift in Sources */,
+ 				854F100B60C750D06E8DF1EC /* iTermateApp.swift in Sources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+--- baseline/iTermateBridge/iTermateBridge.py
++++ current/iTermateBridge/iTermateBridge.py
+@@ -900,6 +900,19 @@
+             ),
+             return_exceptions=True,
+         )
++        ttys = await asyncio.gather(
++            *(
++                session.async_get_variable("tty")
++                for _, _, session in session_triplets
++            ),
++            return_exceptions=True,
++        )
++        ttys_by_session = {
++            session.session_id: tty
++            for (_, _, session), tty in zip(session_triplets, ttys)
++            if isinstance(tty, str) and tty.startswith("/dev/tty")
++            and 8 < len(tty) <= 128 and "/" not in tty[5:]
++        }
+         titles_by_tab = {
+             tab.tab_id: title
+             for (_, tab), title in zip(tab_pairs, titles)
+@@ -955,6 +968,7 @@
+                         "id": session.session_id,
+                         "name": self.session_names[session.session_id],
+                         "path": paths_by_session.get(session.session_id),
++                        "tty": ttys_by_session.get(session.session_id),
+                         "windowId": window.window_id,
+                         "tabId": tab.tab_id,
+                         "isActive": session.session_id == active_session_id,
+--- baseline/tasks/context.md
++++ current/tasks/context.md
+@@ -51,16 +51,17 @@
+ 
+ ## CTX-terminal-backends — iTerm2 与 Ghostty 数据源
+ - Scope: 前台终端识别、面板窗口跟随、Window/Tab/Session 快照与操作路由、跨终端 Agent 摘要，以及不同终端的状态能力边界。
+-- Paths: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`
+-- Keywords: iTerm2, Ghostty, AppleScript, Bridge, TerminalApp, frontmost, panel setting, snapshot, tty, telemetry, shell hook, focus, close, open project, favorite project, agent summary, completion count, session status
+-- Authority: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/FinishedSessionShortcut.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`, `https://ghostty.org/docs/features/applescript`
+-- Recheck: 支持的终端、Ghostty AppleScript 层级或属性、面板按终端启用偏好、快照轮询、TTY 状态协议、Integration 安装、前台窗口选择、跨终端统计或 Bridge 操作路由发生变化时复查。
++- Paths: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/ItermBridge.swift`, `iTermate/VenomDebugMonitor.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`
++- Keywords: iTerm2, Ghostty, AppleScript, Bridge, TerminalApp, frontmost, panel setting, snapshot, tty, telemetry, shell hook, focus, close, open project, favorite project, agent summary, completion count, session status, venom-cli, debug monitoring, radar
++- Authority: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/FinishedSessionShortcut.swift`, `iTermate/ItermBridge.swift`, `iTermate/VenomDebugMonitor.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`, `https://ghostty.org/docs/features/applescript`
++- Recheck: 支持的终端、Ghostty AppleScript 层级或属性、面板按终端启用偏好、快照轮询、TTY 状态协议、Integration 安装、前台窗口选择、跨终端统计、venom-cli 调试子进程结构或 Bridge 操作路由发生变化时复查。
+ 
+ ### Purpose and Boundaries
+ - `PanelFollower` 只在 iTerm2 或 Ghostty 是系统前台应用、存在可见 layer-0 窗口，且 `AppSettings` 中该终端的独立面板开关启用时显示面板；两个开关默认启用并持久化，关闭仅隐藏对应终端的面板，不阻断 `ItermStore` 的终端切换和状态采集。iTerm2 保留选择最大窗口以排除模态框的策略，Ghostty 使用 Core Graphics 前后顺序中的首个窗口；无需 Accessibility 权限。
+ - iTerm2 继续由 Python Bridge 提供层级、操作、普通命令和 Agent 状态；Ghostty 由官方 AppleScript 提供 Window、Tab、Terminal、工作目录、焦点与关闭操作。运行时能读取 terminal `tty` 时，App 才把本机 Integration 状态合并到唯一匹配的 Ghostty Terminal；缺少 TTY、映射重复或来源未映射时状态保持未知，不根据标题、目录或进程名称猜测。
+ 
+ ### Workflows
++- venom-cli 调试雷达由 `iTermate/VenomDebugMonitor.swift` 读取 macOS 原生进程信息确认：iTerm2 Bridge 从动态 `tty` 变量提供真实设备路径；唯一 TTY 的普通 running 命令、该终端前台进程树中的前台 venom-cli debug build 与它仍存活的直接日志采集子进程必须同时成立；通过真实父子关系追踪终端包装器的嵌套 PTY，不按终端名称或相邻 TTY 编号猜测；支持 macOS log stream、模拟器 simctl、设备 devicectl 和 Android adb logcat。共享 Store 每两秒重新观察，仅细化状态图标，不更改命令生命周期、Agent 优先级或完成统计；无日志子进程的构建阶段、未知权限或 TTY 不显示雷达。Canvas 绘制青绿色 7×7 雷达，扫描点沿轮廓循环，减少动态效果时静止；实际面板生效仍需用户运行新构建。
+ - Pi 子代理活动通过进程内 `subagents:rpc:v1:request` 的 `status` 方法读取当前会话 Fleet v1 `totalActive`；只传布尔 `hasRunningSubagents`，不解析终端文字或子代理历史。子代理存在时维持 running，明确待回复仍为 awaitingInput，两种情况都显示像素 Canvas 分支图标：7×7 点阵、2pt 间距、每 0.14 秒高亮一行，从底部沿两支向上流动；开启减少动态效果时暂停时间线并显示完整静态图形。活动观察失败不等同完成；失去确认后停止续报仅由子代理支撑的运行状态，由接收端租约清理。主 Agent 的真实运行与待回复仍独立上报。随 App 分发的源码改变不等于用户已经安装新集成，生效需通过既有安装入口更新并在 Pi 中重新加载。
+ - Pi 待回复只在交互 TUI 上报：明确 confirm/select/input/editor UI 事件，或 `agent_settled` 后的末尾文字识别与可选 Laya 推断，产生 `awaitingInput`；文本与模型任一肯定即保留待回复，模型否定不能覆盖明确文本请求，关闭模型分析不撤销已识别问题，新一轮或会话导航清理该判断；custom UI 不默认视为提问。两端等待状态通过续报维持有限租约，重复续报不改变起始时间；Pi 重启不从历史文字恢复问题，仍活跃 Pi 可以续报恢复 App/Bridge 重建后的状态。识别与生命周期权威为 `integrations/pi/iTermate-integration.ts`，接收与失效权威为 `TerminalStatusServer.swift` 和 Python Bridge。
+ - App 启动时仅在 iTerm2 已运行时启动其 Bridge client；否则在 iTerm2 首次成为前台终端时启动。Ghostty 前台期间通过 `osascript` 最多每秒读取一次快照，并把结果复用到同一 Session 分组 UI；切回 iTerm2 时恢复其缓存快照和连接状态。
+--- baseline/iTermate/VenomDebugMonitor.swift
++++ current/iTermate/VenomDebugMonitor.swift
+@@ -0,0 +1,192 @@
++import Darwin
++import Foundation
++
++/// Observes venom-cli's post-build log capture without changing command lifecycle state.
++enum VenomDebugMonitor {
++    /// Returns terminal TTYs whose foreground process tree contains a debug build with a live capture.
++    static func monitoringTTYs(in ttys: Set<String>) -> Set<String> {
++        Set(ttys.filter { tty in
++            guard tty.hasPrefix("/dev/tty"), tty.count > 8, tty.count <= 128,
++                  !tty.dropFirst(5).contains("/") else { return false }
++            var attributes = stat()
++            guard stat(tty, &attributes) == 0,
++                  attributes.st_mode & S_IFMT == S_IFCHR else { return false }
++            var visited: Set<pid_t> = []
++            return processIDs(type: UInt32(PROC_TTY_ONLY), value: UInt32(bitPattern: attributes.st_rdev))
++                .contains { pid in
++                    guard let root = processInfo(pid),
++                          root.pbi_uid == getuid(),
++                          root.pbi_pgid == root.e_tpgid,
++                          root.e_tdev == UInt32(bitPattern: attributes.st_rdev),
++                          hasMonitoringDescendant(root, depth: 0, visited: &visited),
++                          let current = processInfo(pid) else { return false }
++                    return sameProcess(root, current) && current.pbi_pgid == current.e_tpgid
++                }
++        })
++    }
++
++    private static func hasMonitoringDescendant(
++        _ parent: proc_bsdinfo,
++        depth: Int,
++        visited: inout Set<pid_t>
++    ) -> Bool {
++        let pid = pid_t(parent.pbi_pid)
++        guard depth <= 8, visited.count < 128, visited.insert(pid).inserted else { return false }
++        let children = processIDs(type: UInt32(PROC_PPID_ONLY), value: parent.pbi_pid).compactMap { childPID -> proc_bsdinfo? in
++            guard let child = processInfo(childPID), child.pbi_ppid == parent.pbi_pid,
++                  child.pbi_uid == parent.pbi_uid else { return nil }
++            return child
++        }
++        var found = false
++        if parent.pbi_pgid == parent.e_tpgid,
++           let parentArguments = arguments(of: pid),
++           let runsApp = debugBuildRunsApp(parentArguments) {
++            found = children.contains { child in
++                guard let childArguments = arguments(of: pid_t(child.pbi_pid)),
++                      isLogCapture(childArguments, runsApp: runsApp),
++                      let current = processInfo(pid_t(child.pbi_pid)) else { return false }
++                return sameProcess(child, current)
++            }
++        }
++        if !found {
++            // Terminal wrappers (for example kiro-cli-term) can give their shell a nested PTY.
++            // Follow real parentage, not TTY-number proximity or session titles.
++            found = children.contains { hasMonitoringDescendant($0, depth: depth + 1, visited: &visited) }
++        }
++        guard found, let current = processInfo(pid) else { return false }
++        return sameProcess(parent, current)
++    }
++
++    /// Nil means this is not a supported debug build; the value records the --run flag.
++    static func debugBuildRunsApp(_ arguments: [String]) -> Bool? {
++        guard let executable = arguments.first else { return nil }
++        let name = URL(fileURLWithPath: executable).lastPathComponent
++        var index = 1
++        if name == "node" || name == "nodejs" {
++            guard arguments.count > 1,
++                  ["venom-cli", "venom-cli.js"].contains(
++                    URL(fileURLWithPath: arguments[1]).lastPathComponent
++                  ) else { return nil }
++            index = 2
++        } else if name != "venom-cli" {
++            return nil
++        }
++        var foundBuild = false
++        var debug = false
++        var run = false
++        while index < arguments.count {
++            let argument = arguments[index]
++            let option = argument.split(separator: "=", maxSplits: 1).first.map(String.init) ?? argument
++            let valueOptions = foundBuild
++                ? ["-p", "--project", "--scheme", "--variant", "--app-id", "--device"]
++                : ["-p", "--project"]
++            if valueOptions.contains(option) {
++                if !argument.contains("=") {
++                    index += 1
++                    guard index < arguments.count else { return nil }
++                }
++            } else if argument == "build", !foundBuild {
++                foundBuild = true
++            } else if foundBuild, argument == "--debug" {
++                debug = true
++            } else if foundBuild, argument == "--run" {
++                run = true
++            } else if foundBuild, ["--verbose", "--reconnect"].contains(argument) {
++                // These flags do not select the monitoring phase.
++            } else {
++                return nil
++            }
++            index += 1
++        }
++        return foundBuild && debug ? run : nil
++    }
++
++    /// Matches the capture commands spawned by venom-cli after successful build and launch.
++    static func isLogCapture(_ arguments: [String], runsApp: Bool) -> Bool {
++        guard let executable = arguments.first else { return false }
++        var name = URL(fileURLWithPath: executable).lastPathComponent
++        var tail = Array(arguments.dropFirst())
++        if name == "xcrun", let tool = tail.first {
++            name = tool
++            tail.removeFirst()
++        }
++        if name == "adb" {
++            // Android --debug implies --run. This child is created only after am start succeeds.
++            guard tail.count == 4, tail[0] == "-s", !tail[1].isEmpty,
++                  tail[2] == "logcat", tail[3].hasPrefix("--pid="),
++                  let pid = Int32(tail[3].dropFirst(6)), pid > 0 else { return false }
++            return true
++        }
++        guard runsApp else { return false }
++        if name == "simctl" {
++            guard tail.count >= 4, tail[0] == "spawn", !tail[1].isEmpty,
++                  tail[2] == "log" else { return false }
++            name = "log"
++            tail = Array(tail.dropFirst(3))
++        }
++        if name == "log" {
++            return tail.count == 5 && Array(tail.prefix(4)) == ["stream", "--style", "compact", "--predicate"]
++                && !tail[4].isEmpty
++        }
++        if name == "devicectl" {
++            return tail.count == 7 && Array(tail.prefix(4)) == ["device", "process", "launch", "--device"]
++                && !tail[4].isEmpty && tail[5] == "--console" && !tail[6].isEmpty
++        }
++        return false
++    }
++
++    private static func processIDs(type: UInt32, value: UInt32) -> [pid_t] {
++        let requiredBytes = proc_listpids(type, value, nil, 0)
++        guard requiredBytes > 0 else { return [] }
++        // Allow room for processes created between the sizing and reading calls.
++        var pids = [pid_t](repeating: 0, count: Int(requiredBytes) / MemoryLayout<pid_t>.size + 16)
++        let capacity = pids.count * MemoryLayout<pid_t>.size
++        let bytes = pids.withUnsafeMutableBytes { buffer in
++            proc_listpids(type, value, buffer.baseAddress, Int32(capacity))
++        }
++        guard bytes > 0, bytes < capacity else { return [] }
++        return pids.prefix(Int(bytes) / MemoryLayout<pid_t>.size).filter { $0 > 0 }
++    }
++
++    private static func processInfo(_ pid: pid_t) -> proc_bsdinfo? {
++        var info = proc_bsdinfo()
++        let size = MemoryLayout<proc_bsdinfo>.size
++        guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, Int32(size)) == size,
++              info.pbi_status != SZOMB, info.pbi_status != SSTOP else { return nil }
++        return info
++    }
++
++    private static func sameProcess(_ first: proc_bsdinfo, _ second: proc_bsdinfo) -> Bool {
++        first.pbi_pid == second.pbi_pid && first.pbi_ppid == second.pbi_ppid
++            && first.pbi_start_tvsec == second.pbi_start_tvsec
++            && first.pbi_start_tvusec == second.pbi_start_tvusec
++    }
++
++    private static func arguments(of pid: pid_t) -> [String]? {
++        var mib: [Int32] = [CTL_KERN, KERN_PROCARGS2, pid]
++        var size = 0
++        guard sysctl(&mib, UInt32(mib.count), nil, &size, nil, 0) == 0,
++              size > MemoryLayout<Int32>.size, size <= 1_048_576 else { return nil }
++        var bytes = [UInt8](repeating: 0, count: size)
++        let result = bytes.withUnsafeMutableBytes { buffer in
++            sysctl(&mib, UInt32(mib.count), buffer.baseAddress, &size, nil, 0)
++        }
++        guard result == 0, size > MemoryLayout<Int32>.size else { return nil }
++        let count = bytes.withUnsafeBytes { $0.loadUnaligned(as: Int32.self) }
++        guard count > 0, count <= 4096 else { return nil }
++        var index = MemoryLayout<Int32>.size
++        // KERN_PROCARGS2 stores argc, executable path, padding, argv, then environment.
++        while index < size, bytes[index] != 0 { index += 1 }
++        while index < size, bytes[index] == 0 { index += 1 }
++        var arguments: [String] = []
++        for _ in 0..<count {
++            let start = index
++            while index < size, bytes[index] != 0 { index += 1 }
++            guard index < size,
++                  let argument = String(bytes: bytes[start..<index], encoding: .utf8) else { return nil }
++            arguments.append(argument)
++            index += 1
++        }
++        return arguments
++    }
++}
