@@ -430,6 +430,7 @@ private struct PanelContent: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var archives: PiSessionArchives
     private static let archiveSectionID = "archive:pi"
+    private static let archiveTint = Color(nsColor: .systemPurple)
     @State private var collapsedSectionIDs: Set<String> = [PanelContent.archiveSectionID]
     @State private var hoveredSessionID: String?
     @State private var hoveredCloseButtonSessionID: String?
@@ -681,6 +682,7 @@ private struct PanelContent: View {
             }
             .buttonStyle(.plain)
             .font(headerFont())
+            .foregroundStyle(Self.archiveTint)
             .padding(.top, 5)
             .accessibilityLabel(collapsedSectionIDs.contains(Self.archiveSectionID) ? "Expand Archive" : "Collapse Archive")
 
@@ -706,6 +708,7 @@ private struct PanelContent: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         Button("Resume") { store.resumePiArchive(record) }
                             .font(panelFont(0.8))
+                            .foregroundStyle(Self.archiveTint)
                             .buttonStyle(.plain)
                             .disabled(archives.isBusy)
                             .accessibilityLabel("Resume archived Pi session \(record.name), \(record.sessionId), in \(record.terminal)")
@@ -722,6 +725,11 @@ private struct PanelContent: View {
                     }
                 }
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            RoundedRectangle(cornerRadius: 9)
+                .fill(Self.archiveTint.opacity(effectiveColorScheme == .dark ? 0.14 : 0.08))
         }
     }
 
@@ -1002,7 +1010,7 @@ private struct PanelContent: View {
                 }
                 .contentShape(Rectangle())
                 .padding(.leading, 8)
-                .padding(.vertical, 5)
+                .padding(.vertical, item.session.activityKind == .agent ? 9 : 5)
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -1014,7 +1022,7 @@ private struct PanelContent: View {
                 Image(systemName: "xmark")
                     .font(panelFont(0.85))
                     .foregroundStyle(.secondary)
-                    .frame(width: 24, height: 30)
+                    .frame(width: 24, height: item.session.activityKind == .agent ? 38 : 30)
                     .background {
                         if hoveredCloseButtonSessionID == item.id {
                             Circle()
