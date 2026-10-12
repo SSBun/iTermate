@@ -1,6 +1,64 @@
 # 任务索引
 
+- [调查 Session 仅显示目录而非当前任务摘要的原因](tasks/investigate-session-task-summary.md) — Pending (2026-10-12 17:22)
+
+- [调查 Codex 会话误显示命令运行图标的原因](tasks/investigate-codex-command-icon.md) — Pending (2026-10-12 17:21)
+
+- [按关注点拆分提交当前状态、模型和归档等本地改动](tasks/commit-session-model-and-archive-changes.md) — In Progress (2026-10-12 17:15)
+
+- [评估 Luna 对 Agent 回复状态的分类](tasks/benchmark-luna-agent-responses.md) — Cancelled (2026-10-12 17:07)
+
+- [审计本地改动导致的 Session 问号泛滥与闪烁](tasks/audit-session-question-icon-flicker.md) — Pending (2026-10-12 15:56)
+
+- [调查问号图标过多及反复显隐](tasks/investigate-question-icon-flicker.md) — Blocked (2026-10-12 16:10)
+
+- [调查 venom 调试会话未显示雷达图标的原因](tasks/investigate-missing-venom-radar.md) — Pending (2026-10-12 15:42)
+
+- [优化 Vela 状态分析与图标显示](tasks/optimize-vela-status-icons.md) — Completed (2026-10-12 15:38)
+
+- [将回复状态判定简化为 idle 与 awaitingInput](tasks/binary-response-status.md) — Completed (2026-10-12 14:58)
+
+- [构建场景数据评估 Vela 终端状态分类准确率](tasks/evaluate-vela-session-scenarios.md) — Completed (2026-10-12 14:17)
+
+- [验证 Vela 会话状态判定](tasks/test-vela-session-status.md) — Completed (2026-10-12 14:19)
+
+- [使用 Vela 复测截图场景的终端状态分类](tasks/verify-vela-screenshot-state.md) — Completed (2026-10-12 11:49)
+
+- [默认使用 Vela 判定模型](tasks/default-vela-decision-provider.md) — Completed (2026-10-12 11:44)
+
+- [接入 Vela 并支持切换 Laya 与 Vela 决策模型](tasks/add-vela-decision-provider.md) — In Progress (2026-10-12 11:19)
+
+- [主动查询并恢复 Pi 会话状态](tasks/recover-pi-status-proactively.md) — Blocked (2026-10-10 19:48)
+
+- [验证主动查询 Pi 会话状态的可行性](tasks/verify-proactive-session-status.md) — Completed (2026-10-10 18:41)
+
+- [评估并优化 Vela 向用户提问识别提示词](tasks/optimize-vela-question-prompt.md) — Completed (2026-10-10 19:27)
+
+- [评估 Agent 最后回答是否向用户提问](tasks/evaluate-agent-directed-questions.md) — Completed (2026-10-10 18:07)
+
+- [单独提交 venom-cli 调试监控雷达改动](tasks/commit-venom-debug-monitor.md) — Completed (2026-10-10 16:10)
+
+- [调研 Laya 之外的开放 System 1 分类与决策模型](tasks/explore-open-system-one-models.md) — Completed (2026-10-10 17:17)
+
 - [为 venom-cli 调试监控显示专属状态图标](tasks/distinguish-venom-debug-monitor.md) — Completed (2026-10-10 15:18)
+
+- [移除 Archive 与 Delete Archive 操作的确认弹窗](tasks/remove-archive-action-confirmations.md) — Completed (2026-10-10 14:30)
+
+- [为 Archive 条目增加右键删除菜单](tasks/archive-cell-delete-menu.md) — Completed (2026-10-10 11:42)
+
+- [调查已更新 Pi 集成仍未显示问号的运行时原因](tasks/investigate-live-pi-question-state.md) — In Progress (2026-10-10 14:39)
+
+- [验证本地模型对运行命令类型的分类能力](tasks/evaluate-local-command-classification.md) — Completed (2026-10-10 11:15)
+
+- [区分 Archive 配色并增加 Agent 行留白](tasks/style-archive-and-agent-rows.md) — Completed (2026-10-10 10:37)
+
+- [区分命令执行与服务持续运行状态](tasks/distinguish-command-and-service-status.md) — Cancelled (2026-10-10 11:26)
+
+- [确保 Pi 待回复问题显示问号而非空闲图标](tasks/pi-question-mark-priority.md) — Completed (2026-10-10 10:22)
+
+- [调查等待确认时未显示问号的原因](tasks/investigate-missing-question-status.md) — Pending (2026-10-09 16:36)
+
+- [从 Session 右键菜单归档 Pi 会话并关闭终端](tasks/archive-pi-session-from-cell.md) — Completed (2026-10-10 11:54)
 
 - [记录发布签名限制的长期接受规则](tasks/accept-release-signing-limit.md) — Completed (2026-09-24 15:26)
 
