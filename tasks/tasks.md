@@ -4,7 +4,7 @@
 
 - [调查 Codex 会话误显示命令运行图标的原因](tasks/investigate-codex-command-icon.md) — Pending (2026-10-12 17:21)
 
-- [按关注点拆分提交当前状态、模型和归档等本地改动](tasks/commit-session-model-and-archive-changes.md) — In Progress (2026-10-12 17:15)
+- [按关注点拆分提交当前状态、模型和归档等本地改动](tasks/commit-session-model-and-archive-changes.md) — Completed (2026-10-12 17:31)
 
 - [评估 Luna 对 Agent 回复状态的分类](tasks/benchmark-luna-agent-responses.md) — Cancelled (2026-10-12 17:07)
 

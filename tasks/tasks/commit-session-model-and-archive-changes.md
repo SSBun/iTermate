@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | In Progress (2026-10-12 17:15) |
+| Status | Completed (2026-10-12 17:31) |
 | Kind | Task |
 
 ## Scope
@@ -52,6 +52,28 @@
 未新增或修改产品代码内容；仅将已有源码、测试、文档及历史证据按关注点组织为Git提交，并维护本任务记录。
 
 ## Target
+- [x] T1: 全部现有本地改动按独立功能或关注点拆分为多个 Git 提交，不将无关改动混在同一提交中，每个提交使用清晰的 conventional-style 英文消息。
+- [x] T2: 保留已有改动内容，不推送远端，核对提交内容与最终工作区状态并报告提交清单及未提交例外。
 
-- [ ] T1: 全部现有本地改动按独立功能或关注点拆分为多个 Git 提交，不将无关改动混在同一提交中，每个提交使用清晰的 conventional-style 英文消息。
-- [ ] T2: 保留已有改动内容，不推送远端，核对提交内容与最终工作区状态并报告提交清单及未提交例外。
+## Result
+
+- T1: 基线2cf8858至4299cce已完成15个按关注点划分的提交：7个产品、7个研究诊断记录、1个上下文及索引提交；每组检查暂存差异与conventional-style消息，共享文件按代码块拆分。后续仅追加本任务完成状态的chore提交。
+- T2: 27个产品文件与拆分前逐字节一致，385个已固定产品/历史证据/调查文件与对应提交blob一致；Swift/Python/TS-JS/工程plist语法检查通过，无测试、构建、推送或应用重启。当前仅另一会话在提交后追加的Codex调查T2未提交，予以保留。
+- Review gate: Skipped — R1：本次只整理既有内容为本地提交，无新增产品行为；主Agent逐组检查差异并验证完整字节一致性。没有要求独立审查本次提交整理。
+## Review Assessment
+
+- Schema: task-review-assessment/v1
+- Level: R1
+- State: Current
+- Reason: 仅组织已有内容的本地Git历史，未实现或修改产品行为；起始暂存区为空，历史仅追加，内容一致性可确定验证。
+- Snapshot: base:2cf8858f347979f78b16f0d2eecac1fa1b0de7d6..4299cce; product-manifest-sha256:a26bf58312e7ca2f6bc1de8d9f62597822dcd7e5d0835ec3cf5c2ef4aa8b49ca
+- Evidence: 逐组staged diff检查；27个产品文件及385个固定文件blob一致；产品语法和非历史证据whitespace检查通过；并发Codex记录新目标隔离。
+- Result clarity: 用户要求按独立关注点提交现有改动，不修复代码；15组提交主题与文件边界已核对。
+- Bounded impact: 仅当前main本地追加提交；没有远端操作、历史重写或产品工作区写入。
+- Low risk: 本地可逆的暂存和提交；原始内容保持不变，常见凭据扫描未命中，并发后续修改保留。
+- Sufficient verification: 原始与HEAD文件hash逐项一致；Swift/Python/TS-JS/plist静态语法检查和git diff --check通过（历史原始日志不改写）；未运行测试或完整构建。
+- Task fingerprint: d81aee265cd59d796ebd66dfe3593306d320381598bd6a93a1823f38385bd25e
+
+## Verification
+
+- Passed: 最终比对15个关注点提交和产品清单哈希无漂移；本轮原有改动全部入库，唯一剩余为另一个会话新增的Codex调查T2。Context及本任务check通过；全局任务校验受基线已有重复Result/父任务问题影响，未改动历史。
