@@ -1,0 +1,3564 @@
+{
+  "model": "vllm-sr/Vela-2.0-0.3B",
+  "revision": "d6f03aa9baca4f9017fa8f8e9c2764d3bed3f409",
+  "frozen": {
+    "integrations/laya/iTermate-laya.py": "e25087112f21e32d417506b51ff7d21bf1bcb7c0eb05654c655f580d8d187cef",
+    "iTermateBridge/iTermateBridge.py": "4d19fe6bb901e6ec8dad3e904a83fe1769682391930cf35dfff322f4fb1d175f",
+    "tasks/artifacts/test-vela-session-status/evidence/evaluate.py": "604164f4f71e73b577632e0d92d25493990ac1e3d49907fa0f24064b27e8278a",
+    "tasks/artifacts/test-vela-session-status/evidence/suite.json": "460eb677ed82644e5be8b32bc607c74beb6a594a0c02fe0cb2ae6d9ce66dbaad"
+  },
+  "rows": [
+    {
+      "id": "running-0-zh",
+      "expected": "running",
+      "text": "正在编译，已完成 42%，请稍候。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.948154136778259,
+            "probabilities": {
+              "running": 0.9723685130042266,
+              "awaitingInput": 0.001411268540392518,
+              "idle": 0.02421437622596756,
+              "unknown": 0.002005842229413296
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.23864567800147987
+          }
+        },
+        "usage": {
+          "input_tokens": 153,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 102.317,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 102.89212502539158
+    },
+    {
+      "id": "running-0-en",
+      "expected": "running",
+      "text": "Compiling, 42% complete. Please wait.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.7479674000357408,
+            "probabilities": {
+              "running": 0.11260090969153579,
+              "awaitingInput": 0.01581325349166714,
+              "idle": 0.8605683097272766,
+              "unknown": 0.011017527089520517
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.5697748414253361
+          }
+        },
+        "usage": {
+          "input_tokens": 151,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 89.966,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 90.24154092185199
+    },
+    {
+      "id": "running-1-zh",
+      "expected": "running",
+      "text": "正在检查依赖，不需要你操作。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.8132409135808459,
+            "probabilities": {
+              "running": 0.8883919817039926,
+              "awaitingInput": 0.001706085833023223,
+              "idle": 0.07515106812314665,
+              "unknown": 0.03475086433983737
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.13510022037617606
+          }
+        },
+        "usage": {
+          "input_tokens": 148,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 94.51,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 94.72795808687806
+    },
+    {
+      "id": "running-1-en",
+      "expected": "running",
+      "text": "Checking dependencies; no action is needed from you.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.5294456902914271,
+            "probabilities": {
+              "running": 0.0034287062063617824,
+              "awaitingInput": 0.004015034712555325,
+              "idle": 0.7610009746862549,
+              "unknown": 0.23155528439482786
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.16973501493989954
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 76.116,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 76.53604098595679
+    },
+    {
+      "id": "running-2-zh",
+      "expected": "running",
+      "text": "下载中：128 MB / 650 MB，速度 20 MB/s。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.363363786988219,
+            "probabilities": {
+              "running": 0.05363186012498177,
+              "awaitingInput": 0.029107276839079384,
+              "idle": 0.6403123250120789,
+              "unknown": 0.27694853802385994
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.529920641844829
+          }
+        },
+        "usage": {
+          "input_tokens": 161,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 60.018,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 60.338416835293174
+    },
+    {
+      "id": "running-2-en",
+      "expected": "running",
+      "text": "Downloading: 128 MB / 650 MB at 20 MB/s.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.17443056023959985,
+            "probabilities": {
+              "running": 0.09318489507139159,
+              "awaitingInput": 0.03944196987928028,
+              "idle": 0.520901847644464,
+              "unknown": 0.34647128740486416
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.4714435820330088
+          }
+        },
+        "usage": {
+          "input_tokens": 161,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 62.037,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 62.25941702723503
+    },
+    {
+      "id": "running-3-zh",
+      "expected": "running",
+      "text": "测试仍在运行，已执行 12/80 项。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9977764079202269,
+            "probabilities": {
+              "running": 0.9985936250405725,
+              "awaitingInput": 5.0612520362462906e-05,
+              "idle": 0.0008172171203456006,
+              "unknown": 0.0005385453187194716
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.41475639379736345
+          }
+        },
+        "usage": {
+          "input_tokens": 154,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 52.563,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 52.76129092089832
+    },
+    {
+      "id": "running-3-en",
+      "expected": "running",
+      "text": "Tests are still running: 12 of 80 executed.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9712113966543136,
+            "probabilities": {
+              "running": 0.9836968813311642,
+              "awaitingInput": 0.0015074755614286708,
+              "idle": 0.002310158430556439,
+              "unknown": 0.012485484676850619
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.13253744596515118
+          }
+        },
+        "usage": {
+          "input_tokens": 153,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 67.033,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 67.25179101340473
+    },
+    {
+      "id": "running-4-zh",
+      "expected": "running",
+      "text": "正在重建索引，剩余 230 个文件。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9920205681723249,
+            "probabilities": {
+              "running": 0.9953327061223712,
+              "awaitingInput": 0.00017621166008774944,
+              "idle": 0.0011789442674946411,
+              "unknown": 0.0033121379500463946
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.12866107999787824
+          }
+        },
+        "usage": {
+          "input_tokens": 152,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 56.949,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 57.15525010600686
+    },
+    {
+      "id": "running-4-en",
+      "expected": "running",
+      "text": "Rebuilding the index, 230 files remaining.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.32169743405931744,
+            "probabilities": {
+              "running": 0.5848503379432302,
+              "awaitingInput": 0.016324973299845877,
+              "idle": 0.1356717848730112,
+              "unknown": 0.2631529038839127
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.12517465968194305
+          }
+        },
+        "usage": {
+          "input_tokens": 151,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.006,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": null,
+      "elapsed_ms": 54.22533303499222
+    },
+    {
+      "id": "running-5-zh",
+      "expected": "running",
+      "text": "正在部署，请勿关闭终端。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9765480770450334,
+            "probabilities": {
+              "running": 0.98459545670587,
+              "awaitingInput": 0.0005982212572339185,
+              "idle": 0.008047379660836601,
+              "unknown": 0.006758942376059603
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2671108855731011
+          }
+        },
+        "usage": {
+          "input_tokens": 148,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 51.814,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 52.01949994079769
+    },
+    {
+      "id": "running-5-en",
+      "expected": "running",
+      "text": "Deployment in progress. Do not close the terminal.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9896521276932414,
+            "probabilities": {
+              "running": 0.9929192475431038,
+              "awaitingInput": 0.0007290095224583544,
+              "idle": 0.0032671198498623565,
+              "unknown": 0.0030846230845754203
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.23666041449410613
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.556,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 54.77133300155401
+    },
+    {
+      "id": "awaitingInput-0-zh",
+      "expected": "awaitingInput",
+      "text": "请确认范围。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.941535224882882,
+            "probabilities": {
+              "running": 0.0009993815764307477,
+              "awaitingInput": 0.9670472395303294,
+              "idle": 0.00644136424579241,
+              "unknown": 0.025512014647447404
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2670190465186929
+          }
+        },
+        "usage": {
+          "input_tokens": 143,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.625,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 54.821208119392395
+    },
+    {
+      "id": "awaitingInput-0-en",
+      "expected": "awaitingInput",
+      "text": "Please confirm the scope.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9594107011068701,
+            "probabilities": {
+              "running": 0.0020980664986233097,
+              "awaitingInput": 0.9750757064128025,
+              "idle": 0.007161221782641863,
+              "unknown": 0.015665005305932362
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.3164040185137697
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 49.749,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 49.96191686950624
+    },
+    {
+      "id": "awaitingInput-1-zh",
+      "expected": "awaitingInput",
+      "text": "确认后我再继续。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.7545026584693943,
+            "probabilities": {
+              "running": 0.03984948141854969,
+              "awaitingInput": 0.8433484502789284,
+              "idle": 0.08884579180953395,
+              "unknown": 0.027956276492987885
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.5678452491930354
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 51.528,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 51.73062486574054
+    },
+    {
+      "id": "awaitingInput-1-en",
+      "expected": "awaitingInput",
+      "text": "I will continue after your confirmation.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.5583722054150579,
+            "probabilities": {
+              "running": 0.024720371787451352,
+              "awaitingInput": 0.729817053129996,
+              "idle": 0.17144484771493804,
+              "unknown": 0.07401772736761447
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.6661854162251719
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 51.526,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 51.72999994829297
+    },
+    {
+      "id": "awaitingInput-2-zh",
+      "expected": "awaitingInput",
+      "text": "请选择方案 A 或 B。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9623760193718952,
+            "probabilities": {
+              "running": 0.0011751867672223316,
+              "awaitingInput": 0.9772258509981735,
+              "idle": 0.006749130608325918,
+              "unknown": 0.0148498316262783
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.32135556081884253
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 56.462,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 56.66204099543393
+    },
+    {
+      "id": "awaitingInput-2-en",
+      "expected": "awaitingInput",
+      "text": "Please choose option A or B.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.8778050821033149,
+            "probabilities": {
+              "running": 0.006583584318813635,
+              "awaitingInput": 0.922727231997905,
+              "idle": 0.02576703378869134,
+              "unknown": 0.04492214989459004
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.44423621497979165
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 61.778,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 61.990374932065606
+    },
+    {
+      "id": "awaitingInput-3-zh",
+      "expected": "awaitingInput",
+      "text": "是否允许我重启服务？",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9743807678464267,
+            "probabilities": {
+              "running": 0.0005822356908386942,
+              "awaitingInput": 0.9851242862070365,
+              "idle": 0.003549959741514794,
+              "unknown": 0.01074351836060981
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2983635030103208
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 62.692,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 62.9844581708312
+    },
+    {
+      "id": "awaitingInput-3-en",
+      "expected": "awaitingInput",
+      "text": "May I restart the service?",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.817265186806224,
+            "probabilities": {
+              "running": 0.004854870308663669,
+              "awaitingInput": 0.887093399126745,
+              "idle": 0.0382235182440704,
+              "unknown": 0.06982821232052103
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.14210150108893713
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 62.244,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 62.635624781250954
+    },
+    {
+      "id": "awaitingInput-4-zh",
+      "expected": "awaitingInput",
+      "text": "请提供项目路径，然后我再继续。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9129874351779856,
+            "probabilities": {
+              "running": 0.013271853549693227,
+              "awaitingInput": 0.9447316459699043,
+              "idle": 0.01025228968848372,
+              "unknown": 0.03174421079191874
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.1994279989253672
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 56.673,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 56.9543750025332
+    },
+    {
+      "id": "awaitingInput-4-en",
+      "expected": "awaitingInput",
+      "text": "Please provide the project path so I can continue.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9569748448566648,
+            "probabilities": {
+              "running": 0.0018995710884066098,
+              "awaitingInput": 0.9755789833597123,
+              "idle": 0.003917307048833609,
+              "unknown": 0.018604138503047467
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.20046836728309247
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 65.533,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 65.8088750205934
+    },
+    {
+      "id": "awaitingInput-5-zh",
+      "expected": "awaitingInput",
+      "text": "覆盖现有文件？[y/N]",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.46450527747896997,
+            "probabilities": {
+              "running": 0.05583515635385132,
+              "awaitingInput": 0.19337461306223114,
+              "idle": 0.09291034004271648,
+              "unknown": 0.6578798905412011
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2586374418712588
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 59.545,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 59.90474997088313
+    },
+    {
+      "id": "awaitingInput-5-en",
+      "expected": "awaitingInput",
+      "text": "Overwrite the existing file? [y/N]",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.15445141829606612,
+            "probabilities": {
+              "running": 0.08355538344458319,
+              "awaitingInput": 0.332924371552168,
+              "idle": 0.09614445515501477,
+              "unknown": 0.4873757898482341
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.23111517984254212
+          }
+        },
+        "usage": {
+          "input_tokens": 150,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 53.311,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 53.540874971076846
+    },
+    {
+      "id": "idle-0-zh",
+      "expected": "idle",
+      "text": "任务完成，所有文件已保存，无需进一步操作。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9986896485453233,
+            "probabilities": {
+              "running": 0.00021550813608787542,
+              "awaitingInput": 1.3435059401867359e-05,
+              "idle": 0.9992303526749168,
+              "unknown": 0.0005407041295934647
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8162680305879525
+          }
+        },
+        "usage": {
+          "input_tokens": 151,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 52.425,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 52.670666947960854
+    },
+    {
+      "id": "idle-0-en",
+      "expected": "idle",
+      "text": "Task complete. All files saved. No further action required.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9986476428521581,
+            "probabilities": {
+              "running": 0.00024391080158723272,
+              "awaitingInput": 1.2382069572067948e-05,
+              "idle": 0.9991956749904994,
+              "unknown": 0.0005480321383413042
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8309601083897622
+          }
+        },
+        "usage": {
+          "input_tokens": 151,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 53.137,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 53.35949989967048
+    },
+    {
+      "id": "idle-1-zh",
+      "expected": "idle",
+      "text": "构建成功，进程已退出，退出码 0。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.6678033210631111,
+            "probabilities": {
+              "running": 0.15963291968798035,
+              "awaitingInput": 0.0009315188449919202,
+              "idle": 0.8274362407510915,
+              "unknown": 0.011999320715936186
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.7868246864950045
+          }
+        },
+        "usage": {
+          "input_tokens": 152,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 52.588,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 52.78829112648964
+    },
+    {
+      "id": "idle-1-en",
+      "expected": "idle",
+      "text": "Build succeeded. Process exited with code 0.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.48073733354698756,
+            "probabilities": {
+              "running": 0.7362427470151182,
+              "awaitingInput": 0.0007248714878489404,
+              "idle": 0.2555054134681306,
+              "unknown": 0.007526968028902288
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8535266625070015
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 52.361,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": null,
+      "elapsed_ms": 52.579416893422604
+    },
+    {
+      "id": "idle-2-zh",
+      "expected": "idle",
+      "text": "测试全部通过，检查结束。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.8118155308084994,
+            "probabilities": {
+              "running": 0.08383003144424553,
+              "awaitingInput": 0.0020306563045560918,
+              "idle": 0.8956455622527449,
+              "unknown": 0.018493749998453345
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.9082022654962653
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 55.902,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 56.11416604369879
+    },
+    {
+      "id": "idle-2-en",
+      "expected": "idle",
+      "text": "All tests passed. Verification is complete.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9357097836542161,
+            "probabilities": {
+              "running": 0.022208105114516864,
+              "awaitingInput": 0.0010672714820300173,
+              "idle": 0.957917888768733,
+              "unknown": 0.018806734634720164
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.9445812553928172
+          }
+        },
+        "usage": {
+          "input_tokens": 147,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 93.929,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 94.16275005787611
+    },
+    {
+      "id": "idle-3-zh",
+      "expected": "idle",
+      "text": "报告已导出，本次任务结束。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9907285342724889,
+            "probabilities": {
+              "running": 0.0036366911905673215,
+              "awaitingInput": 0.00013315451543381232,
+              "idle": 0.9943652254630562,
+              "unknown": 0.0018649288309425822
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.1709557763466386
+          }
+        },
+        "usage": {
+          "input_tokens": 147,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 98.624,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 98.8411670550704
+    },
+    {
+      "id": "idle-3-en",
+      "expected": "idle",
+      "text": "Report exported. This task is finished.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9753133219461815,
+            "probabilities": {
+              "running": 0.00735223151665844,
+              "awaitingInput": 0.0005373071771788029,
+              "idle": 0.9837118916261721,
+              "unknown": 0.008398569679990638
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2899591898960393
+          }
+        },
+        "usage": {
+          "input_tokens": 147,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 102.475,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 102.71604103036225
+    },
+    {
+      "id": "idle-4-zh",
+      "expected": "idle",
+      "text": "你之前已经确认，我已完成提交。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.7628567764208187,
+            "probabilities": {
+              "running": 0.021479237886173275,
+              "awaitingInput": 0.05031884491316834,
+              "idle": 0.8455293468107385,
+              "unknown": 0.08267257038991978
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8048630357755071
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 113.873,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 114.09712512977421
+    },
+    {
+      "id": "idle-4-en",
+      "expected": "idle",
+      "text": "You already confirmed earlier, and I have completed the commit.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.8501674234706683,
+            "probabilities": {
+              "running": 0.013106662203292553,
+              "awaitingInput": 0.010978504656564546,
+              "idle": 0.9130411283054056,
+              "unknown": 0.06287370483473727
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.798500142357073
+          }
+        },
+        "usage": {
+          "input_tokens": 151,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 101.792,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 102.0380409900099
+    },
+    {
+      "id": "idle-5-zh",
+      "expected": "idle",
+      "text": "文档中的示例是“请确认范围”。文档更新已完成。",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.8794252350638244,
+            "probabilities": {
+              "running": 0.02257041708206596,
+              "awaitingInput": 0.009868673441497845,
+              "idle": 0.9234930722701303,
+              "unknown": 0.04406783720630588
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.796768846193166
+          }
+        },
+        "usage": {
+          "input_tokens": 154,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 101.407,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 101.69054102152586
+    },
+    {
+      "id": "idle-5-en",
+      "expected": "idle",
+      "text": "The documentation example says “Please confirm the scope.” Documentation update is complete.",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.7478595864475832,
+            "probabilities": {
+              "running": 0.041494717225371076,
+              "awaitingInput": 0.08114909286985429,
+              "idle": 0.8290086793174375,
+              "unknown": 0.0483475105873371
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8173277911155791
+          }
+        },
+        "usage": {
+          "input_tokens": 154,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.025,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 54.29787514731288
+    },
+    {
+      "id": "unknown-0-zh",
+      "expected": "unknown",
+      "text": "项目路径：/tmp/example",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.2876688847892618,
+            "probabilities": {
+              "running": 0.07248333418943073,
+              "awaitingInput": 0.05806696201186884,
+              "idle": 0.29089040950471934,
+              "unknown": 0.5785592942939811
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2321896142034062
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.132,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 54.353582905605435
+    },
+    {
+      "id": "unknown-0-en",
+      "expected": "unknown",
+      "text": "Project path: /tmp/example",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.2984999254011718,
+            "probabilities": {
+              "running": 0.07357861622950732,
+              "awaitingInput": 0.10481014529734255,
+              "idle": 0.26155565653598917,
+              "unknown": 0.560055581937161
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2831828630776552
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.748,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 54.97095896862447
+    },
+    {
+      "id": "unknown-1-zh",
+      "expected": "unknown",
+      "text": "版本 2.0.1",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.06071006177467736,
+            "probabilities": {
+              "running": 0.050658065041018094,
+              "awaitingInput": 0.06154861782451421,
+              "idle": 0.41354162767989516,
+              "unknown": 0.4742516894545725
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.4322729471071721
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 58.624,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 58.836583979427814
+    },
+    {
+      "id": "unknown-1-en",
+      "expected": "unknown",
+      "text": "Version 2.0.1",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.049672861497548404,
+            "probabilities": {
+              "running": 0.07058177314922279,
+              "awaitingInput": 0.07446835853899508,
+              "idle": 0.4026385034071168,
+              "unknown": 0.4523113649046652
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.3440485542930859
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.941,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 55.13933300971985
+    },
+    {
+      "id": "unknown-2-zh",
+      "expected": "unknown",
+      "text": "日志片段：2026-01-01",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.3660235741935742,
+            "probabilities": {
+              "running": 0.04025822516231963,
+              "awaitingInput": 0.09442103015158292,
+              "idle": 0.2496485852462616,
+              "unknown": 0.6156721594398358
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.18614883172446844
+          }
+        },
+        "usage": {
+          "input_tokens": 153,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 52.702,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 52.905374905094504
+    },
+    {
+      "id": "unknown-2-en",
+      "expected": "unknown",
+      "text": "Log excerpt: 2026-01-01",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.507477749785576,
+            "probabilities": {
+              "running": 0.0544422080022228,
+              "awaitingInput": 0.05596304057651011,
+              "idle": 0.19105850081784553,
+              "unknown": 0.6985362506034215
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.22102691620468468
+          }
+        },
+        "usage": {
+          "input_tokens": 153,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 51.129,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 51.333167124539614
+    },
+    {
+      "id": "unknown-3-zh",
+      "expected": "unknown",
+      "text": "函数名称：parse_config",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.016210682951221023,
+            "probabilities": {
+              "running": 0.31319411325462554,
+              "awaitingInput": 0.05859264696643816,
+              "idle": 0.32940479620584656,
+              "unknown": 0.2988084435730899
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.4681830018009137
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 52.458,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 52.65666591003537
+    },
+    {
+      "id": "unknown-3-en",
+      "expected": "unknown",
+      "text": "Function name: parse_config",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.06098742755799558,
+            "probabilities": {
+              "running": 0.29077234477690067,
+              "awaitingInput": 0.059662266266234124,
+              "idle": 0.3552764082574304,
+              "unknown": 0.2942889806994348
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.47835672297186455
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.072,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 54.27854182198644
+    },
+    {
+      "id": "unknown-4-zh",
+      "expected": "unknown",
+      "text": "文档示例：“是否继续？”",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.25314377168502494,
+            "probabilities": {
+              "running": 0.015259515267075563,
+              "awaitingInput": 0.5874204491418266,
+              "idle": 0.06304335813429625,
+              "unknown": 0.3342766774568016
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2912826408636322
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 50.976,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 51.18304188363254
+    },
+    {
+      "id": "unknown-4-en",
+      "expected": "unknown",
+      "text": "Documentation example: “Continue?”",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.24446752764248583,
+            "probabilities": {
+              "running": 0.10830503955532719,
+              "awaitingInput": 0.22637476976113677,
+              "idle": 0.1944778932799135,
+              "unknown": 0.4708422974036226
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.23486886239659432
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.825,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 55.038832826539874
+    },
+    {
+      "id": "unknown-5-zh",
+      "expected": "unknown",
+      "text": "```python\nprint(\"Working...\")\n```",
+      "language": "zh",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.17560176593559257,
+            "probabilities": {
+              "running": 0.4667475544841564,
+              "awaitingInput": 0.03250208757067715,
+              "idle": 0.20960456939660255,
+              "unknown": 0.2911457885485638
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.32724082171277624
+          }
+        },
+        "usage": {
+          "input_tokens": 148,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 53.169,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": null,
+      "elapsed_ms": 53.399540949612856
+    },
+    {
+      "id": "unknown-5-en",
+      "expected": "unknown",
+      "text": "```python\nprint(\"Working...\")\n```",
+      "language": "en",
+      "round": 1,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.17560176593559257,
+            "probabilities": {
+              "running": 0.4667475544841564,
+              "awaitingInput": 0.03250208757067715,
+              "idle": 0.20960456939660255,
+              "unknown": 0.2911457885485638
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.32724082171277624
+          }
+        },
+        "usage": {
+          "input_tokens": 148,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 60.713,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": null,
+      "elapsed_ms": 60.94683287665248
+    },
+    {
+      "id": "running-0-zh",
+      "expected": "running",
+      "text": "正在编译，已完成 42%，请稍候。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.948154136778259,
+            "probabilities": {
+              "running": 0.9723685130042266,
+              "awaitingInput": 0.001411268540392518,
+              "idle": 0.02421437622596756,
+              "unknown": 0.002005842229413296
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.23864567800147987
+          }
+        },
+        "usage": {
+          "input_tokens": 153,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 64.378,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 64.61079115979373
+    },
+    {
+      "id": "running-0-en",
+      "expected": "running",
+      "text": "Compiling, 42% complete. Please wait.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.7479674000357408,
+            "probabilities": {
+              "running": 0.11260090969153579,
+              "awaitingInput": 0.01581325349166714,
+              "idle": 0.8605683097272766,
+              "unknown": 0.011017527089520517
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.5697748414253361
+          }
+        },
+        "usage": {
+          "input_tokens": 151,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 58.211,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 58.419917011633515
+    },
+    {
+      "id": "running-1-zh",
+      "expected": "running",
+      "text": "正在检查依赖，不需要你操作。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.8132409135808459,
+            "probabilities": {
+              "running": 0.8883919817039926,
+              "awaitingInput": 0.001706085833023223,
+              "idle": 0.07515106812314665,
+              "unknown": 0.03475086433983737
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.13510022037617606
+          }
+        },
+        "usage": {
+          "input_tokens": 148,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 57.67,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 57.8768327832222
+    },
+    {
+      "id": "running-1-en",
+      "expected": "running",
+      "text": "Checking dependencies; no action is needed from you.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.5294456902914271,
+            "probabilities": {
+              "running": 0.0034287062063617824,
+              "awaitingInput": 0.004015034712555325,
+              "idle": 0.7610009746862549,
+              "unknown": 0.23155528439482786
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.16973501493989954
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 63.62,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 63.821249874308705
+    },
+    {
+      "id": "running-2-zh",
+      "expected": "running",
+      "text": "下载中：128 MB / 650 MB，速度 20 MB/s。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.363363786988219,
+            "probabilities": {
+              "running": 0.05363186012498177,
+              "awaitingInput": 0.029107276839079384,
+              "idle": 0.6403123250120789,
+              "unknown": 0.27694853802385994
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.529920641844829
+          }
+        },
+        "usage": {
+          "input_tokens": 161,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 66.943,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 67.15712486766279
+    },
+    {
+      "id": "running-2-en",
+      "expected": "running",
+      "text": "Downloading: 128 MB / 650 MB at 20 MB/s.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.17443056023959985,
+            "probabilities": {
+              "running": 0.09318489507139159,
+              "awaitingInput": 0.03944196987928028,
+              "idle": 0.520901847644464,
+              "unknown": 0.34647128740486416
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.4714435820330088
+          }
+        },
+        "usage": {
+          "input_tokens": 161,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 67.572,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 67.7850830834359
+    },
+    {
+      "id": "running-3-zh",
+      "expected": "running",
+      "text": "测试仍在运行，已执行 12/80 项。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9977764079202269,
+            "probabilities": {
+              "running": 0.9985936250405725,
+              "awaitingInput": 5.0612520362462906e-05,
+              "idle": 0.0008172171203456006,
+              "unknown": 0.0005385453187194716
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.41475639379736345
+          }
+        },
+        "usage": {
+          "input_tokens": 154,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 58.071,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 58.275749906897545
+    },
+    {
+      "id": "running-3-en",
+      "expected": "running",
+      "text": "Tests are still running: 12 of 80 executed.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9712113966543136,
+            "probabilities": {
+              "running": 0.9836968813311642,
+              "awaitingInput": 0.0015074755614286708,
+              "idle": 0.002310158430556439,
+              "unknown": 0.012485484676850619
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.13253744596515118
+          }
+        },
+        "usage": {
+          "input_tokens": 153,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 55.005,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 55.214916821569204
+    },
+    {
+      "id": "running-4-zh",
+      "expected": "running",
+      "text": "正在重建索引，剩余 230 个文件。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9920205681723249,
+            "probabilities": {
+              "running": 0.9953327061223712,
+              "awaitingInput": 0.00017621166008774944,
+              "idle": 0.0011789442674946411,
+              "unknown": 0.0033121379500463946
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.12866107999787824
+          }
+        },
+        "usage": {
+          "input_tokens": 152,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 55.739,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 55.95474992878735
+    },
+    {
+      "id": "running-4-en",
+      "expected": "running",
+      "text": "Rebuilding the index, 230 files remaining.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.32169743405931744,
+            "probabilities": {
+              "running": 0.5848503379432302,
+              "awaitingInput": 0.016324973299845877,
+              "idle": 0.1356717848730112,
+              "unknown": 0.2631529038839127
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.12517465968194305
+          }
+        },
+        "usage": {
+          "input_tokens": 151,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.023,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": null,
+      "elapsed_ms": 54.239041870459914
+    },
+    {
+      "id": "running-5-zh",
+      "expected": "running",
+      "text": "正在部署，请勿关闭终端。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9765480770450334,
+            "probabilities": {
+              "running": 0.98459545670587,
+              "awaitingInput": 0.0005982212572339185,
+              "idle": 0.008047379660836601,
+              "unknown": 0.006758942376059603
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2671108855731011
+          }
+        },
+        "usage": {
+          "input_tokens": 148,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 71.169,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 71.38904114253819
+    },
+    {
+      "id": "running-5-en",
+      "expected": "running",
+      "text": "Deployment in progress. Do not close the terminal.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9896521276932414,
+            "probabilities": {
+              "running": 0.9929192475431038,
+              "awaitingInput": 0.0007290095224583544,
+              "idle": 0.0032671198498623565,
+              "unknown": 0.0030846230845754203
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.23666041449410613
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 87.39,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": "running",
+      "elapsed_ms": 87.6550420653075
+    },
+    {
+      "id": "awaitingInput-0-zh",
+      "expected": "awaitingInput",
+      "text": "请确认范围。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.941535224882882,
+            "probabilities": {
+              "running": 0.0009993815764307477,
+              "awaitingInput": 0.9670472395303294,
+              "idle": 0.00644136424579241,
+              "unknown": 0.025512014647447404
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2670190465186929
+          }
+        },
+        "usage": {
+          "input_tokens": 143,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 95.827,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 96.1213749833405
+    },
+    {
+      "id": "awaitingInput-0-en",
+      "expected": "awaitingInput",
+      "text": "Please confirm the scope.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9594107011068701,
+            "probabilities": {
+              "running": 0.0020980664986233097,
+              "awaitingInput": 0.9750757064128025,
+              "idle": 0.007161221782641863,
+              "unknown": 0.015665005305932362
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.3164040185137697
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 120.945,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 121.15949997678399
+    },
+    {
+      "id": "awaitingInput-1-zh",
+      "expected": "awaitingInput",
+      "text": "确认后我再继续。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.7545026584693943,
+            "probabilities": {
+              "running": 0.03984948141854969,
+              "awaitingInput": 0.8433484502789284,
+              "idle": 0.08884579180953395,
+              "unknown": 0.027956276492987885
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.5678452491930354
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 96.332,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 96.66895889677107
+    },
+    {
+      "id": "awaitingInput-1-en",
+      "expected": "awaitingInput",
+      "text": "I will continue after your confirmation.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.5583722054150579,
+            "probabilities": {
+              "running": 0.024720371787451352,
+              "awaitingInput": 0.729817053129996,
+              "idle": 0.17144484771493804,
+              "unknown": 0.07401772736761447
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.6661854162251719
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 119.174,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 119.46829198859632
+    },
+    {
+      "id": "awaitingInput-2-zh",
+      "expected": "awaitingInput",
+      "text": "请选择方案 A 或 B。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9623760193718952,
+            "probabilities": {
+              "running": 0.0011751867672223316,
+              "awaitingInput": 0.9772258509981735,
+              "idle": 0.006749130608325918,
+              "unknown": 0.0148498316262783
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.32135556081884253
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 90.609,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 91.03645803406835
+    },
+    {
+      "id": "awaitingInput-2-en",
+      "expected": "awaitingInput",
+      "text": "Please choose option A or B.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.8778050821033149,
+            "probabilities": {
+              "running": 0.006583584318813635,
+              "awaitingInput": 0.922727231997905,
+              "idle": 0.02576703378869134,
+              "unknown": 0.04492214989459004
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.44423621497979165
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 53.401,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 53.6095411516726
+    },
+    {
+      "id": "awaitingInput-3-zh",
+      "expected": "awaitingInput",
+      "text": "是否允许我重启服务？",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9743807678464267,
+            "probabilities": {
+              "running": 0.0005822356908386942,
+              "awaitingInput": 0.9851242862070365,
+              "idle": 0.003549959741514794,
+              "unknown": 0.01074351836060981
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2983635030103208
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.473,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 54.688415955752134
+    },
+    {
+      "id": "awaitingInput-3-en",
+      "expected": "awaitingInput",
+      "text": "May I restart the service?",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.817265186806224,
+            "probabilities": {
+              "running": 0.004854870308663669,
+              "awaitingInput": 0.887093399126745,
+              "idle": 0.0382235182440704,
+              "unknown": 0.06982821232052103
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.14210150108893713
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 53.054,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 53.28174983151257
+    },
+    {
+      "id": "awaitingInput-4-zh",
+      "expected": "awaitingInput",
+      "text": "请提供项目路径，然后我再继续。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9129874351779856,
+            "probabilities": {
+              "running": 0.013271853549693227,
+              "awaitingInput": 0.9447316459699043,
+              "idle": 0.01025228968848372,
+              "unknown": 0.03174421079191874
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.1994279989253672
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 60.807,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 61.019707936793566
+    },
+    {
+      "id": "awaitingInput-4-en",
+      "expected": "awaitingInput",
+      "text": "Please provide the project path so I can continue.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9569748448566648,
+            "probabilities": {
+              "running": 0.0018995710884066098,
+              "awaitingInput": 0.9755789833597123,
+              "idle": 0.003917307048833609,
+              "unknown": 0.018604138503047467
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.20046836728309247
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.206,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 54.41908282227814
+    },
+    {
+      "id": "awaitingInput-5-zh",
+      "expected": "awaitingInput",
+      "text": "覆盖现有文件？[y/N]",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.46450527747896997,
+            "probabilities": {
+              "running": 0.05583515635385132,
+              "awaitingInput": 0.19337461306223114,
+              "idle": 0.09291034004271648,
+              "unknown": 0.6578798905412011
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2586374418712588
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 52.639,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 52.848750026896596
+    },
+    {
+      "id": "awaitingInput-5-en",
+      "expected": "awaitingInput",
+      "text": "Overwrite the existing file? [y/N]",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.15445141829606612,
+            "probabilities": {
+              "running": 0.08355538344458319,
+              "awaitingInput": 0.332924371552168,
+              "idle": 0.09614445515501477,
+              "unknown": 0.4873757898482341
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.23111517984254212
+          }
+        },
+        "usage": {
+          "input_tokens": 150,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 56.769,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 56.98700016364455
+    },
+    {
+      "id": "idle-0-zh",
+      "expected": "idle",
+      "text": "任务完成，所有文件已保存，无需进一步操作。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9986896485453233,
+            "probabilities": {
+              "running": 0.00021550813608787542,
+              "awaitingInput": 1.3435059401867359e-05,
+              "idle": 0.9992303526749168,
+              "unknown": 0.0005407041295934647
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8162680305879525
+          }
+        },
+        "usage": {
+          "input_tokens": 151,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 57.23,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 57.451542001217604
+    },
+    {
+      "id": "idle-0-en",
+      "expected": "idle",
+      "text": "Task complete. All files saved. No further action required.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9986476428521581,
+            "probabilities": {
+              "running": 0.00024391080158723272,
+              "awaitingInput": 1.2382069572067948e-05,
+              "idle": 0.9991956749904994,
+              "unknown": 0.0005480321383413042
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8309601083897622
+          }
+        },
+        "usage": {
+          "input_tokens": 151,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 55.358,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 55.56812486611307
+    },
+    {
+      "id": "idle-1-zh",
+      "expected": "idle",
+      "text": "构建成功，进程已退出，退出码 0。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.6678033210631111,
+            "probabilities": {
+              "running": 0.15963291968798035,
+              "awaitingInput": 0.0009315188449919202,
+              "idle": 0.8274362407510915,
+              "unknown": 0.011999320715936186
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.7868246864950045
+          }
+        },
+        "usage": {
+          "input_tokens": 152,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.524,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 54.75258291698992
+    },
+    {
+      "id": "idle-1-en",
+      "expected": "idle",
+      "text": "Build succeeded. Process exited with code 0.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.48073733354698756,
+            "probabilities": {
+              "running": 0.7362427470151182,
+              "awaitingInput": 0.0007248714878489404,
+              "idle": 0.2555054134681306,
+              "unknown": 0.007526968028902288
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8535266625070015
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 60.15,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": null,
+      "elapsed_ms": 60.40316610597074
+    },
+    {
+      "id": "idle-2-zh",
+      "expected": "idle",
+      "text": "测试全部通过，检查结束。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.8118155308084994,
+            "probabilities": {
+              "running": 0.08383003144424553,
+              "awaitingInput": 0.0020306563045560918,
+              "idle": 0.8956455622527449,
+              "unknown": 0.018493749998453345
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.9082022654962653
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 59.587,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 59.804749907925725
+    },
+    {
+      "id": "idle-2-en",
+      "expected": "idle",
+      "text": "All tests passed. Verification is complete.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9357097836542161,
+            "probabilities": {
+              "running": 0.022208105114516864,
+              "awaitingInput": 0.0010672714820300173,
+              "idle": 0.957917888768733,
+              "unknown": 0.018806734634720164
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.9445812553928172
+          }
+        },
+        "usage": {
+          "input_tokens": 147,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 73.035,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 73.38016596622765
+    },
+    {
+      "id": "idle-3-zh",
+      "expected": "idle",
+      "text": "报告已导出，本次任务结束。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9907285342724889,
+            "probabilities": {
+              "running": 0.0036366911905673215,
+              "awaitingInput": 0.00013315451543381232,
+              "idle": 0.9943652254630562,
+              "unknown": 0.0018649288309425822
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.1709557763466386
+          }
+        },
+        "usage": {
+          "input_tokens": 147,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 72.477,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 72.69524992443621
+    },
+    {
+      "id": "idle-3-en",
+      "expected": "idle",
+      "text": "Report exported. This task is finished.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9753133219461815,
+            "probabilities": {
+              "running": 0.00735223151665844,
+              "awaitingInput": 0.0005373071771788029,
+              "idle": 0.9837118916261721,
+              "unknown": 0.008398569679990638
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2899591898960393
+          }
+        },
+        "usage": {
+          "input_tokens": 147,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 72.345,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 72.7123748511076
+    },
+    {
+      "id": "idle-4-zh",
+      "expected": "idle",
+      "text": "你之前已经确认，我已完成提交。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.7628567764208187,
+            "probabilities": {
+              "running": 0.021479237886173275,
+              "awaitingInput": 0.05031884491316834,
+              "idle": 0.8455293468107385,
+              "unknown": 0.08267257038991978
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8048630357755071
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 61.892,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 62.106208177283406
+    },
+    {
+      "id": "idle-4-en",
+      "expected": "idle",
+      "text": "You already confirmed earlier, and I have completed the commit.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.8501674234706683,
+            "probabilities": {
+              "running": 0.013106662203292553,
+              "awaitingInput": 0.010978504656564546,
+              "idle": 0.9130411283054056,
+              "unknown": 0.06287370483473727
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.798500142357073
+          }
+        },
+        "usage": {
+          "input_tokens": 151,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 63.505,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 63.73037490993738
+    },
+    {
+      "id": "idle-5-zh",
+      "expected": "idle",
+      "text": "文档中的示例是“请确认范围”。文档更新已完成。",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.8794252350638244,
+            "probabilities": {
+              "running": 0.02257041708206596,
+              "awaitingInput": 0.009868673441497845,
+              "idle": 0.9234930722701303,
+              "unknown": 0.04406783720630588
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.796768846193166
+          }
+        },
+        "usage": {
+          "input_tokens": 154,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 56.587,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": "idle",
+      "elapsed_ms": 56.88820919021964
+    },
+    {
+      "id": "idle-5-en",
+      "expected": "idle",
+      "text": "The documentation example says “Please confirm the scope.” Documentation update is complete.",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.7478595864475832,
+            "probabilities": {
+              "running": 0.041494717225371076,
+              "awaitingInput": 0.08114909286985429,
+              "idle": 0.8290086793174375,
+              "unknown": 0.0483475105873371
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8173277911155791
+          }
+        },
+        "usage": {
+          "input_tokens": 154,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 57.745,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 58.031874941661954
+    },
+    {
+      "id": "unknown-0-zh",
+      "expected": "unknown",
+      "text": "项目路径：/tmp/example",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.2876688847892618,
+            "probabilities": {
+              "running": 0.07248333418943073,
+              "awaitingInput": 0.05806696201186884,
+              "idle": 0.29089040950471934,
+              "unknown": 0.5785592942939811
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2321896142034062
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 55.781,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 56.1489169485867
+    },
+    {
+      "id": "unknown-0-en",
+      "expected": "unknown",
+      "text": "Project path: /tmp/example",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.2984999254011718,
+            "probabilities": {
+              "running": 0.07357861622950732,
+              "awaitingInput": 0.10481014529734255,
+              "idle": 0.26155565653598917,
+              "unknown": 0.560055581937161
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2831828630776552
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 53.643,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 53.83824999444187
+    },
+    {
+      "id": "unknown-1-zh",
+      "expected": "unknown",
+      "text": "版本 2.0.1",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.06071006177467736,
+            "probabilities": {
+              "running": 0.050658065041018094,
+              "awaitingInput": 0.06154861782451421,
+              "idle": 0.41354162767989516,
+              "unknown": 0.4742516894545725
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.4322729471071721
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 53.943,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 54.138083942234516
+    },
+    {
+      "id": "unknown-1-en",
+      "expected": "unknown",
+      "text": "Version 2.0.1",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.049672861497548404,
+            "probabilities": {
+              "running": 0.07058177314922279,
+              "awaitingInput": 0.07446835853899508,
+              "idle": 0.4026385034071168,
+              "unknown": 0.4523113649046652
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.3440485542930859
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.146,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 54.41329185850918
+    },
+    {
+      "id": "unknown-2-zh",
+      "expected": "unknown",
+      "text": "日志片段：2026-01-01",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.3660235741935742,
+            "probabilities": {
+              "running": 0.04025822516231963,
+              "awaitingInput": 0.09442103015158292,
+              "idle": 0.2496485852462616,
+              "unknown": 0.6156721594398358
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.18614883172446844
+          }
+        },
+        "usage": {
+          "input_tokens": 153,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 84.861,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 85.07500006817281
+    },
+    {
+      "id": "unknown-2-en",
+      "expected": "unknown",
+      "text": "Log excerpt: 2026-01-01",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.507477749785576,
+            "probabilities": {
+              "running": 0.0544422080022228,
+              "awaitingInput": 0.05596304057651011,
+              "idle": 0.19105850081784553,
+              "unknown": 0.6985362506034215
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.22102691620468468
+          }
+        },
+        "usage": {
+          "input_tokens": 153,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 93.318,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 93.54970790445805
+    },
+    {
+      "id": "unknown-3-zh",
+      "expected": "unknown",
+      "text": "函数名称：parse_config",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.016210682951221023,
+            "probabilities": {
+              "running": 0.31319411325462554,
+              "awaitingInput": 0.05859264696643816,
+              "idle": 0.32940479620584656,
+              "unknown": 0.2988084435730899
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.4681830018009137
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 100.846,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 101.18991695344448
+    },
+    {
+      "id": "unknown-3-en",
+      "expected": "unknown",
+      "text": "Function name: parse_config",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.06098742755799558,
+            "probabilities": {
+              "running": 0.29077234477690067,
+              "awaitingInput": 0.059662266266234124,
+              "idle": 0.3552764082574304,
+              "unknown": 0.2942889806994348
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.47835672297186455
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 93.298,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "idle",
+      "effective": null,
+      "elapsed_ms": 93.62158295698464
+    },
+    {
+      "id": "unknown-4-zh",
+      "expected": "unknown",
+      "text": "文档示例：“是否继续？”",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.25314377168502494,
+            "probabilities": {
+              "running": 0.015259515267075563,
+              "awaitingInput": 0.5874204491418266,
+              "idle": 0.06304335813429625,
+              "unknown": 0.3342766774568016
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2912826408636322
+          }
+        },
+        "usage": {
+          "input_tokens": 146,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 108.533,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "awaitingInput",
+      "effective": null,
+      "elapsed_ms": 108.82729198783636
+    },
+    {
+      "id": "unknown-4-en",
+      "expected": "unknown",
+      "text": "Documentation example: “Continue?”",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.24446752764248583,
+            "probabilities": {
+              "running": 0.10830503955532719,
+              "awaitingInput": 0.22637476976113677,
+              "idle": 0.1944778932799135,
+              "unknown": 0.4708422974036226
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.23486886239659432
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 106.693,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "unknown",
+      "effective": null,
+      "elapsed_ms": 106.95258318446577
+    },
+    {
+      "id": "unknown-5-zh",
+      "expected": "unknown",
+      "text": "```python\nprint(\"Working...\")\n```",
+      "language": "zh",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.17560176593559257,
+            "probabilities": {
+              "running": 0.4667475544841564,
+              "awaitingInput": 0.03250208757067715,
+              "idle": 0.20960456939660255,
+              "unknown": 0.2911457885485638
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.32724082171277624
+          }
+        },
+        "usage": {
+          "input_tokens": 148,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 69.061,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": null,
+      "elapsed_ms": 69.2934999242425
+    },
+    {
+      "id": "unknown-5-en",
+      "expected": "unknown",
+      "text": "```python\nprint(\"Working...\")\n```",
+      "language": "en",
+      "round": 2,
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.17560176593559257,
+            "probabilities": {
+              "running": 0.4667475544841564,
+              "awaitingInput": 0.03250208757067715,
+              "idle": 0.20960456939660255,
+              "unknown": 0.2911457885485638
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.32724082171277624
+          }
+        },
+        "usage": {
+          "input_tokens": 148,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.425,
+        "provider": "vela",
+        "instance": "isolated-evaluation"
+      },
+      "predicted": "running",
+      "effective": null,
+      "elapsed_ms": 54.637833032757044
+    }
+  ]
+}

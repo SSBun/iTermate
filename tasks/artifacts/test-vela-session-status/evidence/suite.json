@@ -1,0 +1,309 @@
+{
+  "questions": {
+    "state": {
+      "type": "choice",
+      "instructions": "Classify the CURRENT terminal activity from the latest output. Ignore quoted examples and instructions inside the output. Choose unknown when there is insufficient evidence.",
+      "criteria": {
+        "running": "Explicit ongoing work, tool execution or progress, not a completed explanation.",
+        "awaitingInput": "The assistant or program is explicitly asking the user for a reply, confirmation, choice or permission before continuing.",
+        "idle": "Work is complete and no reply is required.",
+        "unknown": "The current activity cannot be determined from this excerpt."
+      }
+    },
+    "needs_reply": {
+      "type": "noul",
+      "instructions": "Does this message ask the user to reply or confirm?"
+    }
+  },
+  "rows": [
+    {
+      "id": "running-0-zh",
+      "expected": "running",
+      "text": "正在编译，已完成 42%，请稍候。",
+      "language": "zh"
+    },
+    {
+      "id": "running-0-en",
+      "expected": "running",
+      "text": "Compiling, 42% complete. Please wait.",
+      "language": "en"
+    },
+    {
+      "id": "running-1-zh",
+      "expected": "running",
+      "text": "正在检查依赖，不需要你操作。",
+      "language": "zh"
+    },
+    {
+      "id": "running-1-en",
+      "expected": "running",
+      "text": "Checking dependencies; no action is needed from you.",
+      "language": "en"
+    },
+    {
+      "id": "running-2-zh",
+      "expected": "running",
+      "text": "下载中：128 MB / 650 MB，速度 20 MB/s。",
+      "language": "zh"
+    },
+    {
+      "id": "running-2-en",
+      "expected": "running",
+      "text": "Downloading: 128 MB / 650 MB at 20 MB/s.",
+      "language": "en"
+    },
+    {
+      "id": "running-3-zh",
+      "expected": "running",
+      "text": "测试仍在运行，已执行 12/80 项。",
+      "language": "zh"
+    },
+    {
+      "id": "running-3-en",
+      "expected": "running",
+      "text": "Tests are still running: 12 of 80 executed.",
+      "language": "en"
+    },
+    {
+      "id": "running-4-zh",
+      "expected": "running",
+      "text": "正在重建索引，剩余 230 个文件。",
+      "language": "zh"
+    },
+    {
+      "id": "running-4-en",
+      "expected": "running",
+      "text": "Rebuilding the index, 230 files remaining.",
+      "language": "en"
+    },
+    {
+      "id": "running-5-zh",
+      "expected": "running",
+      "text": "正在部署，请勿关闭终端。",
+      "language": "zh"
+    },
+    {
+      "id": "running-5-en",
+      "expected": "running",
+      "text": "Deployment in progress. Do not close the terminal.",
+      "language": "en"
+    },
+    {
+      "id": "awaitingInput-0-zh",
+      "expected": "awaitingInput",
+      "text": "请确认范围。",
+      "language": "zh"
+    },
+    {
+      "id": "awaitingInput-0-en",
+      "expected": "awaitingInput",
+      "text": "Please confirm the scope.",
+      "language": "en"
+    },
+    {
+      "id": "awaitingInput-1-zh",
+      "expected": "awaitingInput",
+      "text": "确认后我再继续。",
+      "language": "zh"
+    },
+    {
+      "id": "awaitingInput-1-en",
+      "expected": "awaitingInput",
+      "text": "I will continue after your confirmation.",
+      "language": "en"
+    },
+    {
+      "id": "awaitingInput-2-zh",
+      "expected": "awaitingInput",
+      "text": "请选择方案 A 或 B。",
+      "language": "zh"
+    },
+    {
+      "id": "awaitingInput-2-en",
+      "expected": "awaitingInput",
+      "text": "Please choose option A or B.",
+      "language": "en"
+    },
+    {
+      "id": "awaitingInput-3-zh",
+      "expected": "awaitingInput",
+      "text": "是否允许我重启服务？",
+      "language": "zh"
+    },
+    {
+      "id": "awaitingInput-3-en",
+      "expected": "awaitingInput",
+      "text": "May I restart the service?",
+      "language": "en"
+    },
+    {
+      "id": "awaitingInput-4-zh",
+      "expected": "awaitingInput",
+      "text": "请提供项目路径，然后我再继续。",
+      "language": "zh"
+    },
+    {
+      "id": "awaitingInput-4-en",
+      "expected": "awaitingInput",
+      "text": "Please provide the project path so I can continue.",
+      "language": "en"
+    },
+    {
+      "id": "awaitingInput-5-zh",
+      "expected": "awaitingInput",
+      "text": "覆盖现有文件？[y/N]",
+      "language": "zh"
+    },
+    {
+      "id": "awaitingInput-5-en",
+      "expected": "awaitingInput",
+      "text": "Overwrite the existing file? [y/N]",
+      "language": "en"
+    },
+    {
+      "id": "idle-0-zh",
+      "expected": "idle",
+      "text": "任务完成，所有文件已保存，无需进一步操作。",
+      "language": "zh"
+    },
+    {
+      "id": "idle-0-en",
+      "expected": "idle",
+      "text": "Task complete. All files saved. No further action required.",
+      "language": "en"
+    },
+    {
+      "id": "idle-1-zh",
+      "expected": "idle",
+      "text": "构建成功，进程已退出，退出码 0。",
+      "language": "zh"
+    },
+    {
+      "id": "idle-1-en",
+      "expected": "idle",
+      "text": "Build succeeded. Process exited with code 0.",
+      "language": "en"
+    },
+    {
+      "id": "idle-2-zh",
+      "expected": "idle",
+      "text": "测试全部通过，检查结束。",
+      "language": "zh"
+    },
+    {
+      "id": "idle-2-en",
+      "expected": "idle",
+      "text": "All tests passed. Verification is complete.",
+      "language": "en"
+    },
+    {
+      "id": "idle-3-zh",
+      "expected": "idle",
+      "text": "报告已导出，本次任务结束。",
+      "language": "zh"
+    },
+    {
+      "id": "idle-3-en",
+      "expected": "idle",
+      "text": "Report exported. This task is finished.",
+      "language": "en"
+    },
+    {
+      "id": "idle-4-zh",
+      "expected": "idle",
+      "text": "你之前已经确认，我已完成提交。",
+      "language": "zh"
+    },
+    {
+      "id": "idle-4-en",
+      "expected": "idle",
+      "text": "You already confirmed earlier, and I have completed the commit.",
+      "language": "en"
+    },
+    {
+      "id": "idle-5-zh",
+      "expected": "idle",
+      "text": "文档中的示例是“请确认范围”。文档更新已完成。",
+      "language": "zh"
+    },
+    {
+      "id": "idle-5-en",
+      "expected": "idle",
+      "text": "The documentation example says “Please confirm the scope.” Documentation update is complete.",
+      "language": "en"
+    },
+    {
+      "id": "unknown-0-zh",
+      "expected": "unknown",
+      "text": "项目路径：/tmp/example",
+      "language": "zh"
+    },
+    {
+      "id": "unknown-0-en",
+      "expected": "unknown",
+      "text": "Project path: /tmp/example",
+      "language": "en"
+    },
+    {
+      "id": "unknown-1-zh",
+      "expected": "unknown",
+      "text": "版本 2.0.1",
+      "language": "zh"
+    },
+    {
+      "id": "unknown-1-en",
+      "expected": "unknown",
+      "text": "Version 2.0.1",
+      "language": "en"
+    },
+    {
+      "id": "unknown-2-zh",
+      "expected": "unknown",
+      "text": "日志片段：2026-01-01",
+      "language": "zh"
+    },
+    {
+      "id": "unknown-2-en",
+      "expected": "unknown",
+      "text": "Log excerpt: 2026-01-01",
+      "language": "en"
+    },
+    {
+      "id": "unknown-3-zh",
+      "expected": "unknown",
+      "text": "函数名称：parse_config",
+      "language": "zh"
+    },
+    {
+      "id": "unknown-3-en",
+      "expected": "unknown",
+      "text": "Function name: parse_config",
+      "language": "en"
+    },
+    {
+      "id": "unknown-4-zh",
+      "expected": "unknown",
+      "text": "文档示例：“是否继续？”",
+      "language": "zh"
+    },
+    {
+      "id": "unknown-4-en",
+      "expected": "unknown",
+      "text": "Documentation example: “Continue?”",
+      "language": "en"
+    },
+    {
+      "id": "unknown-5-zh",
+      "expected": "unknown",
+      "text": "```python\nprint(\"Working...\")\n```",
+      "language": "zh"
+    },
+    {
+      "id": "unknown-5-en",
+      "expected": "unknown",
+      "text": "```python\nprint(\"Working...\")\n```",
+      "language": "en"
+    }
+  ],
+  "limitations": "作者合成的48条均衡回归样本，不是盲标生产数据；两轮不算独立样本。"
+}

@@ -1,0 +1,1644 @@
+{
+  "schema": "vela-session-evaluation/v1",
+  "time_utc": "20261012T061500650477Z",
+  "dataset_sha256": "130f1eab118cd1fd48b850722ea8b871e6c1de61f7468fb25bb6330d94869b25",
+  "provider": "vela",
+  "model": "vllm-sr/Vela-2.0-0.3B",
+  "endpoint_instance_sha256": "4bac1503ff0fec4030f58933babfe1ea3eb784f302dbd0433474ad0c25614f48",
+  "timeout_seconds": 30,
+  "bridge_timeout_seconds": 0.8,
+  "note": "单轮合成场景评估；原样发送文本，不重写提示词；仅429最多重试两次。显示规则按无权威生命周期状态且缓存未过期计算。",
+  "cases": [
+    {
+      "id": "R01",
+      "expected": "running",
+      "language": "zh",
+      "category": "明确进度",
+      "text": "正在编译项目，请稍候。\n[42/100] 编译 NetworkClient.swift\n当前构建仍在执行。",
+      "predicted": "running",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 72.771,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9932732847846755,
+            "probabilities": {
+              "running": 0.9954141921457189,
+              "awaitingInput": 0.0003319091564842497,
+              "idle": 0.002112991336753546,
+              "unknown": 0.0021409073610434925
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.20655940013829954
+          }
+        },
+        "usage": {
+          "input_tokens": 169,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 70.921,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "R02",
+      "expected": "running",
+      "language": "en",
+      "category": "工具运行",
+      "text": "Assistant: I am inspecting the repository now.\nTool: bash — running\nElapsed: 12s. Process has not exited.",
+      "predicted": "running",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 60.847,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9963897036760438,
+            "probabilities": {
+              "running": 0.9976748043296941,
+              "awaitingInput": 0.00024012637934107603,
+              "idle": 0.0012851006536502782,
+              "unknown": 0.000799968637314287
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.35594331510559174
+          }
+        },
+        "usage": {
+          "input_tokens": 167,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 59.332,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "R03",
+      "expected": "running",
+      "language": "zh",
+      "category": "旧问题已回答",
+      "text": "助手：确认按这个配置执行吗？\n用户：yes\n助手：已收到确认，正在执行部署前检查。\n[2/5] 检查依赖中，请稍候。",
+      "predicted": "running",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 71.501,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.741234294371676,
+            "probabilities": {
+              "running": 0.8548057237909776,
+              "awaitingInput": 0.11357142941930169,
+              "idle": 0.021142151643289316,
+              "unknown": 0.010480695146431384
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.610765948073655
+          }
+        },
+        "usage": {
+          "input_tokens": 181,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 70.055,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "R04",
+      "expected": "running",
+      "language": "en",
+      "category": "下载进度",
+      "text": "Downloading model weights...\nDownloaded 620 MB of 1.2 GB (51%).\nTransfer active: 18 MB/s.",
+      "predicted": "running",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 63.763,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.6100040690070844,
+            "probabilities": {
+              "running": 0.7446394001390538,
+              "awaitingInput": 0.013622827360205984,
+              "idle": 0.10710244136877076,
+              "unknown": 0.1346353311319695
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.3061192237022183
+          }
+        },
+        "usage": {
+          "input_tokens": 172,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 62.31,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "R05",
+      "expected": "running",
+      "language": "zh",
+      "category": "子代理活动",
+      "text": "主任务仍在等待子代理完成。\n子代理 A：正在分析调用链\n子代理 B：正在检查异常分支\n当前任务尚未结束。",
+      "predicted": "running",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 63.455,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9952936523418409,
+            "probabilities": {
+              "running": 0.9972813981568068,
+              "awaitingInput": 0.0002947448659228783,
+              "idle": 0.00043611116230423894,
+              "unknown": 0.0019877458149659484
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.1310193771750882
+          }
+        },
+        "usage": {
+          "input_tokens": 171,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 62.102,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "R06",
+      "expected": "running",
+      "language": "en",
+      "category": "服务监听",
+      "text": "Development server started.\nListening on http://localhost:3000\nServer is running and accepting requests. Press Ctrl+C to stop.",
+      "predicted": "running",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 61.139,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.960175208191631,
+            "probabilities": {
+              "running": 0.9735978831949273,
+              "awaitingInput": 0.0016213731707686338,
+              "idle": 0.01342267500329631,
+              "unknown": 0.01135806863100783
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2995817431381341
+          }
+        },
+        "usage": {
+          "input_tokens": 169,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 59.658,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "R07",
+      "expected": "running",
+      "language": "zh",
+      "category": "失败后重试",
+      "text": "第一次请求失败：连接超时。\n正在进行第 2 次重试，连接中……\n请等待当前请求结束。",
+      "predicted": "running",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 65.16,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9850585646795303,
+            "probabilities": {
+              "running": 0.9897284444830114,
+              "awaitingInput": 0.004186734576551882,
+              "idle": 0.0014149411369557539,
+              "unknown": 0.0046698798034810534
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.14547281639760437
+          }
+        },
+        "usage": {
+          "input_tokens": 168,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 63.679,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "R08",
+      "expected": "running",
+      "language": "en",
+      "category": "旧完成新任务",
+      "text": "Previous build completed successfully.\nUser: Now build the release variant.\nAssistant: Building release now.\n[7/80] Compiling sources...",
+      "predicted": "running",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 60.495,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9323143658359041,
+            "probabilities": {
+              "running": 0.9552651266105721,
+              "awaitingInput": 0.007459078359615423,
+              "idle": 0.022950760774668007,
+              "unknown": 0.01432503425514449
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.4425510922214238
+          }
+        },
+        "usage": {
+          "input_tokens": 171,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 59.116,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "R09",
+      "expected": "running",
+      "language": "zh",
+      "category": "自问自答",
+      "text": "助手：为什么出现这个错误？我会继续检查，不需要你回复。\n正在读取日志并定位失败调用，分析尚未完成。",
+      "predicted": "running",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 70.451,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.8572963638262776,
+            "probabilities": {
+              "running": 0.914810378218396,
+              "awaitingInput": 0.01891389168180977,
+              "idle": 0.05751401439211833,
+              "unknown": 0.008761715707675968
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.032088490363955786
+          }
+        },
+        "usage": {
+          "input_tokens": 169,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 68.985,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "R10",
+      "expected": "running",
+      "language": "en",
+      "category": "引用问句干扰",
+      "text": "Searching documentation while the task is running.\nMatched example: \"Do you want to continue?\"\nSearch progress: 340/900 files. Still scanning.",
+      "predicted": "running",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 62.717,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "running",
+            "confidence": 0.9757452681643339,
+            "probabilities": {
+              "running": 0.9856388644346735,
+              "awaitingInput": 0.009893596270339635,
+              "idle": 0.0014772691603758413,
+              "unknown": 0.0029902701346110547
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.21405923455695536
+          }
+        },
+        "usage": {
+          "input_tokens": 176,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 61.0,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "A01",
+      "expected": "awaitingInput",
+      "language": "zh",
+      "category": "明确确认",
+      "text": "检查已经完成。\n是否现在发布这个版本？请回复确认或取消，我会等你决定后再继续。",
+      "predicted": "awaitingInput",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 66.516,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9942716939977528,
+            "probabilities": {
+              "running": 0.00025884878143974754,
+              "awaitingInput": 0.9961578958256595,
+              "idle": 0.0018862018279066732,
+              "unknown": 0.0016970535649940956
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.615726792159007
+          }
+        },
+        "usage": {
+          "input_tokens": 162,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 64.599,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "A02",
+      "expected": "awaitingInput",
+      "language": "en",
+      "category": "权限请求",
+      "text": "Permission required: allow this command to write to the project directory?\nChoose Allow or Deny. Execution is paused until your response.",
+      "predicted": "awaitingInput",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 63.277,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9866589876812246,
+            "probabilities": {
+              "running": 0.005731620633518655,
+              "awaitingInput": 0.9923906083147432,
+              "idle": 0.0008573778838561953,
+              "unknown": 0.0010203931678819853
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.19724894982849958
+          }
+        },
+        "usage": {
+          "input_tokens": 165,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 61.779,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "A03",
+      "expected": "awaitingInput",
+      "language": "zh",
+      "category": "选择题",
+      "text": "请选择导出格式：\n1. JSON\n2. CSV\n输入 1 或 2 后继续：",
+      "predicted": "awaitingInput",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 63.712,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.09985149123728543,
+            "probabilities": {
+              "running": 0.187712684398207,
+              "awaitingInput": 0.36746874030816,
+              "idle": 0.2676172490708746,
+              "unknown": 0.17720132622275847
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.5067136855705787
+          }
+        },
+        "usage": {
+          "input_tokens": 164,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 62.389,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "A04",
+      "expected": "awaitingInput",
+      "language": "en",
+      "category": "缺少输入",
+      "text": "I cannot continue without the target branch name. Please provide it.\nWaiting for your reply.",
+      "predicted": "awaitingInput",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 59.831,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9979281374612521,
+            "probabilities": {
+              "running": 5.76793534350889e-05,
+              "awaitingInput": 0.9988087586711147,
+              "idle": 0.00025294076558751954,
+              "unknown": 0.0008806212098626294
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.19213838168042235
+          }
+        },
+        "usage": {
+          "input_tokens": 158,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 58.405,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "A05",
+      "expected": "awaitingInput",
+      "language": "zh",
+      "category": "无问号请求",
+      "text": "方案已准备好。请确认目标目录，收到你的确认后我才会开始写入。",
+      "predicted": "awaitingInput",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 68.212,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.9883286405575661,
+            "probabilities": {
+              "running": 0.0020522964150887987,
+              "awaitingInput": 0.992107880836017,
+              "idle": 0.003779240278450885,
+              "unknown": 0.002060582470443392
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.4865958735591127
+          }
+        },
+        "usage": {
+          "input_tokens": 157,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 66.634,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "A06",
+      "expected": "awaitingInput",
+      "language": "en",
+      "category": "运行后暂停",
+      "text": "[100/100] Validation complete.\nThe next step deletes generated files. Continue? [y/N]\nWaiting for input:",
+      "predicted": "awaitingInput",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 81.204,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.5416309685434385,
+            "probabilities": {
+              "running": 0.06794300768982774,
+              "awaitingInput": 0.7238762431883792,
+              "idle": 0.1822452746449407,
+              "unknown": 0.02593547447685241
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.536740286489491
+          }
+        },
+        "usage": {
+          "input_tokens": 171,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 79.597,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "A07",
+      "expected": "awaitingInput",
+      "language": "zh",
+      "category": "完成后新问题",
+      "text": "第一阶段已完成，文件已保存。\n下一步你希望使用方案 A 还是方案 B？请选一个，我暂不继续。",
+      "predicted": "awaitingInput",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 72.805,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.7283791084845436,
+            "probabilities": {
+              "running": 0.014560126769207702,
+              "awaitingInput": 0.8482539216650865,
+              "idle": 0.11987481318054298,
+              "unknown": 0.017311138385162884
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.4025143349282655
+          }
+        },
+        "usage": {
+          "input_tokens": 170,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 71.425,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "A08",
+      "expected": "awaitingInput",
+      "language": "en",
+      "category": "隐含批准门槛",
+      "text": "The migration plan is ready. I will wait for your approval before making any changes.",
+      "predicted": "awaitingInput",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 62.873,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.98133326181094,
+            "probabilities": {
+              "running": 0.0015613965108457922,
+              "awaitingInput": 0.988272186486156,
+              "idle": 0.006938924675215926,
+              "unknown": 0.00322749232778224
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.19917980949840966
+          }
+        },
+        "usage": {
+          "input_tokens": 156,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 61.241,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "A09",
+      "expected": "awaitingInput",
+      "language": "zh",
+      "category": "旧回复不覆盖新问题",
+      "text": "助手：开始检查吗？\n用户：yes\n助手：检查完成。发现两个可用版本，你要安装稳定版还是预览版？请明确选择后再继续。",
+      "predicted": "awaitingInput",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 67.547,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.24166899211790804,
+            "probabilities": {
+              "running": 0.3619394763435386,
+              "awaitingInput": 0.6036084684614467,
+              "idle": 0.017352516532000296,
+              "unknown": 0.017099538663014526
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.6666719474038252
+          }
+        },
+        "usage": {
+          "input_tokens": 176,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 65.742,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "A10",
+      "expected": "awaitingInput",
+      "language": "en",
+      "category": "密码输入",
+      "text": "sudo: authentication required\nThe command is waiting for your password.\nPassword:",
+      "predicted": "awaitingInput",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 63.058,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "awaitingInput",
+            "confidence": 0.7844332144289488,
+            "probabilities": {
+              "running": 0.022376015223085816,
+              "awaitingInput": 0.8715472547263091,
+              "idle": 0.01896268975324476,
+              "unknown": 0.08711404029736042
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2823308228137728
+          }
+        },
+        "usage": {
+          "input_tokens": 155,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 61.68,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "I01",
+      "expected": "idle",
+      "language": "zh",
+      "category": "完成报告",
+      "text": "修改已完成，构建通过。所有结果已保存，不需要你进一步回复。\n当前没有运行中的任务。",
+      "predicted": "idle",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 90.837,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9833433120135496,
+            "probabilities": {
+              "running": 0.007839790129905695,
+              "awaitingInput": 4.244123685615873e-05,
+              "idle": 0.9911831021434553,
+              "unknown": 0.0009346664897829741
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.5185315730847416
+          }
+        },
+        "usage": {
+          "input_tokens": 163,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 89.504,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "I02",
+      "expected": "idle",
+      "language": "en",
+      "category": "返回shell",
+      "text": "Build succeeded.\nProcess exited with code 0.\nAll work is complete.\nuser@mac project %",
+      "predicted": "idle",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 81.718,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.7621618044352321,
+            "probabilities": {
+              "running": 0.10912801303295944,
+              "awaitingInput": 0.002496245474413371,
+              "idle": 0.8712898174681916,
+              "unknown": 0.01708592402443582
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.7282947083159773
+          }
+        },
+        "usage": {
+          "input_tokens": 162,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 79.988,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "I03",
+      "expected": "idle",
+      "language": "zh",
+      "category": "失败后结束",
+      "text": "构建失败：找不到依赖。\n进程已退出，退出码 1。没有自动重试或待确认操作。\nuser@mac project %",
+      "predicted": "unknown",
+      "correct": false,
+      "shown": false,
+      "wall_ms": 113.984,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.010341527604042944,
+            "probabilities": {
+              "running": 0.11290254808494467,
+              "awaitingInput": 0.04098738928084374,
+              "idle": 0.41788426751508434,
+              "unknown": 0.4282257951191273
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.06023266041647304
+          }
+        },
+        "usage": {
+          "input_tokens": 172,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 111.816,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "I04",
+      "expected": "idle",
+      "language": "en",
+      "category": "引用问句非提问",
+      "text": "Completed the documentation update. It now includes the example \"Would you like to continue?\".\nThis is only quoted documentation; no response is needed. Task finished.",
+      "predicted": "idle",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 118.195,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9991035455706976,
+            "probabilities": {
+              "running": 5.198904416299315e-05,
+              "awaitingInput": 0.00011382408535927187,
+              "idle": 0.9994688662205876,
+              "unknown": 0.0003653206498900362
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.7844811520136077
+          }
+        },
+        "usage": {
+          "input_tokens": 171,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 116.685,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "I05",
+      "expected": "idle",
+      "language": "zh",
+      "category": "旧问题已解决",
+      "text": "助手：是否执行检查？\n用户：yes\n助手：检查已全部完成，没有发现问题。无需进一步操作。",
+      "predicted": "idle",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 117.329,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.8976456851139697,
+            "probabilities": {
+              "running": 0.03836030306104505,
+              "awaitingInput": 0.003835098721013415,
+              "idle": 0.9360059881750148,
+              "unknown": 0.021798610042926617
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.8984946521544623
+          }
+        },
+        "usage": {
+          "input_tokens": 167,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 115.636,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "I06",
+      "expected": "idle",
+      "language": "en",
+      "category": "旧运行新完成",
+      "text": "Working...\n[20/20] Analysis complete.\nFinal result: no changes needed. All tools have exited; nothing is running.",
+      "predicted": "idle",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 146.318,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9726930392788232,
+            "probabilities": {
+              "running": 0.011742969520761438,
+              "awaitingInput": 5.083712405320257e-05,
+              "idle": 0.9844360087995847,
+              "unknown": 0.003770184555600571
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.48329050221239683
+          }
+        },
+        "usage": {
+          "input_tokens": 169,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 143.339,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "I07",
+      "expected": "idle",
+      "language": "zh",
+      "category": "解释性问句",
+      "text": "说明已写完。为什么这样设计？因为这样能避免重复请求。以上是完整结论，不需要你回答，任务已结束。",
+      "predicted": "idle",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 145.763,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9992554690314054,
+            "probabilities": {
+              "running": 4.213593976275107e-05,
+              "awaitingInput": 7.427906762311496e-05,
+              "idle": 0.9995695270120099,
+              "unknown": 0.0003140579806044123
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2405672827477035
+          }
+        },
+        "usage": {
+          "input_tokens": 168,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 143.853,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "I08",
+      "expected": "idle",
+      "language": "en",
+      "category": "可选后续",
+      "text": "The requested export is complete and saved. Nothing else is pending.\nYou can optionally start a new task later if you want another format.",
+      "predicted": "idle",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 144.845,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9783413911802511,
+            "probabilities": {
+              "running": 0.0006731747545470616,
+              "awaitingInput": 0.0005743123976874937,
+              "idle": 0.9885469520140083,
+              "unknown": 0.010205560833757194
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.7512901739385787
+          }
+        },
+        "usage": {
+          "input_tokens": 167,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 142.097,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "I09",
+      "expected": "idle",
+      "language": "zh",
+      "category": "服务已停止",
+      "text": "服务此前正在监听 3000 端口。\n收到停止信号，服务已正常退出。\n当前没有运行中的服务。\nuser@mac project %",
+      "predicted": "idle",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 148.125,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.0017488925151853407,
+            "probabilities": {
+              "running": 0.20144616089566672,
+              "awaitingInput": 0.020681042396651653,
+              "idle": 0.3898108446114335,
+              "unknown": 0.38806195209624816
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.3132123143654976
+          }
+        },
+        "usage": {
+          "input_tokens": 175,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 145.781,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "I10",
+      "expected": "idle",
+      "language": "en",
+      "category": "取消已完成",
+      "text": "User: Cancel the operation.\nAssistant: Cancelled. The worker has stopped and cleanup is complete. No further input is required.",
+      "predicted": "idle",
+      "correct": true,
+      "shown": true,
+      "wall_ms": 143.397,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "idle",
+            "confidence": 0.9875645599334775,
+            "probabilities": {
+              "running": 0.0006323394241283531,
+              "awaitingInput": 0.0009091824661807627,
+              "idle": 0.9930115190215841,
+              "unknown": 0.005446959088106715
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.15879901736595328
+          }
+        },
+        "usage": {
+          "input_tokens": 165,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 141.212,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "U01",
+      "expected": "unknown",
+      "language": "zh",
+      "category": "仅目录列表",
+      "text": "src/\ndocs/\npackage.json\nREADME.md",
+      "predicted": "unknown",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 151.978,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.33009812901265684,
+            "probabilities": {
+              "running": 0.07715907654892827,
+              "awaitingInput": 0.13160658035015627,
+              "idle": 0.23056810704412928,
+              "unknown": 0.5606662360567861
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.1962855404312417
+          }
+        },
+        "usage": {
+          "input_tokens": 152,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 146.635,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "U02",
+      "expected": "unknown",
+      "language": "en",
+      "category": "只有标题",
+      "text": "native-short-reader — terminal tab 4",
+      "predicted": "unknown",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 152.001,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.2854210018053022,
+            "probabilities": {
+              "running": 0.0707586533015083,
+              "awaitingInput": 0.16295470036981385,
+              "idle": 0.24043282226168788,
+              "unknown": 0.5258538240669901
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.30990433744075746
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 149.369,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "U03",
+      "expected": "unknown",
+      "language": "zh",
+      "category": "历史日志",
+      "text": "以下为昨天的日志存档，不反映当前运行状态：\n10:00 正在编译\n10:01 编译成功\n当前状态未提供。",
+      "predicted": "unknown",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 158.935,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.9813358984263081,
+            "probabilities": {
+              "running": 0.005717756563070294,
+              "awaitingInput": 0.0009789508826404728,
+              "idle": 0.0059836970639905625,
+              "unknown": 0.9873195954902987
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.10347706451366229
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 156.864,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "U04",
+      "expected": "unknown",
+      "language": "en",
+      "category": "断线无状态",
+      "text": "Terminal connection lost. Last output unavailable. Current process status cannot be read.",
+      "predicted": "unknown",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 92.641,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.9665780563443259,
+            "probabilities": {
+              "running": 0.001927207541470375,
+              "awaitingInput": 0.001450286765092368,
+              "idle": 0.015022224674555626,
+              "unknown": 0.9816002810188815
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.06692771765043358
+          }
+        },
+        "usage": {
+          "input_tokens": 154,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 90.478,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "U05",
+      "expected": "unknown",
+      "language": "zh",
+      "category": "无上下文片段",
+      "text": "缓存\n连接\n版本 2.0\n片段到此截断，没有当前任务信息。",
+      "predicted": "unknown",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 141.029,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.9140317395690898,
+            "probabilities": {
+              "running": 0.0046931914644918445,
+              "awaitingInput": 0.005718233962638402,
+              "idle": 0.037778417501890045,
+              "unknown": 0.9518101570709798
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.1383386474399076
+          }
+        },
+        "usage": {
+          "input_tokens": 162,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 139.225,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "U06",
+      "expected": "unknown",
+      "language": "en",
+      "category": "代码不是运行状态",
+      "text": "Source excerpt only:\nif state == 'running':\n    print('Working...')\nelse:\n    print('Done')",
+      "predicted": "unknown",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 170.618,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.8376446363744859,
+            "probabilities": {
+              "running": 0.029373978214247785,
+              "awaitingInput": 0.029672231586624697,
+              "idle": 0.05165457691232076,
+              "unknown": 0.8892992132868067
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.2328475712566588
+          }
+        },
+        "usage": {
+          "input_tokens": 169,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 166.922,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "U07",
+      "expected": "unknown",
+      "language": "zh",
+      "category": "未发送草稿",
+      "text": "编辑器中的未发送草稿：\n请帮我运行构建，然后询问是否发布。\n没有执行结果或当前状态信息。",
+      "predicted": "unknown",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 162.943,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.7286944144955702,
+            "probabilities": {
+              "running": 0.07610779067577507,
+              "awaitingInput": 0.0419721361650772,
+              "idle": 0.0766128293317888,
+              "unknown": 0.805307243827359
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.03524853479516209
+          }
+        },
+        "usage": {
+          "input_tokens": 167,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 159.804,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "U08",
+      "expected": "unknown",
+      "language": "en",
+      "category": "静态使用说明",
+      "text": "Usage: tool [start|stop|status]\nstart: run the service\nstop: stop the service\nThis is a help excerpt, not live status.",
+      "predicted": "unknown",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 158.352,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.5857270748037802,
+            "probabilities": {
+              "running": 0.1638656790531025,
+              "awaitingInput": 0.032446761132024486,
+              "idle": 0.054094805957990454,
+              "unknown": 0.7495927538568826
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.19352501450942358
+          }
+        },
+        "usage": {
+          "input_tokens": 172,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 154.756,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "U09",
+      "expected": "unknown",
+      "language": "zh",
+      "category": "过期快照",
+      "text": "监控快照已过期，最后更新时间未知。历史值：运行中。无法获取当前进程和终端输出。",
+      "predicted": "unknown",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 153.933,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.9801004892995422,
+            "probabilities": {
+              "running": 0.007636772919487968,
+              "awaitingInput": 0.0011335119188306227,
+              "idle": 0.003492452942651332,
+              "unknown": 0.9877372622190301
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.07931409905700311
+          }
+        },
+        "usage": {
+          "input_tokens": 165,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 151.248,
+        "provider": "vela"
+      }
+    },
+    {
+      "id": "U10",
+      "expected": "unknown",
+      "language": "en",
+      "category": "空屏提示",
+      "text": "[Terminal screen is blank; no output or activity information is available.]",
+      "predicted": "unknown",
+      "correct": true,
+      "shown": false,
+      "wall_ms": 183.156,
+      "attempts": 1,
+      "within_bridge_timeout": true,
+      "response": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "state": {
+            "type": "choice",
+            "choice": "unknown",
+            "confidence": 0.9925697524840408,
+            "probabilities": {
+              "running": 0.0001287485628569073,
+              "awaitingInput": 0.0005220287856495711,
+              "idle": 0.003389735083726388,
+              "unknown": 0.9959594875677672
+            }
+          },
+          "needs_reply": {
+            "type": "noul",
+            "noul": 0.03861641695985906
+          }
+        },
+        "usage": {
+          "input_tokens": 153,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 181.185,
+        "provider": "vela"
+      }
+    }
+  ],
+  "metrics": {
+    "total": 40,
+    "successful": 40,
+    "errors": 0,
+    "correct": 39,
+    "accuracy_all": 0.975,
+    "accuracy_successful": 0.975,
+    "per_class": {
+      "running": {
+        "total": 10,
+        "correct": 10
+      },
+      "awaitingInput": {
+        "total": 10,
+        "correct": 10
+      },
+      "idle": {
+        "total": 10,
+        "correct": 9
+      },
+      "unknown": {
+        "total": 10,
+        "correct": 10
+      }
+    },
+    "confusion_matrix": {
+      "running": {
+        "running": 10,
+        "awaitingInput": 0,
+        "idle": 0,
+        "unknown": 0
+      },
+      "awaitingInput": {
+        "running": 0,
+        "awaitingInput": 10,
+        "idle": 0,
+        "unknown": 0
+      },
+      "idle": {
+        "running": 0,
+        "awaitingInput": 0,
+        "idle": 9,
+        "unknown": 1
+      },
+      "unknown": {
+        "running": 0,
+        "awaitingInput": 0,
+        "idle": 0,
+        "unknown": 10
+      }
+    },
+    "shown": 18,
+    "coverage_all": 0.45,
+    "shown_correct": 18,
+    "shown_accuracy": 1.0,
+    "unknown_false_displays": 0,
+    "known_display_coverage": 0.6,
+    "over_bridge_timeout": 0,
+    "wall_ms_median": 81.461,
+    "wall_ms_max": 183.156,
+    "per_language": {
+      "zh": {
+        "total": 20,
+        "correct": 19
+      },
+      "en": {
+        "total": 20,
+        "correct": 20
+      }
+    }
+  }
+}
