@@ -151,6 +151,30 @@ final class PiSessionArchives: ObservableObject {
         throw PiArchiveError("Archive saved, but Pi has not exited. The terminal was left open.")
     }
 
+    /// Moves only the selected archive to Trash, preserving original sessions and resume copies.
+    @MainActor
+    func delete(_ record: PiArchiveRecord) async {
+        guard !isBusy else { return }
+        isBusy = true
+        error = nil
+        defer { isBusy = false; refresh() }
+        do {
+            try await Task.detached(priority: .utility) {
+                guard UUID(uuidString: record.id) != nil else {
+                    throw PiArchiveError("Invalid archive identity.")
+                }
+                let folder = Self.archiveRoot.appendingPathComponent(record.id, isDirectory: true)
+                let current = try Self.readManifest(at: folder)
+                guard current == record else {
+                    throw PiArchiveError("Archive metadata changed. Refresh and retry.")
+                }
+                try FileManager.default.trashItem(at: folder, resultingItemURL: nil)
+            }.value
+        } catch {
+            self.error = "Could not delete archive: \(error.localizedDescription)"
+        }
+    }
+
     /// Makes a writable resume copy so later conversation entries cannot change the archive.
     @MainActor
     func prepareResume(_ record: PiArchiveRecord) async throws -> PiResumeLocation {

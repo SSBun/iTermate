@@ -714,6 +714,12 @@ private struct PanelContent: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
                     .help("\(record.summary ?? "No summary available for this archive.")\n\n\(record.terminal) · \(record.sessionId) · \(Date(timeIntervalSince1970: record.archivedAt).formatted(date: .abbreviated, time: .shortened))")
+                    .contextMenu {
+                        Button("Delete Archive", role: .destructive) {
+                            Task { await archives.delete(record) }
+                        }
+                        .disabled(archives.isBusy)
+                    }
                 }
             }
         }
