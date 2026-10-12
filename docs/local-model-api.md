@@ -1,14 +1,18 @@
-# Laya 本地模型与公共 API
+# Laya / Vela 本地决策模型与公共 API
 
 ## 安装与启用
 
-在 iTermate Settings 的 **Local Model** 标签页点击 **Download Model**。App 不包含模型权重，也不会在首次启动时自动下载。
+在 iTermate Settings 的 **Local Model** 标签页选择 **Decision model**（Laya 或 Vela），再点击 **Download Model**。选择持久化；未保存选择时默认使用 Vela，已有明确选择（包括 Laya）保持不变，仍可手动切换。App 不包含模型权重，也不会自动下载未安装的模型。
 
-页面分别展示 **Installation status** 和 **Service status**。安装状态为 Not installed、Installing、Installed 或 Installation failed；安装阶段会显示运行时准备、依赖安装或模型下载进度。Installed 表示安装记录、关键模型文件及 Python/Laya 运行时文件存在，不代表服务已启动，也不是每次打开页面都重新做完整哈希校验。取消后按实际文件状态显示，并提示可以重试；停止服务不会把已安装模型显示为未安装。
+模型切换会停止本 App 拥有的旧 worker，等待其释放单实例锁，然后按服务开关加载所选模型。若新模型未安装或启动失败，显示原因并保持该选择，不悄悄切回另一模型。安装或启动中暂时禁用切换。两种模型使用各自的运行时和安装标记，不需要卸载旧模型。
+
+页面分别展示 **Installation status** 和 **Service status**。安装状态为 Not installed、Installing、Installed 或 Installation failed；安装阶段会显示运行时准备、依赖安装或模型下载进度。Installed 表示安装记录、关键模型文件及 所选模型的 Python 运行时文件存在，不代表服务已启动，也不是每次打开页面都重新做完整哈希校验。取消后按实际文件状态显示，并提示可以重试；停止服务不会把已安装模型显示为未安装。
 
 - 需要 Apple Silicon、macOS 14+ 和 `uv`。未安装 `uv` 时，设置页会提示先运行 `brew install uv`。
 - 下载动作使用 `uv` 准备独立 Python 3.12 环境，安装 `laya-mlx==0.2.0`，然后下载多语言 FP16 模型 `aac6fef/laya-multilingual-mlx`，固定 revision 为 `f2b4faf51023039425946074e2cf1361d2db11d5`。
 - 模型下载到 Hugging Face 缓存；核对发布清单中的大小与 SHA256 后，才写入安装完成标记。模型约 650 MB，另需 Python、依赖与缓存空间。下载进度由 Hub 报告，不包含依赖安装及校验阶段。
+- Vela 使用独立 Python 3.12 环境、`torch==2.14.1`、`transformers==5.19.0`，运行 CPU/FP32、4 线程；模型为 `vllm-sr/Vela-2.0-0.3B`，固定 revision `d6f03aa9baca4f9017fa8f8e9c2764d3bed3f409`。下载和启动前核对固定 SHA256（含模型代码），启动不联网下载；权重约1.24 GB，另需tokenizer和运行时。短输入建议预留2–3 GiB内存，不是长上下文或并发保证。
+- Vela 权重与代码使用 Apache-2.0，但 tokenizer 另受 [Gemma 条款](https://huggingface.co/vllm-sr/Vela-2.0-0.3B/blob/main/DISTRIBUTION_TERMS.md)约束。相关许可随下载保留。
 - 启用 **Enable local API service** 后加载模型；启用 **Assist session state and reply detection** 后才分析 Session 文本。两项偏好独立持久化；错误不会自动关闭用户偏好。
 - 取消下载或服务操作后可重试。App 退出会停止自己启动的服务；没有系统级 daemon 或独立登录项。下次打开 App 时，若用户此前启用了服务，则恢复服务，但不自动下载。
 - Intel Mac 或 macOS 13 仍可使用原有功能，本地模型设置会说明不支持。
@@ -21,11 +25,13 @@
 
 服务工作目录位于当前用户 Application Support 的 `iTermate/Laya` 下，权限为 0700；其中：
 
-- `endpoint.json`：当前服务地址与 PID；客户端应在连接失败后重新读取，不缓存端口。
+- `endpoint.json`：当前服务地址、PID、`provider`、`model` 和随机 `instance`；客户端应重新读取，不永久缓存端口或模型身份。
+- `configuration.json`：用户选择的 `provider`、`analysisEnabled`、`serviceEnabled` 及配置 `revision`；切换/启动/偏好变化生成新revision。
 - `api-token`：权限 0600 的本机调用凭据，与 Jev Token 无关。
 - `model.json`：已校验的本地模型位置。
 - `runtime`：独立 Python 环境。
-- `analysis-enabled`：允许 iTermate 集成提交 Session 正文的标记，不影响公共决策 API。
+- `Vela`：Vela专用安装目录，包含自己的 `model.json` 与 `runtime`；外层控制目录沿用旧名称以兼容连接位置。
+- `analysis-enabled`：服务ready后发布的分析许可，内容为当前配置revision，不影响公共决策 API。客户端同时核对配置、许可、端点provider/instance；响应后重读身份，拒绝切换或禁用期间的迟到结果。
 
 服务不记录正文，不调用云端推理，也不会下载或执行来自 API 请求的模型、文件或命令。拥有当前用户文件读取权限的本地进程可以取得 Token；这不是隔离同一用户恶意程序的安全边界。
 
@@ -35,7 +41,7 @@
 
 ### `GET /health`
 
-返回 `ready` 和模型 ID。只有模型加载成功后才发布 endpoint。
+返回 `ready`、`model`、`provider` 和 `instance`。模型完成加载及短输入预热后才发布 endpoint。
 
 ### `POST /v1/decide`
 
@@ -64,20 +70,30 @@
 - `questions`：1–8 个问题，问题名最多 64 字符。
 - `instructions`：必填非空字符串，最多 600 字符。
 - `choice`：`criteria` 为 2–10 个选项的字典；名称最多 64 字符，描述最多 200 字符。
-- `score`：`criteria` 为 1–10 个描述组成的数组，得分从 0 开始。
+- `score`：`criteria` 为描述数组；Laya为1–10项，Vela为2–10项，得分从0开始。
 - `noul`：是非判断，仅使用 `instructions`，不接受非空 `criteria`。
 - 还会按模型 tokenizer 检查上下文预算；内容过长返回 413，请缩短输入。接口不是 OpenAI Chat Completions，也不接受动态模型路径或切换模型。
 
-返回原生 Laya JSON：`model`、`answers`、`usage`，并附加 `elapsed_ms`（本次 predict 时间，不含 HTTP 网络和加载）。`choice` 包含选择、各项概率、`confidence` 和 `action`。概率与 confidence 不一定相等，均不保证正确性。
+返回 `model`、`provider`、`instance`、`answers`、`usage`，并附加 `elapsed_ms`（本次predict时间，不含HTTP网络和加载）。`choice` 包含选择、各项概率及模型提供的confidence；Laya可能另带action。概率与confidence不一定相等，均不保证正确性。
 
 ### `POST /v1/session`
 
 正文只需 `{"state": "最后一条助手消息或终端文本"}`。返回固定的两个答案：
 
-- `answers.state`：`running`、`awaitingInput`、`idle` 或 `unknown`。
-- `answers.needs_reply.noul`：是否明确要求用户回答、选择、确认或授权的概率。
+- `answers.state`：仅 `awaitingInput` 或 `idle`，判断最新回复是否需要用户继续参与，不预测执行过程。
+- 与 `/v1/question` 共享用户参与语义；不再返回 `needs_reply`，不再使用0.85状态概率与0.6回复概率的双重过滤。
+- 原生运行状态优先。`awaitingInput` 显示问号，点击不清除；`idle` 回复先高亮，点击后灰显。原生协议中的 `finished` 保留为未读回复标记，不再显示 Agent 成功/失败图标。此兼容接口仅供显式 API 调用；iTermate 不再调用它轮询屏幕。产品只通过已接入的回答结束 hook 调用 `/v1/question`。
 
 这是推断，不会直接修改任何 Session。客户端必须保留真实生命周期优先级；不要根据一条文本把正在运行的进程标成完成。
+
+### `POST /v1/question`
+
+正文为 `{"state":"确认后我再继续。"}`。返回 `answers.question`，类型为choice，选项为 `question` / `normal`，附带两类概率。这里的 `question` 是产品状态，不是语法疑问句：判断整条最后回答是否请求或等待用户继续参与，包括回答、确认、选择、授权或提供信息。
+
+- `question`：“确认后我再继续”“请确认范围”“请选择方案”“请提供路径”“已完成，还需要更新示例吗？”。
+- `normal`：单纯完成报告、无需用户介入的自动执行进度、引用/代码中的请求、自问自答、已经得到确认并完成的叙述。任务未完成不等于需要用户参与。
+
+两种provider使用同一固定参与判定定义。此前speech-kind语法问句提示词及其77.5%留出成绩属于历史语义，不能当作当前效果。模型概率不保证正确，不能用作安全授权。
 
 ### 错误
 
@@ -110,10 +126,10 @@ if address.scheme != "http" or address.hostname != "127.0.0.1" or not address.po
     raise ValueError("Not a local iTermate endpoint")
 token = (root / "api-token").read_text().strip()
 body = {
-    "state": "Please confirm whether I should proceed. I will wait for your reply.",
+    "state": "May I proceed with these changes?",
 }
 request = urllib.request.Request(
-    f"http://127.0.0.1:{address.port}/v1/session",
+    f"http://127.0.0.1:{address.port}/v1/question",
     data=json.dumps(body).encode(),
     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
 )
@@ -127,12 +143,13 @@ with opener.open(request, timeout=5) as response:
 
 ## iTermate 的判定边界
 
-- Pi 交互集成仅在 Agent settled 后使用最后一条成功结束的助手文本；启用分析时优先请求模型，不因正则已命中而跳过模型。HTTP 请求最多等待 800 ms；关闭、失败、繁忙、超时或结果不确定时才回退既有正则。正在执行的 Agent、新一轮输入、切换分支和明确 UI 提问事件优先。
-- 模型返回三态决策：`awaitingInput` 概率至少 0.85 且 `needs_reply` 至少 0.6，判定需要回复；`idle` 概率至少 0.85 且 `needs_reply` 不高于 0.4，判定不需要回复，可否定正则误判；其余情况不作决定，回退正则。非法类型、非有限数值或不在 0–1 内的概率也回退。阈值是保守工程选择，不是已验证的准确率保证。
-- 模型的肯定和否定结果都观察分析开关；关闭后，在下一次约两秒的检查中恢复正则结果。模型判定已完成时只检查开关，不重复上报完成事件。等待模型期间暂停旧心跳，避免最终分类前先错误上报完成。
-- iTerm2 对没有真实状态的 Session 轮流读取可见终端文本末尾（最多 1500 字符），每个周期最多分析一个，结果最长保存 8 秒。界面以带问号的模型辅助标签显示，不写回权威状态，不计入完成次数或完成通知。不是按 Session 名称推测，也不能保证可见屏幕等于最后一条助手消息。
+- Pi 交互集成仅在Agent settled后使用最后一条成功结束的助手文本。启用模型分析时调用 `/v1/question`，由所选模型判断用户参与需求，不将旧规则与模型结果做OR合并；关闭分析时保留既有规则行为。新一轮输入、切换分支、子代理活动和明确UI提问事件仍优先。
+- 用户参与决策取合法二分类的最大概率选项，不套用旧终端状态0.85门槛。校验两类概率、选择一致性和provider/instance，响应后再次比对配置revision、许可与端点。配置改变或过期响应被丢弃，不切换到其他模型。
+- 请求超时800ms、不可用、忙、非法结果或完整消息超过3000字符时，不截断后猜测、不换模型，也不把错误当作normal分类；本轮仅保留明确生命周期状态（已结束而非模型确认无需用户参与）。已确认的等待仍由心跳保持直到下一轮或导航，切换模型只作用于后续判定。安装旧版本集成的Pi需通过应用安装入口更新并重新加载，不能只替换源码。
+- 只在 Pi 的 `agent_settled` hook（回答结束且会话空闲）触发模型分析，输入为本轮最后一条助手回复，不抓取终端屏幕、不轮询分类、不设置8秒模型结果过期。等待状态由生命周期心跳续租，心跳不调用模型；新一轮或会话导航清理旧状态。新一轮 generation 及模型身份校验拒绝迟到结果。
+- 没有接入回答结束 hook 的会话不做模型猜测，仍可显示已接入的真实运行/完成事件。Bridge 快照刷新与 Agent 心跳不是模型轮询，保留断开连接时的租约失效机制。
 - Ghostty 无法通过当前 AppleScript 接口读取正文；Pi 集成可以提供消息，其余没有集成的 Session 保持未知。
-- 模型常驻占用内存并竞争 GPU；单例结果不能证明所有语言和终端 UI 都能准确判断。关闭模型分析可立即恢复原有判定路径。
+- Laya常驻占用内存/GPU，Vela占用内存/CPU；同一App只保持所选worker。模型样例不能证明所有语言和终端UI都能准确判断；未执行真实用户会话的切换验收时不得把编译通过当作视觉验收。
 
 ## 验证限制
 

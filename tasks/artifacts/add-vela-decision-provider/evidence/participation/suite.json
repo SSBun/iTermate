@@ -1,0 +1,727 @@
+{
+  "schema": "itermate-user-participation/v1",
+  "questions": {
+    "question": {
+      "type": "choice",
+      "instructions": "Does the assistant's latest reply ask or wait for the user to participate: answer, choose, confirm, authorize, or provide information? Include requests and implicit approval gates, even without a question mark. Exclude completed reports, autonomous progress, quoted examples and self-answered questions.",
+      "criteria": {
+        "normal": "No current user participation is requested or awaited; completed reports or work proceeding autonomously. Quoted or example questions do not count.",
+        "question": "Current user participation is requested or awaited: answering, choosing, confirming, authorizing or providing information, including implicit approval gates."
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "zh-permission",
+      "expected": "question",
+      "category": "permission",
+      "language": "zh",
+      "text": "现在可以由我重启这个进程吗？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-permission",
+      "expected": "question",
+      "category": "permission",
+      "language": "en",
+      "text": "May I restart this process now?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-optional",
+      "expected": "question",
+      "category": "optional",
+      "language": "zh",
+      "text": "报告已经导出。你还想要一份 CSV 吗？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-optional",
+      "expected": "question",
+      "category": "optional",
+      "language": "en",
+      "text": "The report has been exported. Would you also like a CSV copy?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-no-mark",
+      "expected": "question",
+      "category": "no-mark",
+      "language": "zh",
+      "text": "你准备把文件保存到哪里",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-no-mark",
+      "expected": "question",
+      "category": "no-mark",
+      "language": "en",
+      "text": "Where would you like to save the file",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-short",
+      "expected": "question",
+      "category": "short",
+      "language": "zh",
+      "text": "现在发布？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-short",
+      "expected": "question",
+      "category": "short",
+      "language": "en",
+      "text": "Publish now?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-question-before-statement",
+      "expected": "question",
+      "category": "question-before-statement",
+      "language": "zh",
+      "text": "要保留备份吗？两种选择都可以。",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-question-before-statement",
+      "expected": "question",
+      "category": "question-before-statement",
+      "language": "en",
+      "text": "Should I keep a backup? Either choice is fine.",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-polite",
+      "expected": "question",
+      "category": "polite",
+      "language": "zh",
+      "text": "方便告诉我重现这个错误的步骤吗？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-polite",
+      "expected": "question",
+      "category": "polite",
+      "language": "en",
+      "text": "Could you tell me the steps to reproduce this error?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-markdown",
+      "expected": "question",
+      "category": "markdown",
+      "language": "zh",
+      "text": "检查完成。\n\n**你想先处理哪个错误？**",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-markdown",
+      "expected": "question",
+      "category": "markdown",
+      "language": "en",
+      "text": "The inspection is complete.\n\n**Which error would you like to address first?**",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-bullet",
+      "expected": "question",
+      "category": "bullet",
+      "language": "zh",
+      "text": "我需要确认两点：\n- 要保留原文件吗？\n- 输出放在哪个文件夹？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-bullet",
+      "expected": "question",
+      "category": "bullet",
+      "language": "en",
+      "text": "I have two questions:\n- Should I keep the original file?\n- Which folder should contain the output?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-quoted-and-real",
+      "expected": "question",
+      "category": "quoted-and-real",
+      "language": "zh",
+      "text": "说明书举例写着“确认吗？”。不过针对当前改动，你同意保留旧接口吗？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-quoted-and-real",
+      "expected": "question",
+      "category": "quoted-and-real",
+      "language": "en",
+      "text": "The manual gives the example \"Confirm?\". For the current change, do you agree to retain the old interface?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-completed-then-check",
+      "expected": "question",
+      "category": "completed-then-check",
+      "language": "zh",
+      "text": "补丁已生成。你能在预览里看到新的按钮吗？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-completed-then-check",
+      "expected": "question",
+      "category": "completed-then-check",
+      "language": "en",
+      "text": "The patch has been generated. Can you see the new button in the preview?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-negative-context",
+      "expected": "question",
+      "category": "negative-context",
+      "language": "zh",
+      "text": "无需再讨论上周的问题。今天的修改要发到正式环境吗？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-negative-context",
+      "expected": "question",
+      "category": "negative-context",
+      "language": "en",
+      "text": "There is no need to revisit last week's issue. Should today's changes go to production?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-not-blocking",
+      "expected": "question",
+      "category": "not-blocking",
+      "language": "zh",
+      "text": "脚本会照常运行。顺便问一下，你希望通知使用中文吗？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-not-blocking",
+      "expected": "question",
+      "category": "not-blocking",
+      "language": "en",
+      "text": "The script will keep running normally. By the way, would you like notifications in Chinese?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-embedded-direct",
+      "expected": "question",
+      "category": "embedded-direct",
+      "language": "zh",
+      "text": "关于文件名，我想问的是：你希望使用哪个前缀？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-embedded-direct",
+      "expected": "question",
+      "category": "embedded-direct",
+      "language": "en",
+      "text": "Regarding the filename, my question is: which prefix would you like?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-confirmation",
+      "expected": "question",
+      "category": "confirmation",
+      "language": "zh",
+      "text": "我理解你只想导出本月的数据，对吗？",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-confirmation",
+      "expected": "question",
+      "category": "confirmation",
+      "language": "en",
+      "text": "My understanding is that you only want to export this month's data. Is that correct?",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-mixed-message",
+      "expected": "question",
+      "category": "mixed-message",
+      "language": "zh",
+      "text": "我已找到原因，也没有改动文件。是否由我现在修复？确认后才会写入。",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-mixed-message",
+      "expected": "question",
+      "category": "mixed-message",
+      "language": "en",
+      "text": "I found the cause and have not changed any files. Should I fix it now? I will only write after confirmation.",
+      "prior_grammar_label": "question",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-completion",
+      "expected": "normal",
+      "category": "completion",
+      "language": "zh",
+      "text": "索引重建完毕，所有文件都已同步。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-completion",
+      "expected": "normal",
+      "category": "completion",
+      "language": "en",
+      "text": "The index has been rebuilt and all files are synchronized.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-implicit-gate",
+      "expected": "question",
+      "category": "implicit-gate",
+      "language": "zh",
+      "text": "确认后我再继续。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-implicit-gate",
+      "expected": "question",
+      "category": "implicit-gate",
+      "language": "en",
+      "text": "Once you confirm, I will continue.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-paused",
+      "expected": "question",
+      "category": "paused",
+      "language": "zh",
+      "text": "任务暂停中，仍在等待你的许可。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-paused",
+      "expected": "question",
+      "category": "paused",
+      "language": "en",
+      "text": "The task is paused and is still waiting for your permission.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-imperative",
+      "expected": "question",
+      "category": "imperative",
+      "language": "zh",
+      "text": "请提供项目路径，然后我再继续。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-imperative",
+      "expected": "question",
+      "category": "imperative",
+      "language": "en",
+      "text": "Please provide the project path before I continue.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-choose-command",
+      "expected": "question",
+      "category": "choose-command",
+      "language": "zh",
+      "text": "请选择方案 A 或 B。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-choose-command",
+      "expected": "question",
+      "category": "choose-command",
+      "language": "en",
+      "text": "Please choose plan A or B.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-confirm-command",
+      "expected": "question",
+      "category": "confirm-command",
+      "language": "zh",
+      "text": "请确认范围。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-confirm-command",
+      "expected": "question",
+      "category": "confirm-command",
+      "language": "en",
+      "text": "Please confirm the scope.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-self-answer",
+      "expected": "normal",
+      "category": "self-answer",
+      "language": "zh",
+      "text": "为什么没有通知？因为权限被关闭了。我已在上面说明开启方法。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-self-answer",
+      "expected": "normal",
+      "category": "self-answer",
+      "language": "en",
+      "text": "Why was there no notification? Because permission was disabled. I explained how to enable it above.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-heading",
+      "expected": "normal",
+      "category": "heading",
+      "language": "zh",
+      "text": "### 如何导出数据？\n点击导出按钮，选择文件夹即可。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-heading",
+      "expected": "normal",
+      "category": "heading",
+      "language": "en",
+      "text": "### How do you export data?\nClick Export and choose a folder.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-quote",
+      "expected": "normal",
+      "category": "quote",
+      "language": "zh",
+      "text": "这条日志记录了用户昨天的问题：“什么时候发布？”",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-quote",
+      "expected": "normal",
+      "category": "quote",
+      "language": "en",
+      "text": "This log records the user's question from yesterday: \"When will it be released?\"",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-code",
+      "expected": "normal",
+      "category": "code",
+      "language": "zh",
+      "text": "用于测试的字符串如下，不是当前对话的问题：\n```js\nconst message = \"要保存吗？\";\n```",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-code",
+      "expected": "normal",
+      "category": "code",
+      "language": "en",
+      "text": "This is a test string, not a question in the current conversation:\n```js\nconst message = \"Save it?\";\n```",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-reported-question",
+      "expected": "normal",
+      "category": "reported-question",
+      "language": "zh",
+      "text": "团队正在讨论是否采用新数据库，目前还没有决定。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-reported-question",
+      "expected": "normal",
+      "category": "reported-question",
+      "language": "en",
+      "text": "The team is discussing whether to adopt the new database. No decision has been made yet.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-historical-approval",
+      "expected": "normal",
+      "category": "historical-approval",
+      "language": "zh",
+      "text": "你刚才确认过要删除缓存，所以我已经完成清理。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-historical-approval",
+      "expected": "normal",
+      "category": "historical-approval",
+      "language": "en",
+      "text": "You just confirmed that the cache should be deleted, so I have completed the cleanup.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-no-response",
+      "expected": "normal",
+      "category": "no-response",
+      "language": "zh",
+      "text": "无需回答这条消息，结果已经写入报告。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-no-response",
+      "expected": "normal",
+      "category": "no-response",
+      "language": "en",
+      "text": "No response to this message is needed; the results are already in the report.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-autonomous-progress",
+      "expected": "normal",
+      "category": "autonomous-progress",
+      "language": "zh",
+      "text": "正在打包应用，结束后会自动保存，无需用户操作。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-autonomous-progress",
+      "expected": "normal",
+      "category": "autonomous-progress",
+      "language": "en",
+      "text": "The application is being packaged and will be saved automatically. No user action is required.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-suggestion",
+      "expected": "normal",
+      "category": "suggestion",
+      "language": "zh",
+      "text": "建议先备份文件，再修改配置。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-suggestion",
+      "expected": "normal",
+      "category": "suggestion",
+      "language": "en",
+      "text": "I recommend backing up the file before modifying the configuration.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-future-invitation",
+      "expected": "normal",
+      "category": "future-invitation",
+      "language": "zh",
+      "text": "以后需要重新导出时，再通知我即可。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-future-invitation",
+      "expected": "normal",
+      "category": "future-invitation",
+      "language": "en",
+      "text": "Let me know if you need another export in the future.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-ui-label",
+      "expected": "normal",
+      "category": "ui-label",
+      "language": "zh",
+      "text": "按钮文字已改为“是否重试？”，这是界面文案。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-ui-label",
+      "expected": "normal",
+      "category": "ui-label",
+      "language": "en",
+      "text": "The button label has been changed to \"Retry?\". This is interface copy.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-instruction-to-other",
+      "expected": "normal",
+      "category": "instruction-to-other",
+      "language": "zh",
+      "text": "以下是文档中的引用示例，不是当前要求：你可以向管理员询问“我是否有访问权限？”。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-instruction-to-other",
+      "expected": "normal",
+      "category": "instruction-to-other",
+      "language": "en",
+      "text": "This is a quoted documentation example, not a current request: You can ask the administrator \"Do I have access?\".",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-rhetorical-explained",
+      "expected": "normal",
+      "category": "rhetorical-explained",
+      "language": "zh",
+      "text": "谁会想丢失文件呢？这只是说明备份很重要，并不是要你作答。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-rhetorical-explained",
+      "expected": "normal",
+      "category": "rhetorical-explained",
+      "language": "en",
+      "text": "Who would want to lose files? This is just a rhetorical point about backups, not a request for an answer.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-document-dialogue",
+      "expected": "normal",
+      "category": "document-dialogue",
+      "language": "zh",
+      "text": "下面是文档示例对话：\n助手：要打开预览吗？\n用户：不用。\n示例到此结束。",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "en-document-dialogue",
+      "expected": "normal",
+      "category": "document-dialogue",
+      "language": "en",
+      "text": "Here is a sample dialogue for the documentation:\nAssistant: Open the preview?\nUser: No.\nEnd of example.",
+      "prior_grammar_label": "normal",
+      "origin": "historical-relabelled"
+    },
+    {
+      "id": "zh-saved",
+      "expected": "normal",
+      "language": "zh",
+      "category": "saved",
+      "text": "修改已保存，验证通过。没有需要你补充的内容。",
+      "origin": "new"
+    },
+    {
+      "id": "en-saved",
+      "expected": "normal",
+      "language": "en",
+      "category": "saved",
+      "text": "The changes are saved and verification passed. Nothing further is needed from you.",
+      "origin": "new"
+    },
+    {
+      "id": "zh-automatic-retry",
+      "expected": "normal",
+      "language": "zh",
+      "category": "automatic-retry",
+      "text": "构建还没有完成，我会自动重试并在结束后报告。",
+      "origin": "new"
+    },
+    {
+      "id": "en-automatic-retry",
+      "expected": "normal",
+      "language": "en",
+      "category": "automatic-retry",
+      "text": "The build is not complete. I will retry automatically and report when it finishes.",
+      "origin": "new"
+    },
+    {
+      "id": "zh-historical-success",
+      "expected": "normal",
+      "language": "zh",
+      "category": "historical-success",
+      "text": "确认后我提交成功，测试通过。",
+      "origin": "new"
+    },
+    {
+      "id": "en-historical-success",
+      "expected": "normal",
+      "language": "en",
+      "category": "historical-success",
+      "text": "After your confirmation, I submitted successfully and the tests passed.",
+      "origin": "new"
+    },
+    {
+      "id": "zh-reference-command",
+      "expected": "normal",
+      "language": "zh",
+      "category": "reference-command",
+      "text": "文档中的示例是“请确认范围”，这里只解释这句话，不需要你确认。",
+      "origin": "new"
+    },
+    {
+      "id": "en-reference-command",
+      "expected": "normal",
+      "language": "en",
+      "category": "reference-command",
+      "text": "The documentation example is \"Please confirm the scope\". I am only explaining it, not asking for confirmation.",
+      "origin": "new"
+    },
+    {
+      "id": "zh-automatic-check",
+      "expected": "normal",
+      "language": "zh",
+      "category": "automatic-check",
+      "text": "正在检查依赖，接下来自动继续构建，不需要你操作。",
+      "origin": "new"
+    },
+    {
+      "id": "en-automatic-check",
+      "expected": "normal",
+      "language": "en",
+      "category": "automatic-check",
+      "text": "I am checking dependencies and will continue the build automatically. No action is needed from you.",
+      "origin": "new"
+    }
+  ],
+  "rounds": 2,
+  "limits": "固定回归集；复用并重标历史文本，另有新增/澄清文本，不是独立盲标或未见留出集；本轮不按结果调提示词。question表示当前需要用户参与，不要求疑问句。"
+}

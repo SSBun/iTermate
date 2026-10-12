@@ -1,0 +1,32 @@
+{
+  "schema": "itermate-vela-integration-self-check/v1",
+  "files": [
+    "iTermate/LocalModelService.swift",
+    "integrations/laya/iTermate-laya.py",
+    "integrations/laya/agent-connection-prompt.md",
+    "integrations/laya/answer-types.test.ts",
+    "integrations/laya/test_local_model.py",
+    "integrations/pi/iTermate-integration.ts",
+    "integrations/pi/iTermate-integration.test.ts",
+    "integrations/pi/subagent-lifecycle.test.mjs",
+    "iTermateBridge/iTermateBridge.py",
+    "docs/local-model-api.md",
+    "iTermateTests/LocalModelExitBarrierTests.swift",
+    "iTermate.xcodeproj/project.pbxproj"
+  ],
+  "checks": [
+    "TR-1源码核查：退出进程由LocalModelExitBarrier独立保留，stop清空当前引用不清空屏障",
+    "所有子进程创建都经过run中的waitForExit；已取消waiter不移除仍存活进程",
+    "停止后切换及取消后重启回归源码已加入Xcode测试目标",
+    "xcodebuild build-for-testing通过，只编译App与测试，没有运行测试或启动任何测试worker",
+    "TypeScript类型、Node语法、Python AST和git diff --check通过",
+    "分发资源与当前源码字节一致"
+  ],
+  "limitations": [
+    "用户未授权运行测试套件；新增/调整回归用例均未执行",
+    "未安装用户集成、未启动/重启App或本地服务",
+    "未进行真实设置切换、下载及端到端视觉验收",
+    "提示词沿用已测speech-kind；该留出结果77.5%，不承诺模型准确率超过90%"
+  ],
+  "review_finding": "TR-1已按根因修复，等待独立复审确认；未做实际UI或服务切换验收。"
+}

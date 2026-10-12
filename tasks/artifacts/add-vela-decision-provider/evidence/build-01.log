@@ -1,0 +1,554 @@
+Command line invocation:
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/xcodebuild -project iTermate.xcodeproj -scheme iTermate -configuration Debug -destination platform=macOS -derivedDataPath /private/tmp/itermate-vela-build CODE_SIGNING_ALLOWED=NO build
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+Resolve Package Graph
+
+Fetching from https://github.com/sparkle-project/Sparkle (cached)
+
+Creating working copy of package ‘Sparkle’
+
+Checking out 2.9.4 of package ‘Sparkle’
+
+
+Resolved source packages:
+  Sparkle: https://github.com/sparkle-project/Sparkle @ 2.9.4
+
+2026-10-10 19:46:00.104 xcodebuild[19969:115806334] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:macOS, arch:arm64, id:00008132-0016511C0CD9801C, name:My Mac }
+{ platform:macOS, arch:x86_64, id:00008132-0016511C0CD9801C, name:My Mac }
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (2 targets)
+    Target 'iTermate' in project 'iTermate'
+        ➜ Explicit dependency on target 'Sparkle' in project 'Sparkle'
+    Target 'Sparkle' in project 'Sparkle' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: d8fe86b6a30fcf398ff40a2bcd36007e
+Build description path: /tmp/itermate-vela-build/Build/Intermediates.noindex/XCBuildData/d8fe86b6a30fcf398ff40a2bcd36007e.xcbuilddata
+CreateBuildDirectory /tmp/itermate-vela-build/Build/Products
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-vela-build/Build/Products
+
+ClangStatCache /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk /tmp/itermate-vela-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -o /tmp/itermate-vela-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+
+CreateBuildDirectory /tmp/itermate-vela-build/Build/Intermediates.noindex
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-vela-build/Build/Intermediates.noindex
+
+CreateBuildDirectory /tmp/itermate-vela-build/Build/Intermediates.noindex/ExplicitPrecompiledModules
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-vela-build/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+CreateBuildDirectory /tmp/itermate-vela-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-vela-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+CreateBuildDirectory /tmp/itermate-vela-build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-vela-build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate-0c11025b443859bc9d9b166c9f525db8-VFS/all-product-headers.yaml
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate-0c11025b443859bc9d9b166c9f525db8-VFS/all-product-headers.yaml
+
+CreateBuildDirectory /tmp/itermate-vela-build/Build/Products/Debug
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-vela-build/Build/Products/Debug
+
+CreateBuildDirectory /tmp/itermate-vela-build/Build/Products/Debug/PackageFrameworks
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-vela-build/Build/Products/Debug/PackageFrameworks
+
+ProcessXCFramework /tmp/itermate-vela-build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework /tmp/itermate-vela-build/Build/Products/Debug/Sparkle.framework macos
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-process-xcframework --xcframework /tmp/itermate-vela-build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework --platform macos --target-path /tmp/itermate-vela-build/Build/Products/Debug
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.hmap
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-non-framework-target-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyStaticMetadataFileList (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyMetadataFileList (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyMetadataFileList
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibPath-normal-arm64.txt (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibInstallName-normal-arm64.txt (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibInstallName-normal-arm64.txt
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftConstValuesFileList (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.LinkFileList (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.LinkFileList
+
+WriteAuxiliaryFile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json
+
+MkDir /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS
+
+MkDir /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Frameworks (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+MkDir /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+MkDir /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents
+
+MkDir /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app
+
+Ld /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib normal (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -dynamiclib -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-vela-build/Build/Products/Debug -F/tmp/itermate-vela-build/Build/Products/Debug -install_name @rpath/iTermate.debug.dylib -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat -o /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib
+
+MkDir /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned
+
+CpResource /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermateBridge.py /Users/caishilin/Desktop/personal/iTermate/iTermateBridge/iTermateBridge.py (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/iTermateBridge/iTermateBridge.py /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+GenerateAssetSymbols /Users/caishilin/Desktop/personal/iTermate/iTermate/Assets.xcassets (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/actool /Users/caishilin/Desktop/personal/iTermate/iTermate/Assets.xcassets --compile /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources --output-format human-readable-text --notices --warnings --export-dependency-info /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies --output-partial-info-plist /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist --app-icon AppIcon --enable-on-demand-resources NO --development-region en --target-device mac --minimum-deployment-target 13.0 --platform macosx --bundle-identifier com.caishilin.iTermate --generate-swift-asset-symbol-extensions NO --generate-swift-asset-symbols /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift --generate-objc-asset-symbols /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.compilation-results */
+/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.h
+/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift
+
+
+MkDir /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/unthinned (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/unthinned
+
+CpResource /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate.zsh /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.zsh (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.zsh /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate.fish /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.fish (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.fish /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate.bash /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.bash (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.bash /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate-status.py /Users/caishilin/Desktop/personal/iTermate/integrations/status/iTermate-status.py (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/status/iTermate-status.py /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate-laya.py /Users/caishilin/Desktop/personal/iTermate/integrations/laya/iTermate-laya.py (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/laya/iTermate-laya.py /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate-integration.ts /Users/caishilin/Desktop/personal/iTermate/integrations/pi/iTermate-integration.ts (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/pi/iTermate-integration.ts /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/agent-connection-prompt.md /Users/caishilin/Desktop/personal/iTermate/integrations/laya/agent-connection-prompt.md (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/laya/agent-connection-prompt.md /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CompileAssetCatalogVariant thinned /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources /Users/caishilin/Desktop/personal/iTermate/iTermate/Assets.xcassets (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/actool /Users/caishilin/Desktop/personal/iTermate/iTermate/Assets.xcassets --compile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies_thinned --output-partial-info-plist /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --enable-on-demand-resources NO --development-region en --target-device mac --minimum-deployment-target 13.0 --platform macosx
+/* com.apple.actool.compilation-results */
+/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_thinned
+/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned/AppIcon.icns
+/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned/Assets.car
+
+
+Copy /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework /tmp/itermate-vela-build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable /tmp/itermate-vela-build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+LinkAssetCatalog /Users/caishilin/Desktop/personal/iTermate/iTermate/Assets.xcassets (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-linkAssetCatalog --thinned /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned --thinned-dependencies /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_thinned --unthinned /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/unthinned --unthinned-dependencies /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_unthinned --output /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources --plist-output /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist
+note: Emplaced /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/AppIcon.icns (in target 'iTermate' from project 'iTermate')
+note: Emplaced /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/Assets.car (in target 'iTermate' from project 'iTermate')
+
+ProcessInfoPlistFile /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Info.plist /Users/caishilin/Desktop/personal/iTermate/iTermate/Info.plist (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-infoPlistUtility /Users/caishilin/Desktop/personal/iTermate/iTermate/Info.plist -producttype com.apple.product-type.application -genpkginfo /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/PkgInfo -expandbuildsettings -platform macosx -additionalcontentfile /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist -scanforprivacyfile /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework -o /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Info.plist
+
+SwiftDriver iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-SwiftDriver -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-vela-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-vela-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-vela-build/Build/Products/Debug -F /tmp/itermate-vela-build/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-vela-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-vela-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-vela-build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-vela-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-vela-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/tmp/itermate-vela-build/Build/Products/Debug/include -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/DeveloperToolsSupport-54SK8WZ66YCZ2J4YJBH5RSSDE.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_Builtin_float-6U59Q3OEKS4DZHIEJJ0T8T042.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_AvailabilityInternal-RXQHSGXZ924CRFFQ46O065EH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_Builtin_stddef-83IYVBWAI3AL5E02M1D6CAS2O.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_Builtin_stdarg-7DUNMVFIL2U8NTLPI8K45NUXS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/SwiftShims-6XF7U527GCH8BTHF9QN1V0HQW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_SwiftConcurrencyShims-7TNHDWDK3WCNA2RZNORYH08IB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/ptrauth-6ZXVR814STULV4BSD6QOUSXXB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/ptrcheck-5372A3XKHQECEP3K3GRFWDK8M.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_Builtin_stdbool-1A2KTWDG3MR0WKRGXM0Y39H8H.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_DarwinFoundation1-69YJVFSIN6T6OFJL37BVRUP78.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_DarwinFoundation2-JZDR94NZY3ABGTCY8H43ITBO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_Builtin_limits-455BRDZGWJEI9BHGI9PRKV250.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/sys_types-2U59VC4REZA06PU76YK7EBSJZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_Builtin_stdint-8ZZQ9YLUN4QIQG36REVSU2TYM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_Builtin_tgmath-EUQVKY3ZXCDYMYRTY88K4VUW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_Builtin_stdatomic-C4KDKGK1T4U4NVUC3CFYNNH5X.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_Builtin_intrinsics-B5K3R7AZZMEIPWH0CPQI7R9JW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/OpenGL-17QJBQBW2QVPIR6R4QQBZF9K0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/libDER-DS5XC2YU7LMDV2TCRJJQ802MJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_DarwinFoundation3-6XGFY76SLGRP5GPV60IR2P4AJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/_Builtin_inttypes-3PP7S0WU14REAZE5XV6IKZPL3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/Darwin-46SOIY0ONRHF18Z1ZK9D5ORJ4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/simd-IHEEWNI684KJQ3OKZNZNITEA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/libkern-2HMF4NAXCBGU4A8G11QD7IBCT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/launch-8D2DXY3V4DNK79WNPOXYM5ZEY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/CUPS-530IQ118W0KOL81Q64ZEG1QXN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/MachO-AJU3SVFH5EWGV0Q5HTZBQ4U54.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/Spatial-BI3FX0KH3SQMESZ4OWS4ZIXNY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/ObjectiveC-6052XGQMJ5L2MTHZI4ZGM6O8O.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/os_object-F1N1X10CA45RRKGZSBXVA31BL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/os_workgroup-7O1HMII9MSOGXET4KMQ1V47D.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/Dispatch-FK5YT91FRPVNHPPDT0U4YBC4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/dnssd-34S51JXM106YVP5G0JPFGY6HT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/XPC-34S2PR7SGT1BBHY4CBC7FWDIP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/CoreFoundation-8OFC64M5TS8DWTC72YGMQVDBH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/os-8H3I25XIWSW1Q7OMXGB6RP2NS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/IOKit-E7MI8FMR91RZSXAUJCOPP21WN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/Security-78A545FRGYSNBE9RYP9N67KEA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/CFNetwork-98UVT5EXBUC1M86SBII808DA5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/ColorSync-8FWC03A0UN8KT6EZ7UBJ3STXY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/CoreGraphics-909LF7T0797CJC4NTEOSK8GMA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/DiskArbitration-41LS26RR1KAO5KQ1ECXS7U3ZL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/CoreServices-79DU771AXZJSJS4FVO7F22XHF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/CoreText-1ZT76VLUP3MYW5EUDJO4LN2QL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/ImageIO-CIBP8AMMIQ99ZSOB2TPHN4ZLT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/Foundation-ANPIB83Z54R8NSLGFQ9E1QTGT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/Symbols-6CUWZ7I86BHCCGV7ZV0FS8A9F.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/Accessibility-YX0OEVWMA46O2WCF4DPO1HQQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/Network-3HRLFB43B4RGR7FU1GDOXRH7K.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/UniformTypeIdentifiers-7DOUG4OZC7M00HWEO01G19Q80.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/ServiceManagement-BB7QLXSRLKK7MMMK7AS59BIGE.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/LocalAuthentication-ACYADZH1OKRVPO87ITBFPZ4JB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/UserNotifications-26PL4FL7I1PV7G7TLHK2LE94P.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/CoreData-89K083YWYV553D4ZBH10Z3OXX.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/IOSurface-2FS5IZIKG3IHYRZTUV7K95RV2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/ApplicationServices-7CC4VV6ZG6HOISEQX3L5QFOOX.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/OSLog-9NRYG5EX4WN7TQQKMTV8GMPK1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/Sparkle-6LGCZF1K976YY9O7LM9N20EQ7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/CoreTransferable-8ADPOR0PV3UX044XKJVQOA3MO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/DataDetection-CTGNHBD9N4FV3TP71SUPPFYQ0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/Metal-5VSW7OWA7BDLDQYTBPPMET01S.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/Carbon-AP2SNJLL53CJ7ROK0Q2CEIJ69.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/CoreVideo-8WR9LXC9GWJDEX5BLBZCRXUZV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/QuartzCore-DO0MAYSWDRLFGSY8B9YRJYJ4Z.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/CoreImage-K4YT0AZI8QVTM8EGB23E7LS0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/SwiftUICore-AC7OI9QVO5JB5LLTVSWQTGCJT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/AppKit-CMPUVKHMJ2EIX6ID2MAQ1SK5J.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-vela-build/ModuleCache.noindex/SwiftUI-AVISS9IWVPLZC92KJMXOOFRZL.pcm
+
+SwiftCompile normal arm64 Compiling\ VenomDebugMonitor.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/VenomDebugMonitor.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/VenomDebugMonitor.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ GeneratedAssetSymbols.swift /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+SwiftCompile normal arm64 /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ PiSessionArchives.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ ItermBridge.swift,\ LocalModelService.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/ItermBridge.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/LocalModelService.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/ItermBridge.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/LocalModelService.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ AgentIntegrations.swift,\ FinishedSessionShortcut.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/AgentIntegrations.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/FinishedSessionShortcut.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/AgentIntegrations.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/FinishedSessionShortcut.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ TerminalStatusServer.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/TerminalStatusServer.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/TerminalStatusServer.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ SessionNotifications.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ iTermateApp.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ SettingsViews.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ iTermate (in target 'iTermate' from project 'iTermate')
+
+EmitSwiftModule normal arm64 (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ PanelLayout.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/PanelLayout.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/PanelLayout.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for iTermate (in target 'iTermate' from project 'iTermate')
+
+SwiftDriver\ Compilation\ Requirements iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-vela-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-vela-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-vela-build/Build/Products/Debug -F /tmp/itermate-vela-build/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-vela-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-vela-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-vela-build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-vela-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-vela-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/tmp/itermate-vela-build/Build/Products/Debug/include -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftMergeGeneratedHeaders /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/iTermate-Swift.h /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-swiftHeaderTool -arch arm64 /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -o /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/iTermate-Swift.h
+
+Copy /tmp/itermate-vela-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftmodule /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule /tmp/itermate-vela-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftmodule
+
+Copy /tmp/itermate-vela-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftdoc /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftdoc (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftdoc /tmp/itermate-vela-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftdoc
+
+Copy /tmp/itermate-vela-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.abi.json /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.abi.json (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.abi.json /tmp/itermate-vela-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.abi.json
+
+Copy /tmp/itermate-vela-build/Build/Products/Debug/iTermate.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftsourceinfo (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftsourceinfo /tmp/itermate-vela-build/Build/Products/Debug/iTermate.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo
+
+SwiftDriverJobDiscovery normal arm64 Compiling VenomDebugMonitor.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling TerminalStatusServer.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling PanelLayout.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AgentIntegrations.swift, FinishedSessionShortcut.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling ItermBridge.swift, LocalModelService.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriver\ Compilation iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-Swift-Compilation -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-vela-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-vela-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-vela-build/Build/Products/Debug -F /tmp/itermate-vela-build/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-vela-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-vela-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-vela-build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-vela-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-vela-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/tmp/itermate-vela-build/Build/Products/Debug/include -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+Ld /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib normal (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -dynamiclib -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-vela-build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -L/tmp/itermate-vela-build/Build/Products/Debug -F/tmp/itermate-vela-build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -F/tmp/itermate-vela-build/Build/Products/Debug -filelist /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.LinkFileList -install_name @rpath/iTermate.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/../Frameworks -Xlinker -object_path_lto -Xlinker /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat -fobjc-link-runtime -fprofile-instr-generate -L/Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule @/tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-linker-args.resp -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -framework Sparkle -o /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib
+
+ConstructStubExecutorLinkFileList /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    construct-stub-executor-link-file-list /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'iTermate' from project 'iTermate')
+
+Ld /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate normal (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-vela-build/Build/Products/Debug -F/tmp/itermate-vela-build/Build/Products/Debug -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/../Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib -o /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate
+
+CopySwiftLibs /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-swiftStdLibTool --copy --verbose --scan-executable /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib --scan-folder /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Frameworks --scan-folder /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/PlugIns --scan-folder /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Library/SystemExtensions --scan-folder /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Extensions --platform macosx --toolchain /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+Ignoring --strip-bitcode because --sign was not passed
+
+ExtractAppIntentsMetadata (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name iTermate --sdk-root /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk --xcode-version 17C52 --platform-family macOS --deployment-target 13.0 --bundle-identifier com.caishilin.iTermate --output /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources --target-triple arm64-apple-macos13.0 --binary-file /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate --dependency-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat --stringsdata-file /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList --metadata-file-list /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyMetadataFileList --static-metadata-file-list /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/itermate-vela-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-10 19:46:11.243 appintentsmetadataprocessor[21112:115808128] Starting appintentsmetadataprocessor export
+2026-10-10 19:46:11.244 appintentsmetadataprocessor[21112:115808128] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+RegisterExecutionPolicyException /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-RegisterExecutionPolicyException /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app
+
+Validate /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-validationUtility /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app -no-validate-extension -infoplist-subpath Contents/Info.plist
+
+Touch /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /usr/bin/touch -c /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app
+
+RegisterWithLaunchServices /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister -f -R -trusted /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app
+
+** BUILD SUCCEEDED ** [11.338 sec]
+

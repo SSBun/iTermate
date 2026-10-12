@@ -1,0 +1,577 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3C23D61D4969774FEA271D3B /* PiStatusRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C392679BCA47875383F75E60 /* PiStatusRecoveryTests.swift */; };
+		5710E93BFF050C2919D03D58 /* PiSessionArchives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B64B776E9CA4A9EFBFB2C08 /* PiSessionArchives.swift */; };
+		5B5F89FB907820C9055C9184 /* iTermate.bash in Resources */ = {isa = PBXBuildFile; fileRef = 0448C28D1F048069AA0A0D18 /* iTermate.bash */; };
+		5FB71DAE674AB719CA12F02B /* iTermate.fish in Resources */ = {isa = PBXBuildFile; fileRef = 2754035B6E0A92CE752D09E5 /* iTermate.fish */; };
+		81CDDEC1358C6082F1D554F4 /* PiSessionArchiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B652704E42F76E84D47DEDB /* PiSessionArchiveTests.swift */; };
+		854F100B60C750D06E8DF1EC /* iTermateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8719B6809A3EC4D52A306 /* iTermateApp.swift */; };
+		85814D5023E76DE82EB7F95C /* agent-connection-prompt.md in Resources */ = {isa = PBXBuildFile; fileRef = EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */; };
+		897BF8EC3951B3FE3BB72763 /* FinishedSessionShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C38928251D32A7255116F91 /* FinishedSessionShortcutTests.swift */; };
+		8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8A8790CA418B304742A10E /* AgentIntegrations.swift */; };
+		94B162FBE46FC4FD4E2DF794 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 877F89ED3A45C6F8DF3B44C1 /* Sparkle */; };
+		9EA014E904BFB2839F940EBA /* SessionNotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */; };
+		AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */; };
+		B3841525F058DCEF4B08CC48 /* TerminalStatusServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */; };
+		BEEB853D6C906357937B0DAF /* iTermate-laya.py in Resources */ = {isa = PBXBuildFile; fileRef = 778A5491FBE924DD5E2ED781 /* iTermate-laya.py */; };
+		C7E944908DE9ED9089171685 /* iTermateBridge.py in Resources */ = {isa = PBXBuildFile; fileRef = 98A663F51BCEE90A4D694DFD /* iTermateBridge.py */; };
+		CD6C91A30902A7FCEE57204D /* PanelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */; };
+		CF61D396BC472AA8FE36FF58 /* iTermate-status.py in Resources */ = {isa = PBXBuildFile; fileRef = 88ED6137D49AA3F3F967AC35 /* iTermate-status.py */; };
+		D2C6987CA2110DB3371B778F /* PanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2964CC35CF647092E51DBA87 /* PanelLayout.swift */; };
+		D70EAEE488EDDDCA530D505D /* ItermBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */; };
+		EAECC190D6FF2D443E6ABD91 /* SettingsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */; };
+		EB587179278E9117F362FB84 /* FinishedSessionShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */; };
+		F1BACAA2BF873D0423D5D029 /* iTermate-integration.ts in Resources */ = {isa = PBXBuildFile; fileRef = 455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */; };
+		F3A0DE6F13889CD5EB0312AD /* iTermate.zsh in Resources */ = {isa = PBXBuildFile; fileRef = 05A3AA7BB59AC8672303E16B /* iTermate.zsh */; };
+		F8C2B099533A5060DD6FF222 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 26707EC6497714316C11E6B6 /* Assets.xcassets */; };
+		F8FB3990DA0A51BF7DD6065B /* LocalModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */; };
+		FBA2C09664EC79CCE097AE9C /* AgentIntegrationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */; };
+		FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC44468A07DBECAD73989BA /* ItermBridge.swift */; };
+		FE4669F91E4913024CB8720C /* VenomDebugMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0D84FD9AD3EC207067EAD7 /* VenomDebugMonitor.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0EB25F46A39FD39F91E9F0E9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4546A343AEC928D0E831142D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9E6541CC5BD0F484063454B8;
+			remoteInfo = iTermate;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0448C28D1F048069AA0A0D18 /* iTermate.bash */ = {isa = PBXFileReference; path = iTermate.bash; sourceTree = "<group>"; };
+		05A3AA7BB59AC8672303E16B /* iTermate.zsh */ = {isa = PBXFileReference; path = iTermate.zsh; sourceTree = "<group>"; };
+		06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViews.swift; sourceTree = "<group>"; };
+		0A5616016F9CC20D9F3ADD3E /* iTermate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iTermate.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0B64B776E9CA4A9EFBFB2C08 /* PiSessionArchives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiSessionArchives.swift; sourceTree = "<group>"; };
+		1A0D84FD9AD3EC207067EAD7 /* VenomDebugMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenomDebugMonitor.swift; sourceTree = "<group>"; };
+		1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinishedSessionShortcut.swift; sourceTree = "<group>"; };
+		26707EC6497714316C11E6B6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2754035B6E0A92CE752D09E5 /* iTermate.fish */ = {isa = PBXFileReference; path = iTermate.fish; sourceTree = "<group>"; };
+		2964CC35CF647092E51DBA87 /* PanelLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelLayout.swift; sourceTree = "<group>"; };
+		44F8719B6809A3EC4D52A306 /* iTermateApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iTermateApp.swift; sourceTree = "<group>"; };
+		455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */ = {isa = PBXFileReference; path = "iTermate-integration.ts"; sourceTree = "<group>"; };
+		4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIntegrationManagerTests.swift; sourceTree = "<group>"; };
+		5AC44468A07DBECAD73989BA /* ItermBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItermBridge.swift; sourceTree = "<group>"; };
+		6B652704E42F76E84D47DEDB /* PiSessionArchiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiSessionArchiveTests.swift; sourceTree = "<group>"; };
+		778A5491FBE924DD5E2ED781 /* iTermate-laya.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-laya.py"; sourceTree = "<group>"; };
+		7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelService.swift; sourceTree = "<group>"; };
+		88ED6137D49AA3F3F967AC35 /* iTermate-status.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-status.py"; sourceTree = "<group>"; };
+		8C38928251D32A7255116F91 /* FinishedSessionShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinishedSessionShortcutTests.swift; sourceTree = "<group>"; };
+		8F8A8790CA418B304742A10E /* AgentIntegrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIntegrations.swift; sourceTree = "<group>"; };
+		8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNotificationTests.swift; sourceTree = "<group>"; };
+		98A663F51BCEE90A4D694DFD /* iTermateBridge.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = iTermateBridge.py; sourceTree = "<group>"; };
+		9BF8CFF4C87D1CF8C9E3F93E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelLayoutTests.swift; sourceTree = "<group>"; };
+		C392679BCA47875383F75E60 /* PiStatusRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiStatusRecoveryTests.swift; sourceTree = "<group>"; };
+		E19ED60DFB350BCCD35BB7D4 /* iTermateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iTermateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItermBridgeTests.swift; sourceTree = "<group>"; };
+		EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "agent-connection-prompt.md"; sourceTree = "<group>"; };
+		F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalStatusServer.swift; sourceTree = "<group>"; };
+		FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNotifications.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3334512B6372A4D07F5375A0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				94B162FBE46FC4FD4E2DF794 /* Sparkle in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2E61A8D8AE626BC046971823 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0A5616016F9CC20D9F3ADD3E /* iTermate.app */,
+				E19ED60DFB350BCCD35BB7D4 /* iTermateTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3658B826EE18D20F9833DF62 = {
+			isa = PBXGroup;
+			children = (
+				9D8AD233E03307791188C9BA /* iTermate */,
+				AB381789852D8FBBEF03E620 /* iTermateBridge */,
+				E983C73C444786BC354E7A8A /* iTermateTests */,
+				EABF8A1EEF5EE7C774797170 /* laya */,
+				B116C045A938ACC98A870800 /* pi */,
+				6265AB239F8D9AC12E6BF1F9 /* shell */,
+				377849C3113349301ACDBD92 /* status */,
+				2E61A8D8AE626BC046971823 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		377849C3113349301ACDBD92 /* status */ = {
+			isa = PBXGroup;
+			children = (
+				88ED6137D49AA3F3F967AC35 /* iTermate-status.py */,
+			);
+			name = status;
+			path = integrations/status;
+			sourceTree = "<group>";
+		};
+		6265AB239F8D9AC12E6BF1F9 /* shell */ = {
+			isa = PBXGroup;
+			children = (
+				0448C28D1F048069AA0A0D18 /* iTermate.bash */,
+				2754035B6E0A92CE752D09E5 /* iTermate.fish */,
+				05A3AA7BB59AC8672303E16B /* iTermate.zsh */,
+			);
+			name = shell;
+			path = integrations/shell;
+			sourceTree = "<group>";
+		};
+		9D8AD233E03307791188C9BA /* iTermate */ = {
+			isa = PBXGroup;
+			children = (
+				8F8A8790CA418B304742A10E /* AgentIntegrations.swift */,
+				26707EC6497714316C11E6B6 /* Assets.xcassets */,
+				1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */,
+				9BF8CFF4C87D1CF8C9E3F93E /* Info.plist */,
+				44F8719B6809A3EC4D52A306 /* iTermateApp.swift */,
+				5AC44468A07DBECAD73989BA /* ItermBridge.swift */,
+				7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */,
+				2964CC35CF647092E51DBA87 /* PanelLayout.swift */,
+				0B64B776E9CA4A9EFBFB2C08 /* PiSessionArchives.swift */,
+				FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */,
+				06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */,
+				F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */,
+				1A0D84FD9AD3EC207067EAD7 /* VenomDebugMonitor.swift */,
+			);
+			path = iTermate;
+			sourceTree = "<group>";
+		};
+		AB381789852D8FBBEF03E620 /* iTermateBridge */ = {
+			isa = PBXGroup;
+			children = (
+				98A663F51BCEE90A4D694DFD /* iTermateBridge.py */,
+			);
+			path = iTermateBridge;
+			sourceTree = "<group>";
+		};
+		B116C045A938ACC98A870800 /* pi */ = {
+			isa = PBXGroup;
+			children = (
+				455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */,
+			);
+			name = pi;
+			path = integrations/pi;
+			sourceTree = "<group>";
+		};
+		E983C73C444786BC354E7A8A /* iTermateTests */ = {
+			isa = PBXGroup;
+			children = (
+				4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */,
+				8C38928251D32A7255116F91 /* FinishedSessionShortcutTests.swift */,
+				EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */,
+				AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */,
+				6B652704E42F76E84D47DEDB /* PiSessionArchiveTests.swift */,
+				C392679BCA47875383F75E60 /* PiStatusRecoveryTests.swift */,
+				8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */,
+			);
+			path = iTermateTests;
+			sourceTree = "<group>";
+		};
+		EABF8A1EEF5EE7C774797170 /* laya */ = {
+			isa = PBXGroup;
+			children = (
+				EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */,
+				778A5491FBE924DD5E2ED781 /* iTermate-laya.py */,
+			);
+			name = laya;
+			path = integrations/laya;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		9E6541CC5BD0F484063454B8 /* iTermate */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5338509B05A052AC5B0E5D14 /* Build configuration list for PBXNativeTarget "iTermate" */;
+			buildPhases = (
+				D6797E1A816F39B0E4E111E5 /* Sources */,
+				322F8C8A1DBB648EEFCD1BB0 /* Resources */,
+				3334512B6372A4D07F5375A0 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iTermate;
+			packageProductDependencies = (
+				877F89ED3A45C6F8DF3B44C1 /* Sparkle */,
+			);
+			productName = iTermate;
+			productReference = 0A5616016F9CC20D9F3ADD3E /* iTermate.app */;
+			productType = "com.apple.product-type.application";
+		};
+		EA8CE3C70AD70C7BE7812A10 /* iTermateTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 79AA3F961F411F3DA54B1CD7 /* Build configuration list for PBXNativeTarget "iTermateTests" */;
+			buildPhases = (
+				BF62A3A06D8D3AFC46BFD9D1 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4078A29993FBB52AEEBC323D /* PBXTargetDependency */,
+			);
+			name = iTermateTests;
+			packageProductDependencies = (
+			);
+			productName = iTermateTests;
+			productReference = E19ED60DFB350BCCD35BB7D4 /* iTermateTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4546A343AEC928D0E831142D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 7C72036E3F964F2BE620ECA2 /* Build configuration list for PBXProject "iTermate" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 3658B826EE18D20F9833DF62;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				BCE652478ECC8A854AF882D2 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 2E61A8D8AE626BC046971823 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				9E6541CC5BD0F484063454B8 /* iTermate */,
+				EA8CE3C70AD70C7BE7812A10 /* iTermateTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		322F8C8A1DBB648EEFCD1BB0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F8C2B099533A5060DD6FF222 /* Assets.xcassets in Resources */,
+				85814D5023E76DE82EB7F95C /* agent-connection-prompt.md in Resources */,
+				F1BACAA2BF873D0423D5D029 /* iTermate-integration.ts in Resources */,
+				BEEB853D6C906357937B0DAF /* iTermate-laya.py in Resources */,
+				CF61D396BC472AA8FE36FF58 /* iTermate-status.py in Resources */,
+				5B5F89FB907820C9055C9184 /* iTermate.bash in Resources */,
+				5FB71DAE674AB719CA12F02B /* iTermate.fish in Resources */,
+				F3A0DE6F13889CD5EB0312AD /* iTermate.zsh in Resources */,
+				C7E944908DE9ED9089171685 /* iTermateBridge.py in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BF62A3A06D8D3AFC46BFD9D1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FBA2C09664EC79CCE097AE9C /* AgentIntegrationManagerTests.swift in Sources */,
+				897BF8EC3951B3FE3BB72763 /* FinishedSessionShortcutTests.swift in Sources */,
+				D70EAEE488EDDDCA530D505D /* ItermBridgeTests.swift in Sources */,
+				CD6C91A30902A7FCEE57204D /* PanelLayoutTests.swift in Sources */,
+				81CDDEC1358C6082F1D554F4 /* PiSessionArchiveTests.swift in Sources */,
+				3C23D61D4969774FEA271D3B /* PiStatusRecoveryTests.swift in Sources */,
+				9EA014E904BFB2839F940EBA /* SessionNotificationTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D6797E1A816F39B0E4E111E5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */,
+				EB587179278E9117F362FB84 /* FinishedSessionShortcut.swift in Sources */,
+				FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */,
+				F8FB3990DA0A51BF7DD6065B /* LocalModelService.swift in Sources */,
+				D2C6987CA2110DB3371B778F /* PanelLayout.swift in Sources */,
+				5710E93BFF050C2919D03D58 /* PiSessionArchives.swift in Sources */,
+				AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */,
+				EAECC190D6FF2D443E6ABD91 /* SettingsViews.swift in Sources */,
+				B3841525F058DCEF4B08CC48 /* TerminalStatusServer.swift in Sources */,
+				FE4669F91E4913024CB8720C /* VenomDebugMonitor.swift in Sources */,
+				854F100B60C750D06E8DF1EC /* iTermateApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4078A29993FBB52AEEBC323D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9E6541CC5BD0F484063454B8 /* iTermate */;
+			targetProxy = 0EB25F46A39FD39F91E9F0E9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0451C7B0FB1A212B1E603B21 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		2209248D725ABEB17D976421 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 13;
+				INFOPLIST_FILE = iTermate/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.6.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.caishilin.iTermate;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		790398967140EF21E7C2FD93 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.caishilin.iTermateTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/iTermate.app/Contents/MacOS/iTermate";
+			};
+			name = Debug;
+		};
+		A49EE558324794E6477DA4AB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.caishilin.iTermateTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/iTermate.app/Contents/MacOS/iTermate";
+			};
+			name = Release;
+		};
+		CCDFFE8F6F7E7A6BF10898F6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 13;
+				INFOPLIST_FILE = iTermate/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.6.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.caishilin.iTermate;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		E5F36896C414B530D1503273 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5338509B05A052AC5B0E5D14 /* Build configuration list for PBXNativeTarget "iTermate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CCDFFE8F6F7E7A6BF10898F6 /* Debug */,
+				2209248D725ABEB17D976421 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		79AA3F961F411F3DA54B1CD7 /* Build configuration list for PBXNativeTarget "iTermateTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				790398967140EF21E7C2FD93 /* Debug */,
+				A49EE558324794E6477DA4AB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7C72036E3F964F2BE620ECA2 /* Build configuration list for PBXProject "iTermate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0451C7B0FB1A212B1E603B21 /* Debug */,
+				E5F36896C414B530D1503273 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BCE652478ECC8A854AF882D2 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.9.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		877F89ED3A45C6F8DF3B44C1 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BCE652478ECC8A854AF882D2 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 4546A343AEC928D0E831142D /* Project object */;
+}

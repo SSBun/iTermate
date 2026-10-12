@@ -1,4 +1,4 @@
-请使用这台 Mac 上 iTermate 提供的 Laya 本地模型，处理当前任务中适合分类、评分或是非判断的决策。它不是聊天模型，也不是 Jev 云端 API。
+请使用这台 Mac 上 iTermate 提供的 {{MODEL_NAME}} 本地模型，处理当前任务中适合分类、评分或是非判断的决策。它不是聊天模型，也不是 Jev 云端 API。
 
 ## 当前真实连接信息
 
@@ -11,11 +11,12 @@
 ## 使用方式
 
 1. 只向上述本机地址发送请求，禁用代理和 HTTP 重定向，不把 Token 发往其他地址。
-2. 先调用 `GET /health`，确认 `ready` 为 true。
+2. 先调用 `GET /health`，确认 `ready` 为 true，并查看 `provider`、`model` 与 `instance`；切换模型或服务重启后重新获取连接信息。
 3. 根据任务选择接口：
    - `POST /v1/decide`：正文含 `state` 字符串和 `questions` 对象；支持 `choice`、`score`、`noul`，每个问题必须有 `type` 和非空 `instructions`。
-   - `POST /v1/session`：正文为 `{"state":"最后一条助手消息或终端文本"}`，返回运行状态分类和需要回复的概率。
-4. `choice` 的 `criteria` 为 2–10 个选项及描述组成的字典；`score` 为 1–10 个描述组成的数组，分数从 0 开始；`noul` 不传 criteria。
+   - `POST /v1/session`：正文为 `{"state":"终端文本"}`，返回运行状态分类和需要回复的概率。
+   - `POST /v1/question`：正文为 `{"state":"最后一条助手消息"}`，返回 `answers.question.choice`（`question` 或 `normal`）。识别当前是否请求或等待用户参与：回答、确认、选择、授权或提供信息。请求句和隐含确认也算 `question`，不要求有问号；完成报告、自主执行进度、引用和自问自答算 `normal`。
+4. `choice` 的 `criteria` 为 2–10 个选项及描述组成的字典；`score` 为 2–10 个描述组成的数组（Laya 也兼容单级数组），分数从 0 开始；`noul` 不传 criteria。
 5. 正文最多 16384 字节，state 最多 3000 字符，每次 1–8 个问题；instructions 最多 600 字符，选项名最多 64 字符、描述最多 200 字符。还有模型 token 预算，超限返回 413。401 表示认证失败，429 表示模型忙；请求超时不代表服务端推理已取消。
 6. 结果在 `answers` 中。概率和 confidence 不是正确性保证，不要用推断覆盖明确的进程或 Agent 生命周期事件。
 7. 服务随 iTermate 运行；无法连接时请用户检查设置，不要擅自启动、重启 App 或安装其他服务。

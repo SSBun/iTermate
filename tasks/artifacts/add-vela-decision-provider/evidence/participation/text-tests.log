@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: direct question decisions use the binary protocol without a terminal-state threshold
+ok 1 - direct question decisions use the binary protocol without a terminal-state threshold
+  ---
+  duration_ms: 0.4625
+  type: 'test'
+  ...
+# Subtest: legacy terminal-state parser and disabled-model heuristic remain callable
+ok 2 - legacy terminal-state parser and disabled-model heuristic remain callable
+  ---
+  duration_ms: 1.910333
+  type: 'test'
+  ...
+# Subtest: uncertain or malformed model output falls back instead of becoming false
+ok 3 - uncertain or malformed model output falls back instead of becoming false
+  ---
+  duration_ms: 0.443708
+  type: 'test'
+  ...
+# Subtest: recognizes explicit confirmation gates
+ok 4 - recognizes explicit confirmation gates
+  ---
+  duration_ms: 1.065334
+  type: 'test'
+  ...
+# Subtest: recognizes short action-scoped approval questions without a separate waiting clause
+ok 5 - recognizes short action-scoped approval questions without a separate waiting clause
+  ---
+  duration_ms: 0.40025
+  type: 'test'
+  ...
+# Subtest: recognizes approval, selection, and clarification gates
+ok 6 - recognizes approval, selection, and clarification gates
+  ---
+  duration_ms: 0.103333
+  type: 'test'
+  ...
+# Subtest: recognizes direct closing questions and implicit confirmation requests
+ok 7 - recognizes direct closing questions and implicit confirmation requests
+  ---
+  duration_ms: 0.157583
+  type: 'test'
+  ...
+# Subtest: does not ask for a reply when the request is negated or already fulfilled
+ok 8 - does not ask for a reply when the request is negated or already fulfilled
+  ---
+  duration_ms: 0.070417
+  type: 'test'
+  ...
+# Subtest: all confirmation actions share the same completed-action exclusion
+ok 9 - all confirmation actions share the same completed-action exclusion
+  ---
+  duration_ms: 0.239625
+  type: 'test'
+  ...
+# Subtest: completed results are not confused with future conditions or noun modifiers
+ok 10 - completed results are not confused with future conditions or noun modifiers
+  ---
+  duration_ms: 0.233833
+  type: 'test'
+  ...
+# Subtest: future modals and terminal conditions preserve confirmation requests
+ok 11 - future modals and terminal conditions preserve confirmation requests
+  ---
+  duration_ms: 0.073
+  type: 'test'
+  ...
+# Subtest: rejects negated waiting in both languages
+ok 12 - rejects negated waiting in both languages
+  ---
+  duration_ms: 0.038042
+  type: 'test'
+  ...
+# Subtest: does not treat examples, code, or optional offers as blocking questions
+ok 13 - does not treat examples, code, or optional offers as blocking questions
+  ---
+  duration_ms: 0.059084
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 191.137625

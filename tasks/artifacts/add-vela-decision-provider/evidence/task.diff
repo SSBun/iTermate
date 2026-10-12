@@ -1,0 +1,1287 @@
+--- before/iTermate/LocalModelService.swift
++++ current/iTermate/LocalModelService.swift
+@@ -2,6 +2,21 @@
+ import Darwin
+ import Foundation
+ import SwiftUI
++
++/// Available local decision engines; selection never implies a fallback to another engine.
++enum LocalDecisionProvider: String, CaseIterable, Identifiable {
++    /// Existing multilingual MLX engine.
++    case laya
++    /// Vela's pinned CPU decision engine.
++    case vela
++
++    var id: String { rawValue }
++    var title: String { self == .laya ? "Laya" : "Vela 2.0 · 0.3B" }
++    var modelID: String { self == .laya ? "aac6fef/laya-multilingual-mlx" : "vllm-sr/Vela-2.0-0.3B" }
++    var dependencies: [String] {
++        self == .laya ? ["laya-mlx==0.2.0"] : ["torch==2.14.1", "transformers==5.19.0", "safetensors", "numpy"]
++    }
++}
+ 
+ /// Owns the optional local model worker for the lifetime of iTermate.
+ @MainActor
+@@ -9,6 +24,7 @@
+     nonisolated static let directory = FileManager.default.homeDirectoryForCurrentUser
+         .appendingPathComponent("Library/Application Support/iTermate/Laya", isDirectory: true)
+ 
++    @Published private(set) var provider: LocalDecisionProvider
+     @Published private(set) var status = "Stopped"
+     @Published private(set) var error: String?
+     @Published private(set) var isBusy = false
+@@ -27,10 +43,13 @@
+     private var generation = UUID()
+     private let defaults: UserDefaults
+     private let directory: URL
++    private var configurationRevision = UUID()
++    private var configurationIsCurrent = false
+ 
+     init(defaults: UserDefaults = .standard, directory: URL = LocalModelService.directory) {
+         self.defaults = defaults
+         self.directory = directory
++        provider = LocalDecisionProvider(rawValue: defaults.string(forKey: "decisionModelProvider") ?? "") ?? .laya
+         serviceEnabled = defaults.bool(forKey: "layaServiceEnabled")
+         analysisEnabled = defaults.bool(forKey: "layaAnalysisEnabled")
+         refreshInstallationStatus()
+@@ -45,28 +64,35 @@
+     /// Checks installed files without loading the model or hashing large weights on the UI thread.
+     func refreshInstallationStatus() {
+         guard !isInstalling else { return }
+-        let markerURL = directory.appendingPathComponent("model.json")
++        let markerURL = modelDirectory.appendingPathComponent("model.json")
+         let marker = (try? Data(contentsOf: markerURL)).flatMap {
+             try? JSONDecoder().decode(InstalledModel.self, from: $0)
+         }
+-        let requiredFiles = [
++        let requiredFiles = provider == .laya ? [
+             "model.safetensors", "mlx_config.json", "rl_agent_config.json",
+             "encoder/config.json", "tokenizer/tokenizer.json", "tokenizer/tokenizer_config.json",
++        ] : [
++            "model.safetensors", "config.json", "calibration.json", "tokenizer.json",
++            "configuration_vela2.py", "modeling_vela2.py", "vela2_inference.py",
+         ]
+         let modelFilesPresent = marker.map { model in
+-            guard model.model == "aac6fef/laya-multilingual-mlx", model.path.hasPrefix("/") else { return false }
++            guard model.model == provider.modelID, model.path.hasPrefix("/") else { return false }
++            if provider == .vela && model.revision != "d6f03aa9baca4f9017fa8f8e9c2764d3bed3f409" { return false }
+             return requiredFiles.allSatisfy { name in
+                 let file = URL(fileURLWithPath: model.path).appendingPathComponent(name)
+                 let size = try? file.resourceValues(forKeys: [.fileSizeKey]).fileSize
+                 return FileManager.default.isReadableFile(atPath: file.path) && (size ?? 0) > 0
+             }
+         } ?? false
++        let modules = provider == .laya ? ["laya_mlx"] : ["torch", "transformers", "safetensors"]
+         let runtimePresent = FileManager.default.isExecutableFile(atPath: pythonURL.path)
+-            && FileManager.default.isReadableFile(atPath: directory
+-                .appendingPathComponent("runtime/lib/python3.12/site-packages/laya_mlx/__init__.py").path)
++            && modules.allSatisfy { module in
++                FileManager.default.isReadableFile(atPath: modelDirectory
++                    .appendingPathComponent("runtime/lib/python3.12/site-packages/\(module)/__init__.py").path)
++            }
+         modelInstalled = modelFilesPresent && runtimePresent
+         if modelInstalled {
+-            installationDetail = "Laya multilingual · FP16 · Runtime and model files available"
++            installationDetail = "\(provider.title) · \(provider == .laya ? "GPU / FP16" : "CPU / FP32") · Runtime and model files available"
+         } else if marker != nil {
+             installationDetail = "Some model or runtime files are missing. Use Repair / Download."
+         } else {
+@@ -77,6 +103,7 @@
+     private struct InstalledModel: Decodable {
+         let path: String
+         let model: String
++        let revision: String?
+     }
+ 
+     var isSupported: Bool {
+@@ -86,8 +113,61 @@
+         return false
+     }
+ 
++    /// Retains the legacy control directory so existing API clients keep their connection location.
++    private var modelDirectory: URL {
++        provider == .laya ? directory : directory.appendingPathComponent("Vela", isDirectory: true)
++    }
++
+     private var pythonURL: URL {
+-        directory.appendingPathComponent("runtime/bin/python")
++        modelDirectory.appendingPathComponent("runtime/bin/python")
++    }
++
++    /// Publishes a new preference epoch before requests can use a changed configuration.
++    @discardableResult
++    private func publishConfiguration() -> Bool {
++        configurationIsCurrent = false
++        do {
++            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
++                                                    attributes: [.posixPermissions: 0o700])
++            let revision = UUID()
++            let data = try JSONSerialization.data(withJSONObject: [
++                "provider": provider.rawValue, "revision": revision.uuidString,
++                "analysisEnabled": analysisEnabled, "serviceEnabled": serviceEnabled,
++            ])
++            try data.write(to: directory.appendingPathComponent("configuration.json"), options: .atomic)
++            configurationRevision = revision
++            configurationIsCurrent = true
++            return true
++        } catch {
++            self.error = "Could not publish the selected decision model. No model fallback will be used."
++            return false
++        }
++    }
++
++    /// Changes the selected engine and waits for our old worker to release its shared service lock.
++    func setProvider(_ selected: LocalDecisionProvider) {
++        guard provider != selected, !isBusy else { return }
++        let previous = process
++        stop()
++        provider = selected
++        defaults.set(selected.rawValue, forKey: "decisionModelProvider")
++        error = nil
++        installationError = nil
++        refreshInstallationStatus()
++        guard publishConfiguration(), serviceEnabled else { return }
++        let operation = generation
++        isBusy = true
++        status = "Switching model…"
++        Task { @MainActor in
++            while previous?.isRunning == true {
++                try? await Task.sleep(nanoseconds: 50_000_000)
++                guard generation == operation else { return }
++            }
++            guard generation == operation else { return }
++            isBusy = false
++            status = "Stopped"
++            start()
++        }
+     }
+ 
+     private var helperURL: URL? {
+@@ -97,6 +177,7 @@
+     /// Restores the user's preference without downloading anything automatically.
+     func startIfEnabled() {
+         clearAbandonedAnalysisPermission()
++        guard publishConfiguration() else { return }
+         if serviceEnabled { start() }
+     }
+ 
+@@ -123,12 +204,14 @@
+     func setServiceEnabled(_ enabled: Bool) {
+         serviceEnabled = enabled
+         defaults.set(enabled, forKey: "layaServiceEnabled")
++        guard publishConfiguration() else { stop(); return }
+         if enabled { start() } else { stop() }
+     }
+ 
+     func setAnalysisEnabled(_ enabled: Bool) {
+         analysisEnabled = enabled
+         defaults.set(enabled, forKey: "layaAnalysisEnabled")
++        publishConfiguration()
+         updateAnalysisMarker()
+     }
+ 
+@@ -137,7 +220,7 @@
+         guard isSupported, !isBusy, !isReady else { return }
+         installationError = nil
+         guard let helperURL else {
+-            installationError = "The bundled Laya helper is missing."
++            installationError = "The bundled local decision helper is missing."
+             return
+         }
+         let candidates = [
+@@ -145,7 +228,7 @@
+             FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/bin/uv").path,
+         ]
+         guard let uv = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else {
+-            installationError = "Install uv first (brew install uv), then retry. Python 3.12 and Laya are installed in an isolated environment."
++            installationError = "Install uv first (brew install uv), then retry. Python 3.12 and the selected model are installed in an isolated environment."
+             return
+         }
+         let operation = UUID()
+@@ -157,17 +240,17 @@
+         installationDetail = "Preparing Python runtime…"
+         Task { @MainActor in
+             do {
+-                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
++                try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true,
+                                                         attributes: [.posixPermissions: 0o700])
+                 if !FileManager.default.isExecutableFile(atPath: pythonURL.path) {
+-                    try await run(URL(fileURLWithPath: uv), arguments: ["venv", "--python", "3.12", directory.appendingPathComponent("runtime").path], operation: operation)
++                    try await run(URL(fileURLWithPath: uv), arguments: ["venv", "--python", "3.12", modelDirectory.appendingPathComponent("runtime").path], operation: operation)
+                 }
+                 guard generation == operation else { return }
+-                installationDetail = "Installing Laya-MLX…"
+-                try await run(URL(fileURLWithPath: uv), arguments: ["pip", "install", "--python", pythonURL.path, "laya-mlx==0.2.0"], operation: operation)
++                installationDetail = "Installing \(provider.title) runtime…"
++                try await run(URL(fileURLWithPath: uv), arguments: ["pip", "install", "--python", pythonURL.path] + provider.dependencies, operation: operation)
+                 guard generation == operation else { return }
+                 installationDetail = "Downloading multilingual model…"
+-                try await run(pythonURL, arguments: [helperURL.path, "download", "--directory", directory.path], operation: operation)
++                try await run(pythonURL, arguments: [helperURL.path, "download", "--directory", directory.path, "--provider", provider.rawValue], operation: operation)
+                 guard generation == operation else { return }
+                 isInstalling = false
+                 isBusy = false
+@@ -195,15 +278,16 @@
+             error = "Download the model and runtime in this tab first."
+             return
+         }
++        guard publishConfiguration() else { return }
+         let operation = UUID()
+         generation = operation
+         isBusy = true
+         error = nil
+-        status = "Loading model…"
++        status = "Loading \(provider.title)…"
+         Task { @MainActor in
+             do {
+                 try await run(pythonURL, arguments: [helperURL.path, "serve", "--directory", directory.path,
+-                                                    "--parent-pid", String(ProcessInfo.processInfo.processIdentifier)], operation: operation)
++                                                    "--provider", provider.rawValue, "--parent-pid", String(ProcessInfo.processInfo.processIdentifier)], operation: operation)
+                 guard generation == operation else { return }
+                 finishWithError(ServiceError("The local service stopped. Toggle the service to restart it."), operation: operation)
+             } catch {
+@@ -259,6 +343,7 @@
+                 throw ServiceError("The local API token format is invalid.")
+             }
+             let prompt = try String(contentsOf: templateURL, encoding: .utf8)
++                .replacingOccurrences(of: "{{MODEL_NAME}}", with: provider.title)
+                 .replacingOccurrences(of: "{{API_URL}}", with: endpoint)
+                 .replacingOccurrences(of: "{{API_TOKEN}}", with: token)
+             NSPasteboard.general.clearContents()
+@@ -275,8 +360,8 @@
+     private func updateAnalysisMarker() {
+         let marker = directory.appendingPathComponent("analysis-enabled")
+         do {
+-            if analysisEnabled && isReady {
+-                try Data().write(to: marker, options: .atomic)
++            if analysisEnabled && isReady && configurationIsCurrent {
++                try Data(configurationRevision.uuidString.utf8).write(to: marker, options: .atomic)
+                 ownsAnalysisMarker = true
+             } else if ownsAnalysisMarker {
+                 if FileManager.default.fileExists(atPath: marker.path) {
+@@ -312,14 +397,15 @@
+                 progress = min(1, completed / total)
+             }
+         case "ready":
+-            guard let port = event["port"] as? Int, (1...65535).contains(port) else { return }
++            guard let port = event["port"] as? Int, (1...65535).contains(port),
++                  event["provider"] as? String == provider.rawValue else { return }
+             isReady = true
+             isBusy = false
+-            status = "Ready · GPU / FP16"
++            status = "Ready · \(provider.title) · \(provider == .laya ? "GPU / FP16" : "CPU / FP32")"
+             endpoint = "http://127.0.0.1:\(port)"
+             updateAnalysisMarker()
+         case "error":
+-            let message = "Laya reported \(event["error"] as? String ?? "an error"). Check network access, available disk space and the model download."
++            let message = "\(provider.title) reported \(event["error"] as? String ?? "an error"). Check network access, available disk space and the model download."
+             if isInstalling { installationError = message } else { error = message }
+         default:
+             break
+@@ -373,13 +459,42 @@
+     var errorDescription: String? { message }
+ }
+ 
++private struct LocalModelInstallationIcon: View {
++    @Environment(\.accessibilityReduceMotion) private var reduceMotion
++    let installed: Bool
++
++    var body: some View {
++        TimelineView(.animation(minimumInterval: 0.2, paused: reduceMotion)) { timeline in
++            let row = Int(timeline.date.timeIntervalSinceReferenceDate / 0.2) % 7
++            let glyph = installed ? [0, 1, 2, 68, 40, 16, 0] : [8, 8, 8, 42, 28, 8, 0]
++            Canvas { context, _ in
++                for y in 0..<7 {
++                    for x in 0..<7 where glyph[y] & (1 << (6 - x)) != 0 {
++                        context.fill(Path(CGRect(x: CGFloat(x * 2), y: CGFloat(y * 2), width: 1.7, height: 1.7)),
++                                     with: .color((installed ? Color.green : Color.secondary)
++                                        .opacity(reduceMotion || row == y ? 1 : 0.5)))
++                    }
++                }
++            }
++        }
++    }
++}
++
+ struct LocalModelSettingsView: View {
+     @ObservedObject var service: LocalModelService
+     @State private var connectionPromptCopied = false
+ 
+     var body: some View {
+         Form {
+-            Section("Laya-MLX · Local Decisions") {
++            Section("Local Decisions") {
++                Picker("Decision model", selection: Binding(get: { service.provider }, set: { service.setProvider($0) })) {
++                    ForEach(LocalDecisionProvider.allCases) { provider in
++                        Text(provider.title).tag(provider)
++                    }
++                }
++                .disabled(service.isBusy)
++                Text("Switching stops the current worker and loads the selected model if installed. No automatic fallback to another model.")
++                    .font(.caption).foregroundStyle(.secondary)
+                 Text("The multilingual model is downloaded separately. Session text stays on this Mac; model decisions never replace explicit lifecycle events.")
+                     .font(.caption).foregroundStyle(.secondary)
+                 if !service.isSupported {
+@@ -388,9 +503,13 @@
+                 HStack {
+                     Text("Installation status")
+                     Spacer()
+-                    Label(service.installationStatus, systemImage: service.modelInstalled && !service.isInstalling && service.installationError == nil
+-                          ? "checkmark.circle.fill" : "arrow.down.circle")
+-                        .foregroundStyle(service.modelInstalled && !service.isInstalling && service.installationError == nil ? .green : .secondary)
++                    Label {
++                        Text(service.installationStatus)
++                    } icon: {
++                        LocalModelInstallationIcon(installed: service.modelInstalled && !service.isInstalling && service.installationError == nil)
++                            .frame(width: 14, height: 14).accessibilityHidden(true)
++                    }
++                    .foregroundStyle(service.modelInstalled && !service.isInstalling && service.installationError == nil ? .green : .secondary)
+                 }
+                 Text(service.installationDetail).font(.caption).foregroundStyle(.secondary)
+                 if let error = service.installationError {
+@@ -398,7 +517,9 @@
+                 }
+                 Button(service.modelInstalled ? "Repair / Download" : "Download Model") { service.downloadModel() }
+                     .disabled(!service.isSupported || service.isBusy || service.isReady)
+-                Text("Downloads Python dependencies and a multilingual model (~650 MB plus runtime). Requires uv. No weights are bundled with the App.")
++                Text(service.provider == .laya
++                     ? "Downloads Python dependencies and Laya (~650 MB plus runtime). Requires uv. No weights are bundled with the App."
++                     : "Downloads Vela (~1.3 GB plus runtime). Allow 2–3 GB of memory for short inputs. Requires uv. Weights/code: Apache-2.0; tokenizer: Gemma terms.")
+                     .font(.caption).foregroundStyle(.secondary)
+                 if service.isInstalling {
+                     if let progress = service.progress { ProgressView(value: progress) }
+@@ -424,7 +545,7 @@
+             Section("Public API · This Mac Only") {
+                 Text(service.endpoint ?? "Start the service to obtain its loopback address.")
+                     .textSelection(.enabled)
+-                Text("POST /v1/decide · POST /v1/session · GET /health")
++                Text("POST /v1/decide · POST /v1/session · POST /v1/question · GET /health")
+                     .font(.system(.caption, design: .monospaced)).textSelection(.enabled)
+                 Button(connectionPromptCopied ? "Connection Prompt Copied" : "Copy Agent Connection Prompt") {
+                     connectionPromptCopied = service.copyConnectionPrompt()
+@@ -439,7 +560,7 @@
+                 }
+                 Text("Bearer authentication required. The port may change on restart. Clients can read endpoint.json and api-token in the Laya support directory. Quitting iTermate stops the service.")
+                     .font(.caption).foregroundStyle(.secondary)
+-                Text("Pi uses the last assistant message. iTerm2 can estimate unknown states from its visible text. Ghostty without an Agent integration remains unknown.")
++                Text("Pi classifies whether the last assistant message asks the user a question, not whether it waits for approval. Model errors/timeouts keep explicit lifecycle status; no other model is used. Disabling assistance retains legacy rules. Classification is experimental and is not guaranteed to exceed 90% accuracy. iTerm2 may estimate unknown states from visible text; Ghostty without an integration remains unknown.")
+                     .font(.caption).foregroundStyle(.secondary)
+             }
+         }
+--- before/integrations/laya/iTermate-laya.py
++++ current/integrations/laya/iTermate-laya.py
+@@ -18,7 +18,31 @@
+ 
+ MODEL_ID = "aac6fef/laya-multilingual-mlx"
+ MODEL_REVISION = "f2b4faf51023039425946074e2cf1361d2db11d5"
++VELA_ID = "vllm-sr/Vela-2.0-0.3B"
++VELA_REVISION = "d6f03aa9baca4f9017fa8f8e9c2764d3bed3f409"
++VELA_FILES = {
++    "model.safetensors": "bd37dd0db177d766bc554eded78ae8493bc248172d0480f6a543b30932a0cc8e",
++    "config.json": "81e08c8f8f2a4a6205f05b67d5682e42fc5249cc11e5231c456929ae0534d675",
++    "calibration.json": "f8557b3922e9bef33e688ece12da20436b5ae868ed7ff1375b346bd26403506a",
++    "configuration_vela2.py": "94b22bf266a45eaa4877123ca59e62e0908d4054a985712f12de8d1e230f0e3c",
++    "modeling_vela2.py": "a536b7ffa832693b2aaaa6f499da6c594bebc1be2bd8d85d2ef5e794124cda94",
++    "vela2_inference.py": "d3e140c7bc9d291e0862b85894f03ecb1d4c95f0c58bbf705da775b1f63cbf22",
++    "tokenizer.json": "e4b670c5ab72158f35de150792133e8c92adb4ba677d26b99d22c77f34c63faf",
++    "tokenizer_config.json": "7f91c861ebdaba0c211b973dcfb4e303ecc1cc37a95eb0e7c34ec26475102cef",
++    "special_tokens_map.json": "d06e6589673f3f246972572d7911f83fe8b868bf5b76b71152500f0f2f95e596",
++}
+ MAX_BODY = 16384
++# 开发集胜者；留出accuracy为77.5%，不作为正确性保证。
++QUESTION_QUESTIONS = {
++    "question": {
++        "type": "choice",
++        "instructions": "What is the communicative form of this assistant message?",
++        "criteria": {
++            "normal": "A statement, imperative, instruction, explanation, or quotation; no interrogative directed to the user.",
++            "question": "An interrogative directed to the user, asking them something rather than explaining or quoting a question.",
++        },
++    },
++}
+ SESSION_QUESTIONS = {
+     "state": {
+         "type": "choice",
+@@ -41,7 +65,39 @@
+     print(json.dumps(event), flush=True)
+ 
+ 
+-def download(directory):
++def model_directory(directory, provider):
++    return directory / "Vela" if provider == "vela" else directory
++
++
++def verify_vela(root):
++    # 固定版本中包含Python模型代码，导入前验证所有代码、配置与权重。
++    for name, expected in VELA_FILES.items():
++        with (root / name).open("rb") as stream:
++            actual = hashlib.file_digest(stream, "sha256").hexdigest()
++        if actual != expected:
++            raise ValueError("Vela checksum mismatch")
++
++
++class VelaAgent:
++    def __init__(self, path):
++        import torch
++        from transformers import AutoModel
++        verify_vela(Path(path))
++        torch.set_num_threads(4)
++        self.model = AutoModel.from_pretrained(path, trust_remote_code=True, local_files_only=True,
++                                               dtype=torch.float32).to("cpu").eval()
++        self.cfg = {"max_len": self.model.vela2_engine.max_len}
++
++    def tok(self, text):
++        return {"input_ids": self.model.vela2_engine.tok.encode(text).ids}
++
++    def predict(self, state, questions):
++        import torch
++        with torch.inference_mode():
++            return self.model.system_one(state, questions)
++
++
++def download(directory, provider="laya"):
+     from huggingface_hub import snapshot_download
+     from tqdm.auto import tqdm
+ 
+@@ -62,9 +118,17 @@
+                 emit(stage="download", completed=self.n, total=self.total or 0)
+             return result
+ 
+-    path = snapshot_download(MODEL_ID, revision=MODEL_REVISION, tqdm_class=Progress)
++    if provider == "vela":
++        path = snapshot_download(VELA_ID, revision=VELA_REVISION, tqdm_class=Progress,
++                                 allow_patterns=[*VELA_FILES, "LICENSE*", "LICENSES/**", "NOTICE*", "DISTRIBUTION_TERMS.md"])
++        verify_vela(Path(path))
++        model_id = VELA_ID
++        manifest = {"files": {}}
++    else:
++        path = snapshot_download(MODEL_ID, revision=MODEL_REVISION, tqdm_class=Progress)
++        manifest = json.loads((Path(path) / "manifest.json").read_text())
++        model_id = MODEL_ID
+     root = Path(path)
+-    manifest = json.loads((root / "manifest.json").read_text())
+     for name, expected in manifest["files"].items():
+         file = (root / name).resolve()
+         # Hub snapshots use symlinks into the cache; only published relative names are allowed.
+@@ -76,14 +140,18 @@
+                 digest.update(chunk)
+         if file.stat().st_size != expected["bytes"] or digest.hexdigest() != expected["sha256"]:
+             raise ValueError("Model checksum mismatch")
+-    marker = directory / "model.json"
++    assets = model_directory(directory, provider)
++    assets.mkdir(parents=True, exist_ok=True, mode=0o700)
++    marker = assets / "model.json"
+     temporary = marker.with_suffix(".tmp")
+-    temporary.write_text(json.dumps({"path": path, "model": MODEL_ID}))
++    temporary.write_text(json.dumps({"path": path, "model": model_id,
++                                     "revision": VELA_REVISION if provider == "vela" else MODEL_REVISION}))
+     temporary.replace(marker)
+-    emit(stage="downloaded", model=MODEL_ID)
+-
+-
+-def validate_payload(payload):
++    progress_sink.close()
++    emit(stage="downloaded", model=model_id, provider=provider)
++
++
++def validate_payload(payload, provider="laya"):
+     if not isinstance(payload, dict):
+         raise ValueError("Expected a JSON object")
+     state = payload.get("state")
+@@ -108,8 +176,9 @@
+             if any(not isinstance(k, str) or not 1 <= len(k) <= 64 or not isinstance(v, str) or len(v) > 200 for k, v in criteria.items()):
+                 raise ValueError("Invalid choice label or description")
+         elif kind == "score":
+-            if not isinstance(criteria, list) or not 1 <= len(criteria) <= 10 or any(not isinstance(v, str) or len(v) > 200 for v in criteria):
+-                raise ValueError("score criteria must contain 1 to 10 strings")
++            minimum = 2 if provider == "vela" else 1
++            if not isinstance(criteria, list) or not minimum <= len(criteria) <= 10 or any(not isinstance(v, str) or len(v) > 200 for v in criteria):
++                raise ValueError(f"score criteria must contain {minimum} to 10 strings")
+         elif kind == "noul":
+             if criteria is not None:
+                 raise ValueError("noul uses instructions only")
+@@ -172,14 +241,15 @@
+         if not self.authorized():
+             return
+         if self.path == "/health":
+-            self.reply(200, {"ready": True, "model": self.server.model_id})
++            self.reply(200, {"ready": True, "model": self.server.model_id,
++                             "provider": self.server.provider, "instance": self.server.instance})
+         else:
+             self.reply(404, {"error": "Unknown endpoint"})
+ 
+     def do_POST(self):
+         if not self.authorized():
+             return
+-        if self.path not in {"/v1/decide", "/v1/session"}:
++        if self.path not in {"/v1/decide", "/v1/session", "/v1/question"}:
+             self.reply(404, {"error": "Unknown endpoint"})
+             return
+         if self.headers.get("Transfer-Encoding") or self.headers.get_content_type() != "application/json":
+@@ -194,11 +264,12 @@
+             if len(raw) != length:
+                 raise ValueError("Incomplete body")
+             payload = json.loads(raw)
+-            if self.path == "/v1/session":
++            if self.path in {"/v1/session", "/v1/question"}:
+                 if not isinstance(payload, dict):
+                     raise ValueError("Expected a JSON object")
+-                payload = {"state": payload.get("state"), "questions": SESSION_QUESTIONS}
+-            state, questions = validate_payload(payload)
++                payload = {"state": payload.get("state"), "questions":
++                           QUESTION_QUESTIONS if self.path == "/v1/question" else SESSION_QUESTIONS}
++            state, questions = validate_payload(payload, self.server.provider)
+         except (ValueError, UnicodeError, socket.timeout):
+             self.reply(400, {"error": "Invalid request; see API documentation and size limits"})
+             return
+@@ -209,14 +280,20 @@
+             # Reject overly long requests instead of silently losing the end of a message.
+             agent = self.server.agent
+             state_tokens = len(agent.tok(state)["input_ids"])
++            schema_tokens = 0
+             for question in questions.values():
+                 prompt = question["instructions"] + json.dumps(question.get("criteria", {}), ensure_ascii=False)
+-                if state_tokens + len(agent.tok(prompt)["input_ids"]) + 64 > agent.cfg.get("max_len", 512):
++                question_tokens = len(agent.tok(prompt)["input_ids"]) + 64
++                schema_tokens = schema_tokens + question_tokens if self.server.provider == "vela" else question_tokens
++                if state_tokens + schema_tokens > agent.cfg.get("max_len", 512):
+                     self.reply(413, {"error": "Request exceeds model token budget; shorten state or criteria"})
+                     return
+             started = time.perf_counter()
+             result = agent.predict(state, questions)
+             result["elapsed_ms"] = round((time.perf_counter() - started) * 1000, 3)
++            result["model"] = self.server.model_id
++            result["provider"] = self.server.provider
++            result["instance"] = self.server.instance
+             self.reply(200, result)
+         except Exception:
+             self.reply(500, {"error": "Local inference failed"})
+@@ -224,7 +301,7 @@
+             self.server.inference.release()
+ 
+ 
+-def serve(directory, parent_pid, port):
++def serve(directory, parent_pid, port, provider="laya"):
+     # A per-user lock prevents two App instances from creating competing services.
+     lock = (directory / "service.lock").open("a")
+     fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+@@ -232,7 +309,12 @@
+     # 当前 App 会在 ready 后依据本次偏好重新创建分析许可。
+     (directory / "analysis-enabled").unlink(missing_ok=True)
+     (directory / "endpoint.json").unlink(missing_ok=True)
+-    marker = json.loads((directory / "model.json").read_text())
++    marker = json.loads((model_directory(directory, provider) / "model.json").read_text())
++    model_id = VELA_ID if provider == "vela" else MODEL_ID
++    if marker.get("model") != model_id:
++        raise ValueError("Installed model does not match the selected provider")
++    if provider == "vela" and marker.get("revision") != VELA_REVISION:
++        raise ValueError("Installed Vela revision is unsupported")
+     token_path = directory / "api-token"
+     if not token_path.exists():
+         fd = os.open(token_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+@@ -242,18 +324,26 @@
+     if len(token) < 32:
+         raise ValueError("Invalid API token")
+     os.environ["HF_HUB_OFFLINE"] = "1"
+-    import laya_mlx
+-    emit(stage="loading")
+-    agent = laya_mlx.load(marker["path"], dtype="float16", device="gpu")
++    os.environ["TRANSFORMERS_OFFLINE"] = "1"
++    emit(stage="loading", provider=provider)
++    if provider == "vela":
++        agent = VelaAgent(marker["path"])
++    else:
++        import laya_mlx
++        agent = laya_mlx.load(marker["path"], dtype="float16", device="gpu")
++    agent.predict("The work is complete.", QUESTION_QUESTIONS)
+     server = Server(("127.0.0.1", port), Handler)
+     server.agent = agent
+-    server.model_id = marker["model"]
++    server.model_id = model_id
++    server.provider = provider
++    server.instance = secrets.token_hex(16)
+     server.token = token
+     server.inference = threading.Lock()
+     server.connections = threading.BoundedSemaphore(8)
+     descriptor = directory / "endpoint.json"
+     temp = descriptor.with_suffix(".tmp")
+-    temp.write_text(json.dumps({"url": f"http://127.0.0.1:{server.server_port}", "pid": os.getpid()}))
++    temp.write_text(json.dumps({"url": f"http://127.0.0.1:{server.server_port}", "pid": os.getpid(),
++                                "provider": provider, "instance": server.instance, "model": model_id}))
+     temp.replace(descriptor)
+ 
+     def cleanup():
+@@ -272,7 +362,7 @@
+     signal.signal(signal.SIGTERM, terminate)
+ 
+     threading.Thread(target=watch_parent, daemon=True).start()
+-    emit(stage="ready", port=server.server_port)
++    emit(stage="ready", port=server.server_port, provider=provider)
+     try:
+         server.serve_forever(poll_interval=0.5)
+     finally:
+@@ -284,6 +374,7 @@
+     parser = argparse.ArgumentParser()
+     parser.add_argument("action", choices=["download", "serve"])
+     parser.add_argument("--directory", type=Path, required=True)
++    parser.add_argument("--provider", choices=["laya", "vela"], default="laya")
+     parser.add_argument("--parent-pid", type=int, default=os.getppid())
+     parser.add_argument("--port", type=int, default=0)
+     args = parser.parse_args()
+@@ -294,9 +385,9 @@
+     os.environ["HF_HUB_DISABLE_XET"] = "1"
+     try:
+         if args.action == "download":
+-            download(args.directory)
++            download(args.directory, args.provider)
+         else:
+-            serve(args.directory, args.parent_pid, args.port)
++            serve(args.directory, args.parent_pid, args.port, args.provider)
+     except Exception as error:
+         emit(stage="error", error=type(error).__name__)
+         raise SystemExit(1)
+--- before/integrations/laya/agent-connection-prompt.md
++++ current/integrations/laya/agent-connection-prompt.md
+@@ -1,4 +1,4 @@
+-请使用这台 Mac 上 iTermate 提供的 Laya 本地模型，处理当前任务中适合分类、评分或是非判断的决策。它不是聊天模型，也不是 Jev 云端 API。
++请使用这台 Mac 上 iTermate 提供的 {{MODEL_NAME}} 本地模型，处理当前任务中适合分类、评分或是非判断的决策。它不是聊天模型，也不是 Jev 云端 API。
+ 
+ ## 当前真实连接信息
+ 
+@@ -11,11 +11,12 @@
+ ## 使用方式
+ 
+ 1. 只向上述本机地址发送请求，禁用代理和 HTTP 重定向，不把 Token 发往其他地址。
+-2. 先调用 `GET /health`，确认 `ready` 为 true。
++2. 先调用 `GET /health`，确认 `ready` 为 true，并查看 `provider`、`model` 与 `instance`；切换模型或服务重启后重新获取连接信息。
+ 3. 根据任务选择接口：
+    - `POST /v1/decide`：正文含 `state` 字符串和 `questions` 对象；支持 `choice`、`score`、`noul`，每个问题必须有 `type` 和非空 `instructions`。
+-   - `POST /v1/session`：正文为 `{"state":"最后一条助手消息或终端文本"}`，返回运行状态分类和需要回复的概率。
+-4. `choice` 的 `criteria` 为 2–10 个选项及描述组成的字典；`score` 为 1–10 个描述组成的数组，分数从 0 开始；`noul` 不传 criteria。
++   - `POST /v1/session`：正文为 `{"state":"终端文本"}`，返回运行状态分类和需要回复的概率。
++   - `POST /v1/question`：正文为 `{"state":"最后一条助手消息"}`，返回 `answers.question.choice`（`question` 或 `normal`）。识别实际向用户提问，不把等待授权或命令句当作问句。
++4. `choice` 的 `criteria` 为 2–10 个选项及描述组成的字典；`score` 为 2–10 个描述组成的数组（Laya 也兼容单级数组），分数从 0 开始；`noul` 不传 criteria。
+ 5. 正文最多 16384 字节，state 最多 3000 字符，每次 1–8 个问题；instructions 最多 600 字符，选项名最多 64 字符、描述最多 200 字符。还有模型 token 预算，超限返回 413。401 表示认证失败，429 表示模型忙；请求超时不代表服务端推理已取消。
+ 6. 结果在 `answers` 中。概率和 confidence 不是正确性保证，不要用推断覆盖明确的进程或 Agent 生命周期事件。
+ 7. 服务随 iTermate 运行；无法连接时请用户检查设置，不要擅自启动、重启 App 或安装其他服务。
+--- before/integrations/laya/answer-types.test.ts
++++ current/integrations/laya/answer-types.test.ts
+@@ -1,3 +1,4 @@
++// Historical /v1/session diagnostic, not the current Pi /v1/question classifier.
+ // Opt in: ITERMATE_LAYA_LIVE=1 tsx --test integrations/laya/answer-types.test.ts
+ // Optional JSON evidence: ITERMATE_LAYA_REPORT=/absolute/path/report.json
+ import assert from "node:assert/strict";
+@@ -121,7 +122,7 @@
+     || typeof needsReply !== "number" || !Number.isFinite(needsReply) || needsReply < 0 || needsReply > 1) {
+     throw new ProbeFailure("invalid_prediction_schema");
+   }
+-  const decision = modelReplyDecision(answers); // Real product threshold logic, not the regex fallback.
++  const decision = modelReplyDecision(answers); // Legacy terminal-state threshold retained for diagnostic replay.
+   const expectedQuestion = sample.expected === "question";
+   const elapsedMs = Math.round((performance.now() - started) * 1000) / 1000;
+   return {
+--- before/integrations/laya/test_local_model.py
++++ current/integrations/laya/test_local_model.py
+@@ -0,0 +1,44 @@
++"""本地provider协议回归；只用临时文件，不启动模型或用户服务。"""
++import importlib.util
++from pathlib import Path
++import tempfile
++import unittest
++
++spec = importlib.util.spec_from_file_location("local_model", Path(__file__).with_name("iTermate-laya.py"))
++helper = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(helper)
++
++
++class LocalModelProtocolTests(unittest.TestCase):
++    def test_provider_assets_are_separate_but_laya_stays_compatible(self):
++        directory = Path("/isolated/Laya")
++        self.assertEqual(helper.model_directory(directory, "laya"), directory)
++        self.assertEqual(helper.model_directory(directory, "vela"), directory / "Vela")
++
++    def test_question_contract_is_binary_and_not_terminal_state(self):
++        state, questions = helper.validate_payload({"state": "May I proceed?", "questions": helper.QUESTION_QUESTIONS}, "vela")
++        self.assertEqual(state, "May I proceed?")
++        self.assertEqual(set(questions), {"question"})
++        self.assertEqual(set(questions["question"]["criteria"]), {"question", "normal"})
++        self.assertIn("interrogative", questions["question"]["criteria"]["question"])
++
++    def test_vela_score_requires_two_levels_without_breaking_legacy_laya(self):
++        payload = {"state": "example", "questions": {"level": {"type": "score", "instructions": "Rate", "criteria": ["one"]}}}
++        helper.validate_payload(payload, "laya")
++        with self.assertRaises(ValueError):
++            helper.validate_payload(payload, "vela")
++
++    def test_question_body_is_not_silently_truncated(self):
++        with self.assertRaises(ValueError):
++            helper.validate_payload({"state": "x" * 3001, "questions": helper.QUESTION_QUESTIONS}, "vela")
++
++    def test_unverified_vela_files_are_rejected_before_remote_code_import(self):
++        with tempfile.TemporaryDirectory() as directory:
++            root = Path(directory)
++            (root / "model.safetensors").write_bytes(b"not verified weights")
++            with self.assertRaisesRegex(ValueError, "checksum mismatch"):
++                helper.verify_vela(root)
++
++
++if __name__ == "__main__":
++    unittest.main()
+--- before/integrations/pi/iTermate-integration.ts
++++ current/integrations/pi/iTermate-integration.ts
+@@ -1,6 +1,6 @@
+ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+ import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+-import { readFile, access } from "node:fs/promises";
++import { readFile } from "node:fs/promises";
+ import { chmodSync, closeSync, existsSync, fsyncSync, mkdirSync, mkdtempSync, openSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+ import { request as httpRequest } from "node:http";
+ import { execFileSync } from "node:child_process";
+@@ -177,6 +177,7 @@
+   });
+ }
+ 
++// Legacy terminal-state parser retained for diagnostic clients, not Pi question decisions.
+ // Undefined means unavailable or uncertain, not a negative classification.
+ export function modelReplyDecision(answers: unknown): boolean | undefined {
+   if (!answers || typeof answers !== "object") return undefined;
+@@ -198,18 +199,51 @@
+   return undefined;
+ }
+ 
+-// The optional HTTP inference request has an 800 ms deadline.
++// Direct question classification is distinct from the legacy terminal-state parser above.
++export function modelQuestionDecision(answers: unknown): boolean | undefined {
++  if (!answers || typeof answers !== "object") return undefined;
++  const value = (answers as { question?: { type?: unknown; choice?: unknown; probabilities?: Record<string, unknown> } }).question;
++  if (value?.type !== "choice" || (value.choice !== "question" && value.choice !== "normal")) return undefined;
++  const question = value.probabilities?.question;
++  const normal = value.probabilities?.normal;
++  if (typeof question !== "number" || typeof normal !== "number"
++    || !Number.isFinite(question) || !Number.isFinite(normal)
++    || question < 0 || question > 1 || normal < 0 || normal > 1
++    || Math.abs(question + normal - 1) > 0.02) return undefined;
++  if ((value.choice === "question" && question < normal) || (value.choice === "normal" && normal < question)) return undefined;
++  return value.choice === "question";
++}
++
++function usesModelForQuestions(): boolean {
++  const directory = join(supportDirectory, "Laya");
++  const configuration = join(directory, "configuration.json");
++  try {
++    const value = JSON.parse(readFileSync(configuration, "utf8"));
++    return typeof value?.analysisEnabled === "boolean" ? value.analysisEnabled : true;
++  } catch {
++    // Malformed configuration is not permission to silently use a different classifier.
++    return existsSync(configuration) || existsSync(join(directory, "analysis-enabled"));
++  }
++}
++
++// The optional HTTP inference request has an 800 ms deadline; do not truncate the message.
+ async function classifyReplyWithModel(text: string): Promise<boolean | undefined> {
+-  if (!text.trim()) return undefined;
++  if (!text.trim() || text.length > 3000) return undefined;
+   try {
+     const directory = join(supportDirectory, "Laya");
+-    await access(join(directory, "analysis-enabled"));
+-    const endpoint = JSON.parse(await readFile(join(directory, "endpoint.json"), "utf8"));
++    const paths = ["configuration.json", "analysis-enabled", "endpoint.json"].map(name => join(directory, name));
++    const identity = await Promise.all(paths.map(path => readFile(path, "utf8")));
++    const configuration = JSON.parse(identity[0]);
++    const endpoint = JSON.parse(identity[2]);
++    if (configuration.analysisEnabled !== true || configuration.serviceEnabled !== true
++      || !["laya", "vela"].includes(configuration.provider)
++      || typeof configuration.revision !== "string" || identity[1] !== configuration.revision
++      || endpoint.provider !== configuration.provider || typeof endpoint.instance !== "string") return undefined;
+     const url = new URL(endpoint.url);
+     if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || !url.port) return undefined;
+     const token = (await readFile(join(directory, "api-token"), "utf8")).trim();
+-    const body = JSON.stringify({ state: text.slice(-1500) });
+-    return await new Promise<boolean | undefined>((resolve) => {
++    const body = JSON.stringify({ state: text });
++    const decision = await new Promise<boolean | undefined>((resolve) => {
+       let finished = false;
+       const finish = (value: boolean | undefined) => {
+         if (finished) return;
+@@ -219,7 +253,7 @@
+         resolve(value);
+       };
+       const request = httpRequest({
+-        hostname: "127.0.0.1", port: url.port, path: "/v1/session", method: "POST",
++        hostname: "127.0.0.1", port: url.port, path: "/v1/question", method: "POST",
+         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+       }, (response) => {
+         let result = "";
+@@ -230,8 +264,9 @@
+         response.on("error", () => finish(undefined));
+         response.on("end", () => {
+           try {
+-            finish(response.statusCode === 200
+-              ? modelReplyDecision(JSON.parse(result).answers) : undefined);
++            const payload = JSON.parse(result);
++            finish(response.statusCode === 200 && payload.provider === endpoint.provider && payload.instance === endpoint.instance
++              ? modelQuestionDecision(payload.answers) : undefined);
+           } catch { finish(undefined); }
+         });
+       });
+@@ -239,6 +274,8 @@
+       request.on("error", () => finish(undefined));
+       request.end(body);
+     });
++    const current = await Promise.all(paths.map(path => readFile(path, "utf8")));
++    return current.every((value, index) => value === identity[index]) ? decision : undefined;
+   } catch { return undefined; }
+ }
+ 
+@@ -713,23 +750,24 @@
+     lastAssistantText = message.stopReason === "stop"
+       ? message.content.flatMap((block) => block.type === "text" ? [block.text] : []).join("\n")
+       : "";
+-    replyPending = needsReply(lastAssistantText);
++    replyPending = !usesModelForQuestions() && needsReply(lastAssistantText);
+   });
+   pi.on("agent_settled", async (_event, ctx) => {
+     if (!active || !ctx.isIdle()) return;
+     stopHeartbeat();
++    const modelAssistance = usesModelForQuestions();
++    if (modelAssistance) replyPending = false;
+     // Establish the lifecycle fallback before awaiting optional inference so UI
+     // prompt events during that wait cannot restore the old running state.
+     baseStatus = replyPending ? "awaitingInput" : "finished";
+     const generation = heartbeatGeneration;
+     await refreshFleet();
+-    const decision = !agentFailed && !promptOpen
++    const decision = modelAssistance && !agentFailed && !promptOpen
+       ? await classifyReplyWithModel(lastAssistantText) : undefined;
+     if (!active || !ctx.isIdle() || generation !== heartbeatGeneration) return;
+-    // Either positive signal is sufficient. A model's negative/uncertain
+-    // result must not erase an explicit request already found in the reply.
+-    replyPending ||= existsSync(join(supportDirectory, "Laya", "analysis-enabled"))
+-      && decision === true;
++    // Model assistance classifies actual questions, not the legacy implicit-reply heuristic.
++    // Unavailability leaves explicit lifecycle status; it never selects another model.
++    if (modelAssistance) replyPending = usesModelForQuestions() && decision === true;
+     baseStatus = replyPending ? "awaitingInput" : "finished";
+     return publish();
+   });
+--- before/integrations/pi/iTermate-integration.test.ts
++++ current/integrations/pi/iTermate-integration.test.ts
+@@ -1,6 +1,17 @@
+ import assert from "node:assert/strict";
+ import { test } from "node:test";
+-import { modelReplyDecision, needsReply } from "./iTermate-integration";
++import { modelQuestionDecision, modelReplyDecision, needsReply } from "./iTermate-integration";
++
++test("direct question decisions use the binary protocol without a terminal-state threshold", () => {
++  assert.equal(modelQuestionDecision({ question: { type: "choice", choice: "question", probabilities: { question: 0.6, normal: 0.4 } } }), true);
++  assert.equal(modelQuestionDecision({ question: { type: "choice", choice: "normal", probabilities: { question: 0.4, normal: 0.6 } } }), false);
++  for (const answer of [null, {},
++    { question: { type: "noul", noul: 0.9 } },
++    { question: { type: "choice", choice: "question", probabilities: { question: NaN, normal: 0.1 } } },
++    { question: { type: "choice", choice: "question", probabilities: { question: 0.1, normal: 0.9 } } },
++    { question: { type: "choice", choice: "normal", probabilities: { question: 0.4, normal: 1.1 } } },
++  ]) assert.equal(modelQuestionDecision(answer), undefined);
++});
+ 
+ function modelAnswers(choice: string, probability: unknown, noul: unknown) {
+   return {
+@@ -9,13 +20,13 @@
+   };
+ }
+ 
+-test("either positive signal preserves a pending question", () => {
++test("legacy terminal-state parser and disabled-model heuristic remain callable", () => {
+   const positive = modelReplyDecision(modelAnswers("awaitingInput", 0.95, 0.8));
+   const negative = modelReplyDecision(modelAnswers("idle", 0.95, 0.1));
+   assert.equal(positive, true);
+   assert.equal(negative, false);
+-  assert.equal(positive === true || needsReply("Which option do you prefer?"), true);
+-  assert.equal(negative === true || needsReply("Please confirm before I proceed."), true);
++  assert.equal(needsReply("Which option do you prefer?"), true);
++  assert.equal(needsReply("Please confirm before I proceed."), true);
+ });
+ 
+ test("uncertain or malformed model output falls back instead of becoming false", () => {
+--- before/integrations/pi/subagent-lifecycle.test.mjs
++++ current/integrations/pi/subagent-lifecycle.test.mjs
+@@ -14,6 +14,9 @@
+ 
+ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model } = {}) {
+   let modelEnabled = model !== undefined;
++  let modelProvider = "laya";
++  let modelEpoch = 0;
++  const configuration = () => JSON.stringify({ provider: modelProvider, revision: `epoch-${modelEpoch}`, analysisEnabled: modelEnabled, serviceEnabled: true });
+   const modelRequests = [];
+   let now = 10000;
+   let timerID = 0;
+@@ -57,10 +60,11 @@
+   const mocks = {
+     "node:crypto": { createHash, randomBytes, randomUUID, timingSafeEqual },
+     "node:fs/promises": {
+-      access: async () => { if (!modelEnabled) throw new Error("Optional model is disabled"); },
+       readFile: async (path) => {
++        if (path.endsWith("configuration.json")) return configuration();
+         assert.ok(modelEnabled);
+-        if (path.endsWith("endpoint.json")) return JSON.stringify({ url: "http://127.0.0.1:1234" });
++        if (path.endsWith("analysis-enabled")) return `epoch-${modelEpoch}`;
++        if (path.endsWith("endpoint.json")) return JSON.stringify({ url: "http://127.0.0.1:1234", provider: modelProvider, instance: `worker-${modelEpoch}` });
+         assert.ok(path.endsWith("api-token"));
+         return "isolated-token";
+       },
+@@ -68,13 +72,17 @@
+     "node:fs": {
+       ...Object.fromEntries([
+         "chmodSync", "closeSync", "fsyncSync", "mkdirSync", "mkdtempSync",
+-        "openSync", "readFileSync", "renameSync", "writeFileSync",
++        "openSync", "renameSync", "writeFileSync",
+       ].map((name) => [name, unavailable])),
++      readFileSync: (path) => path.endsWith("configuration.json") ? configuration() : unavailable(),
+       rmSync: () => {},
+       existsSync: () => modelEnabled,
+     },
+-    "node:http": { request: (_options, receive) => {
++    "node:http": { request: (options, receive) => {
++      assert.equal(options.path, "/v1/question");
+       assert.ok(modelEnabled, "Unexpected model request");
++      const provider = modelProvider;
++      const instance = `worker-${modelEpoch}`;
+       const request = new EventEmitter();
+       let destroyed = false;
+       request.destroy = () => { destroyed = true; };
+@@ -85,7 +93,8 @@
+           const response = new EventEmitter();
+           response.statusCode = model.statusCode ?? 200;
+           receive(response);
+-          response.emit("data", JSON.stringify({ answers: model.answers }));
++          model.onResponse?.();
++          response.emit("data", JSON.stringify({ answers: model.answers, provider, instance }));
+           response.emit("end");
+         });
+       };
+@@ -154,7 +163,8 @@
+   }
+   return {
+     reports, queries, responses, modelRequests, advance, emit,
+-    setModelEnabled: (enabled) => { modelEnabled = enabled; },
++    setModelEnabled: (enabled) => { modelEnabled = enabled; modelEpoch += 1; },
++    setProvider: (provider) => { modelProvider = provider; modelEpoch += 1; },
+     elapseWithoutCallbacks: (milliseconds) => { now += milliseconds; },
+     setResponse: (response) => { defaultResponse = response; },
+     get now() { return now; },
+@@ -249,10 +259,9 @@
+ });
+ 
+ for (const terminal of ["iTerm.app", "ghostty"]) {
+-  test(`${terminal}: explicit question survives a negative model and lease refresh`, async () => {
++  test(`${terminal}: model assistance does not turn implicit confirmation into a question`, async () => {
+     const h = await harness({ count: 0, terminal, model: { answers: {
+-      state: { type: "choice", choice: "idle", probabilities: { idle: 0.99 } },
+-      needs_reply: { type: "noul", noul: 0.01 },
++      question: { type: "choice", choice: "normal", probabilities: { normal: 0.99, question: 0.01 } },
+     } } });
+     await h.emit("session_start");
+     await h.advance(0);
+@@ -261,11 +270,10 @@
+       content: [{ type: "text", text: "确认后我写入并校验。" }] }] });
+     await h.emit("agent_settled");
+     assert.equal(h.modelRequests.length, 1);
+-    assert.equal(h.reports.at(-1).status, "awaitingInput");
++    assert.equal(h.reports.at(-1).status, "finished");
+     await h.advance(10000);
+-    assert.equal(h.reports.at(-1).status, "awaitingInput");
+-    assert.equal(h.reports.at(-1).heartbeat, true);
+-    assert.equal(h.reports.some((report) => report.status === "finished"), false);
++    assert.equal(h.reports.at(-1).status, "finished");
++    assert.equal(h.reports.some((report) => report.status === "awaitingInput"), false);
+     await h.emit("agent_start");
+     assert.equal(h.reports.at(-1).status, "running");
+     await h.emit("session_shutdown");
+@@ -273,8 +281,7 @@
+ 
+   test(`${terminal}: model-only question remains pending when analysis is disabled`, async () => {
+     const h = await harness({ count: 0, terminal, model: { answers: {
+-      state: { type: "choice", choice: "awaitingInput", probabilities: { awaitingInput: 0.99 } },
+-      needs_reply: { type: "noul", noul: 0.99 },
++      question: { type: "choice", choice: "question", probabilities: { normal: 0.01, question: 0.99 } },
+     } } });
+     await h.emit("session_start");
+     await h.advance(0);
+@@ -300,8 +307,7 @@
+ 
+ test("negated requests and completed confirmation narratives do not retain a question", async () => {
+   const h = await harness({ count: 0, model: { answers: {
+-    state: { type: "choice", choice: "idle", probabilities: { idle: 0.99 } },
+-    needs_reply: { type: "noul", noul: 0.01 },
++    question: { type: "choice", choice: "normal", probabilities: { normal: 0.99, question: 0.01 } },
+   } } });
+   await h.emit("session_start");
+   await h.advance(0);
+@@ -323,7 +329,7 @@
+   await h.emit("session_shutdown");
+ });
+ 
+-test("unavailable model does not turn a direct question into completion", async () => {
++test("unavailable selected model keeps lifecycle completion without heuristic fallback", async () => {
+   const h = await harness({ count: 0, model: { statusCode: 429 } });
+   await h.emit("session_start");
+   await h.advance(0);
+@@ -332,7 +338,7 @@
+     content: [{ type: "text", text: "Which option do you prefer?" }] }] });
+   await h.emit("agent_settled");
+   assert.equal(h.modelRequests.length, 1);
+-  assert.equal(h.reports.at(-1).status, "awaitingInput");
++  assert.equal(h.reports.at(-1).status, "finished");
+   await h.emit("session_shutdown");
+ });
+ 
+@@ -429,6 +435,38 @@
+   await h.emit("session_shutdown");
+ });
+ 
++for (const provider of ["laya", "vela"]) {
++  test(`${provider}: selected question model is used and full text is preserved`, async () => {
++    const h = await harness({ count: 0, model: { answers: {
++      question: { type: "choice", choice: "question", probabilities: { normal: 0.2, question: 0.8 } },
++    } } });
++    h.setProvider(provider);
++    await h.emit("session_start");
++    await h.advance(0);
++    await h.emit("agent_start");
++    const text = "Context. ".repeat(180) + "May I proceed?";
++    await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text }] }] });
++    await h.emit("agent_settled");
++    assert.equal(h.modelRequests[0].state, text);
++    assert.equal(h.reports.at(-1).status, "awaitingInput");
++    await h.emit("session_shutdown");
++  });
++}
++
++test("provider changes reject the old worker's late positive response", async () => {
++  const model = { answers: { question: { type: "choice", choice: "question", probabilities: { normal: 0.1, question: 0.9 } } } };
++  const h = await harness({ count: 0, model });
++  model.onResponse = () => h.setProvider("vela");
++  await h.emit("session_start");
++  await h.advance(0);
++  await h.emit("agent_start");
++  await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text: "May I proceed?" }] }] });
++  await h.emit("agent_settled");
++  assert.equal(h.modelRequests.length, 1);
++  assert.equal(h.reports.at(-1).status, "finished");
++  await h.emit("session_shutdown");
++});
++
+ test("non-TUI child runtimes do not query or report parent terminal activity", async () => {
+   const h = await harness({ mode: "json" });
+   await h.emit("session_start");
+--- before/iTermateBridge/iTermateBridge.py
++++ current/iTermateBridge/iTermateBridge.py
+@@ -10,6 +10,7 @@
+ import time
+ import urllib.request
+ import urllib.parse
++from pathlib import Path
+ 
+ SUPPORT_DIRECTORY = os.path.expanduser(
+     "~/Library/Application Support/iTermate"
+@@ -811,7 +812,9 @@
+     async def update_model_observation(self):
+         """仅在没有真实状态时，从可见文本产生短期辅助标签。"""
+         directory = os.path.join(SUPPORT_DIRECTORY, "Laya")
+-        if not os.path.exists(os.path.join(directory, "analysis-enabled")):
++        try:
++            identity = self.model_identity(directory)
++        except (OSError, ValueError, KeyError, TypeError):
+             self.model_observations.clear()
+             return
+         sessions = [
+@@ -823,7 +826,7 @@
+         live_ids = {session.session_id for session in sessions}
+         self.model_observations = {
+             key: value for key, value in self.model_observations.items()
+-            if key in live_ids and now - value[1] < 8
++            if key in live_ids and now - value[1] < 8 and len(value) == 3 and value[2] == identity
+         }
+         if not sessions:
+             return
+@@ -835,7 +838,9 @@
+             text = "\n".join(screen.line(index).string for index in range(screen.number_of_lines))[-1500:]
+             if not text.strip():
+                 return
+-            answer = await asyncio.to_thread(self.request_model_observation, directory, text)
++            answer = await asyncio.to_thread(self.request_model_observation, directory, text, identity)
++            if self.model_identity(directory) != identity:
++                return
+             if self.session_statuses.get(session.session_id, {}).get("status"):
+                 return
+             state = answer.get("state", {})
+@@ -846,14 +851,34 @@
+                 return
+             if choice == "awaitingInput" and answer.get("needs_reply", {}).get("noul", 0) < 0.6:
+                 return
+-            self.model_observations[session.session_id] = (choice, time.monotonic())
++            self.model_observations[session.session_id] = (choice, time.monotonic(), identity)
+         except Exception:
+             self.model_observations.pop(session.session_id, None)
+ 
+     @staticmethod
+-    def request_model_observation(directory, text):
+-        with open(os.path.join(directory, "endpoint.json")) as stream:
+-            endpoint = json.load(stream)
++    def model_identity(directory):
++        identity = tuple(Path(directory, name).read_text() for name in
++                         ("configuration.json", "analysis-enabled", "endpoint.json"))
++        configuration = json.loads(identity[0])
++        endpoint = json.loads(identity[2])
++        if not isinstance(configuration, dict) or not isinstance(endpoint, dict):
++            raise ValueError("Invalid decision model configuration")
++        if (configuration.get("analysisEnabled") is not True
++                or configuration.get("serviceEnabled") is not True
++                or configuration.get("provider") not in {"laya", "vela"}
++                or not isinstance(configuration.get("revision"), str)
++                or identity[1] != configuration["revision"]
++                or endpoint.get("provider") != configuration["provider"]
++                or not isinstance(endpoint.get("instance"), str)):
++            raise ValueError("Local decision model is not ready for this configuration")
++        return identity
++
++    @staticmethod
++    def request_model_observation(directory, text, identity=None):
++        identity = identity or Bridge.model_identity(directory)
++        if Bridge.model_identity(directory) != identity:
++            raise ValueError("Decision model changed")
++        endpoint = json.loads(identity[2])
+         url = urllib.parse.urlparse(endpoint["url"])
+         if url.scheme != "http" or url.hostname != "127.0.0.1" or not url.port:
+             raise ValueError("Invalid local endpoint")
+@@ -869,15 +894,22 @@
+                 return None
+         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+         with opener.open(request, timeout=0.8) as response:
+-            return json.loads(response.read(16384))["answers"]
++            result = json.loads(response.read(16384))
++        if (Bridge.model_identity(directory) != identity
++                or result.get("provider") != endpoint["provider"]
++                or result.get("instance") != endpoint["instance"]):
++            raise ValueError("Stale decision model response")
++        return result["answers"]
+ 
+     def model_state(self, session_id):
+         if self.session_statuses.get(session_id, {}).get("status"):
+             return None
+-        if not os.path.exists(os.path.join(SUPPORT_DIRECTORY, "Laya", "analysis-enabled")):
++        try:
++            identity = self.model_identity(os.path.join(SUPPORT_DIRECTORY, "Laya"))
++        except (OSError, ValueError, KeyError, TypeError):
+             return None
+         observation = self.model_observations.get(session_id)
+-        if observation and time.monotonic() - observation[1] < 8:
++        if observation and len(observation) == 3 and observation[2] == identity and time.monotonic() - observation[1] < 8:
+             return observation[0]
+         return None
+ 
+--- before/docs/local-model-api.md
++++ current/docs/local-model-api.md
+@@ -1,14 +1,18 @@
+-# Laya 本地模型与公共 API
++# Laya / Vela 本地决策模型与公共 API
+ 
+ ## 安装与启用
+ 
+-在 iTermate Settings 的 **Local Model** 标签页点击 **Download Model**。App 不包含模型权重，也不会在首次启动时自动下载。
++在 iTermate Settings 的 **Local Model** 标签页选择 **Decision model**（Laya 或 Vela），再点击 **Download Model**。选择持久化，现有用户默认仍用 Laya。App 不包含模型权重，也不会自动下载未安装的模型。
+ 
+-页面分别展示 **Installation status** 和 **Service status**。安装状态为 Not installed、Installing、Installed 或 Installation failed；安装阶段会显示运行时准备、依赖安装或模型下载进度。Installed 表示安装记录、关键模型文件及 Python/Laya 运行时文件存在，不代表服务已启动，也不是每次打开页面都重新做完整哈希校验。取消后按实际文件状态显示，并提示可以重试；停止服务不会把已安装模型显示为未安装。
++模型切换会停止本 App 拥有的旧 worker，等待其释放单实例锁，然后按服务开关加载所选模型。若新模型未安装或启动失败，显示原因并保持该选择，不悄悄切回另一模型。安装或启动中暂时禁用切换。两种模型使用各自的运行时和安装标记，不需要卸载旧模型。
++
++页面分别展示 **Installation status** 和 **Service status**。安装状态为 Not installed、Installing、Installed 或 Installation failed；安装阶段会显示运行时准备、依赖安装或模型下载进度。Installed 表示安装记录、关键模型文件及 所选模型的 Python 运行时文件存在，不代表服务已启动，也不是每次打开页面都重新做完整哈希校验。取消后按实际文件状态显示，并提示可以重试；停止服务不会把已安装模型显示为未安装。
+ 
+ - 需要 Apple Silicon、macOS 14+ 和 `uv`。未安装 `uv` 时，设置页会提示先运行 `brew install uv`。
+ - 下载动作使用 `uv` 准备独立 Python 3.12 环境，安装 `laya-mlx==0.2.0`，然后下载多语言 FP16 模型 `aac6fef/laya-multilingual-mlx`，固定 revision 为 `f2b4faf51023039425946074e2cf1361d2db11d5`。
+ - 模型下载到 Hugging Face 缓存；核对发布清单中的大小与 SHA256 后，才写入安装完成标记。模型约 650 MB，另需 Python、依赖与缓存空间。下载进度由 Hub 报告，不包含依赖安装及校验阶段。
++- Vela 使用独立 Python 3.12 环境、`torch==2.14.1`、`transformers==5.19.0`，运行 CPU/FP32、4 线程；模型为 `vllm-sr/Vela-2.0-0.3B`，固定 revision `d6f03aa9baca4f9017fa8f8e9c2764d3bed3f409`。下载和启动前核对固定 SHA256（含模型代码），启动不联网下载；权重约1.24 GB，另需tokenizer和运行时。短输入建议预留2–3 GiB内存，不是长上下文或并发保证。
++- Vela 权重与代码使用 Apache-2.0，但 tokenizer 另受 [Gemma 条款](https://huggingface.co/vllm-sr/Vela-2.0-0.3B/blob/main/DISTRIBUTION_TERMS.md)约束。相关许可随下载保留。
+ - 启用 **Enable local API service** 后加载模型；启用 **Assist session state and reply detection** 后才分析 Session 文本。两项偏好独立持久化；错误不会自动关闭用户偏好。
+ - 取消下载或服务操作后可重试。App 退出会停止自己启动的服务；没有系统级 daemon 或独立登录项。下次打开 App 时，若用户此前启用了服务，则恢复服务，但不自动下载。
+ - Intel Mac 或 macOS 13 仍可使用原有功能，本地模型设置会说明不支持。
+@@ -21,11 +25,13 @@
+ 
+ 服务工作目录位于当前用户 Application Support 的 `iTermate/Laya` 下，权限为 0700；其中：
+ 
+-- `endpoint.json`：当前服务地址与 PID；客户端应在连接失败后重新读取，不缓存端口。
++- `endpoint.json`：当前服务地址、PID、`provider`、`model` 和随机 `instance`；客户端应重新读取，不永久缓存端口或模型身份。
++- `configuration.json`：用户选择的 `provider`、`analysisEnabled`、`serviceEnabled` 及配置 `revision`；切换/启动/偏好变化生成新revision。
+ - `api-token`：权限 0600 的本机调用凭据，与 Jev Token 无关。
+ - `model.json`：已校验的本地模型位置。
+ - `runtime`：独立 Python 环境。
+-- `analysis-enabled`：允许 iTermate 集成提交 Session 正文的标记，不影响公共决策 API。
++- `Vela`：Vela专用安装目录，包含自己的 `model.json` 与 `runtime`；外层控制目录沿用旧名称以兼容连接位置。
++- `analysis-enabled`：服务ready后发布的分析许可，内容为当前配置revision，不影响公共决策 API。客户端同时核对配置、许可、端点provider/instance；响应后重读身份，拒绝切换或禁用期间的迟到结果。
+ 
+ 服务不记录正文，不调用云端推理，也不会下载或执行来自 API 请求的模型、文件或命令。拥有当前用户文件读取权限的本地进程可以取得 Token；这不是隔离同一用户恶意程序的安全边界。
+ 
+@@ -35,7 +41,7 @@
+ 
+ ### `GET /health`
+ 
+-返回 `ready` 和模型 ID。只有模型加载成功后才发布 endpoint。
++返回 `ready`、`model`、`provider` 和 `instance`。模型完成加载及短输入预热后才发布 endpoint。
+ 
+ ### `POST /v1/decide`
+ 
+@@ -64,11 +70,11 @@
+ - `questions`：1–8 个问题，问题名最多 64 字符。
+ - `instructions`：必填非空字符串，最多 600 字符。
+ - `choice`：`criteria` 为 2–10 个选项的字典；名称最多 64 字符，描述最多 200 字符。
+-- `score`：`criteria` 为 1–10 个描述组成的数组，得分从 0 开始。
++- `score`：`criteria` 为描述数组；Laya为1–10项，Vela为2–10项，得分从0开始。
+ - `noul`：是非判断，仅使用 `instructions`，不接受非空 `criteria`。
+ - 还会按模型 tokenizer 检查上下文预算；内容过长返回 413，请缩短输入。接口不是 OpenAI Chat Completions，也不接受动态模型路径或切换模型。
+ 
+-返回原生 Laya JSON：`model`、`answers`、`usage`，并附加 `elapsed_ms`（本次 predict 时间，不含 HTTP 网络和加载）。`choice` 包含选择、各项概率、`confidence` 和 `action`。概率与 confidence 不一定相等，均不保证正确性。
++返回 `model`、`provider`、`instance`、`answers`、`usage`，并附加 `elapsed_ms`（本次predict时间，不含HTTP网络和加载）。`choice` 包含选择、各项概率及模型提供的confidence；Laya可能另带action。概率与confidence不一定相等，均不保证正确性。
+ 
+ ### `POST /v1/session`
+ 
+@@ -78,6 +84,12 @@
+ - `answers.needs_reply.noul`：是否明确要求用户回答、选择、确认或授权的概率。
+ 
+ 这是推断，不会直接修改任何 Session。客户端必须保留真实生命周期优先级；不要根据一条文本把正在运行的进程标成完成。
++
++### `POST /v1/question`
++
++正文为 `{"state":"文档已经完成，还需要更新示例吗？"}`。返回 `answers.question`，类型为choice，选项为 `question` / `normal`，附带两类概率。判断整条助手消息是否实际向用户提问；没有问号的疑问表达和完成后的追问也算，引用、代码、自问自答、隐含确认陈述和无疑问表达的命令请求不算。
++
++两种provider使用同一固定任务定义。当前采用Vela开发集选择的speech-kind提示词；其80条合成留出样本准确率为77.5%，**未达到90%**，也不代表Laya达到同等表现。不是安全授权或正确性保证。
+ 
+ ### 错误
+ 
+@@ -110,10 +122,10 @@
+     raise ValueError("Not a local iTermate endpoint")
+ token = (root / "api-token").read_text().strip()
+ body = {
+-    "state": "Please confirm whether I should proceed. I will wait for your reply.",
++    "state": "May I proceed with these changes?",
+ }
+ request = urllib.request.Request(
+-    f"http://127.0.0.1:{address.port}/v1/session",
++    f"http://127.0.0.1:{address.port}/v1/question",
+     data=json.dumps(body).encode(),
+     headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+ )
+@@ -127,12 +139,12 @@
+ 
+ ## iTermate 的判定边界
+ 
+-- Pi 交互集成仅在 Agent settled 后使用最后一条成功结束的助手文本；启用分析时优先请求模型，不因正则已命中而跳过模型。HTTP 请求最多等待 800 ms；关闭、失败、繁忙、超时或结果不确定时才回退既有正则。正在执行的 Agent、新一轮输入、切换分支和明确 UI 提问事件优先。
+-- 模型返回三态决策：`awaitingInput` 概率至少 0.85 且 `needs_reply` 至少 0.6，判定需要回复；`idle` 概率至少 0.85 且 `needs_reply` 不高于 0.4，判定不需要回复，可否定正则误判；其余情况不作决定，回退正则。非法类型、非有限数值或不在 0–1 内的概率也回退。阈值是保守工程选择，不是已验证的准确率保证。
+-- 模型的肯定和否定结果都观察分析开关；关闭后，在下一次约两秒的检查中恢复正则结果。模型判定已完成时只检查开关，不重复上报完成事件。等待模型期间暂停旧心跳，避免最终分类前先错误上报完成。
++- Pi 交互集成仅在Agent settled后使用最后一条成功结束的助手文本。启用模型分析时调用 `/v1/question`，不再将旧的隐含待回复规则与模型结果做OR合并；关闭分析时保留既有规则行为。新一轮输入、切换分支、子代理活动和明确UI提问事件仍优先。
++- 问句决策取合法二分类的最大概率选项，不套用旧终端状态0.85门槛。校验两类概率、选择一致性和provider/instance，响应后再次比对配置revision、许可与端点。配置改变或过期响应被丢弃，不切换到其他模型。
++- 请求超时800ms、不可用、忙、非法结果或完整消息超过3000字符时，不截断后猜测、不换模型，也不把错误当作normal分类；本轮仅保留明确生命周期状态（已结束而非模型判定无问句）。已确认的等待仍由心跳保持直到下一轮或导航，切换模型只作用于后续判定。安装旧版本集成的Pi需通过应用安装入口更新并重新加载，不能只替换源码。
+ - iTerm2 对没有真实状态的 Session 轮流读取可见终端文本末尾（最多 1500 字符），每个周期最多分析一个，结果最长保存 8 秒。界面以带问号的模型辅助标签显示，不写回权威状态，不计入完成次数或完成通知。不是按 Session 名称推测，也不能保证可见屏幕等于最后一条助手消息。
+ - Ghostty 无法通过当前 AppleScript 接口读取正文；Pi 集成可以提供消息，其余没有集成的 Session 保持未知。
+-- 模型常驻占用内存并竞争 GPU；单例结果不能证明所有语言和终端 UI 都能准确判断。关闭模型分析可立即恢复原有判定路径。
++- Laya常驻占用内存/GPU，Vela占用内存/CPU；同一App只保持所选worker。模型样例不能证明所有语言和终端UI都能准确判断；未执行真实用户会话的切换验收时不得把编译通过当作视觉验收。
+ 
+ ## 验证限制
+ 

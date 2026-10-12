@@ -1,0 +1,32 @@
+--- before/tasks/context.md
++++ current/tasks/context.md
+@@ -63,13 +63,28 @@
+ ### Workflows
+ - venom-cli 调试雷达由 `iTermate/VenomDebugMonitor.swift` 读取 macOS 原生进程信息确认：iTerm2 Bridge 从动态 `tty` 变量提供真实设备路径；唯一 TTY 的普通 running 命令、该终端前台进程树中的前台 venom-cli debug build 与它仍存活的直接日志采集子进程必须同时成立；通过真实父子关系追踪终端包装器的嵌套 PTY，不按终端名称或相邻 TTY 编号猜测；支持 macOS log stream、模拟器 simctl、设备 devicectl 和 Android adb logcat。共享 Store 每两秒重新观察，仅细化状态图标，不更改命令生命周期、Agent 优先级或完成统计；无日志子进程的构建阶段、未知权限或 TTY 不显示雷达。Canvas 绘制青绿色 7×7 雷达，扫描点沿轮廓循环，减少动态效果时静止；实际面板生效仍需用户运行新构建。
+ - Pi 子代理活动通过进程内 `subagents:rpc:v1:request` 的 `status` 方法读取当前会话 Fleet v1 `totalActive`；只传布尔 `hasRunningSubagents`，不解析终端文字或子代理历史。子代理存在时维持 running，明确待回复仍为 awaitingInput，两种情况都显示像素 Canvas 分支图标：7×7 点阵、2pt 间距、每 0.14 秒高亮一行，从底部沿两支向上流动；开启减少动态效果时暂停时间线并显示完整静态图形。活动观察失败不等同完成；失去确认后停止续报仅由子代理支撑的运行状态，由接收端租约清理。主 Agent 的真实运行与待回复仍独立上报。随 App 分发的源码改变不等于用户已经安装新集成，生效需通过既有安装入口更新并在 Pi 中重新加载。
+-- Pi 待回复只在交互 TUI 上报：明确 confirm/select/input/editor UI 事件，或 `agent_settled` 后的末尾文字识别与可选 Laya 推断，产生 `awaitingInput`；文本与模型任一肯定即保留待回复，模型否定不能覆盖明确文本请求，关闭模型分析不撤销已识别问题，新一轮或会话导航清理该判断；custom UI 不默认视为提问。两端等待状态通过续报维持有限租约，重复续报不改变起始时间；Pi 重启不从历史文字恢复问题，仍活跃 Pi 可以续报恢复 App/Bridge 重建后的状态。识别与生命周期权威为 `integrations/pi/iTermate-integration.ts`，接收与失效权威为 `TerminalStatusServer.swift` 和 Python Bridge。
++- Pi 待回复只在交互 TUI 上报：明确 confirm/select/input/editor UI 事件，或 `agent_settled` 后的问句识别产生 `awaitingInput`；启用模型辅助时使用所选Laya/Vela的独立问句接口，不再与隐含待回复规则OR合并，模型不可用时仅保留明确生命周期状态；关闭辅助时保留旧规则。已确认问题持续续租，新一轮或会话导航清理，custom UI不默认视为提问。两端等待状态通过有限租约维持，重复续报不改变起始时间；Pi重启不从历史文字恢复问题，仍活跃Pi可续报恢复App/Bridge重建后的状态。识别与生命周期权威为 `integrations/pi/iTermate-integration.ts`，接收与失效权威为 `TerminalStatusServer.swift` 和Python Bridge。
+ - App 启动时仅在 iTerm2 已运行时启动其 Bridge client；否则在 iTerm2 首次成为前台终端时启动。Ghostty 前台期间通过 `osascript` 最多每秒读取一次快照，并把结果复用到同一 Session 分组 UI；切回 iTerm2 时恢复其缓存快照和连接状态。
+ - App 自有的本机状态 listener 与 Store 同生命周期；状态按 TTY 独立维护 Agent 与普通命令通道，Agent 优先，并通过 sequence、Agent heartbeat、唤醒清理和 Terminal identity 重建避免显示不可证实的 running 或复用旧状态。
+ - Pi 与 Codex 只有在 `TERM_PROGRAM=iTerm.app` 时才信任 iTerm Session ID 并使用 Bridge 协议；Ghostty 从 iTerm2 启动时可能继承陈旧的 `ITERM_SESSION_ID`/`TERM_SESSION_ID`，必须忽略它们并按控制 TTY 改走本机状态 listener。zsh、Bash、fish 普通命令状态必须由用户在设置中显式安装可逆 shell hook 后才报告。
+ - 标题栏刷新按钮对 iTerm2 重启 Bridge 并重建状态，对 Ghostty 立即重新读取 AppleScript 快照；两条路径都不重启 App 或用户的终端 Session。
+ - General 中的全局快捷键由 `FinishedSessionShortcut` 使用系统热键 API 注册，配置由 `AppSettings` 持久化；动作固定路由 iTerm2 Bridge，不依赖当前前台终端或面板分组顺序。Bridge 按实际 Window/Tab/Session 顺序从当前项之后循环，只选 `activityKind=agent`，依次优先其他 awaitingInput（问号）、finished、running、idle Agent；普通命令、当前项、未知及独立模型推测均不参与，待回复、运行中及空闲目标不执行完成状态清理，聚焦不会清除问号。
+ - 状态菜单打开时刷新正在运行的终端数据源；`ItermStore` 分别保留两端快照与完成转换基线，只把可确认的 Agent Running 相加，并只累计退出状态为 0 的 Agent 完成。收藏项目操作固定路由到 iTerm2 Bridge；Bridge 在同一动作内用动态 `path` 判断首个精确匹配 Session，只有确认不存在时才通过 `LocalWriteOnlyProfile` 的自定义初始目录创建 Tab 或 Window，并以 `actionResult` 驱动菜单成功关闭或失败提示。
++
++## CTX-local-decision-models — 本地决策模型选择
++- Scope: 设置中的Laya/Vela选择、模型安装与服务、Pi问句分类和Bridge辅助状态估计。
++- Paths: `iTermate/LocalModelService.swift`, `integrations/laya/`, `integrations/pi/iTermate-integration.ts`, `iTermateBridge/iTermateBridge.py`, `docs/local-model-api.md`
++- Keywords: Laya, Vela, decision model, provider, question, local model, epoch
++- Authority: `iTermate/LocalModelService.swift`, `integrations/laya/iTermate-laya.py`, `integrations/pi/iTermate-integration.ts`, `iTermateBridge/iTermateBridge.py`
++- Recheck: provider选择、安装目录、控制协议、问句定义、推理结果合并或服务生命周期变化时复查。
++
++### Structure
++- `LocalModelService`拥有单个所选worker、持久偏好及设置入口；沿用Laya控制目录以兼容已有客户端位置，Vela资产与运行时分开存放。Python helper承载统一鉴权API和provider适配，固定模型版本与Vela代码/权重校验来源在helper，不缓存到Context。
++- 配置revision、ready分析许可及端点provider/instance共同绑定推理身份；Pi响应与Bridge辅助缓存都校验身份，拒绝切换后的旧结果。新模型不可用不会自动切回另一模型。
++
++### Decision and Verification Boundaries
++- Pi问句二分类与Bridge终端状态估计是不同接口和目标；隐含授权陈述不等同向用户提问。模型输出是有误判风险的辅助判断，不替代明确生命周期事件，也不构成安全授权。
++- 源码和构建通过不代表用户已运行新App或重新加载Pi集成；安装、启动和真实切换验收与源码交付区分。
+ 
+ ## CTX-pi-status-recovery — Pi 状态主动恢复
+ - Scope: Pi已存在但Agent状态缺失时的认证查询、跨终端恢复、乱序防护和旧集成能力边界。

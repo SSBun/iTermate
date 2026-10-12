@@ -1,0 +1,47 @@
+Command line invocation:
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/xcodebuild -project iTermate.xcodeproj -scheme iTermate -configuration Debug -destination platform=macOS -derivedDataPath /private/tmp/itermate-vela-build CODE_SIGNING_ALLOWED=NO build
+
+Build settings from command line:
+    CODE_SIGNING_ALLOWED = NO
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  Sparkle: https://github.com/sparkle-project/Sparkle @ 2.9.4
+
+2026-10-10 19:58:07.302 xcodebuild[72751:115883322] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:macOS, arch:arm64, id:00008132-0016511C0CD9801C, name:My Mac }
+{ platform:macOS, arch:x86_64, id:00008132-0016511C0CD9801C, name:My Mac }
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (2 targets)
+    Target 'iTermate' in project 'iTermate'
+        ➜ Explicit dependency on target 'Sparkle' in project 'Sparkle'
+    Target 'Sparkle' in project 'Sparkle' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ClangStatCache /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk /tmp/itermate-vela-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -o /tmp/itermate-vela-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+
+CpResource /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate-integration.ts /Users/caishilin/Desktop/personal/iTermate/integrations/pi/iTermate-integration.ts (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/pi/iTermate-integration.ts /tmp/itermate-vela-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+** BUILD SUCCEEDED ** [0.822 sec]
+
