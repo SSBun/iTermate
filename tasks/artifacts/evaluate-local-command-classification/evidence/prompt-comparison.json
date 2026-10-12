@@ -1,0 +1,1432 @@
+{
+  "variants": {
+    "short-choice": {
+      "kind": {
+        "type": "choice",
+        "instructions": "What is the terminal command doing now?",
+        "criteria": {
+          "command": "Building, installing, downloading or executing a finite task.",
+          "service": "Running a server that accepts requests.",
+          "monitor": "Watching logs or files continuously.",
+          "unknown": "Cannot determine from the provided text."
+        }
+      }
+    },
+    "binary": {
+      "service": {
+        "type": "noul",
+        "instructions": "Is this command currently running a server that accepts requests, rather than building or watching logs?"
+      },
+      "monitor": {
+        "type": "noul",
+        "instructions": "Is this command currently continuously monitoring logs or watching files for changes?"
+      },
+      "command": {
+        "type": "noul",
+        "instructions": "Is this command currently executing a finite task such as building, compiling, installing or downloading?"
+      }
+    }
+  },
+  "results": [
+    {
+      "variant": "short-choice",
+      "id": "venom-original",
+      "expected": "monitor",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.6408,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.8802,
+              "service": 0.0386,
+              "monitor": 0.0425,
+              "unknown": 0.0386
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 203,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 131.014
+      },
+      "wall_ms": 136.23
+    },
+    {
+      "variant": "short-choice",
+      "id": "venom-building",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.771,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.93,
+              "service": 0.006,
+              "monitor": 0.0378,
+              "unknown": 0.0262
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 101,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 24.997
+      },
+      "wall_ms": 26.67
+    },
+    {
+      "variant": "short-choice",
+      "id": "vite-ready",
+      "expected": "service",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.583,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.0625,
+              "service": 0.0554,
+              "monitor": 0.8512,
+              "unknown": 0.0309
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 113,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 28.512
+      },
+      "wall_ms": 30.05
+    },
+    {
+      "variant": "short-choice",
+      "id": "python-http",
+      "expected": "service",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.7059,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0487,
+              "service": 0.9033,
+              "monitor": 0.0392,
+              "unknown": 0.0088
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 109,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 31.249
+      },
+      "wall_ms": 32.36
+    },
+    {
+      "variant": "short-choice",
+      "id": "uvicorn",
+      "expected": "service",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.0861,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.4594,
+              "service": 0.2243,
+              "monitor": 0.1206,
+              "unknown": 0.1957
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 122,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 37.938
+      },
+      "wall_ms": 39.49
+    },
+    {
+      "variant": "short-choice",
+      "id": "tail-quiet",
+      "expected": "monitor",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.0446,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.2851,
+              "service": 0.238,
+              "monitor": 0.3543,
+              "unknown": 0.1227
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 107,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 20.905
+      },
+      "wall_ms": 22.26
+    },
+    {
+      "variant": "short-choice",
+      "id": "tsc-watch",
+      "expected": "monitor",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.4455,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.0529,
+              "service": 0.0664,
+              "monitor": 0.7759,
+              "unknown": 0.1048
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 89,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 23.848
+      },
+      "wall_ms": 25.51
+    },
+    {
+      "variant": "short-choice",
+      "id": "test-watch",
+      "expected": "monitor",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.7131,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.0431,
+              "service": 0.0131,
+              "monitor": 0.9084,
+              "unknown": 0.0354
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 95,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 36.445
+      },
+      "wall_ms": 38.14
+    },
+    {
+      "variant": "short-choice",
+      "id": "npm-install",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.6189,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.8642,
+              "service": 0.0169,
+              "monitor": 0.0475,
+              "unknown": 0.0713
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 91,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 25.725
+      },
+      "wall_ms": 27.26
+    },
+    {
+      "variant": "short-choice",
+      "id": "long-build",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.3239,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.5412,
+              "service": 0.0133,
+              "monitor": 0.3793,
+              "unknown": 0.0663
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 98,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 36.72
+      },
+      "wall_ms": 38.24
+    },
+    {
+      "variant": "short-choice",
+      "id": "download",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.4782,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.109,
+              "service": 0.0203,
+              "monitor": 0.7841,
+              "unknown": 0.0866
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 29.502
+      },
+      "wall_ms": 30.92
+    },
+    {
+      "variant": "short-choice",
+      "id": "opaque-empty",
+      "expected": "unknown",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.0345,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.2387,
+              "service": 0.207,
+              "monitor": 0.3821,
+              "unknown": 0.1722
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 77,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 35.251
+      },
+      "wall_ms": 36.9
+    },
+    {
+      "variant": "short-choice",
+      "id": "opaque-ready",
+      "expected": "unknown",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.2585,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0655,
+              "service": 0.5489,
+              "monitor": 0.3335,
+              "unknown": 0.0521
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 79,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 40.401
+      },
+      "wall_ms": 41.93
+    },
+    {
+      "variant": "short-choice",
+      "id": "old-server-new-build",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.6024,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.8622,
+              "service": 0.0498,
+              "monitor": 0.05,
+              "unknown": 0.038
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 105,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 37.061
+      },
+      "wall_ms": 38.68
+    },
+    {
+      "variant": "short-choice",
+      "id": "quoted-server",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.8626,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0162,
+              "service": 0.9633,
+              "monitor": 0.0177,
+              "unknown": 0.0028
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 113,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 20.791
+      },
+      "wall_ms": 21.99
+    },
+    {
+      "variant": "short-choice",
+      "id": "injected-label",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.1102,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "unknown",
+            "probabilities": {
+              "command": 0.3743,
+              "service": 0.0741,
+              "monitor": 0.1752,
+              "unknown": 0.3765
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 105,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 21.505
+      },
+      "wall_ms": 23.17
+    },
+    {
+      "variant": "short-choice",
+      "id": "cn-monitor",
+      "expected": "monitor",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.4911,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.0765,
+              "service": 0.0525,
+              "monitor": 0.805,
+              "unknown": 0.0661
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 104,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 22.739
+      },
+      "wall_ms": 24.27
+    },
+    {
+      "variant": "short-choice",
+      "id": "server-starting",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.4944,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.1188,
+              "service": 0.057,
+              "monitor": 0.7953,
+              "unknown": 0.0289
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 93,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 21.405
+      },
+      "wall_ms": 22.76
+    },
+    {
+      "variant": "short-choice",
+      "id": "silent-known-server",
+      "expected": "service",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.532,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0798,
+              "service": 0.8151,
+              "monitor": 0.0897,
+              "unknown": 0.0153
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 26.093
+      },
+      "wall_ms": 27.75
+    },
+    {
+      "variant": "short-choice",
+      "id": "unknown-listening-word",
+      "expected": "unknown",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.0195,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.2676,
+              "service": 0.1992,
+              "monitor": 0.3389,
+              "unknown": 0.1942
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 86,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 35.049
+      },
+      "wall_ms": 36.68
+    },
+    {
+      "variant": "binary",
+      "id": "venom-original",
+      "expected": "monitor",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.9686,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9686
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.9737,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9737
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.9786,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9786
+          }
+        },
+        "usage": {
+          "input_tokens": 562,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 79.62
+      },
+      "wall_ms": 82.46
+    },
+    {
+      "variant": "binary",
+      "id": "venom-building",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.6421,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.6421
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.6378,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.3622
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.8989,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8989
+          }
+        },
+        "usage": {
+          "input_tokens": 256,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 62.609
+      },
+      "wall_ms": 64.25
+    },
+    {
+      "variant": "binary",
+      "id": "vite-ready",
+      "expected": "service",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.8587,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8587
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.877,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.877
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.8351,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8351
+          }
+        },
+        "usage": {
+          "input_tokens": 292,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 48.633
+      },
+      "wall_ms": 50.23
+    },
+    {
+      "variant": "binary",
+      "id": "python-http",
+      "expected": "service",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.9588,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9588
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.9138,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9138
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.8485,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8485
+          }
+        },
+        "usage": {
+          "input_tokens": 280,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 67.972
+      },
+      "wall_ms": 69.63
+    },
+    {
+      "variant": "binary",
+      "id": "uvicorn",
+      "expected": "service",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.9476,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9476
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.9637,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9637
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.9635,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9635
+          }
+        },
+        "usage": {
+          "input_tokens": 319,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 65.025
+      },
+      "wall_ms": 67.4
+    },
+    {
+      "variant": "binary",
+      "id": "tail-quiet",
+      "expected": "monitor",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.7203,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.2797
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.8334,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.1666
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.5962,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.5962
+          }
+        },
+        "usage": {
+          "input_tokens": 274,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 41.643
+      },
+      "wall_ms": 43.81
+    },
+    {
+      "variant": "binary",
+      "id": "tsc-watch",
+      "expected": "monitor",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.7726,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.2274
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.9712,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9712
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.8029,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8029
+          }
+        },
+        "usage": {
+          "input_tokens": 220,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 61.217
+      },
+      "wall_ms": 63.56
+    },
+    {
+      "variant": "binary",
+      "id": "test-watch",
+      "expected": "monitor",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.9406,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.0594
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.9689,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9689
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.822,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.822
+          }
+        },
+        "usage": {
+          "input_tokens": 238,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 36.965
+      },
+      "wall_ms": 38.64
+    },
+    {
+      "variant": "binary",
+      "id": "npm-install",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.7059,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.7059
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.5521,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.5521
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.8676,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8676
+          }
+        },
+        "usage": {
+          "input_tokens": 226,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.154
+      },
+      "wall_ms": 55.81
+    },
+    {
+      "variant": "binary",
+      "id": "long-build",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.6454,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.6454
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.735,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.735
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.8726,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8726
+          }
+        },
+        "usage": {
+          "input_tokens": 247,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.356
+      },
+      "wall_ms": 56.23
+    },
+    {
+      "variant": "binary",
+      "id": "download",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.7867,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.7867
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.6443,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.6443
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.6832,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.6832
+          }
+        },
+        "usage": {
+          "input_tokens": 358,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 61.047
+      },
+      "wall_ms": 63.23
+    },
+    {
+      "variant": "binary",
+      "id": "opaque-empty",
+      "expected": "unknown",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.5567,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.4433
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.6286,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.6286
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.5524,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.5524
+          }
+        },
+        "usage": {
+          "input_tokens": 184,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 29.428
+      },
+      "wall_ms": 30.8
+    },
+    {
+      "variant": "binary",
+      "id": "opaque-ready",
+      "expected": "unknown",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.8505,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8505
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.8847,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8847
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.7266,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.7266
+          }
+        },
+        "usage": {
+          "input_tokens": 190,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 32.72
+      },
+      "wall_ms": 35.6
+    },
+    {
+      "variant": "binary",
+      "id": "old-server-new-build",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.8686,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8686
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.733,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.733
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.8949,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8949
+          }
+        },
+        "usage": {
+          "input_tokens": 268,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 59.288
+      },
+      "wall_ms": 60.94
+    },
+    {
+      "variant": "binary",
+      "id": "quoted-server",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.853,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.853
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.5332,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.4668
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.7899,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.7899
+          }
+        },
+        "usage": {
+          "input_tokens": 292,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 42.54
+      },
+      "wall_ms": 43.85
+    },
+    {
+      "variant": "binary",
+      "id": "injected-label",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.9678,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9678
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.9228,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9228
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.9719,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9719
+          }
+        },
+        "usage": {
+          "input_tokens": 268,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 42.213
+      },
+      "wall_ms": 43.35
+    },
+    {
+      "variant": "binary",
+      "id": "cn-monitor",
+      "expected": "monitor",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.9649,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.0351
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.9175,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9175
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.7414,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.7414
+          }
+        },
+        "usage": {
+          "input_tokens": 265,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 36.076
+      },
+      "wall_ms": 37.46
+    },
+    {
+      "variant": "binary",
+      "id": "server-starting",
+      "expected": "command",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.8776,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8776
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.8909,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.8909
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.9263,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9263
+          }
+        },
+        "usage": {
+          "input_tokens": 232,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 50.386
+      },
+      "wall_ms": 51.72
+    },
+    {
+      "variant": "binary",
+      "id": "silent-known-server",
+      "expected": "service",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.9549,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9549
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.9356,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9356
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.9215,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.9215
+          }
+        },
+        "usage": {
+          "input_tokens": 331,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 71.509
+      },
+      "wall_ms": 72.87
+    },
+    {
+      "variant": "binary",
+      "id": "unknown-listening-word",
+      "expected": "unknown",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "service": {
+            "type": "noul",
+            "confidence": 0.7078,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.7078
+          },
+          "monitor": {
+            "type": "noul",
+            "confidence": 0.7866,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.7866
+          },
+          "command": {
+            "type": "noul",
+            "confidence": 0.6359,
+            "action": {
+              "act_probability": 1.0
+            },
+            "noul": 0.6359
+          }
+        },
+        "usage": {
+          "input_tokens": 211,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 50.574
+      },
+      "wall_ms": 52.27
+    }
+  ]
+}

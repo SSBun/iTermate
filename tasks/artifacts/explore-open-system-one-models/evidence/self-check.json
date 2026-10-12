@@ -1,0 +1,63 @@
+{
+  "schema": "itermate-eval-self-check/v1",
+  "validated": {
+    "laya-choice": {
+      "rows": 96,
+      "correct_first_round": 28,
+      "input_labels_not_forwarded": "分类调用仅接收text；Kev采用无标签的官方服务编码路径"
+    },
+    "laya-noul": {
+      "rows": 96,
+      "correct_first_round": 23,
+      "input_labels_not_forwarded": "分类调用仅接收text；Kev采用无标签的官方服务编码路径"
+    },
+    "laya-product": {
+      "rows": 96,
+      "correct_first_round": 0,
+      "input_labels_not_forwarded": "分类调用仅接收text；Kev采用无标签的官方服务编码路径"
+    },
+    "gliner-retry1": {
+      "rows": 96,
+      "correct_first_round": 29,
+      "input_labels_not_forwarded": "分类调用仅接收text；Kev采用无标签的官方服务编码路径"
+    },
+    "gliclass": {
+      "rows": 96,
+      "correct_first_round": 24,
+      "input_labels_not_forwarded": "分类调用仅接收text；Kev采用无标签的官方服务编码路径"
+    },
+    "vela": {
+      "rows": 96,
+      "correct_first_round": 39,
+      "input_labels_not_forwarded": "分类调用仅接收text；Kev采用无标签的官方服务编码路径"
+    },
+    "kev-retry2": {
+      "rows": 96,
+      "correct_first_round": 38,
+      "input_labels_not_forwarded": "分类调用仅接收text；Kev采用无标签的官方服务编码路径"
+    },
+    "system-one": {
+      "rows": 96,
+      "correct_first_round": 40,
+      "input_labels_not_forwarded": "分类调用仅接收text；Kev采用无标签的官方服务编码路径"
+    },
+    "d1": {
+      "rows": 96,
+      "correct_first_round": 34,
+      "input_labels_not_forwarded": "分类调用仅接收text；Kev采用无标签的官方服务编码路径"
+    }
+  },
+  "checks": [
+    "逐例文本及标签与冻结集一致",
+    "每配置两轮各48条，无推理错误",
+    "准确率布尔值独立重算一致",
+    "summarize自检与数据完整性断言通过",
+    "Python语法编译通过",
+    "git diff --check通过"
+  ],
+  "limits": [
+    "未进行独立人工盲标",
+    "没有完整UI验收",
+    "不推断生产分布准确率"
+  ]
+}

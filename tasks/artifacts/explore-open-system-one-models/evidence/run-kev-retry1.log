@@ -1,0 +1,20 @@
+Fetching 9 files:   0%|          | 0/9 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Fetching 9 files: 100%|██████████| 9/9 [00:01<00:00,  8.80it/s]Fetching 9 files: 100%|██████████| 9/9 [00:01<00:00,  8.79it/s]
+Traceback (most recent call last):
+  File "/Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/explore-open-system-one-models/evidence/benchmark.py", line 168, in main
+    report["warmup"] = predict("The requested changes are complete. No response is needed.")
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/explore-open-system-one-models/evidence/benchmark.py", line 94, in predict
+    raw = model({"state": text, "questions": {"reply": QUESTION}})
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/itermate-system-one-eval/mlx-env/lib/python3.12/site-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/itermate-system-one-eval/mlx-env/lib/python3.12/site-packages/kev/predictors.py", line 128, in __call__
+    enc = self.model.encode(self.tok, materialize(record), max_state=self.context["max_state"], max_branch=self.context["max_branch"], strict=True)
+                                      ^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/itermate-system-one-eval/mlx-env/lib/python3.12/site-packages/kev/data.py", line 401, in materialize
+    y = src_q["label"]
+        ~~~~~^^^^^^^^^
+KeyError: 'label'
+

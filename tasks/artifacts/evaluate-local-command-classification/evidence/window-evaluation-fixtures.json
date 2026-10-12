@@ -1,0 +1,119 @@
+{
+  "questions": {
+    "kind": {
+      "type": "choice",
+      "instructions": "What is the terminal command doing now?",
+      "criteria": {
+        "command": "Building, installing, downloading or executing a finite task.",
+        "service": "Running a server that accepts requests.",
+        "monitor": "Watching logs or files continuously.",
+        "unknown": "Cannot determine from the provided text."
+      }
+    }
+  },
+  "methods": {
+    "full": "全部非空行",
+    "last4": "最后四个非空行",
+    "last1": "最后一个非空行"
+  },
+  "input_prefix": "Current command: {command}\nLifecycle: command is still running.\nLatest terminal output:\n",
+  "samples": [
+    {
+      "id": "webpack-ready",
+      "expected": "service",
+      "command": "npm run dev",
+      "output": "Building development bundle...\nCompiled successfully\nDevelopment server listening at http://localhost:8080\nGET / 200\nGET /app.js 200\nGET /favicon.ico 404"
+    },
+    {
+      "id": "flask-requests",
+      "expected": "service",
+      "command": "flask run",
+      "output": "Starting application\nDebug mode: off\nRunning on http://127.0.0.1:5000\nPress CTRL+C to quit\nGET /health 200\nGET /users 200\nGET /users/1 200\nGET /missing 404"
+    },
+    {
+      "id": "redis-ready",
+      "expected": "service",
+      "command": "redis-server",
+      "output": "Loading configuration\nInitializing database\nServer initialized\nReady to accept connections tcp\nBackground saving started\nDB saved on disk"
+    },
+    {
+      "id": "node-request-error",
+      "expected": "service",
+      "command": "node server.js",
+      "output": "Starting HTTP server\nListening on port 9000\nGET / 200\nGET /api 500\nError: request handler failed\n    at handleRequest (server.js:42:8)"
+    },
+    {
+      "id": "cargo-watch-error",
+      "expected": "monitor",
+      "command": "cargo watch -x check",
+      "output": "Watching source files for changes\nRunning cargo check\nerror[E0425]: cannot find value x\nCompilation failed\nWaiting for file changes..."
+    },
+    {
+      "id": "nodemon-wait",
+      "expected": "monitor",
+      "command": "nodemon app.js",
+      "output": "[nodemon] starting node app.js\nSyntaxError: Unexpected token\n[nodemon] app crashed - waiting for file changes before starting..."
+    },
+    {
+      "id": "tail-service-log",
+      "expected": "monitor",
+      "command": "tail -F server.log",
+      "output": "Server listening on port 8088\nGET /ping 200\nGET /ping 200\nGET /ping 200\nGET /ping 200\nGET /ping 200"
+    },
+    {
+      "id": "venom-new-log",
+      "expected": "monitor",
+      "command": "venom-cli build --run --debug",
+      "output": "Building ExampleApp\nBuild succeeded\nLaunched ExampleApp\nMonitoring application logs (r=rerun, Ctrl+C=stop)\nApplication initialized\nWindow became active\nNetwork request completed\nCache refreshed\nWindow became inactive"
+    },
+    {
+      "id": "cargo-release",
+      "expected": "command",
+      "command": "cargo build --release",
+      "output": "Compiling serde v1.0\nCompiling tokio v1.0\nCompiling myapp v0.1\nLinking release binary..."
+    },
+    {
+      "id": "pip-download",
+      "expected": "command",
+      "command": "pip install numpy",
+      "output": "Collecting numpy\nDownloading numpy.whl (20 MB)\n━━━━━━━━━━━━━━ 12/20 MB 8 MB/s"
+    },
+    {
+      "id": "old-http-current-build",
+      "expected": "command",
+      "command": "npm run build",
+      "output": "Earlier shell command: node server.js\nServer listening on port 3000\n^C\n$ npm run build\nBuilding production assets\nTransforming modules 30%\nTransforming modules 40%\nTransforming modules 50%"
+    },
+    {
+      "id": "docs-stream",
+      "expected": "command",
+      "command": "python3 render_manual.py",
+      "output": "Rendering manual page 4/80\nWriting quoted example: Server ready to accept connections\nRendering manual page 5/80\nWriting quoted example: Listening on port 7000"
+    },
+    {
+      "id": "quiet-worker",
+      "expected": "unknown",
+      "command": "./worker",
+      "output": "Job 713\nTick 4\nTick 5"
+    },
+    {
+      "id": "unqualified-ready",
+      "expected": "unknown",
+      "command": "./tool",
+      "output": "Configuration loaded\nReady\n"
+    },
+    {
+      "id": "blank-output",
+      "expected": "unknown",
+      "command": "./runner",
+      "output": "\n\n"
+    },
+    {
+      "id": "cn-file-watch",
+      "expected": "monitor",
+      "command": "./watch-files",
+      "output": "初始化完成\n正在监视目录，文件变化时重新执行\n检测到配置更新\n重新执行完成\n继续等待文件变化"
+    }
+  ],
+  "limitations": "人工构造的新措辞样本；venom是已知失败场景的变体，其他也不是生产随机样本。方法与预期在请求前固定，所有方法保留命令信息。"
+}

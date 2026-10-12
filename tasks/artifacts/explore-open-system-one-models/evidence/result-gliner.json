@@ -1,0 +1,35 @@
+{
+  "model": "gliner",
+  "platform": "macOS-26.5.1-arm64-arm-64bit",
+  "python": "3.12.3",
+  "suite_sha256": "cf262deea49d59b99831e9c177ad4f8720a7b476b0d39d672f4ffecd64d4a8fd",
+  "harness_sha256": "574bfe9d7a8f7a84d2081a3639b68c9795b99762e4be59c4f6926c28f4b076b7",
+  "spec": {
+    "repo": "fastino/GLiNER2.5-multi-Decide",
+    "revision": "e173bca1f0c4217d7a55b3b0c705d5ece8a0218d",
+    "files": [
+      ".gitattributes",
+      "GLiNER-2.5-Decision-HF-Banner.png",
+      "README.md",
+      "SKILL.md",
+      "config.json",
+      "encoder_config/config.json",
+      "model.safetensors",
+      "tokenizer.json",
+      "tokenizer_config.json"
+    ]
+  },
+  "started_at": "2026-10-10T16:24:15+0800",
+  "rows": [],
+  "status": "blocked",
+  "versions": {
+    "torch": "2.14.1",
+    "transformers": "5.19.0",
+    "gliner2": "2.1.0",
+    "gliclass": "0.1.20"
+  },
+  "error": "IncompleteSnapshotError: The cached snapshot for 'fastino/GLiNER2.5-multi-Decide' (revision 'e173bca1f0c4217d7a55b3b0c705d5ece8a0218d', commit e173bca1f0c4217d7a55b3b0c705d5ece8a0218d) is incomplete: 3 file(s) are missing (.gitattributes, GLiNER-2.5-Decision-HF-Banner.png, SKILL.md). Outgoing traffic is disabled ('local_files_only=True'). Re-run the download with network access to complete the snapshot.",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/explore-open-system-one-models/evidence/benchmark.py\", line 164, in main\n    predict, info = load_predictor(args.model, args.device)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/explore-open-system-one-models/evidence/benchmark.py\", line 102, in load_predictor\n    path = snapshot(name)\n           ^^^^^^^^^^^^^^\n  File \"/Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/explore-open-system-one-models/evidence/benchmark.py\", line 28, in snapshot\n    return snapshot_download(spec[\"repo\"], revision=spec[\"revision\"], local_files_only=True)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/itermate-system-one-eval/torch-env/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py\", line 89, in _inner_fn\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/itermate-system-one-eval/torch-env/lib/python3.12/site-packages/huggingface_hub/utils/_http.py\", line 276, in _inner\n    return fn(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/itermate-system-one-eval/torch-env/lib/python3.12/site-packages/huggingface_hub/_snapshot_download.py\", line 349, in snapshot_download\n    _raise_if_incomplete_snapshot(\n  File \"/private/tmp/itermate-system-one-eval/torch-env/lib/python3.12/site-packages/huggingface_hub/_snapshot_download.py\", line 595, in _raise_if_incomplete_snapshot\n    raise IncompleteSnapshotError(\nhuggingface_hub.errors.IncompleteSnapshotError: The cached snapshot for 'fastino/GLiNER2.5-multi-Decide' (revision 'e173bca1f0c4217d7a55b3b0c705d5ece8a0218d', commit e173bca1f0c4217d7a55b3b0c705d5ece8a0218d) is incomplete: 3 file(s) are missing (.gitattributes, GLiNER-2.5-Decision-HF-Banner.png, SKILL.md). Outgoing traffic is disabled ('local_files_only=True'). Re-run the download with network access to complete the snapshot.\n",
+  "peak_process_rss_bytes": 230408192,
+  "finished_at": "2026-10-10T16:24:32+0800"
+}

@@ -1,0 +1,60 @@
+{
+  "model": "kev",
+  "platform": "macOS-26.5.1-arm64-arm-64bit",
+  "python": "3.12.3",
+  "suite_sha256": "cf262deea49d59b99831e9c177ad4f8720a7b476b0d39d672f4ffecd64d4a8fd",
+  "harness_sha256": "f26a876bbc9a9085fdc5f420b913251648da37cec5cbc1d04dbd514bea149993",
+  "spec": {
+    "repo": "jaredpalmer/kev-0.8b",
+    "revision": "bf75a6a8848ea6960ff2ed108d9ed44c2941174f",
+    "files": [
+      ".gitattributes",
+      "README.md",
+      "adapter_config.json",
+      "adapter_model.safetensors",
+      "head.pt",
+      "provenance.json",
+      "result.json",
+      "tokenizer.json",
+      "tokenizer_config.json",
+      "train.log",
+      "training_config.json",
+      "training_metrics.json"
+    ]
+  },
+  "started_at": "2026-10-10T16:50:48+0800",
+  "rows": [],
+  "status": "blocked",
+  "versions": {
+    "torch": "2.8.0",
+    "transformers": "5.19.0",
+    "mlx": "0.32.3",
+    "mlx-lm": "0.31.3",
+    "kev": "0.1.0"
+  },
+  "backend": "mlx",
+  "environment": {
+    "packages": {
+      "torch": "2.8.0",
+      "transformers": "5.19.0",
+      "peft": "0.21.2",
+      "flash-linear-attention": null,
+      "triton": null,
+      "causal-conv1d": null,
+      "mlx": "0.32.3",
+      "mlx-lm": "0.31.3"
+    },
+    "device": "cpu",
+    "gpu": null,
+    "backend": "mlx",
+    "dtype": "bfloat16",
+    "triton_f32_default": null,
+    "attention": null,
+    "deltanet": null
+  },
+  "initialization_ms": 11690.757957985625,
+  "error": "KeyError: 'label'",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/explore-open-system-one-models/evidence/benchmark.py\", line 168, in main\n    report[\"warmup\"] = predict(\"The requested changes are complete. No response is needed.\")\n                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/explore-open-system-one-models/evidence/benchmark.py\", line 94, in predict\n    raw = model({\"state\": text, \"questions\": {\"reply\": QUESTION}})\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/itermate-system-one-eval/mlx-env/lib/python3.12/site-packages/torch/utils/_contextlib.py\", line 120, in decorate_context\n    return func(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/itermate-system-one-eval/mlx-env/lib/python3.12/site-packages/kev/predictors.py\", line 128, in __call__\n    enc = self.model.encode(self.tok, materialize(record), max_state=self.context[\"max_state\"], max_branch=self.context[\"max_branch\"], strict=True)\n                                      ^^^^^^^^^^^^^^^^^^^\n  File \"/private/tmp/itermate-system-one-eval/mlx-env/lib/python3.12/site-packages/kev/data.py\", line 401, in materialize\n    y = src_q[\"label\"]\n        ~~~~~^^^^^^^^^\nKeyError: 'label'\n",
+  "peak_process_rss_bytes": 2140176384,
+  "finished_at": "2026-10-10T16:51:00+0800"
+}

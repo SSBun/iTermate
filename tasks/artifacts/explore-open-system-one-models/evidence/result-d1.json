@@ -1,0 +1,2752 @@
+{
+  "model": "d1",
+  "platform": "macOS-26.5.1-arm64-arm-64bit",
+  "python": "3.12.3",
+  "suite_sha256": "cf262deea49d59b99831e9c177ad4f8720a7b476b0d39d672f4ffecd64d4a8fd",
+  "harness_sha256": "7f0ad82aafddc236d8528ecc6fe9dbedb8eeceba83f47c75b3dda47a6aef9e0a",
+  "spec": {
+    "repo": "LiquidAI/d1-3b",
+    "revision": "051bcc464b01b9f92942b364d9586b0ef5912432",
+    "files": [
+      ".gitattributes",
+      "LICENSE",
+      "README.md",
+      "api.py",
+      "chat_template.jinja",
+      "config.json",
+      "hybrid.py",
+      "lfm2_vl.py",
+      "model.safetensors",
+      "modeling_d1.py",
+      "processor_config.json",
+      "prompt.py",
+      "runner.py",
+      "tokenizer.json",
+      "tokenizer_config.json"
+    ]
+  },
+  "started_at": "2026-10-10T17:09:41+0800",
+  "rows": [
+    {
+      "id": "normal-zh-completed",
+      "expected": "normal",
+      "text": "已完成修改，编译通过。相关变更已经保存。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9783846672373524,
+            "probabilities": {
+              "normal": 0.9783846672373524,
+              "question": 0.021615332762647654
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 266.47712499834597,
+      "correct": true
+    },
+    {
+      "id": "normal-en-completed",
+      "expected": "normal",
+      "text": "The implementation is complete. The build passed and all changes are saved.",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9796676466573412,
+            "probabilities": {
+              "normal": 0.9796676466573412,
+              "question": 0.020332353342658753
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 265.3915418777615,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-no-reply",
+      "expected": "normal",
+      "text": "请勿回复。工作已经完成，无需确认。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9626731126558706,
+            "probabilities": {
+              "normal": 0.9626731126558706,
+              "question": 0.037326887344129464
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 263.4302501101047,
+      "correct": true
+    },
+    {
+      "id": "normal-en-no-reply",
+      "expected": "normal",
+      "text": "The work is complete. No reply or confirmation is needed.",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9796676466573412,
+            "probabilities": {
+              "normal": 0.9796676466573412,
+              "question": 0.020332353342658753
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 137,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 269.99804098159075,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-quoted-example",
+      "expected": "normal",
+      "text": "文档已更新。以下只是引用示例，不是在向你提问：\n> 你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8807970779778823,
+            "probabilities": {
+              "normal": 0.11920292202211755,
+              "question": 0.8807970779778823
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 152,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 360.10950012132525,
+      "correct": false
+    },
+    {
+      "id": "normal-en-code-example",
+      "expected": "normal",
+      "text": "The documentation is complete. This is example text, not a request:\n```text\nPlease confirm before I proceed.\n```",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8519528019683106,
+            "probabilities": {
+              "normal": 0.1480471980316895,
+              "question": 0.8519528019683106
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 286.8056658189744,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-self-answered",
+      "expected": "normal",
+      "text": "为什么构建失败？因为缺少依赖。我已经补齐依赖并完成构建。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7185943925708561,
+            "probabilities": {
+              "normal": 0.7185943925708561,
+              "question": 0.28140560742914383
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 142,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 275.018917163834,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-completed-confirmation",
+      "expected": "normal",
+      "text": "确认后我提交成功，测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9770226300899744,
+            "probabilities": {
+              "normal": 0.9770226300899744,
+              "question": 0.02297736991002561
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 274.69950006343424,
+      "correct": true
+    },
+    {
+      "id": "question-zh-choice",
+      "expected": "question",
+      "text": "你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9724147177732099,
+            "probabilities": {
+              "normal": 0.027585282226789985,
+              "question": 0.9724147177732099
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 263.40283383615315,
+      "correct": true
+    },
+    {
+      "id": "question-en-choice",
+      "expected": "question",
+      "text": "Which option do you prefer, A or B?",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8991213772699436,
+            "probabilities": {
+              "normal": 0.10087862273005653,
+              "question": 0.8991213772699436
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 136,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 265.9597920719534,
+      "correct": true
+    },
+    {
+      "id": "question-en-proceed",
+      "expected": "question",
+      "text": "May I proceed with these changes?",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8872045937171068,
+            "probabilities": {
+              "normal": 0.11279540628289324,
+              "question": 0.8872045937171068
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 133,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 272.52970915287733,
+      "correct": true
+    },
+    {
+      "id": "question-en-confirm",
+      "expected": "question",
+      "text": "Please confirm the scope before I begin.",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.6513548646660542,
+            "probabilities": {
+              "normal": 0.34864513533394575,
+              "question": 0.6513548646660542
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 133,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 267.23587489686906,
+      "correct": true
+    },
+    {
+      "id": "question-zh-implicit-write",
+      "expected": "question",
+      "text": "确认后我写入并校验。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.8991213772699436,
+            "probabilities": {
+              "normal": 0.8991213772699436,
+              "question": 0.10087862273005653
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 134,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 267.2029579989612,
+      "correct": false
+    },
+    {
+      "id": "question-zh-screenshot",
+      "expected": "question",
+      "text": "确认后，我会修改解析逻辑并重新评审。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7879311956428947,
+            "probabilities": {
+              "normal": 0.7879311956428947,
+              "question": 0.21206880435710532
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 274.07416701316833,
+      "correct": false
+    },
+    {
+      "id": "question-zh-future-condition",
+      "expected": "question",
+      "text": "确认后我会继续执行，直到测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7662936430859597,
+            "probabilities": {
+              "normal": 0.7662936430859597,
+              "question": 0.23370635691404026
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 271.66800014674664,
+      "correct": false
+    },
+    {
+      "id": "question-zh-old-negation-new-question",
+      "expected": "question",
+      "text": "请勿回复旧问题。按这个范围实现，可以吗？",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7662936430859597,
+            "probabilities": {
+              "normal": 0.7662936430859597,
+              "question": 0.23370635691404026
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 275.11629089713097,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-done",
+      "expected": "normal",
+      "text": "修复已经合入，本轮没有需要你处理的事项。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9796676466573412,
+            "probabilities": {
+              "normal": 0.9796676466573412,
+              "question": 0.020332353342658753
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 273.0088750831783,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-done",
+      "expected": "normal",
+      "text": "The fix has been merged. There is nothing you need to do this round.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9875683491468141,
+            "probabilities": {
+              "normal": 0.9875683491468141,
+              "question": 0.012431650853185818
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 303.9984169881791,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-historical",
+      "expected": "normal",
+      "text": "得到你的确认后，我开始了测试，现在测试已结束。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9099070060380482,
+            "probabilities": {
+              "normal": 0.9099070060380482,
+              "question": 0.09009299396195182
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 270.9748330526054,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-historical",
+      "expected": "normal",
+      "text": "After receiving your approval, I started the tests. They have now finished.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9525741268224334,
+            "probabilities": {
+              "normal": 0.9525741268224334,
+              "question": 0.04742587317756679
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 140,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 322.470375103876,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-negative",
+      "expected": "normal",
+      "text": "不必确认这个范围，我已经按照之前的授权完成了工作。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.8175744761936437,
+            "probabilities": {
+              "normal": 0.8175744761936437,
+              "question": 0.18242552380635632
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 142,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 287.64279116876423,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-negative",
+      "expected": "normal",
+      "text": "Do not confirm this scope again. I finished the work under your earlier authorization.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7310585786300049,
+            "probabilities": {
+              "normal": 0.7310585786300049,
+              "question": 0.2689414213699951
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 278.5735840443522,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-quote",
+      "expected": "normal",
+      "text": "日志中的最后一行是“是否继续？”，这是旧日志，不是当前请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9149009549929797,
+            "probabilities": {
+              "normal": 0.08509904500702024,
+              "question": 0.9149009549929797
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 313.30749997869134,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-quote",
+      "expected": "normal",
+      "text": "The last line of the log says 'Continue?'. That is an old log, not a current request.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8872045937171068,
+            "probabilities": {
+              "normal": 0.11279540628289324,
+              "question": 0.8872045937171068
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 147,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 300.7574169896543,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-rhetorical",
+      "expected": "normal",
+      "text": "为什么会这样？原因是缓存未刷新；刷新后问题已经消失。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9324533088603709,
+            "probabilities": {
+              "normal": 0.9324533088603709,
+              "question": 0.0675466911396291
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 293.75595785677433,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-rhetorical",
+      "expected": "normal",
+      "text": "Why did this happen? The cache was stale; refreshing it has already resolved the issue.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9241418199787566,
+            "probabilities": {
+              "normal": 0.9241418199787566,
+              "question": 0.07585818002124356
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 518.9830840099603,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-deferred",
+      "expected": "normal",
+      "text": "下次需要部署时再告诉我即可。本次文档更新已经完成。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9362850057480346,
+            "probabilities": {
+              "normal": 0.9362850057480346,
+              "question": 0.06371499425196533
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 281.97583300061524,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-deferred",
+      "expected": "normal",
+      "text": "Let me know next time you need a deployment. This documentation update is finished.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9399133498259924,
+            "probabilities": {
+              "normal": 0.9399133498259924,
+              "question": 0.06008665017400762
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 279.17991601862013,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-progress",
+      "expected": "normal",
+      "text": "我正在检查依赖，接下来会自动继续构建，不需要你操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9783846672373524,
+            "probabilities": {
+              "normal": 0.9783846672373524,
+              "question": 0.021615332762647654
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 279.8269169870764,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-progress",
+      "expected": "normal",
+      "text": "I am checking dependencies and will continue the build automatically. No action is needed from you.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9820137900379085,
+            "probabilities": {
+              "normal": 0.9820137900379085,
+              "question": 0.017986209962091555
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 143,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 292.1662500593811,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-code",
+      "expected": "normal",
+      "text": "示例代码是 print(\"请确认后继续\")，以上只是代码说明。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.6224593312018546,
+            "probabilities": {
+              "normal": 0.37754066879814546,
+              "question": 0.6224593312018546
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 142,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 281.5775419585407,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-code",
+      "expected": "normal",
+      "text": "The sample code is print(\"Please confirm to proceed\"). This is only an explanation of code.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.7981867777396212,
+            "probabilities": {
+              "normal": 0.20181322226037882,
+              "question": 0.7981867777396212
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 280.3628749679774,
+      "correct": false
+    },
+    {
+      "id": "new-question-zh-permission",
+      "expected": "question",
+      "text": "可以删除这些临时文件吗？我会等你确认再操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9859363729567544,
+            "probabilities": {
+              "normal": 0.014063627043245474,
+              "question": 0.9859363729567544
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 142,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 444.13937511853874,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-permission",
+      "expected": "question",
+      "text": "May I delete these temporary files? I will wait for your approval.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9648551535992067,
+            "probabilities": {
+              "normal": 0.03514484640079327,
+              "question": 0.9648551535992067
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 309.20900008641183,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-implicit",
+      "expected": "question",
+      "text": "收到你的确认，我再开始部署。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9149009549929797,
+            "probabilities": {
+              "normal": 0.9149009549929797,
+              "question": 0.08509904500702024
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 278.4730000421405,
+      "correct": false
+    },
+    {
+      "id": "new-question-en-implicit",
+      "expected": "question",
+      "text": "Once you confirm, I will begin the deployment.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8807970779778823,
+            "probabilities": {
+              "normal": 0.11920292202211755,
+              "question": 0.8807970779778823
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 277.5539590511471,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-choice",
+      "expected": "question",
+      "text": "请选择保留旧配置，或切换到新配置。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9099070060380482,
+            "probabilities": {
+              "normal": 0.09009299396195182,
+              "question": 0.9099070060380482
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 137,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 278.86895881965756,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-choice",
+      "expected": "question",
+      "text": "Please choose whether to retain the old configuration or switch to the new one.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9465966702001757,
+            "probabilities": {
+              "normal": 0.053403329799824234,
+              "question": 0.9465966702001757
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 140,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 279.3964168522507,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-missing",
+      "expected": "question",
+      "text": "还缺少目标分支名称，请提供后我再创建请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9553191297273498,
+            "probabilities": {
+              "normal": 0.0446808702726502,
+              "question": 0.9553191297273498
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 277.85362489521503,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-missing",
+      "expected": "question",
+      "text": "I still need the target branch name. Please provide it before I create the request.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9626731126558706,
+            "probabilities": {
+              "normal": 0.037326887344129464,
+              "question": 0.9626731126558706
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 142,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 292.6654159091413,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-mixed",
+      "expected": "question",
+      "text": "旧问题不用回答。新方案是否按这个范围执行？",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.5926665999540697,
+            "probabilities": {
+              "normal": 0.5926665999540697,
+              "question": 0.4073334000459302
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 281.1934999190271,
+      "correct": false
+    },
+    {
+      "id": "new-question-en-mixed",
+      "expected": "question",
+      "text": "No need to answer the old question. Should I implement the new plan within this scope?",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.5926665999540697,
+            "probabilities": {
+              "normal": 0.4073334000459302,
+              "question": 0.5926665999540697
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 279.46037519723177,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-future",
+      "expected": "question",
+      "text": "你确认之后，我将一直重试直到构建成功。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.679178699175393,
+            "probabilities": {
+              "normal": 0.679178699175393,
+              "question": 0.32082130082460697
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 278.7956250831485,
+      "correct": false
+    },
+    {
+      "id": "new-question-en-future",
+      "expected": "question",
+      "text": "After you confirm, I will keep retrying until the build succeeds.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.679178699175393,
+            "probabilities": {
+              "normal": 0.32082130082460697,
+              "question": 0.679178699175393
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 140,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 284.45541695691645,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-block",
+      "expected": "question",
+      "text": "工作已暂停，等待你授权后继续。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9859363729567544,
+            "probabilities": {
+              "normal": 0.014063627043245474,
+              "question": 0.9859363729567544
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 137,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 280.2994588855654,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-block",
+      "expected": "question",
+      "text": "Work is paused until you authorize me to continue.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9867771782476948,
+            "probabilities": {
+              "normal": 0.013222821752305148,
+              "question": 0.9867771782476948
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 278.3879169728607,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-done-plus",
+      "expected": "question",
+      "text": "文档已经写完。是否还需要我更新示例？",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7310585786300049,
+            "probabilities": {
+              "normal": 0.7310585786300049,
+              "question": 0.2689414213699951
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 278.53737492114305,
+      "correct": false
+    },
+    {
+      "id": "new-question-en-done-plus",
+      "expected": "question",
+      "text": "The documentation is done. Would you like me to update the examples too?",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8596637505099167,
+            "probabilities": {
+              "normal": 0.14033624949008322,
+              "question": 0.8596637505099167
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 279.93145817890763,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-completed",
+      "expected": "normal",
+      "text": "已完成修改，编译通过。相关变更已经保存。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9783846672373524,
+            "probabilities": {
+              "normal": 0.9783846672373524,
+              "question": 0.021615332762647654
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 281.91991709172726,
+      "correct": true
+    },
+    {
+      "id": "normal-en-completed",
+      "expected": "normal",
+      "text": "The implementation is complete. The build passed and all changes are saved.",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9796676466573412,
+            "probabilities": {
+              "normal": 0.9796676466573412,
+              "question": 0.020332353342658753
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 276.58324991352856,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-no-reply",
+      "expected": "normal",
+      "text": "请勿回复。工作已经完成，无需确认。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9626731126558706,
+            "probabilities": {
+              "normal": 0.9626731126558706,
+              "question": 0.037326887344129464
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 280.2142910659313,
+      "correct": true
+    },
+    {
+      "id": "normal-en-no-reply",
+      "expected": "normal",
+      "text": "The work is complete. No reply or confirmation is needed.",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9796676466573412,
+            "probabilities": {
+              "normal": 0.9796676466573412,
+              "question": 0.020332353342658753
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 137,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 281.0457090381533,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-quoted-example",
+      "expected": "normal",
+      "text": "文档已更新。以下只是引用示例，不是在向你提问：\n> 你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8807970779778823,
+            "probabilities": {
+              "normal": 0.11920292202211755,
+              "question": 0.8807970779778823
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 152,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 294.7490829974413,
+      "correct": false
+    },
+    {
+      "id": "normal-en-code-example",
+      "expected": "normal",
+      "text": "The documentation is complete. This is example text, not a request:\n```text\nPlease confirm before I proceed.\n```",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8519528019683106,
+            "probabilities": {
+              "normal": 0.1480471980316895,
+              "question": 0.8519528019683106
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 149,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 295.95624981448054,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-self-answered",
+      "expected": "normal",
+      "text": "为什么构建失败？因为缺少依赖。我已经补齐依赖并完成构建。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7185943925708561,
+            "probabilities": {
+              "normal": 0.7185943925708561,
+              "question": 0.28140560742914383
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 142,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 279.0529588237405,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-completed-confirmation",
+      "expected": "normal",
+      "text": "确认后我提交成功，测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9770226300899744,
+            "probabilities": {
+              "normal": 0.9770226300899744,
+              "question": 0.02297736991002561
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 278.13683287240565,
+      "correct": true
+    },
+    {
+      "id": "question-zh-choice",
+      "expected": "question",
+      "text": "你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9724147177732099,
+            "probabilities": {
+              "normal": 0.027585282226789985,
+              "question": 0.9724147177732099
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 275.3016659989953,
+      "correct": true
+    },
+    {
+      "id": "question-en-choice",
+      "expected": "question",
+      "text": "Which option do you prefer, A or B?",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8991213772699436,
+            "probabilities": {
+              "normal": 0.10087862273005653,
+              "question": 0.8991213772699436
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 136,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 287.04658313654363,
+      "correct": true
+    },
+    {
+      "id": "question-en-proceed",
+      "expected": "question",
+      "text": "May I proceed with these changes?",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8872045937171068,
+            "probabilities": {
+              "normal": 0.11279540628289324,
+              "question": 0.8872045937171068
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 133,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 282.80579182319343,
+      "correct": true
+    },
+    {
+      "id": "question-en-confirm",
+      "expected": "question",
+      "text": "Please confirm the scope before I begin.",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.6513548646660542,
+            "probabilities": {
+              "normal": 0.34864513533394575,
+              "question": 0.6513548646660542
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 133,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 281.2937500420958,
+      "correct": true
+    },
+    {
+      "id": "question-zh-implicit-write",
+      "expected": "question",
+      "text": "确认后我写入并校验。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.8991213772699436,
+            "probabilities": {
+              "normal": 0.8991213772699436,
+              "question": 0.10087862273005653
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 134,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 281.56287502497435,
+      "correct": false
+    },
+    {
+      "id": "question-zh-screenshot",
+      "expected": "question",
+      "text": "确认后，我会修改解析逻辑并重新评审。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7879311956428947,
+            "probabilities": {
+              "normal": 0.7879311956428947,
+              "question": 0.21206880435710532
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 287.54154103808105,
+      "correct": false
+    },
+    {
+      "id": "question-zh-future-condition",
+      "expected": "question",
+      "text": "确认后我会继续执行，直到测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7662936430859597,
+            "probabilities": {
+              "normal": 0.7662936430859597,
+              "question": 0.23370635691404026
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 289.13291706703603,
+      "correct": false
+    },
+    {
+      "id": "question-zh-old-negation-new-question",
+      "expected": "question",
+      "text": "请勿回复旧问题。按这个范围实现，可以吗？",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7662936430859597,
+            "probabilities": {
+              "normal": 0.7662936430859597,
+              "question": 0.23370635691404026
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 295.2985828742385,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-done",
+      "expected": "normal",
+      "text": "修复已经合入，本轮没有需要你处理的事项。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9796676466573412,
+            "probabilities": {
+              "normal": 0.9796676466573412,
+              "question": 0.020332353342658753
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 313.28154099173844,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-done",
+      "expected": "normal",
+      "text": "The fix has been merged. There is nothing you need to do this round.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9875683491468141,
+            "probabilities": {
+              "normal": 0.9875683491468141,
+              "question": 0.012431650853185818
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 291.7717080563307,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-historical",
+      "expected": "normal",
+      "text": "得到你的确认后，我开始了测试，现在测试已结束。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9099070060380482,
+            "probabilities": {
+              "normal": 0.9099070060380482,
+              "question": 0.09009299396195182
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 281.6941668279469,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-historical",
+      "expected": "normal",
+      "text": "After receiving your approval, I started the tests. They have now finished.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9525741268224334,
+            "probabilities": {
+              "normal": 0.9525741268224334,
+              "question": 0.04742587317756679
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 140,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 282.16708288528025,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-negative",
+      "expected": "normal",
+      "text": "不必确认这个范围，我已经按照之前的授权完成了工作。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.8175744761936437,
+            "probabilities": {
+              "normal": 0.8175744761936437,
+              "question": 0.18242552380635632
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 142,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 290.5688751488924,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-negative",
+      "expected": "normal",
+      "text": "Do not confirm this scope again. I finished the work under your earlier authorization.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7310585786300049,
+            "probabilities": {
+              "normal": 0.7310585786300049,
+              "question": 0.2689414213699951
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 292.5307918339968,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-quote",
+      "expected": "normal",
+      "text": "日志中的最后一行是“是否继续？”，这是旧日志，不是当前请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9149009549929797,
+            "probabilities": {
+              "normal": 0.08509904500702024,
+              "question": 0.9149009549929797
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 297.33420815318823,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-quote",
+      "expected": "normal",
+      "text": "The last line of the log says 'Continue?'. That is an old log, not a current request.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8872045937171068,
+            "probabilities": {
+              "normal": 0.11279540628289324,
+              "question": 0.8872045937171068
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 147,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 326.0602499358356,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-rhetorical",
+      "expected": "normal",
+      "text": "为什么会这样？原因是缓存未刷新；刷新后问题已经消失。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9324533088603709,
+            "probabilities": {
+              "normal": 0.9324533088603709,
+              "question": 0.0675466911396291
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 305.96770788542926,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-rhetorical",
+      "expected": "normal",
+      "text": "Why did this happen? The cache was stale; refreshing it has already resolved the issue.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9241418199787566,
+            "probabilities": {
+              "normal": 0.9241418199787566,
+              "question": 0.07585818002124356
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 145,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 320.71037497371435,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-deferred",
+      "expected": "normal",
+      "text": "下次需要部署时再告诉我即可。本次文档更新已经完成。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9362850057480346,
+            "probabilities": {
+              "normal": 0.9362850057480346,
+              "question": 0.06371499425196533
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 1042.431415989995,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-deferred",
+      "expected": "normal",
+      "text": "Let me know next time you need a deployment. This documentation update is finished.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9399133498259924,
+            "probabilities": {
+              "normal": 0.9399133498259924,
+              "question": 0.06008665017400762
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 314.0094159170985,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-progress",
+      "expected": "normal",
+      "text": "我正在检查依赖，接下来会自动继续构建，不需要你操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9783846672373524,
+            "probabilities": {
+              "normal": 0.9783846672373524,
+              "question": 0.021615332762647654
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 297.5901667959988,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-progress",
+      "expected": "normal",
+      "text": "I am checking dependencies and will continue the build automatically. No action is needed from you.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9820137900379085,
+            "probabilities": {
+              "normal": 0.9820137900379085,
+              "question": 0.017986209962091555
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 143,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 300.12783291749656,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-code",
+      "expected": "normal",
+      "text": "示例代码是 print(\"请确认后继续\")，以上只是代码说明。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.6224593312018546,
+            "probabilities": {
+              "normal": 0.37754066879814546,
+              "question": 0.6224593312018546
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 142,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 293.91658306121826,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-code",
+      "expected": "normal",
+      "text": "The sample code is print(\"Please confirm to proceed\"). This is only an explanation of code.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.7981867777396212,
+            "probabilities": {
+              "normal": 0.20181322226037882,
+              "question": 0.7981867777396212
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 281.4521670807153,
+      "correct": false
+    },
+    {
+      "id": "new-question-zh-permission",
+      "expected": "question",
+      "text": "可以删除这些临时文件吗？我会等你确认再操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9859363729567544,
+            "probabilities": {
+              "normal": 0.014063627043245474,
+              "question": 0.9859363729567544
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 142,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 279.7607500106096,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-permission",
+      "expected": "question",
+      "text": "May I delete these temporary files? I will wait for your approval.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9648551535992067,
+            "probabilities": {
+              "normal": 0.03514484640079327,
+              "question": 0.9648551535992067
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 280.9059170540422,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-implicit",
+      "expected": "question",
+      "text": "收到你的确认，我再开始部署。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9149009549929797,
+            "probabilities": {
+              "normal": 0.9149009549929797,
+              "question": 0.08509904500702024
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 280.5278750602156,
+      "correct": false
+    },
+    {
+      "id": "new-question-en-implicit",
+      "expected": "question",
+      "text": "Once you confirm, I will begin the deployment.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8807970779778823,
+            "probabilities": {
+              "normal": 0.11920292202211755,
+              "question": 0.8807970779778823
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 278.46545819193125,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-choice",
+      "expected": "question",
+      "text": "请选择保留旧配置，或切换到新配置。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9099070060380482,
+            "probabilities": {
+              "normal": 0.09009299396195182,
+              "question": 0.9099070060380482
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 137,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 280.78183392062783,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-choice",
+      "expected": "question",
+      "text": "Please choose whether to retain the old configuration or switch to the new one.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9465966702001757,
+            "probabilities": {
+              "normal": 0.053403329799824234,
+              "question": 0.9465966702001757
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 140,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 400.31162509694695,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-missing",
+      "expected": "question",
+      "text": "还缺少目标分支名称，请提供后我再创建请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9553191297273498,
+            "probabilities": {
+              "normal": 0.0446808702726502,
+              "question": 0.9553191297273498
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 349.00487517006695,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-missing",
+      "expected": "question",
+      "text": "I still need the target branch name. Please provide it before I create the request.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9626731126558706,
+            "probabilities": {
+              "normal": 0.037326887344129464,
+              "question": 0.9626731126558706
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 142,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 283.5603340063244,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-mixed",
+      "expected": "question",
+      "text": "旧问题不用回答。新方案是否按这个范围执行？",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.5926665999540697,
+            "probabilities": {
+              "normal": 0.5926665999540697,
+              "question": 0.4073334000459302
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 280.01045784913003,
+      "correct": false
+    },
+    {
+      "id": "new-question-en-mixed",
+      "expected": "question",
+      "text": "No need to answer the old question. Should I implement the new plan within this scope?",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.5926665999540697,
+            "probabilities": {
+              "normal": 0.4073334000459302,
+              "question": 0.5926665999540697
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 281.5655830781907,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-future",
+      "expected": "question",
+      "text": "你确认之后，我将一直重试直到构建成功。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.679178699175393,
+            "probabilities": {
+              "normal": 0.679178699175393,
+              "question": 0.32082130082460697
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 279.5879580080509,
+      "correct": false
+    },
+    {
+      "id": "new-question-en-future",
+      "expected": "question",
+      "text": "After you confirm, I will keep retrying until the build succeeds.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.679178699175393,
+            "probabilities": {
+              "normal": 0.32082130082460697,
+              "question": 0.679178699175393
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 140,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 283.06233300827444,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-block",
+      "expected": "question",
+      "text": "工作已暂停，等待你授权后继续。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9859363729567544,
+            "probabilities": {
+              "normal": 0.014063627043245474,
+              "question": 0.9859363729567544
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 137,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 276.5312499832362,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-block",
+      "expected": "question",
+      "text": "Work is paused until you authorize me to continue.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9867771782476948,
+            "probabilities": {
+              "normal": 0.013222821752305148,
+              "question": 0.9867771782476948
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 135,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 275.7450419012457,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-done-plus",
+      "expected": "question",
+      "text": "文档已经写完。是否还需要我更新示例？",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.7310585786300049,
+            "probabilities": {
+              "normal": 0.7310585786300049,
+              "question": 0.2689414213699951
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 279.1943328920752,
+      "correct": false
+    },
+    {
+      "id": "new-question-en-done-plus",
+      "expected": "question",
+      "text": "The documentation is done. Would you like me to update the examples too?",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8596637505099167,
+            "probabilities": {
+              "normal": 0.14033624949008322,
+              "question": 0.8596637505099167
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 141,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 279.37141596339643,
+      "correct": true
+    }
+  ],
+  "status": "complete",
+  "versions": {
+    "torch": "2.14.1",
+    "transformers": "5.19.0",
+    "gliner2": "2.1.0",
+    "gliclass": "0.1.20"
+  },
+  "backend": "torch-mps",
+  "threads": 4,
+  "initialization_ms": 18495.615541003644,
+  "warmup": [
+    "normal",
+    {
+      "answers": {
+        "reply": {
+          "type": "choice",
+          "choice": "normal",
+          "confidence": 0.98504291340685,
+          "probabilities": {
+            "normal": 0.98504291340685,
+            "question": 0.01495708659314999
+          }
+        }
+      },
+      "usage": {
+        "input_tokens": 136,
+        "output_tokens": 0
+      }
+    }
+  ],
+  "first_inference_ms": 2859.7769998013973,
+  "peak_process_rss_bytes": 489472000,
+  "finished_at": "2026-10-10T17:10:31+0800"
+}

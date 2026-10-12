@@ -1,0 +1,2370 @@
+{
+  "result-d1": {
+    "model": "d1",
+    "status": "complete",
+    "error": null,
+    "backend": "torch-mps",
+    "overall": {
+      "samples": 48,
+      "classified": 48,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 34,
+      "accuracy": 0.7083333333333334,
+      "tp": 16,
+      "tn": 18,
+      "fp": 6,
+      "fn": 8,
+      "question_recall": 0.6666666666666666,
+      "normal_false_positive_rate": 0.25,
+      "p50_ms": 279.02443741913885,
+      "p95_ms": 360.10950012132525
+    },
+    "by_language": {
+      "zh": {
+        "samples": 26,
+        "classified": 26,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 15,
+        "accuracy": 0.5769230769230769,
+        "tp": 5,
+        "tn": 10,
+        "fp": 3,
+        "fn": 8,
+        "question_recall": 0.38461538461538464,
+        "normal_false_positive_rate": 0.23076923076923078,
+        "p50_ms": 278.50518748164177,
+        "p95_ms": 360.10950012132525
+      },
+      "en": {
+        "samples": 22,
+        "classified": 22,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 19,
+        "accuracy": 0.8636363636363636,
+        "tp": 11,
+        "tn": 8,
+        "fp": 3,
+        "fn": 0,
+        "question_recall": 1.0,
+        "normal_false_positive_rate": 0.2727272727272727,
+        "p50_ms": 279.6959166880697,
+        "p95_ms": 322.470375103876
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 16,
+        "classified": 16,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 10,
+        "accuracy": 0.625,
+        "tp": 4,
+        "tn": 6,
+        "fp": 2,
+        "fn": 4,
+        "question_recall": 0.5,
+        "normal_false_positive_rate": 0.25,
+        "p50_ms": 270.8330205641687,
+        "p95_ms": 360.10950012132525
+      },
+      "new": {
+        "samples": 32,
+        "classified": 32,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 24,
+        "accuracy": 0.75,
+        "tp": 12,
+        "tn": 12,
+        "fp": 4,
+        "fn": 4,
+        "question_recall": 0.75,
+        "normal_false_positive_rate": 0.25,
+        "p50_ms": 280.3311669267714,
+        "p95_ms": 444.13937511853874
+      }
+    },
+    "repeated_rows": 48,
+    "prediction_flips": 0,
+    "initialization_ms": 18495.615541003644,
+    "first_inference_ms": 2859.7769998013973,
+    "peak_process_rss_bytes": 489472000,
+    "failures": [
+      {
+        "id": "normal-zh-quoted-example",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-en-code-example",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "question-zh-implicit-write",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-screenshot",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-future-condition",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-old-negation-new-question",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-quote",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-quote",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-implicit",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-mixed",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-future",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-done-plus",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      }
+    ]
+  },
+  "result-gliclass": {
+    "model": "gliclass",
+    "status": "complete",
+    "error": null,
+    "backend": "torch-cpu",
+    "overall": {
+      "samples": 48,
+      "classified": 48,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 24,
+      "accuracy": 0.5,
+      "tp": 24,
+      "tn": 0,
+      "fp": 24,
+      "fn": 0,
+      "question_recall": 1.0,
+      "normal_false_positive_rate": 1.0,
+      "p50_ms": 808.1880623940378,
+      "p95_ms": 1160.7787909451872
+    },
+    "by_language": {
+      "zh": {
+        "samples": 26,
+        "classified": 26,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 13,
+        "accuracy": 0.5,
+        "tp": 13,
+        "tn": 0,
+        "fp": 13,
+        "fn": 0,
+        "question_recall": 1.0,
+        "normal_false_positive_rate": 1.0,
+        "p50_ms": 801.6768748639151,
+        "p95_ms": 1361.9562918320298
+      },
+      "en": {
+        "samples": 22,
+        "classified": 22,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 11,
+        "accuracy": 0.5,
+        "tp": 11,
+        "tn": 0,
+        "fp": 11,
+        "fn": 0,
+        "question_recall": 1.0,
+        "normal_false_positive_rate": 1.0,
+        "p50_ms": 813.8451039558277,
+        "p95_ms": 1144.168792059645
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 16,
+        "classified": 16,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 8,
+        "accuracy": 0.5,
+        "tp": 8,
+        "tn": 0,
+        "fp": 8,
+        "fn": 0,
+        "question_recall": 1.0,
+        "normal_false_positive_rate": 1.0,
+        "p50_ms": 826.8926664022729,
+        "p95_ms": 1141.1258750595152
+      },
+      "new": {
+        "samples": 32,
+        "classified": 32,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 16,
+        "accuracy": 0.5,
+        "tp": 16,
+        "tn": 0,
+        "fp": 16,
+        "fn": 0,
+        "question_recall": 1.0,
+        "normal_false_positive_rate": 1.0,
+        "p50_ms": 797.4791874876246,
+        "p95_ms": 1361.9562918320298
+      }
+    },
+    "repeated_rows": 48,
+    "prediction_flips": 0,
+    "initialization_ms": 5743.466208921745,
+    "first_inference_ms": 977.1830420941114,
+    "peak_process_rss_bytes": 1001766912,
+    "failures": [
+      {
+        "id": "normal-zh-completed",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-en-completed",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-zh-no-reply",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-en-no-reply",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-zh-quoted-example",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-en-code-example",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-zh-self-answered",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-zh-completed-confirmation",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-done",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-done",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-historical",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-historical",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-negative",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-negative",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-quote",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-quote",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-rhetorical",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-rhetorical",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-deferred",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-deferred",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-progress",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-progress",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      }
+    ]
+  },
+  "result-gliner-retry1": {
+    "model": "gliner",
+    "status": "complete",
+    "error": null,
+    "backend": "torch-cpu",
+    "overall": {
+      "samples": 48,
+      "classified": 48,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 29,
+      "accuracy": 0.6041666666666666,
+      "tp": 9,
+      "tn": 20,
+      "fp": 4,
+      "fn": 15,
+      "question_recall": 0.375,
+      "normal_false_positive_rate": 0.16666666666666666,
+      "p50_ms": 207.15195848606527,
+      "p95_ms": 392.4875420052558
+    },
+    "by_language": {
+      "zh": {
+        "samples": 26,
+        "classified": 26,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 14,
+        "accuracy": 0.5384615384615384,
+        "tp": 3,
+        "tn": 11,
+        "fp": 2,
+        "fn": 10,
+        "question_recall": 0.23076923076923078,
+        "normal_false_positive_rate": 0.15384615384615385,
+        "p50_ms": 198.93795857205987,
+        "p95_ms": 392.4875420052558
+      },
+      "en": {
+        "samples": 22,
+        "classified": 22,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 15,
+        "accuracy": 0.6818181818181818,
+        "tp": 6,
+        "tn": 9,
+        "fp": 2,
+        "fn": 5,
+        "question_recall": 0.5454545454545454,
+        "normal_false_positive_rate": 0.18181818181818182,
+        "p50_ms": 220.11824999935925,
+        "p95_ms": 337.915875017643
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 16,
+        "classified": 16,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 11,
+        "accuracy": 0.6875,
+        "tp": 3,
+        "tn": 8,
+        "fp": 0,
+        "fn": 5,
+        "question_recall": 0.375,
+        "normal_false_positive_rate": 0.0,
+        "p50_ms": 185.31893740873784,
+        "p95_ms": 272.5844159722328
+      },
+      "new": {
+        "samples": 32,
+        "classified": 32,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 18,
+        "accuracy": 0.5625,
+        "tp": 6,
+        "tn": 12,
+        "fp": 4,
+        "fn": 10,
+        "question_recall": 0.375,
+        "normal_false_positive_rate": 0.25,
+        "p50_ms": 219.59479188080877,
+        "p95_ms": 497.89695790968835
+      }
+    },
+    "repeated_rows": 48,
+    "prediction_flips": 0,
+    "initialization_ms": 116723.51466701366,
+    "first_inference_ms": 453.2155420165509,
+    "peak_process_rss_bytes": 3354296320,
+    "failures": [
+      {
+        "id": "question-zh-choice",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-en-confirm",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-implicit-write",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-screenshot",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-future-condition",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-quote",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-quote",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-rhetorical",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-rhetorical",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-implicit",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-implicit",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-choice",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-choice",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-missing",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-mixed",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-future",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-future",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-block",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-block",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      }
+    ]
+  },
+  "result-gliner": {
+    "model": "gliner",
+    "status": "blocked",
+    "error": "IncompleteSnapshotError: The cached snapshot for 'fastino/GLiNER2.5-multi-Decide' (revision 'e173bca1f0c4217d7a55b3b0c705d5ece8a0218d', commit e173bca1f0c4217d7a55b3b0c705d5ece8a0218d) is incomplete: 3 file(s) are missing (.gitattributes, GLiNER-2.5-Decision-HF-Banner.png, SKILL.md). Outgoing traffic is disabled ('local_files_only=True'). Re-run the download with network access to complete the snapshot.",
+    "backend": null,
+    "overall": {
+      "samples": 0,
+      "classified": 0,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 0,
+      "accuracy": null,
+      "tp": 0,
+      "tn": 0,
+      "fp": 0,
+      "fn": 0,
+      "question_recall": null,
+      "normal_false_positive_rate": null,
+      "p50_ms": null,
+      "p95_ms": null
+    },
+    "by_language": {
+      "zh": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      },
+      "en": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      },
+      "new": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      }
+    },
+    "repeated_rows": 0,
+    "prediction_flips": 0,
+    "initialization_ms": null,
+    "first_inference_ms": null,
+    "peak_process_rss_bytes": 230408192,
+    "failures": []
+  },
+  "result-kev-retry1": {
+    "model": "kev",
+    "status": "blocked",
+    "error": "KeyError: 'label'",
+    "backend": "mlx",
+    "overall": {
+      "samples": 0,
+      "classified": 0,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 0,
+      "accuracy": null,
+      "tp": 0,
+      "tn": 0,
+      "fp": 0,
+      "fn": 0,
+      "question_recall": null,
+      "normal_false_positive_rate": null,
+      "p50_ms": null,
+      "p95_ms": null
+    },
+    "by_language": {
+      "zh": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      },
+      "en": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      },
+      "new": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      }
+    },
+    "repeated_rows": 0,
+    "prediction_flips": 0,
+    "initialization_ms": 11690.757957985625,
+    "first_inference_ms": null,
+    "peak_process_rss_bytes": 2140176384,
+    "failures": []
+  },
+  "result-kev-retry2": {
+    "model": "kev",
+    "status": "complete",
+    "error": null,
+    "backend": "mlx",
+    "overall": {
+      "samples": 48,
+      "classified": 48,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 38,
+      "accuracy": 0.7916666666666666,
+      "tp": 15,
+      "tn": 23,
+      "fp": 1,
+      "fn": 9,
+      "question_recall": 0.625,
+      "normal_false_positive_rate": 0.041666666666666664,
+      "p50_ms": 70.8769999910146,
+      "p95_ms": 148.70937494561076
+    },
+    "by_language": {
+      "zh": {
+        "samples": 26,
+        "classified": 26,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 19,
+        "accuracy": 0.7307692307692307,
+        "tp": 7,
+        "tn": 12,
+        "fp": 1,
+        "fn": 6,
+        "question_recall": 0.5384615384615384,
+        "normal_false_positive_rate": 0.07692307692307693,
+        "p50_ms": 69.48683352675289,
+        "p95_ms": 116.03070795536041
+      },
+      "en": {
+        "samples": 22,
+        "classified": 22,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 19,
+        "accuracy": 0.8636363636363636,
+        "tp": 8,
+        "tn": 11,
+        "fp": 0,
+        "fn": 3,
+        "question_recall": 0.7272727272727273,
+        "normal_false_positive_rate": 0.0,
+        "p50_ms": 71.53054210357368,
+        "p95_ms": 148.70937494561076
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 16,
+        "classified": 16,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 11,
+        "accuracy": 0.6875,
+        "tp": 3,
+        "tn": 8,
+        "fp": 0,
+        "fn": 5,
+        "question_recall": 0.375,
+        "normal_false_positive_rate": 0.0,
+        "p50_ms": 71.85760408174247,
+        "p95_ms": 158.70129107497633
+      },
+      "new": {
+        "samples": 32,
+        "classified": 32,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 27,
+        "accuracy": 0.84375,
+        "tp": 12,
+        "tn": 15,
+        "fp": 1,
+        "fn": 4,
+        "question_recall": 0.75,
+        "normal_false_positive_rate": 0.0625,
+        "p50_ms": 70.7429168978706,
+        "p95_ms": 148.70937494561076
+      }
+    },
+    "repeated_rows": 48,
+    "prediction_flips": 0,
+    "initialization_ms": 10197.393916081637,
+    "first_inference_ms": 1240.3712081722915,
+    "peak_process_rss_bytes": 2273050624,
+    "failures": [
+      {
+        "id": "question-en-choice",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-implicit-write",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-screenshot",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-future-condition",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-old-negation-new-question",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-mixed",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-mixed",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-done-plus",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-done-plus",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      }
+    ]
+  },
+  "result-kev": {
+    "model": "kev",
+    "status": "loading",
+    "error": null,
+    "backend": null,
+    "overall": {
+      "samples": 0,
+      "classified": 0,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 0,
+      "accuracy": null,
+      "tp": 0,
+      "tn": 0,
+      "fp": 0,
+      "fn": 0,
+      "question_recall": null,
+      "normal_false_positive_rate": null,
+      "p50_ms": null,
+      "p95_ms": null
+    },
+    "by_language": {
+      "zh": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      },
+      "en": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      },
+      "new": {
+        "samples": 0,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 0,
+        "accuracy": null,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": null,
+        "normal_false_positive_rate": null,
+        "p50_ms": null,
+        "p95_ms": null
+      }
+    },
+    "repeated_rows": 0,
+    "prediction_flips": 0,
+    "initialization_ms": null,
+    "first_inference_ms": null,
+    "peak_process_rss_bytes": null,
+    "failures": []
+  },
+  "result-laya-choice": {
+    "model": "laya-choice",
+    "status": "complete",
+    "error": null,
+    "backend": "existing-loopback-service",
+    "overall": {
+      "samples": 48,
+      "classified": 48,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 28,
+      "accuracy": 0.5833333333333334,
+      "tp": 9,
+      "tn": 19,
+      "fp": 5,
+      "fn": 15,
+      "question_recall": 0.375,
+      "normal_false_positive_rate": 0.20833333333333334,
+      "p50_ms": 21.141333505511284,
+      "p95_ms": 494.3150000181049
+    },
+    "by_language": {
+      "zh": {
+        "samples": 26,
+        "classified": 26,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 17,
+        "accuracy": 0.6538461538461539,
+        "tp": 6,
+        "tn": 11,
+        "fp": 2,
+        "fn": 7,
+        "question_recall": 0.46153846153846156,
+        "normal_false_positive_rate": 0.15384615384615385,
+        "p50_ms": 19.39916657283902,
+        "p95_ms": 417.48495888896286
+      },
+      "en": {
+        "samples": 22,
+        "classified": 22,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 11,
+        "accuracy": 0.5,
+        "tp": 3,
+        "tn": 8,
+        "fp": 3,
+        "fn": 8,
+        "question_recall": 0.2727272727272727,
+        "normal_false_positive_rate": 0.2727272727272727,
+        "p50_ms": 22.596937604248524,
+        "p95_ms": 494.3150000181049
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 16,
+        "classified": 16,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 10,
+        "accuracy": 0.625,
+        "tp": 5,
+        "tn": 5,
+        "fp": 3,
+        "fn": 3,
+        "question_recall": 0.625,
+        "normal_false_positive_rate": 0.375,
+        "p50_ms": 122.82645795494318,
+        "p95_ms": 629.3627920094877
+      },
+      "new": {
+        "samples": 32,
+        "classified": 32,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 18,
+        "accuracy": 0.5625,
+        "tp": 4,
+        "tn": 14,
+        "fp": 2,
+        "fn": 12,
+        "question_recall": 0.25,
+        "normal_false_positive_rate": 0.125,
+        "p50_ms": 18.38006207253784,
+        "p95_ms": 417.48495888896286
+      }
+    },
+    "repeated_rows": 48,
+    "prediction_flips": 0,
+    "initialization_ms": 31.99020796455443,
+    "first_inference_ms": 485.8842911198735,
+    "peak_process_rss_bytes": 34209792,
+    "failures": [
+      {
+        "id": "normal-zh-no-reply",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-en-code-example",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-zh-self-answered",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "question-en-proceed",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-future-condition",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-old-negation-new-question",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-negative",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-question-en-permission",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-implicit",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-implicit",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-choice",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-choice",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-missing",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-missing",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-mixed",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-future",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-future",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-block",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-done-plus",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      }
+    ]
+  },
+  "result-laya-noul": {
+    "model": "laya-noul",
+    "status": "complete",
+    "error": null,
+    "backend": "existing-loopback-service",
+    "overall": {
+      "samples": 48,
+      "classified": 48,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 23,
+      "accuracy": 0.4791666666666667,
+      "tp": 7,
+      "tn": 16,
+      "fp": 8,
+      "fn": 17,
+      "question_recall": 0.2916666666666667,
+      "normal_false_positive_rate": 0.3333333333333333,
+      "p50_ms": 16.538250143639743,
+      "p95_ms": 196.90287485718727
+    },
+    "by_language": {
+      "zh": {
+        "samples": 26,
+        "classified": 26,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 14,
+        "accuracy": 0.5384615384615384,
+        "tp": 5,
+        "tn": 9,
+        "fp": 4,
+        "fn": 8,
+        "question_recall": 0.38461538461538464,
+        "normal_false_positive_rate": 0.3076923076923077,
+        "p50_ms": 16.537229064852,
+        "p95_ms": 201.7479999922216
+      },
+      "en": {
+        "samples": 22,
+        "classified": 22,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 9,
+        "accuracy": 0.4090909090909091,
+        "tp": 2,
+        "tn": 7,
+        "fp": 4,
+        "fn": 9,
+        "question_recall": 0.18181818181818182,
+        "normal_false_positive_rate": 0.36363636363636365,
+        "p50_ms": 16.55479206237942,
+        "p95_ms": 160.0958751514554
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 16,
+        "classified": 16,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 7,
+        "accuracy": 0.4375,
+        "tp": 2,
+        "tn": 5,
+        "fp": 3,
+        "fn": 6,
+        "question_recall": 0.25,
+        "normal_false_positive_rate": 0.375,
+        "p50_ms": 19.30327108129859,
+        "p95_ms": 214.82187509536743
+      },
+      "new": {
+        "samples": 32,
+        "classified": 32,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 16,
+        "accuracy": 0.5,
+        "tp": 5,
+        "tn": 11,
+        "fp": 5,
+        "fn": 11,
+        "question_recall": 0.3125,
+        "normal_false_positive_rate": 0.3125,
+        "p50_ms": 16.31154154893011,
+        "p95_ms": 18.128624884411693
+      }
+    },
+    "repeated_rows": 48,
+    "prediction_flips": 0,
+    "initialization_ms": 12.097666971385479,
+    "first_inference_ms": 19.48779192753136,
+    "peak_process_rss_bytes": 35667968,
+    "failures": [
+      {
+        "id": "normal-zh-no-reply",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-en-no-reply",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-en-code-example",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "question-zh-choice",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-en-choice",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-en-proceed",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-en-confirm",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-screenshot",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "question-zh-future-condition",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-done",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-historical",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-negative",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-deferred",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-progress",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-permission",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-implicit",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-choice",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-choice",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-missing",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-missing",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-mixed",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-future",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-future",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-done-plus",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-done-plus",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      }
+    ]
+  },
+  "result-laya-product": {
+    "model": "laya-product",
+    "status": "complete",
+    "error": null,
+    "backend": "existing-loopback-service",
+    "overall": {
+      "samples": 48,
+      "classified": 1,
+      "errors": 0,
+      "abstained": 47,
+      "correct": 0,
+      "accuracy": 0.0,
+      "tp": 0,
+      "tn": 0,
+      "fp": 0,
+      "fn": 1,
+      "question_recall": 0.0,
+      "normal_false_positive_rate": 0.0,
+      "p50_ms": 28.30064599402249,
+      "p95_ms": 364.50329096987844
+    },
+    "by_language": {
+      "zh": {
+        "samples": 26,
+        "classified": 1,
+        "errors": 0,
+        "abstained": 25,
+        "correct": 0,
+        "accuracy": 0.0,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 1,
+        "question_recall": 0.0,
+        "normal_false_positive_rate": 0.0,
+        "p50_ms": 28.692686930298805,
+        "p95_ms": 244.48145809583366
+      },
+      "en": {
+        "samples": 22,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 22,
+        "correct": 0,
+        "accuracy": 0.0,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": 0.0,
+        "normal_false_positive_rate": 0.0,
+        "p50_ms": 28.176416526548564,
+        "p95_ms": 483.8171249721199
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 16,
+        "classified": 0,
+        "errors": 0,
+        "abstained": 16,
+        "correct": 0,
+        "accuracy": 0.0,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 0,
+        "question_recall": 0.0,
+        "normal_false_positive_rate": 0.0,
+        "p50_ms": 32.82224992290139,
+        "p95_ms": 581.2215420883149
+      },
+      "new": {
+        "samples": 32,
+        "classified": 1,
+        "errors": 0,
+        "abstained": 31,
+        "correct": 0,
+        "accuracy": 0.0,
+        "tp": 0,
+        "tn": 0,
+        "fp": 0,
+        "fn": 1,
+        "question_recall": 0.0,
+        "normal_false_positive_rate": 0.0,
+        "p50_ms": 28.126791468821466,
+        "p95_ms": 40.88137508369982
+      }
+    },
+    "repeated_rows": 48,
+    "prediction_flips": 0,
+    "initialization_ms": 8.239333983510733,
+    "first_inference_ms": 434.1912080999464,
+    "peak_process_rss_bytes": 34734080,
+    "failures": [
+      {
+        "id": "normal-zh-completed",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "normal-en-completed",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "normal-zh-no-reply",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "normal-en-no-reply",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "normal-zh-quoted-example",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "normal-en-code-example",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "normal-zh-self-answered",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "normal-zh-completed-confirmation",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "question-zh-choice",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "question-en-choice",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "question-en-proceed",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "question-en-confirm",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "question-zh-implicit-write",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "question-zh-screenshot",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "question-zh-future-condition",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "question-zh-old-negation-new-question",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-done",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-en-done",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-historical",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-en-historical",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-negative",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-en-negative",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-quote",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-en-quote",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-rhetorical",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-en-rhetorical",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-deferred",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-en-deferred",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-progress",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-en-progress",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-code",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-normal-en-code",
+        "expected": "normal",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-zh-permission",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-en-permission",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-zh-implicit",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-en-implicit",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-zh-choice",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-en-choice",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-zh-missing",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-en-missing",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-zh-mixed",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-en-mixed",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-zh-future",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-en-future",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-zh-block",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-question-en-block",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-zh-done-plus",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      },
+      {
+        "id": "new-question-en-done-plus",
+        "expected": "question",
+        "predicted": null,
+        "error": null
+      }
+    ]
+  },
+  "result-system-one-early": {
+    "model": "system-one",
+    "status": "complete",
+    "error": null,
+    "backend": "mlx",
+    "overall": {
+      "samples": 48,
+      "classified": 48,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 40,
+      "accuracy": 0.8333333333333334,
+      "tp": 22,
+      "tn": 18,
+      "fp": 6,
+      "fn": 2,
+      "question_recall": 0.9166666666666666,
+      "normal_false_positive_rate": 0.25,
+      "p50_ms": 71.9616876449436,
+      "p95_ms": 125.90662483125925
+    },
+    "by_language": {
+      "zh": {
+        "samples": 26,
+        "classified": 26,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 21,
+        "accuracy": 0.8076923076923077,
+        "tp": 11,
+        "tn": 10,
+        "fp": 3,
+        "fn": 2,
+        "question_recall": 0.8461538461538461,
+        "normal_false_positive_rate": 0.23076923076923078,
+        "p50_ms": 71.9806666020304,
+        "p95_ms": 131.45933393388987
+      },
+      "en": {
+        "samples": 22,
+        "classified": 22,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 19,
+        "accuracy": 0.8636363636363636,
+        "tp": 11,
+        "tn": 8,
+        "fp": 3,
+        "fn": 0,
+        "question_recall": 1.0,
+        "normal_false_positive_rate": 0.2727272727272727,
+        "p50_ms": 71.80802058428526,
+        "p95_ms": 75.45312494039536
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 16,
+        "classified": 16,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 13,
+        "accuracy": 0.8125,
+        "tp": 7,
+        "tn": 6,
+        "fp": 2,
+        "fn": 1,
+        "question_recall": 0.875,
+        "normal_false_positive_rate": 0.25,
+        "p50_ms": 71.38691702857614,
+        "p95_ms": 133.69179191067815
+      },
+      "new": {
+        "samples": 32,
+        "classified": 32,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 27,
+        "accuracy": 0.84375,
+        "tp": 15,
+        "tn": 12,
+        "fp": 4,
+        "fn": 1,
+        "question_recall": 0.9375,
+        "normal_false_positive_rate": 0.25,
+        "p50_ms": 72.08064547739923,
+        "p95_ms": 76.08208293095231
+      }
+    },
+    "repeated_rows": 48,
+    "prediction_flips": 0,
+    "initialization_ms": 6230.094542028382,
+    "first_inference_ms": 1269.3064578343183,
+    "peak_process_rss_bytes": 1153957888,
+    "failures": [
+      {
+        "id": "normal-zh-quoted-example",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-en-code-example",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "question-zh-implicit-write",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-quote",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-quote",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-done-plus",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      }
+    ]
+  },
+  "result-system-one": {
+    "model": "system-one",
+    "status": "complete",
+    "error": null,
+    "backend": "mlx",
+    "overall": {
+      "samples": 48,
+      "classified": 48,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 40,
+      "accuracy": 0.8333333333333334,
+      "tp": 22,
+      "tn": 18,
+      "fp": 6,
+      "fn": 2,
+      "question_recall": 0.9166666666666666,
+      "normal_false_positive_rate": 0.25,
+      "p50_ms": 72.13714544195682,
+      "p95_ms": 83.40241597034037
+    },
+    "by_language": {
+      "zh": {
+        "samples": 26,
+        "classified": 26,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 21,
+        "accuracy": 0.8076923076923077,
+        "tp": 11,
+        "tn": 10,
+        "fp": 3,
+        "fn": 2,
+        "question_recall": 0.8461538461538461,
+        "normal_false_positive_rate": 0.23076923076923078,
+        "p50_ms": 72.0450000371784,
+        "p95_ms": 85.69358312524855
+      },
+      "en": {
+        "samples": 22,
+        "classified": 22,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 19,
+        "accuracy": 0.8636363636363636,
+        "tp": 11,
+        "tn": 8,
+        "fp": 3,
+        "fn": 0,
+        "question_recall": 1.0,
+        "normal_false_positive_rate": 0.2727272727272727,
+        "p50_ms": 72.58689601439983,
+        "p95_ms": 76.91854191944003
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 16,
+        "classified": 16,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 13,
+        "accuracy": 0.8125,
+        "tp": 7,
+        "tn": 6,
+        "fp": 2,
+        "fn": 1,
+        "question_recall": 0.875,
+        "normal_false_positive_rate": 0.25,
+        "p50_ms": 71.81693753227592,
+        "p95_ms": 99.13474996574223
+      },
+      "new": {
+        "samples": 32,
+        "classified": 32,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 27,
+        "accuracy": 0.84375,
+        "tp": 15,
+        "tn": 12,
+        "fp": 4,
+        "fn": 1,
+        "question_recall": 0.9375,
+        "normal_false_positive_rate": 0.25,
+        "p50_ms": 72.17293756548315,
+        "p95_ms": 75.78391581773758
+      }
+    },
+    "repeated_rows": 48,
+    "prediction_flips": 0,
+    "initialization_ms": 5431.324417004362,
+    "first_inference_ms": 317.32704187743366,
+    "peak_process_rss_bytes": 1760460800,
+    "failures": [
+      {
+        "id": "normal-zh-quoted-example",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "normal-en-code-example",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "question-zh-implicit-write",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-quote",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-quote",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-done-plus",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      }
+    ]
+  },
+  "result-vela": {
+    "model": "vela",
+    "status": "complete",
+    "error": null,
+    "backend": "torch-cpu",
+    "overall": {
+      "samples": 48,
+      "classified": 48,
+      "errors": 0,
+      "abstained": 0,
+      "correct": 39,
+      "accuracy": 0.8125,
+      "tp": 22,
+      "tn": 17,
+      "fp": 7,
+      "fn": 2,
+      "question_recall": 0.9166666666666666,
+      "normal_false_positive_rate": 0.2916666666666667,
+      "p50_ms": 54.82850002590567,
+      "p95_ms": 86.18829096667469
+    },
+    "by_language": {
+      "zh": {
+        "samples": 26,
+        "classified": 26,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 20,
+        "accuracy": 0.7692307692307693,
+        "tp": 11,
+        "tn": 9,
+        "fp": 4,
+        "fn": 2,
+        "question_recall": 0.8461538461538461,
+        "normal_false_positive_rate": 0.3076923076923077,
+        "p50_ms": 55.81337551120669,
+        "p95_ms": 90.32874996773899
+      },
+      "en": {
+        "samples": 22,
+        "classified": 22,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 19,
+        "accuracy": 0.8636363636363636,
+        "tp": 11,
+        "tn": 8,
+        "fp": 3,
+        "fn": 0,
+        "question_recall": 1.0,
+        "normal_false_positive_rate": 0.2727272727272727,
+        "p50_ms": 54.273395566269755,
+        "p95_ms": 77.19404087401927
+      }
+    },
+    "by_split": {
+      "regression": {
+        "samples": 16,
+        "classified": 16,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 15,
+        "accuracy": 0.9375,
+        "tp": 7,
+        "tn": 8,
+        "fp": 0,
+        "fn": 1,
+        "question_recall": 0.875,
+        "normal_false_positive_rate": 0.0,
+        "p50_ms": 56.08308350201696,
+        "p95_ms": 116.31866614334285
+      },
+      "new": {
+        "samples": 32,
+        "classified": 32,
+        "errors": 0,
+        "abstained": 0,
+        "correct": 24,
+        "accuracy": 0.75,
+        "tp": 15,
+        "tn": 9,
+        "fp": 7,
+        "fn": 1,
+        "question_recall": 0.9375,
+        "normal_false_positive_rate": 0.4375,
+        "p50_ms": 53.91943745780736,
+        "p95_ms": 77.22187484614551
+      }
+    },
+    "repeated_rows": 48,
+    "prediction_flips": 0,
+    "initialization_ms": 4421.516750007868,
+    "first_inference_ms": 2450.266290921718,
+    "peak_process_rss_bytes": 1341636608,
+    "failures": [
+      {
+        "id": "question-zh-implicit-write",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-historical",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-negative",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-rhetorical",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-deferred",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-deferred",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-zh-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-normal-en-code",
+        "expected": "normal",
+        "predicted": "question",
+        "error": null
+      },
+      {
+        "id": "new-question-zh-done-plus",
+        "expected": "question",
+        "predicted": "normal",
+        "error": null
+      }
+    ]
+  }
+}

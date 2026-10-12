@@ -1,0 +1,1682 @@
+{
+  "model": "gliclass",
+  "platform": "macOS-26.5.1-arm64-arm-64bit",
+  "python": "3.12.3",
+  "suite_sha256": "cf262deea49d59b99831e9c177ad4f8720a7b476b0d39d672f4ffecd64d4a8fd",
+  "harness_sha256": "f26a876bbc9a9085fdc5f420b913251648da37cec5cbc1d04dbd514bea149993",
+  "spec": {
+    "repo": "knowledgator/gliclass-multilang-mini",
+    "revision": "0bd888b6c3ef9fca5f0a9d407bddfbbc7623486b",
+    "files": [
+      ".gitattributes",
+      "README.md",
+      "added_tokens.json",
+      "config.json",
+      "gliclass_multilang.png",
+      "model.safetensors",
+      "model_comparison_en.png",
+      "model_comparison_multi.png",
+      "special_tokens_map.json",
+      "spm.model",
+      "tokenizer.json",
+      "tokenizer_config.json"
+    ]
+  },
+  "started_at": "2026-10-10T16:26:42+0800",
+  "rows": [
+    {
+      "id": "normal-zh-completed",
+      "expected": "normal",
+      "text": "已完成修改，编译通过。相关变更已经保存。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9765625
+        }
+      ],
+      "elapsed_ms": 692.4950841348618,
+      "correct": false
+    },
+    {
+      "id": "normal-en-completed",
+      "expected": "normal",
+      "text": "The implementation is complete. The build passed and all changes are saved.",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.7734375
+        }
+      ],
+      "elapsed_ms": 730.4197500925511,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-no-reply",
+      "expected": "normal",
+      "text": "请勿回复。工作已经完成，无需确认。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.953125
+        }
+      ],
+      "elapsed_ms": 681.4425829797983,
+      "correct": false
+    },
+    {
+      "id": "normal-en-no-reply",
+      "expected": "normal",
+      "text": "The work is complete. No reply or confirmation is needed.",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.86328125
+        }
+      ],
+      "elapsed_ms": 777.5111249648035,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-quoted-example",
+      "expected": "normal",
+      "text": "文档已更新。以下只是引用示例，不是在向你提问：\n> 你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 850.274917203933,
+      "correct": false
+    },
+    {
+      "id": "normal-en-code-example",
+      "expected": "normal",
+      "text": "The documentation is complete. This is example text, not a request:\n```text\nPlease confirm before I proceed.\n```",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9609375
+        }
+      ],
+      "elapsed_ms": 1021.5889590326697,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-self-answered",
+      "expected": "normal",
+      "text": "为什么构建失败？因为缺少依赖。我已经补齐依赖并完成构建。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.87890625
+        }
+      ],
+      "elapsed_ms": 846.8196659814566,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-completed-confirmation",
+      "expected": "normal",
+      "text": "确认后我提交成功，测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98046875
+        }
+      ],
+      "elapsed_ms": 857.6001669280231,
+      "correct": false
+    },
+    {
+      "id": "question-zh-choice",
+      "expected": "question",
+      "text": "你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9921875
+        }
+      ],
+      "elapsed_ms": 894.5367920678109,
+      "correct": true
+    },
+    {
+      "id": "question-en-choice",
+      "expected": "question",
+      "text": "Which option do you prefer, A or B?",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.99609375
+        }
+      ],
+      "elapsed_ms": 1141.1258750595152,
+      "correct": true
+    },
+    {
+      "id": "question-en-proceed",
+      "expected": "question",
+      "text": "May I proceed with these changes?",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.99609375
+        }
+      ],
+      "elapsed_ms": 798.8322500605136,
+      "correct": true
+    },
+    {
+      "id": "question-en-confirm",
+      "expected": "question",
+      "text": "Please confirm the scope before I begin.",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.99609375
+        }
+      ],
+      "elapsed_ms": 823.699832893908,
+      "correct": true
+    },
+    {
+      "id": "question-zh-implicit-write",
+      "expected": "question",
+      "text": "确认后我写入并校验。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98046875
+        }
+      ],
+      "elapsed_ms": 830.0854999106377,
+      "correct": true
+    },
+    {
+      "id": "question-zh-screenshot",
+      "expected": "question",
+      "text": "确认后，我会修改解析逻辑并重新评审。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9921875
+        }
+      ],
+      "elapsed_ms": 765.86874993518,
+      "correct": true
+    },
+    {
+      "id": "question-zh-future-condition",
+      "expected": "question",
+      "text": "确认后我会继续执行，直到测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.97265625
+        }
+      ],
+      "elapsed_ms": 745.0533341616392,
+      "correct": true
+    },
+    {
+      "id": "question-zh-old-negation-new-question",
+      "expected": "question",
+      "text": "请勿回复旧问题。按这个范围实现，可以吗？",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98828125
+        }
+      ],
+      "elapsed_ms": 905.6252089794725,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-done",
+      "expected": "normal",
+      "text": "修复已经合入，本轮没有需要你处理的事项。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.8515625
+        }
+      ],
+      "elapsed_ms": 754.4416659511626,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-done",
+      "expected": "normal",
+      "text": "The fix has been merged. There is nothing you need to do this round.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.74609375
+        }
+      ],
+      "elapsed_ms": 825.1141670625657,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-historical",
+      "expected": "normal",
+      "text": "得到你的确认后，我开始了测试，现在测试已结束。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.52734375
+        }
+      ],
+      "elapsed_ms": 1361.9562918320298,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-historical",
+      "expected": "normal",
+      "text": "After receiving your approval, I started the tests. They have now finished.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.75
+        }
+      ],
+      "elapsed_ms": 969.9044160079211,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-negative",
+      "expected": "normal",
+      "text": "不必确认这个范围，我已经按照之前的授权完成了工作。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.90625
+        }
+      ],
+      "elapsed_ms": 1468.4930830262601,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-negative",
+      "expected": "normal",
+      "text": "Do not confirm this scope again. I finished the work under your earlier authorization.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.94921875
+        }
+      ],
+      "elapsed_ms": 1144.168792059645,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-quote",
+      "expected": "normal",
+      "text": "日志中的最后一行是“是否继续？”，这是旧日志，不是当前请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9296875
+        }
+      ],
+      "elapsed_ms": 938.2384999189526,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-quote",
+      "expected": "normal",
+      "text": "The last line of the log says 'Continue?'. That is an old log, not a current request.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.94921875
+        }
+      ],
+      "elapsed_ms": 1033.3649581298232,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-rhetorical",
+      "expected": "normal",
+      "text": "为什么会这样？原因是缓存未刷新；刷新后问题已经消失。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.8671875
+        }
+      ],
+      "elapsed_ms": 883.9244591072202,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-rhetorical",
+      "expected": "normal",
+      "text": "Why did this happen? The cache was stale; refreshing it has already resolved the issue.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.95703125
+        }
+      ],
+      "elapsed_ms": 846.8195418827236,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-deferred",
+      "expected": "normal",
+      "text": "下次需要部署时再告诉我即可。本次文档更新已经完成。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9453125
+        }
+      ],
+      "elapsed_ms": 812.3857497703284,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-deferred",
+      "expected": "normal",
+      "text": "Let me know next time you need a deployment. This documentation update is finished.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.94140625
+        }
+      ],
+      "elapsed_ms": 1160.7787909451872,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-progress",
+      "expected": "normal",
+      "text": "我正在检查依赖，接下来会自动继续构建，不需要你操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.90234375
+        }
+      ],
+      "elapsed_ms": 836.8764170445502,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-progress",
+      "expected": "normal",
+      "text": "I am checking dependencies and will continue the build automatically. No action is needed from you.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.91796875
+        }
+      ],
+      "elapsed_ms": 907.7362501993775,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-code",
+      "expected": "normal",
+      "text": "示例代码是 print(\"请确认后继续\")，以上只是代码说明。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98828125
+        }
+      ],
+      "elapsed_ms": 775.4643750376999,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-code",
+      "expected": "normal",
+      "text": "The sample code is print(\"Please confirm to proceed\"). This is only an explanation of code.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98046875
+        }
+      ],
+      "elapsed_ms": 840.0190419051796,
+      "correct": false
+    },
+    {
+      "id": "new-question-zh-permission",
+      "expected": "question",
+      "text": "可以删除这些临时文件吗？我会等你确认再操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9921875
+        }
+      ],
+      "elapsed_ms": 859.6200419124216,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-permission",
+      "expected": "question",
+      "text": "May I delete these temporary files? I will wait for your approval.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9921875
+        }
+      ],
+      "elapsed_ms": 803.9903750177473,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-implicit",
+      "expected": "question",
+      "text": "收到你的确认，我再开始部署。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98046875
+        }
+      ],
+      "elapsed_ms": 746.1768328212202,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-implicit",
+      "expected": "question",
+      "text": "Once you confirm, I will begin the deployment.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 642.4812080804259,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-choice",
+      "expected": "question",
+      "text": "请选择保留旧配置，或切换到新配置。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98046875
+        }
+      ],
+      "elapsed_ms": 696.0003329440951,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-choice",
+      "expected": "question",
+      "text": "Please choose whether to retain the old configuration or switch to the new one.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9765625
+        }
+      ],
+      "elapsed_ms": 703.1612088903785,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-missing",
+      "expected": "question",
+      "text": "还缺少目标分支名称，请提供后我再创建请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 716.1046250257641,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-missing",
+      "expected": "question",
+      "text": "I still need the target branch name. Please provide it before I create the request.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9921875
+        }
+      ],
+      "elapsed_ms": 777.8682080097497,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-mixed",
+      "expected": "question",
+      "text": "旧问题不用回答。新方案是否按这个范围执行？",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.96875
+        }
+      ],
+      "elapsed_ms": 790.9679999575019,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-mixed",
+      "expected": "question",
+      "text": "No need to answer the old question. Should I implement the new plan within this scope?",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9765625
+        }
+      ],
+      "elapsed_ms": 714.5325411111116,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-future",
+      "expected": "question",
+      "text": "你确认之后，我将一直重试直到构建成功。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.96875
+        }
+      ],
+      "elapsed_ms": 673.0796659830958,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-future",
+      "expected": "question",
+      "text": "After you confirm, I will keep retrying until the build succeeds.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 678.2622500322759,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-block",
+      "expected": "question",
+      "text": "工作已暂停，等待你授权后继续。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98828125
+        }
+      ],
+      "elapsed_ms": 633.0923337955028,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-block",
+      "expected": "question",
+      "text": "Work is paused until you authorize me to continue.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98828125
+        }
+      ],
+      "elapsed_ms": 698.071125196293,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-done-plus",
+      "expected": "question",
+      "text": "文档已经写完。是否还需要我更新示例？",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 713.4912500623614,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-done-plus",
+      "expected": "question",
+      "text": "The documentation is done. Would you like me to update the examples too?",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 728.7403750233352,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-completed",
+      "expected": "normal",
+      "text": "已完成修改，编译通过。相关变更已经保存。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9765625
+        }
+      ],
+      "elapsed_ms": 1909.5768330153078,
+      "correct": false
+    },
+    {
+      "id": "normal-en-completed",
+      "expected": "normal",
+      "text": "The implementation is complete. The build passed and all changes are saved.",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.7734375
+        }
+      ],
+      "elapsed_ms": 2007.1699579712003,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-no-reply",
+      "expected": "normal",
+      "text": "请勿回复。工作已经完成，无需确认。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.953125
+        }
+      ],
+      "elapsed_ms": 3158.1772500649095,
+      "correct": false
+    },
+    {
+      "id": "normal-en-no-reply",
+      "expected": "normal",
+      "text": "The work is complete. No reply or confirmation is needed.",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.86328125
+        }
+      ],
+      "elapsed_ms": 779.9094161018729,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-quoted-example",
+      "expected": "normal",
+      "text": "文档已更新。以下只是引用示例，不是在向你提问：\n> 你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 1176.3888329733163,
+      "correct": false
+    },
+    {
+      "id": "normal-en-code-example",
+      "expected": "normal",
+      "text": "The documentation is complete. This is example text, not a request:\n```text\nPlease confirm before I proceed.\n```",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9609375
+        }
+      ],
+      "elapsed_ms": 751.6208330634981,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-self-answered",
+      "expected": "normal",
+      "text": "为什么构建失败？因为缺少依赖。我已经补齐依赖并完成构建。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.87890625
+        }
+      ],
+      "elapsed_ms": 702.8028341010213,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-completed-confirmation",
+      "expected": "normal",
+      "text": "确认后我提交成功，测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98046875
+        }
+      ],
+      "elapsed_ms": 754.7949580475688,
+      "correct": false
+    },
+    {
+      "id": "question-zh-choice",
+      "expected": "question",
+      "text": "你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9921875
+        }
+      ],
+      "elapsed_ms": 676.9035831093788,
+      "correct": true
+    },
+    {
+      "id": "question-en-choice",
+      "expected": "question",
+      "text": "Which option do you prefer, A or B?",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.99609375
+        }
+      ],
+      "elapsed_ms": 700.3171669784933,
+      "correct": true
+    },
+    {
+      "id": "question-en-proceed",
+      "expected": "question",
+      "text": "May I proceed with these changes?",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.99609375
+        }
+      ],
+      "elapsed_ms": 691.0117091611028,
+      "correct": true
+    },
+    {
+      "id": "question-en-confirm",
+      "expected": "question",
+      "text": "Please confirm the scope before I begin.",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.99609375
+        }
+      ],
+      "elapsed_ms": 722.2642090637237,
+      "correct": true
+    },
+    {
+      "id": "question-zh-implicit-write",
+      "expected": "question",
+      "text": "确认后我写入并校验。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98046875
+        }
+      ],
+      "elapsed_ms": 764.5580000244081,
+      "correct": true
+    },
+    {
+      "id": "question-zh-screenshot",
+      "expected": "question",
+      "text": "确认后，我会修改解析逻辑并重新评审。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9921875
+        }
+      ],
+      "elapsed_ms": 859.6290829591453,
+      "correct": true
+    },
+    {
+      "id": "question-zh-future-condition",
+      "expected": "question",
+      "text": "确认后我会继续执行，直到测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.97265625
+        }
+      ],
+      "elapsed_ms": 749.8304999899119,
+      "correct": true
+    },
+    {
+      "id": "question-zh-old-negation-new-question",
+      "expected": "question",
+      "text": "请勿回复旧问题。按这个范围实现，可以吗？",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98828125
+        }
+      ],
+      "elapsed_ms": 756.3657499849796,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-done",
+      "expected": "normal",
+      "text": "修复已经合入，本轮没有需要你处理的事项。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.8515625
+        }
+      ],
+      "elapsed_ms": 658.9625421911478,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-done",
+      "expected": "normal",
+      "text": "The fix has been merged. There is nothing you need to do this round.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.74609375
+        }
+      ],
+      "elapsed_ms": 685.4797089472413,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-historical",
+      "expected": "normal",
+      "text": "得到你的确认后，我开始了测试，现在测试已结束。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.52734375
+        }
+      ],
+      "elapsed_ms": 866.612209007144,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-historical",
+      "expected": "normal",
+      "text": "After receiving your approval, I started the tests. They have now finished.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.75
+        }
+      ],
+      "elapsed_ms": 709.5867919269949,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-negative",
+      "expected": "normal",
+      "text": "不必确认这个范围，我已经按照之前的授权完成了工作。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.90625
+        }
+      ],
+      "elapsed_ms": 791.4613750763237,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-negative",
+      "expected": "normal",
+      "text": "Do not confirm this scope again. I finished the work under your earlier authorization.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.94921875
+        }
+      ],
+      "elapsed_ms": 750.8570828940719,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-quote",
+      "expected": "normal",
+      "text": "日志中的最后一行是“是否继续？”，这是旧日志，不是当前请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9296875
+        }
+      ],
+      "elapsed_ms": 827.0604170393199,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-quote",
+      "expected": "normal",
+      "text": "The last line of the log says 'Continue?'. That is an old log, not a current request.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.94921875
+        }
+      ],
+      "elapsed_ms": 779.1280839592218,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-rhetorical",
+      "expected": "normal",
+      "text": "为什么会这样？原因是缓存未刷新；刷新后问题已经消失。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.8671875
+        }
+      ],
+      "elapsed_ms": 1190.8574169501662,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-rhetorical",
+      "expected": "normal",
+      "text": "Why did this happen? The cache was stale; refreshing it has already resolved the issue.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.95703125
+        }
+      ],
+      "elapsed_ms": 851.047667209059,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-deferred",
+      "expected": "normal",
+      "text": "下次需要部署时再告诉我即可。本次文档更新已经完成。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9453125
+        }
+      ],
+      "elapsed_ms": 730.706375092268,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-deferred",
+      "expected": "normal",
+      "text": "Let me know next time you need a deployment. This documentation update is finished.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.94140625
+        }
+      ],
+      "elapsed_ms": 762.9558749031276,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-progress",
+      "expected": "normal",
+      "text": "我正在检查依赖，接下来会自动继续构建，不需要你操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.90234375
+        }
+      ],
+      "elapsed_ms": 757.896084105596,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-progress",
+      "expected": "normal",
+      "text": "I am checking dependencies and will continue the build automatically. No action is needed from you.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.91796875
+        }
+      ],
+      "elapsed_ms": 690.7386251259595,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-code",
+      "expected": "normal",
+      "text": "示例代码是 print(\"请确认后继续\")，以上只是代码说明。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98828125
+        }
+      ],
+      "elapsed_ms": 816.0967079456896,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-code",
+      "expected": "normal",
+      "text": "The sample code is print(\"Please confirm to proceed\"). This is only an explanation of code.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98046875
+        }
+      ],
+      "elapsed_ms": 773.826666874811,
+      "correct": false
+    },
+    {
+      "id": "new-question-zh-permission",
+      "expected": "question",
+      "text": "可以删除这些临时文件吗？我会等你确认再操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9921875
+        }
+      ],
+      "elapsed_ms": 667.2673330176622,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-permission",
+      "expected": "question",
+      "text": "May I delete these temporary files? I will wait for your approval.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9921875
+        }
+      ],
+      "elapsed_ms": 808.6495420429856,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-implicit",
+      "expected": "question",
+      "text": "收到你的确认，我再开始部署。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98046875
+        }
+      ],
+      "elapsed_ms": 703.3335419837385,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-implicit",
+      "expected": "question",
+      "text": "Once you confirm, I will begin the deployment.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 722.9897079523653,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-choice",
+      "expected": "question",
+      "text": "请选择保留旧配置，或切换到新配置。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98046875
+        }
+      ],
+      "elapsed_ms": 771.5529999695718,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-choice",
+      "expected": "question",
+      "text": "Please choose whether to retain the old configuration or switch to the new one.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9765625
+        }
+      ],
+      "elapsed_ms": 763.8570419512689,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-missing",
+      "expected": "question",
+      "text": "还缺少目标分支名称，请提供后我再创建请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 727.9879590496421,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-missing",
+      "expected": "question",
+      "text": "I still need the target branch name. Please provide it before I create the request.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9921875
+        }
+      ],
+      "elapsed_ms": 746.7365839984268,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-mixed",
+      "expected": "question",
+      "text": "旧问题不用回答。新方案是否按这个范围执行？",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.96875
+        }
+      ],
+      "elapsed_ms": 635.7118340674788,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-mixed",
+      "expected": "question",
+      "text": "No need to answer the old question. Should I implement the new plan within this scope?",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.9765625
+        }
+      ],
+      "elapsed_ms": 671.6566251125187,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-future",
+      "expected": "question",
+      "text": "你确认之后，我将一直重试直到构建成功。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.96875
+        }
+      ],
+      "elapsed_ms": 679.4993751682341,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-future",
+      "expected": "question",
+      "text": "After you confirm, I will keep retrying until the build succeeds.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 715.128457872197,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-block",
+      "expected": "question",
+      "text": "工作已暂停，等待你授权后继续。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98828125
+        }
+      ],
+      "elapsed_ms": 749.0188330411911,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-block",
+      "expected": "question",
+      "text": "Work is paused until you authorize me to continue.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.98828125
+        }
+      ],
+      "elapsed_ms": 863.5556660592556,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-done-plus",
+      "expected": "question",
+      "text": "文档已经写完。是否还需要我更新示例？",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 994.8873750399798,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-done-plus",
+      "expected": "question",
+      "text": "The documentation is done. Would you like me to update the examples too?",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": [
+        {
+          "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+          "score": 0.984375
+        }
+      ],
+      "elapsed_ms": 764.5737081766129,
+      "correct": true
+    }
+  ],
+  "status": "complete",
+  "versions": {
+    "torch": "2.14.1",
+    "transformers": "5.19.0",
+    "gliner2": "2.1.0",
+    "gliclass": "0.1.20"
+  },
+  "backend": "torch-cpu",
+  "threads": 4,
+  "initialization_ms": 5743.466208921745,
+  "warmup": [
+    "question",
+    [
+      {
+        "label": "question: The assistant currently asks or waits for the user to reply, choose, provide information or authorize an action, including implicit confirmation gates.",
+        "score": 0.91015625
+      }
+    ]
+  ],
+  "first_inference_ms": 977.1830420941114,
+  "peak_process_rss_bytes": 1001766912,
+  "finished_at": "2026-10-10T16:28:11+0800"
+}

@@ -1,0 +1,2870 @@
+{
+  "model": "system-one",
+  "platform": "macOS-26.5.1-arm64-arm-64bit",
+  "python": "3.12.3",
+  "suite_sha256": "cf262deea49d59b99831e9c177ad4f8720a7b476b0d39d672f4ffecd64d4a8fd",
+  "harness_sha256": "f26a876bbc9a9085fdc5f420b913251648da37cec5cbc1d04dbd514bea149993",
+  "spec": null,
+  "started_at": "2026-10-10T16:43:17+0800",
+  "rows": [
+    {
+      "id": "normal-zh-completed",
+      "expected": "normal",
+      "text": "已完成修改，编译通过。相关变更已经保存。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8477090387383498,
+              "question": 0.15229096126165015
+            },
+            "confidence": 0.6954180774766996,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 177,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 125.90662483125925,
+      "correct": true
+    },
+    {
+      "id": "normal-en-completed",
+      "expected": "normal",
+      "text": "The implementation is complete. The build passed and all changes are saved.",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8893991549940183,
+              "question": 0.1106008450059816
+            },
+            "confidence": 0.7787983099880369,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 177,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.47387508302927,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-no-reply",
+      "expected": "normal",
+      "text": "请勿回复。工作已经完成，无需确认。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8311949691147652,
+              "question": 0.1688050308852347
+            },
+            "confidence": 0.6623899382295306,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 176,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 133.69179191067815,
+      "correct": true
+    },
+    {
+      "id": "normal-en-no-reply",
+      "expected": "normal",
+      "text": "The work is complete. No reply or confirmation is needed.",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.87674855903842,
+              "question": 0.12325144096158012
+            },
+            "confidence": 0.75349711807684,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 175,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.95295796170831,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-quoted-example",
+      "expected": "normal",
+      "text": "文档已更新。以下只是引用示例，不是在向你提问：\n> 你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.3797761483033086,
+              "question": 0.6202238516966914
+            },
+            "confidence": 0.24044770339338273,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 195,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 105.59199983254075,
+      "correct": false
+    },
+    {
+      "id": "normal-en-code-example",
+      "expected": "normal",
+      "text": "The documentation is complete. This is example text, not a request:\n```text\nPlease confirm before I proceed.\n```",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.3797761483033086,
+              "question": 0.6202238516966914
+            },
+            "confidence": 0.24044770339338273,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 190,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 90.1273749768734,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-self-answered",
+      "expected": "normal",
+      "text": "为什么构建失败？因为缺少依赖。我已经补齐依赖并完成构建。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.6202238516966914,
+              "question": 0.3797761483033086
+            },
+            "confidence": 0.24044770339338273,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 180,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.69195800088346,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-completed-confirmation",
+      "expected": "normal",
+      "text": "确认后我提交成功，测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.7731608836202879,
+              "question": 0.22683911637971213
+            },
+            "confidence": 0.5463217672405758,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.31491701491177,
+      "correct": true
+    },
+    {
+      "id": "question-zh-choice",
+      "expected": "question",
+      "text": "你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2976795222142789,
+              "question": 0.702320477785721
+            },
+            "confidence": 0.4046409555714421,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 175,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.26266609318554,
+      "correct": true
+    },
+    {
+      "id": "question-en-choice",
+      "expected": "question",
+      "text": "Which option do you prefer, A or B?",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2060550721761674,
+              "question": 0.7939449278238325
+            },
+            "confidence": 0.5878898556476653,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 69.79650002904236,
+      "correct": true
+    },
+    {
+      "id": "question-en-proceed",
+      "expected": "question",
+      "text": "May I proceed with these changes?",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.22683911637971213,
+              "question": 0.7731608836202879
+            },
+            "confidence": 0.5463217672405758,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 171,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.04612497985363,
+      "correct": true
+    },
+    {
+      "id": "question-en-confirm",
+      "expected": "question",
+      "text": "Please confirm the scope before I begin.",
+      "language": "en",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.15229096126165015,
+              "question": 0.8477090387383498
+            },
+            "confidence": 0.6954180774766996,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 172,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 69.85954195261002,
+      "correct": true
+    },
+    {
+      "id": "question-zh-implicit-write",
+      "expected": "question",
+      "text": "确认后我写入并校验。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.5610068223805792,
+              "question": 0.4389931776194208
+            },
+            "confidence": 0.12201364476115839,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.74658286385238,
+      "correct": false
+    },
+    {
+      "id": "question-zh-screenshot",
+      "expected": "question",
+      "text": "确认后，我会修改解析逻辑并重新评审。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.3239347108431305,
+              "question": 0.6760652891568695
+            },
+            "confidence": 0.35213057831373895,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 176,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.299958974123,
+      "correct": true
+    },
+    {
+      "id": "question-zh-future-condition",
+      "expected": "question",
+      "text": "确认后我会继续执行，直到测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.4389931776194208,
+              "question": 0.5610068223805792
+            },
+            "confidence": 0.12201364476115839,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 175,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.08999998308718,
+      "correct": true
+    },
+    {
+      "id": "question-zh-old-negation-new-question",
+      "expected": "question",
+      "text": "请勿回复旧问题。按这个范围实现，可以吗？",
+      "language": "zh",
+      "split": "regression",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2726940210237006,
+              "question": 0.7273059789762994
+            },
+            "confidence": 0.4546119579525989,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.0438330899924,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-done",
+      "expected": "normal",
+      "text": "修复已经合入，本轮没有需要你处理的事项。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.9008980450273231,
+              "question": 0.09910195497267693
+            },
+            "confidence": 0.8017960900546461,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 75.86341700516641,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-done",
+      "expected": "normal",
+      "text": "The fix has been merged. There is nothing you need to do this round.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8311949691147652,
+              "question": 0.1688050308852347
+            },
+            "confidence": 0.6623899382295306,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.58012508787215,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-historical",
+      "expected": "normal",
+      "text": "得到你的确认后，我开始了测试，现在测试已结束。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.702320477785721,
+              "question": 0.2976795222142789
+            },
+            "confidence": 0.4046409555714421,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.51574990712106,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-historical",
+      "expected": "normal",
+      "text": "After receiving your approval, I started the tests. They have now finished.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8628740758553683,
+              "question": 0.1371259241446317
+            },
+            "confidence": 0.7257481517107367,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.15462508611381,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-negative",
+      "expected": "normal",
+      "text": "不必确认这个范围，我已经按照之前的授权完成了工作。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8311949691147652,
+              "question": 0.1688050308852347
+            },
+            "confidence": 0.6623899382295306,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 177,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.0896251257509,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-negative",
+      "expected": "normal",
+      "text": "Do not confirm this scope again. I finished the work under your earlier authorization.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.590945115345823,
+              "question": 0.4090548846541771
+            },
+            "confidence": 0.1818902306916459,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.14020797982812,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-quote",
+      "expected": "normal",
+      "text": "日志中的最后一行是“是否继续？”，这是旧日志，不是当前请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.3797761483033086,
+              "question": 0.6202238516966914
+            },
+            "confidence": 0.24044770339338273,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 185,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 131.45933393388987,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-quote",
+      "expected": "normal",
+      "text": "The last line of the log says 'Continue?'. That is an old log, not a current request.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2976795222142789,
+              "question": 0.702320477785721
+            },
+            "confidence": 0.4046409555714421,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 185,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 74.54375014640391,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-rhetorical",
+      "expected": "normal",
+      "text": "为什么会这样？原因是缓存未刷新；刷新后问题已经消失。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.5306178012780436,
+              "question": 0.46938219872195636
+            },
+            "confidence": 0.061235602556087176,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 180,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.07616604864597,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-rhetorical",
+      "expected": "normal",
+      "text": "Why did this happen? The cache was stale; refreshing it has already resolved the issue.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.5,
+              "question": 0.5
+            },
+            "confidence": 0.0,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 181,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 75.45312494039536,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-deferred",
+      "expected": "normal",
+      "text": "下次需要部署时再告诉我即可。本次文档更新已经完成。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.5,
+              "question": 0.5
+            },
+            "confidence": 0.0,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 73.75879096798599,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-deferred",
+      "expected": "normal",
+      "text": "Let me know next time you need a deployment. This documentation update is finished.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.590945115345823,
+              "question": 0.4090548846541771
+            },
+            "confidence": 0.1818902306916459,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 180,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.0058751758188,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-progress",
+      "expected": "normal",
+      "text": "我正在检查依赖，接下来会自动继续构建，不需要你操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.6486528740466033,
+              "question": 0.35134712595339673
+            },
+            "confidence": 0.29730574809320665,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 180,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.08512490615249,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-progress",
+      "expected": "normal",
+      "text": "I am checking dependencies and will continue the build automatically. No action is needed from you.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.7509380462177915,
+              "question": 0.24906195378220847
+            },
+            "confidence": 0.501876092435583,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 181,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.02024990692735,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-code",
+      "expected": "normal",
+      "text": "示例代码是 print(\"请确认后继续\")，以上只是代码说明。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.12325144096158012,
+              "question": 0.87674855903842
+            },
+            "confidence": 0.75349711807684,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 182,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.40116696245968,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-code",
+      "expected": "normal",
+      "text": "The sample code is print(\"Please confirm to proceed\"). This is only an explanation of code.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2060550721761674,
+              "question": 0.7939449278238325
+            },
+            "confidence": 0.5878898556476653,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 183,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 74.14012495428324,
+      "correct": false
+    },
+    {
+      "id": "new-question-zh-permission",
+      "expected": "question",
+      "text": "可以删除这些临时文件吗？我会等你确认再操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.02614954602162159,
+              "question": 0.9738504539783783
+            },
+            "confidence": 0.9477009079567569,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 73.46687489189208,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-permission",
+      "expected": "question",
+      "text": "May I delete these temporary files? I will wait for your approval.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.03961068097803965,
+              "question": 0.9603893190219605
+            },
+            "confidence": 0.9207786380439209,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.61016599275172,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-implicit",
+      "expected": "question",
+      "text": "收到你的确认，我再开始部署。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2060550721761674,
+              "question": 0.7939449278238325
+            },
+            "confidence": 0.5878898556476653,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.96687504276633,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-implicit",
+      "expected": "question",
+      "text": "Once you confirm, I will begin the deployment.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.1688050308852347,
+              "question": 0.8311949691147652
+            },
+            "confidence": 0.6623899382295306,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.7481661811471,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-choice",
+      "expected": "question",
+      "text": "请选择保留旧配置，或切换到新配置。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.1371259241446317,
+              "question": 0.8628740758553683
+            },
+            "confidence": 0.7257481517107367,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 176,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.84891612268984,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-choice",
+      "expected": "question",
+      "text": "Please choose whether to retain the old configuration or switch to the new one.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.22683911637971213,
+              "question": 0.7731608836202879
+            },
+            "confidence": 0.5463217672405758,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.61887495405972,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-missing",
+      "expected": "question",
+      "text": "还缺少目标分支名称，请提供后我再创建请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.05306673660108173,
+              "question": 0.9469332633989181
+            },
+            "confidence": 0.8938665267978365,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.98483410663903,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-missing",
+      "expected": "question",
+      "text": "I still need the target branch name. Please provide it before I create the request.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.06310675864737512,
+              "question": 0.936893241352625
+            },
+            "confidence": 0.87378648270525,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 180,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 73.86016706004739,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-mixed",
+      "expected": "question",
+      "text": "旧问题不用回答。新方案是否按这个范围执行？",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.3797761483033086,
+              "question": 0.6202238516966914
+            },
+            "confidence": 0.24044770339338273,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 76.08208293095231,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-mixed",
+      "expected": "question",
+      "text": "No need to answer the old question. Should I implement the new plan within this scope?",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.4389931776194208,
+              "question": 0.5610068223805792
+            },
+            "confidence": 0.12201364476115839,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 181,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.24529196880758,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-future",
+      "expected": "question",
+      "text": "你确认之后，我将一直重试直到构建成功。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.35134712595339673,
+              "question": 0.6486528740466033
+            },
+            "confidence": 0.29730574809320665,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.91750011406839,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-future",
+      "expected": "question",
+      "text": "After you confirm, I will keep retrying until the build succeeds.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.15229096126165015,
+              "question": 0.8477090387383498
+            },
+            "confidence": 0.6954180774766996,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 177,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 73.17358301952481,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-block",
+      "expected": "question",
+      "text": "工作已暂停，等待你授权后继续。",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.021852120485351026,
+              "question": 0.9781478795146489
+            },
+            "confidence": 0.956295759029298,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 175,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.20920794457197,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-block",
+      "expected": "question",
+      "text": "Work is paused until you authorize me to continue.",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.02320179031475465,
+              "question": 0.9767982096852453
+            },
+            "confidence": 0.9535964193704907,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 69.35208407230675,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-done-plus",
+      "expected": "question",
+      "text": "文档已经写完。是否还需要我更新示例？",
+      "language": "zh",
+      "split": "new",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.590945115345823,
+              "question": 0.4090548846541771
+            },
+            "confidence": 0.1818902306916459,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 177,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.93216697871685,
+      "correct": false
+    },
+    {
+      "id": "new-question-en-done-plus",
+      "expected": "question",
+      "text": "The documentation is done. Would you like me to update the examples too?",
+      "language": "en",
+      "split": "new",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.4090548846541771,
+              "question": 0.590945115345823
+            },
+            "confidence": 0.1818902306916459,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.16816588677466,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-completed",
+      "expected": "normal",
+      "text": "已完成修改，编译通过。相关变更已经保存。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8477090387383498,
+              "question": 0.15229096126165015
+            },
+            "confidence": 0.6954180774766996,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 177,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.56070910766721,
+      "correct": true
+    },
+    {
+      "id": "normal-en-completed",
+      "expected": "normal",
+      "text": "The implementation is complete. The build passed and all changes are saved.",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8893991549940183,
+              "question": 0.1106008450059816
+            },
+            "confidence": 0.7787983099880369,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 177,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.03633384779096,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-no-reply",
+      "expected": "normal",
+      "text": "请勿回复。工作已经完成，无需确认。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8311949691147652,
+              "question": 0.1688050308852347
+            },
+            "confidence": 0.6623899382295306,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 176,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.33404195681214,
+      "correct": true
+    },
+    {
+      "id": "normal-en-no-reply",
+      "expected": "normal",
+      "text": "The work is complete. No reply or confirmation is needed.",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.87674855903842,
+              "question": 0.12325144096158012
+            },
+            "confidence": 0.75349711807684,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 175,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.47412497922778,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-quoted-example",
+      "expected": "normal",
+      "text": "文档已更新。以下只是引用示例，不是在向你提问：\n> 你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.3797761483033086,
+              "question": 0.6202238516966914
+            },
+            "confidence": 0.24044770339338273,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 195,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 86.10649988986552,
+      "correct": false
+    },
+    {
+      "id": "normal-en-code-example",
+      "expected": "normal",
+      "text": "The documentation is complete. This is example text, not a request:\n```text\nPlease confirm before I proceed.\n```",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.3797761483033086,
+              "question": 0.6202238516966914
+            },
+            "confidence": 0.24044770339338273,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 190,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 74.20570915564895,
+      "correct": false
+    },
+    {
+      "id": "normal-zh-self-answered",
+      "expected": "normal",
+      "text": "为什么构建失败？因为缺少依赖。我已经补齐依赖并完成构建。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.6202238516966914,
+              "question": 0.3797761483033086
+            },
+            "confidence": 0.24044770339338273,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 180,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.64204206876457,
+      "correct": true
+    },
+    {
+      "id": "normal-zh-completed-confirmation",
+      "expected": "normal",
+      "text": "确认后我提交成功，测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.7731608836202879,
+              "question": 0.22683911637971213
+            },
+            "confidence": 0.5463217672405758,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.8768339138478,
+      "correct": true
+    },
+    {
+      "id": "question-zh-choice",
+      "expected": "question",
+      "text": "你希望使用方案 A 还是 B？",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2976795222142789,
+              "question": 0.702320477785721
+            },
+            "confidence": 0.4046409555714421,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 175,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 74.0317499730736,
+      "correct": true
+    },
+    {
+      "id": "question-en-choice",
+      "expected": "question",
+      "text": "Which option do you prefer, A or B?",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2060550721761674,
+              "question": 0.7939449278238325
+            },
+            "confidence": 0.5878898556476653,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.91274990327656,
+      "correct": true
+    },
+    {
+      "id": "question-en-proceed",
+      "expected": "question",
+      "text": "May I proceed with these changes?",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.22683911637971213,
+              "question": 0.7731608836202879
+            },
+            "confidence": 0.5463217672405758,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 171,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 79.0740828961134,
+      "correct": true
+    },
+    {
+      "id": "question-en-confirm",
+      "expected": "question",
+      "text": "Please confirm the scope before I begin.",
+      "language": "en",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.15229096126165015,
+              "question": 0.8477090387383498
+            },
+            "confidence": 0.6954180774766996,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 172,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 74.06616699881852,
+      "correct": true
+    },
+    {
+      "id": "question-zh-implicit-write",
+      "expected": "question",
+      "text": "确认后我写入并校验。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.5610068223805792,
+              "question": 0.4389931776194208
+            },
+            "confidence": 0.12201364476115839,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.05033385939896,
+      "correct": false
+    },
+    {
+      "id": "question-zh-screenshot",
+      "expected": "question",
+      "text": "确认后，我会修改解析逻辑并重新评审。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.3239347108431305,
+              "question": 0.6760652891568695
+            },
+            "confidence": 0.35213057831373895,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 176,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.54658397100866,
+      "correct": true
+    },
+    {
+      "id": "question-zh-future-condition",
+      "expected": "question",
+      "text": "确认后我会继续执行，直到测试通过。",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.4389931776194208,
+              "question": 0.5610068223805792
+            },
+            "confidence": 0.12201364476115839,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 175,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.20179198682308,
+      "correct": true
+    },
+    {
+      "id": "question-zh-old-negation-new-question",
+      "expected": "question",
+      "text": "请勿回复旧问题。按这个范围实现，可以吗？",
+      "language": "zh",
+      "split": "regression",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2726940210237006,
+              "question": 0.7273059789762994
+            },
+            "confidence": 0.4546119579525989,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.9307919498533,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-done",
+      "expected": "normal",
+      "text": "修复已经合入，本轮没有需要你处理的事项。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.9008980450273231,
+              "question": 0.09910195497267693
+            },
+            "confidence": 0.8017960900546461,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.46404194645584,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-done",
+      "expected": "normal",
+      "text": "The fix has been merged. There is nothing you need to do this round.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8311949691147652,
+              "question": 0.1688050308852347
+            },
+            "confidence": 0.6623899382295306,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 73.87433294206858,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-historical",
+      "expected": "normal",
+      "text": "得到你的确认后，我开始了测试，现在测试已结束。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.702320477785721,
+              "question": 0.2976795222142789
+            },
+            "confidence": 0.4046409555714421,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.96874979510903,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-historical",
+      "expected": "normal",
+      "text": "After receiving your approval, I started the tests. They have now finished.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8628740758553683,
+              "question": 0.1371259241446317
+            },
+            "confidence": 0.7257481517107367,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.80195797607303,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-negative",
+      "expected": "normal",
+      "text": "不必确认这个范围，我已经按照之前的授权完成了工作。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.8311949691147652,
+              "question": 0.1688050308852347
+            },
+            "confidence": 0.6623899382295306,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 177,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.3743752092123,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-negative",
+      "expected": "normal",
+      "text": "Do not confirm this scope again. I finished the work under your earlier authorization.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.590945115345823,
+              "question": 0.4090548846541771
+            },
+            "confidence": 0.1818902306916459,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.24812505207956,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-quote",
+      "expected": "normal",
+      "text": "日志中的最后一行是“是否继续？”，这是旧日志，不是当前请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.3797761483033086,
+              "question": 0.6202238516966914
+            },
+            "confidence": 0.24044770339338273,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 185,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.13425007648766,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-quote",
+      "expected": "normal",
+      "text": "The last line of the log says 'Continue?'. That is an old log, not a current request.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2976795222142789,
+              "question": 0.702320477785721
+            },
+            "confidence": 0.4046409555714421,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 185,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.86629180796444,
+      "correct": false
+    },
+    {
+      "id": "new-normal-zh-rhetorical",
+      "expected": "normal",
+      "text": "为什么会这样？原因是缓存未刷新；刷新后问题已经消失。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.5306178012780436,
+              "question": 0.46938219872195636
+            },
+            "confidence": 0.061235602556087176,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 180,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 72.29683408513665,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-rhetorical",
+      "expected": "normal",
+      "text": "Why did this happen? The cache was stale; refreshing it has already resolved the issue.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.5,
+              "question": 0.5
+            },
+            "confidence": 0.0,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 181,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.97495789639652,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-deferred",
+      "expected": "normal",
+      "text": "下次需要部署时再告诉我即可。本次文档更新已经完成。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.5,
+              "question": 0.5
+            },
+            "confidence": 0.0,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.76983409933746,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-deferred",
+      "expected": "normal",
+      "text": "Let me know next time you need a deployment. This documentation update is finished.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.590945115345823,
+              "question": 0.4090548846541771
+            },
+            "confidence": 0.1818902306916459,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 180,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.03799988888204,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-progress",
+      "expected": "normal",
+      "text": "我正在检查依赖，接下来会自动继续构建，不需要你操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.6486528740466033,
+              "question": 0.35134712595339673
+            },
+            "confidence": 0.29730574809320665,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 180,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.00362493656576,
+      "correct": true
+    },
+    {
+      "id": "new-normal-en-progress",
+      "expected": "normal",
+      "text": "I am checking dependencies and will continue the build automatically. No action is needed from you.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.7509380462177915,
+              "question": 0.24906195378220847
+            },
+            "confidence": 0.501876092435583,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 181,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.81170799210668,
+      "correct": true
+    },
+    {
+      "id": "new-normal-zh-code",
+      "expected": "normal",
+      "text": "示例代码是 print(\"请确认后继续\")，以上只是代码说明。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.12325144096158012,
+              "question": 0.87674855903842
+            },
+            "confidence": 0.75349711807684,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 182,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.54045796394348,
+      "correct": false
+    },
+    {
+      "id": "new-normal-en-code",
+      "expected": "normal",
+      "text": "The sample code is print(\"Please confirm to proceed\"). This is only an explanation of code.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2060550721761674,
+              "question": 0.7939449278238325
+            },
+            "confidence": 0.5878898556476653,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 183,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.43195904791355,
+      "correct": false
+    },
+    {
+      "id": "new-question-zh-permission",
+      "expected": "question",
+      "text": "可以删除这些临时文件吗？我会等你确认再操作。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.02614954602162159,
+              "question": 0.9738504539783783
+            },
+            "confidence": 0.9477009079567569,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 73.90304212458432,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-permission",
+      "expected": "question",
+      "text": "May I delete these temporary files? I will wait for your approval.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.03961068097803965,
+              "question": 0.9603893190219605
+            },
+            "confidence": 0.9207786380439209,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.30399981886148,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-implicit",
+      "expected": "question",
+      "text": "收到你的确认，我再开始部署。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.2060550721761674,
+              "question": 0.7939449278238325
+            },
+            "confidence": 0.5878898556476653,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.03362493216991,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-implicit",
+      "expected": "question",
+      "text": "Once you confirm, I will begin the deployment.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.1688050308852347,
+              "question": 0.8311949691147652
+            },
+            "confidence": 0.6623899382295306,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 69.3835411220789,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-choice",
+      "expected": "question",
+      "text": "请选择保留旧配置，或切换到新配置。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.1371259241446317,
+              "question": 0.8628740758553683
+            },
+            "confidence": 0.7257481517107367,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 176,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 69.79545787908137,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-choice",
+      "expected": "question",
+      "text": "Please choose whether to retain the old configuration or switch to the new one.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.22683911637971213,
+              "question": 0.7731608836202879
+            },
+            "confidence": 0.5463217672405758,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 179,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.5187918394804,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-missing",
+      "expected": "question",
+      "text": "还缺少目标分支名称，请提供后我再创建请求。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.05306673660108173,
+              "question": 0.9469332633989181
+            },
+            "confidence": 0.8938665267978365,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.0460830014199,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-missing",
+      "expected": "question",
+      "text": "I still need the target branch name. Please provide it before I create the request.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.06310675864737512,
+              "question": 0.936893241352625
+            },
+            "confidence": 0.87378648270525,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 180,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.18112500756979,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-mixed",
+      "expected": "question",
+      "text": "旧问题不用回答。新方案是否按这个范围执行？",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.3797761483033086,
+              "question": 0.6202238516966914
+            },
+            "confidence": 0.24044770339338273,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.66904187761247,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-mixed",
+      "expected": "question",
+      "text": "No need to answer the old question. Should I implement the new plan within this scope?",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.4389931776194208,
+              "question": 0.5610068223805792
+            },
+            "confidence": 0.12201364476115839,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 181,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.91700006276369,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-future",
+      "expected": "question",
+      "text": "你确认之后，我将一直重试直到构建成功。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.35134712595339673,
+              "question": 0.6486528740466033
+            },
+            "confidence": 0.29730574809320665,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.44983299076557,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-future",
+      "expected": "question",
+      "text": "After you confirm, I will keep retrying until the build succeeds.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.15229096126165015,
+              "question": 0.8477090387383498
+            },
+            "confidence": 0.6954180774766996,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 177,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.00766694545746,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-block",
+      "expected": "question",
+      "text": "工作已暂停，等待你授权后继续。",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.021852120485351026,
+              "question": 0.9781478795146489
+            },
+            "confidence": 0.956295759029298,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 175,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.02683309838176,
+      "correct": true
+    },
+    {
+      "id": "new-question-en-block",
+      "expected": "question",
+      "text": "Work is paused until you authorize me to continue.",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.02320179031475465,
+              "question": 0.9767982096852453
+            },
+            "confidence": 0.9535964193704907,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 174,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 71.91425003111362,
+      "correct": true
+    },
+    {
+      "id": "new-question-zh-done-plus",
+      "expected": "question",
+      "text": "文档已经写完。是否还需要我更新示例？",
+      "language": "zh",
+      "split": "new",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "normal",
+            "probabilities": {
+              "normal": 0.590945115345823,
+              "question": 0.4090548846541771
+            },
+            "confidence": 0.1818902306916459,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 177,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 70.52383292466402,
+      "correct": false
+    },
+    {
+      "id": "new-question-en-done-plus",
+      "expected": "question",
+      "text": "The documentation is done. Would you like me to update the examples too?",
+      "language": "en",
+      "split": "new",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+        "answers": {
+          "reply": {
+            "choice": "question",
+            "probabilities": {
+              "normal": 0.4090548846541771,
+              "question": 0.590945115345823
+            },
+            "confidence": 0.1818902306916459,
+            "type": "choice"
+          }
+        },
+        "usage": {
+          "input_tokens": 178,
+          "output_tokens": 0
+        }
+      },
+      "elapsed_ms": 69.62633295916021,
+      "correct": true
+    }
+  ],
+  "status": "complete",
+  "versions": {
+    "torch": "2.8.0",
+    "transformers": "5.19.0",
+    "mlx": "0.32.3",
+    "mlx-lm": "0.31.3",
+    "kev": "0.1.0"
+  },
+  "backend": "mlx",
+  "identity": {
+    "id": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+    "object": "model",
+    "owned_by": "local",
+    "backbone": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca",
+    "backbone_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "adapter_sha256": "c3e1c86f703e19417d84d89b6860d117cb89925a449faac52d3ca9cc31c2b642",
+    "renderer_version": "structured-v1",
+    "readout_version": "letters-v1",
+    "precision": "native",
+    "execution_mode": "independent",
+    "shared_prefix_supported": true,
+    "confidence_scheme": "typesafe-fb52b10",
+    "temperature_sha256": "0ca23b387e3d345eeda2808d90e9839b8a58f87c0b8a28d784c7845f7f6add67",
+    "workload_calibration": {
+      "registered": {},
+      "max_workloads": 16,
+      "min_examples": 25,
+      "max_examples": 256
+    },
+    "max_batch_size": 4,
+    "limits": {
+      "max_state_tokens": 2048,
+      "max_prompt_tokens": 4096,
+      "max_request_tokens": 1000000,
+      "max_questions": 32,
+      "max_options": 26,
+      "max_views": 512,
+      "max_prior_cache_entries": 128,
+      "max_token_cache_entries": 64
+    },
+    "mlx_allocator_cache_limit_bytes": null,
+    "implementation_sha256": {
+      "engine.py": "c819701ecc214b9e91c1610f5f0610037ce32a4f7bd189b3deb273788ec3e812",
+      "rendering.py": "3f8953908232763e0ba743ca0f02c57726e21ee17e20d05addabbb5d8aa8409d",
+      "serialization.py": "187a3aa7cc41a5c12ca0b39cd86195245a06d764e99a40ee7fe92b7ef6f44aa0",
+      "schema.py": "1daea98c6c5441fa40791b35cfb51a4f34dc991d4dedc09ed73d35a1a069642d",
+      "calibration.py": "62d39ba10497e91344c792e11e5ad849f0d3a59cbf8fe51625313fd7c5df25d9",
+      "confidence.py": "3643b1f1cca5dac96d0579d931a3932406e104eb8b7bcbc4620ea2b585dad2f8"
+    }
+  },
+  "initialization_ms": 6230.094542028382,
+  "warmup": [
+    "normal",
+    {
+      "model": "/Users/caishilin/.cache/huggingface/hub/models--Qwen--Qwen3-0.6B/snapshots/c1899de289a04d12100db370d81485cdf75e47ca@f9fabd9813a66481",
+      "answers": {
+        "reply": {
+          "choice": "normal",
+          "probabilities": {
+            "normal": 0.7731608836202879,
+            "question": 0.22683911637971213
+          },
+          "confidence": 0.5463217672405758,
+          "type": "choice"
+        }
+      },
+      "usage": {
+        "input_tokens": 174,
+        "output_tokens": 0
+      }
+    }
+  ],
+  "first_inference_ms": 1269.3064578343183,
+  "peak_process_rss_bytes": 1153957888,
+  "finished_at": "2026-10-10T16:43:32+0800"
+}

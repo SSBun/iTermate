@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "/Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/explore-open-system-one-models/evidence/benchmark.py", line 164, in main
+    predict, info = load_predictor(args.model, args.device)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/explore-open-system-one-models/evidence/benchmark.py", line 102, in load_predictor
+    path = snapshot(name)
+           ^^^^^^^^^^^^^^
+  File "/Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/explore-open-system-one-models/evidence/benchmark.py", line 28, in snapshot
+    return snapshot_download(spec["repo"], revision=spec["revision"], local_files_only=True)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/itermate-system-one-eval/torch-env/lib/python3.12/site-packages/huggingface_hub/utils/_validators.py", line 89, in _inner_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/itermate-system-one-eval/torch-env/lib/python3.12/site-packages/huggingface_hub/utils/_http.py", line 276, in _inner
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/itermate-system-one-eval/torch-env/lib/python3.12/site-packages/huggingface_hub/_snapshot_download.py", line 349, in snapshot_download
+    _raise_if_incomplete_snapshot(
+  File "/private/tmp/itermate-system-one-eval/torch-env/lib/python3.12/site-packages/huggingface_hub/_snapshot_download.py", line 595, in _raise_if_incomplete_snapshot
+    raise IncompleteSnapshotError(
+huggingface_hub.errors.IncompleteSnapshotError: The cached snapshot for 'fastino/GLiNER2.5-multi-Decide' (revision 'e173bca1f0c4217d7a55b3b0c705d5ece8a0218d', commit e173bca1f0c4217d7a55b3b0c705d5ece8a0218d) is incomplete: 3 file(s) are missing (.gitattributes, GLiNER-2.5-Decision-HF-Banner.png, SKILL.md). Outgoing traffic is disabled ('local_files_only=True'). Re-run the download with network access to complete the snapshot.
+

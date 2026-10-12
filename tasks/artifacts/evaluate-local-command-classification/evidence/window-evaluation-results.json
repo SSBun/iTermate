@@ -1,0 +1,1541 @@
+{
+  "fixture_sha256": "9fcd9738394ca04cd16a50e4928252aab8b1deae9cbd6aa47af7ea66394ce15f",
+  "results": [
+    {
+      "id": "webpack-ready",
+      "method": "full",
+      "expected": "service",
+      "state": "Current command: npm run dev\nLifecycle: command is still running.\nLatest terminal output:\nBuilding development bundle...\nCompiled successfully\nDevelopment server listening at http://localhost:8080\nGET / 200\nGET /app.js 200\nGET /favicon.ico 404",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.7444,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.9218,
+              "service": 0.0396,
+              "monitor": 0.0239,
+              "unknown": 0.0148
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 125,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 54.429
+      },
+      "wall_ms": 61.937,
+      "correct": false
+    },
+    {
+      "id": "webpack-ready",
+      "method": "last4",
+      "expected": "service",
+      "state": "Current command: npm run dev\nLifecycle: command is still running.\nLatest terminal output:\nDevelopment server listening at http://localhost:8080\nGET / 200\nGET /app.js 200\nGET /favicon.ico 404",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.402,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.1722,
+              "service": 0.7218,
+              "monitor": 0.0848,
+              "unknown": 0.0212
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 117,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 21.019
+      },
+      "wall_ms": 22.472,
+      "correct": true
+    },
+    {
+      "id": "webpack-ready",
+      "method": "last1",
+      "expected": "service",
+      "state": "Current command: npm run dev\nLifecycle: command is still running.\nLatest terminal output:\nGET /favicon.ico 404",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.2789,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.1432,
+              "service": 0.6322,
+              "monitor": 0.0343,
+              "unknown": 0.1902
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 87,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 18.32
+      },
+      "wall_ms": 19.629,
+      "correct": true
+    },
+    {
+      "id": "flask-requests",
+      "method": "full",
+      "expected": "service",
+      "state": "Current command: flask run\nLifecycle: command is still running.\nLatest terminal output:\nStarting application\nDebug mode: off\nRunning on http://127.0.0.1:5000\nPress CTRL+C to quit\nGET /health 200\nGET /users 200\nGET /users/1 200\nGET /missing 404",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.4609,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.7175,
+              "service": 0.2386,
+              "monitor": 0.025,
+              "unknown": 0.0189
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 144,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 34.968
+      },
+      "wall_ms": 36.652,
+      "correct": false
+    },
+    {
+      "id": "flask-requests",
+      "method": "last4",
+      "expected": "service",
+      "state": "Current command: flask run\nLifecycle: command is still running.\nLatest terminal output:\nGET /health 200\nGET /users 200\nGET /users/1 200\nGET /missing 404",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.1324,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0925,
+              "service": 0.4912,
+              "monitor": 0.1441,
+              "unknown": 0.2723
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 110,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 22.333
+      },
+      "wall_ms": 24.129,
+      "correct": true
+    },
+    {
+      "id": "flask-requests",
+      "method": "last1",
+      "expected": "service",
+      "state": "Current command: flask run\nLifecycle: command is still running.\nLatest terminal output:\nGET /missing 404",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.4162,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "unknown",
+            "probabilities": {
+              "command": 0.0297,
+              "service": 0.2844,
+              "monitor": 0.0195,
+              "unknown": 0.6664
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 84,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 18.733
+      },
+      "wall_ms": 20.112,
+      "correct": false
+    },
+    {
+      "id": "redis-ready",
+      "method": "full",
+      "expected": "service",
+      "state": "Current command: redis-server\nLifecycle: command is still running.\nLatest terminal output:\nLoading configuration\nInitializing database\nServer initialized\nReady to accept connections tcp\nBackground saving started\nDB saved on disk",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.1341,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.3675,
+              "service": 0.4222,
+              "monitor": 0.1281,
+              "unknown": 0.0821
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 102,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 30.769
+      },
+      "wall_ms": 33.313,
+      "correct": true
+    },
+    {
+      "id": "redis-ready",
+      "method": "last4",
+      "expected": "service",
+      "state": "Current command: redis-server\nLifecycle: command is still running.\nLatest terminal output:\nServer initialized\nReady to accept connections tcp\nBackground saving started\nDB saved on disk",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.6866,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0348,
+              "service": 0.899,
+              "monitor": 0.0444,
+              "unknown": 0.0218
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 95,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 22.638
+      },
+      "wall_ms": 24.109,
+      "correct": true
+    },
+    {
+      "id": "redis-ready",
+      "method": "last1",
+      "expected": "service",
+      "state": "Current command: redis-server\nLifecycle: command is still running.\nLatest terminal output:\nDB saved on disk",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.0242,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.2641,
+              "service": 0.2224,
+              "monitor": 0.3455,
+              "unknown": 0.1679
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 82,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 18.79
+      },
+      "wall_ms": 20.09,
+      "correct": false
+    },
+    {
+      "id": "node-request-error",
+      "method": "full",
+      "expected": "service",
+      "state": "Current command: node server.js\nLifecycle: command is still running.\nLatest terminal output:\nStarting HTTP server\nListening on port 9000\nGET / 200\nGET /api 500\nError: request handler failed\n    at handleRequest (server.js:42:8)",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.6442,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.1217,
+              "service": 0.8551,
+              "monitor": 0.0105,
+              "unknown": 0.0127
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 129,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 30.576
+      },
+      "wall_ms": 32.831,
+      "correct": true
+    },
+    {
+      "id": "node-request-error",
+      "method": "last4",
+      "expected": "service",
+      "state": "Current command: node server.js\nLifecycle: command is still running.\nLatest terminal output:\nGET / 200\nGET /api 500\nError: request handler failed\n    at handleRequest (server.js:42:8)",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.685,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0485,
+              "service": 0.8979,
+              "monitor": 0.0219,
+              "unknown": 0.0317
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 116,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 20.438
+      },
+      "wall_ms": 21.936,
+      "correct": true
+    },
+    {
+      "id": "node-request-error",
+      "method": "last1",
+      "expected": "service",
+      "state": "Current command: node server.js\nLifecycle: command is still running.\nLatest terminal output:\n    at handleRequest (server.js:42:8)",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.8209,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0233,
+              "service": 0.9506,
+              "monitor": 0.0161,
+              "unknown": 0.01
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 95,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 21.132
+      },
+      "wall_ms": 22.633,
+      "correct": true
+    },
+    {
+      "id": "cargo-watch-error",
+      "method": "full",
+      "expected": "monitor",
+      "state": "Current command: cargo watch -x check\nLifecycle: command is still running.\nLatest terminal output:\nWatching source files for changes\nRunning cargo check\nerror[E0425]: cannot find value x\nCompilation failed\nWaiting for file changes...",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.6841,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.0327,
+              "service": 0.0103,
+              "monitor": 0.8922,
+              "unknown": 0.0648
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 111,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 20.975
+      },
+      "wall_ms": 22.758,
+      "correct": true
+    },
+    {
+      "id": "cargo-watch-error",
+      "method": "last4",
+      "expected": "monitor",
+      "state": "Current command: cargo watch -x check\nLifecycle: command is still running.\nLatest terminal output:\nRunning cargo check\nerror[E0425]: cannot find value x\nCompilation failed\nWaiting for file changes...",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.7184,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.0275,
+              "service": 0.01,
+              "monitor": 0.9082,
+              "unknown": 0.0544
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 105,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 24.57
+      },
+      "wall_ms": 26.572,
+      "correct": true
+    },
+    {
+      "id": "cargo-watch-error",
+      "method": "last1",
+      "expected": "monitor",
+      "state": "Current command: cargo watch -x check\nLifecycle: command is still running.\nLatest terminal output:\nWaiting for file changes...",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.9596,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.0031,
+              "service": 0.002,
+              "monitor": 0.9919,
+              "unknown": 0.003
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 85,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 17.345
+      },
+      "wall_ms": 18.523,
+      "correct": true
+    },
+    {
+      "id": "nodemon-wait",
+      "method": "full",
+      "expected": "monitor",
+      "state": "Current command: nodemon app.js\nLifecycle: command is still running.\nLatest terminal output:\n[nodemon] starting node app.js\nSyntaxError: Unexpected token\n[nodemon] app crashed - waiting for file changes before starting...",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.3236,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.1989,
+              "service": 0.0185,
+              "monitor": 0.6533,
+              "unknown": 0.1293
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 110,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 23.488
+      },
+      "wall_ms": 24.941,
+      "correct": true
+    },
+    {
+      "id": "nodemon-wait",
+      "method": "last4",
+      "expected": "monitor",
+      "state": "Current command: nodemon app.js\nLifecycle: command is still running.\nLatest terminal output:\n[nodemon] starting node app.js\nSyntaxError: Unexpected token\n[nodemon] app crashed - waiting for file changes before starting...",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.3236,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.1989,
+              "service": 0.0185,
+              "monitor": 0.6533,
+              "unknown": 0.1293
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 110,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 24.197
+      },
+      "wall_ms": 25.766,
+      "correct": true
+    },
+    {
+      "id": "nodemon-wait",
+      "method": "last1",
+      "expected": "monitor",
+      "state": "Current command: nodemon app.js\nLifecycle: command is still running.\nLatest terminal output:\n[nodemon] app crashed - waiting for file changes before starting...",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.6501,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.1059,
+              "service": 0.0091,
+              "monitor": 0.8648,
+              "unknown": 0.0202
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 94,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 17.577
+      },
+      "wall_ms": 18.927,
+      "correct": true
+    },
+    {
+      "id": "tail-service-log",
+      "method": "full",
+      "expected": "monitor",
+      "state": "Current command: tail -F server.log\nLifecycle: command is still running.\nLatest terminal output:\nServer listening on port 8088\nGET /ping 200\nGET /ping 200\nGET /ping 200\nGET /ping 200\nGET /ping 200",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.7346,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0259,
+              "service": 0.9163,
+              "monitor": 0.0466,
+              "unknown": 0.0113
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 130,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 26.204
+      },
+      "wall_ms": 27.884,
+      "correct": false
+    },
+    {
+      "id": "tail-service-log",
+      "method": "last4",
+      "expected": "monitor",
+      "state": "Current command: tail -F server.log\nLifecycle: command is still running.\nLatest terminal output:\nGET /ping 200\nGET /ping 200\nGET /ping 200\nGET /ping 200",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.2375,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.1537,
+              "service": 0.5966,
+              "monitor": 0.2068,
+              "unknown": 0.0429
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 112,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 20.491
+      },
+      "wall_ms": 22.5,
+      "correct": false
+    },
+    {
+      "id": "tail-service-log",
+      "method": "last1",
+      "expected": "monitor",
+      "state": "Current command: tail -F server.log\nLifecycle: command is still running.\nLatest terminal output:\nGET /ping 200",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.2046,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0815,
+              "service": 0.584,
+              "monitor": 0.2151,
+              "unknown": 0.1195
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 88,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 20.578
+      },
+      "wall_ms": 22.247,
+      "correct": false
+    },
+    {
+      "id": "venom-new-log",
+      "method": "full",
+      "expected": "monitor",
+      "state": "Current command: venom-cli build --run --debug\nLifecycle: command is still running.\nLatest terminal output:\nBuilding ExampleApp\nBuild succeeded\nLaunched ExampleApp\nMonitoring application logs (r=rerun, Ctrl+C=stop)\nApplication initialized\nWindow became active\nNetwork request completed\nCache refreshed\nWindow became inactive",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.3049,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.685,
+              "service": 0.1188,
+              "monitor": 0.1183,
+              "unknown": 0.0779
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 127,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 23.693
+      },
+      "wall_ms": 25.58,
+      "correct": false
+    },
+    {
+      "id": "venom-new-log",
+      "method": "last4",
+      "expected": "monitor",
+      "state": "Current command: venom-cli build --run --debug\nLifecycle: command is still running.\nLatest terminal output:\nWindow became active\nNetwork request completed\nCache refreshed\nWindow became inactive",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.075,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.4058,
+              "service": 0.0953,
+              "monitor": 0.24,
+              "unknown": 0.259
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 97,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 23.442
+      },
+      "wall_ms": 24.783,
+      "correct": false
+    },
+    {
+      "id": "venom-new-log",
+      "method": "last1",
+      "expected": "monitor",
+      "state": "Current command: venom-cli build --run --debug\nLifecycle: command is still running.\nLatest terminal output:\nWindow became inactive",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.1546,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "unknown",
+            "probabilities": {
+              "command": 0.2128,
+              "service": 0.0487,
+              "monitor": 0.2484,
+              "unknown": 0.4901
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 86,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 19.399
+      },
+      "wall_ms": 20.952,
+      "correct": false
+    },
+    {
+      "id": "cargo-release",
+      "method": "full",
+      "expected": "command",
+      "state": "Current command: cargo build --release\nLifecycle: command is still running.\nLatest terminal output:\nCompiling serde v1.0\nCompiling tokio v1.0\nCompiling myapp v0.1\nLinking release binary...",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.6612,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.8882,
+              "service": 0.0266,
+              "monitor": 0.0363,
+              "unknown": 0.0489
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 108,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 18.229
+      },
+      "wall_ms": 19.573,
+      "correct": true
+    },
+    {
+      "id": "cargo-release",
+      "method": "last4",
+      "expected": "command",
+      "state": "Current command: cargo build --release\nLifecycle: command is still running.\nLatest terminal output:\nCompiling serde v1.0\nCompiling tokio v1.0\nCompiling myapp v0.1\nLinking release binary...",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.6612,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.8882,
+              "service": 0.0266,
+              "monitor": 0.0363,
+              "unknown": 0.0489
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 108,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 20.747
+      },
+      "wall_ms": 22.359,
+      "correct": true
+    },
+    {
+      "id": "cargo-release",
+      "method": "last1",
+      "expected": "command",
+      "state": "Current command: cargo build --release\nLifecycle: command is still running.\nLatest terminal output:\nLinking release binary...",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.6732,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.8873,
+              "service": 0.0079,
+              "monitor": 0.0575,
+              "unknown": 0.0473
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 83,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 18.725
+      },
+      "wall_ms": 21.006,
+      "correct": true
+    },
+    {
+      "id": "pip-download",
+      "method": "full",
+      "expected": "command",
+      "state": "Current command: pip install numpy\nLifecycle: command is still running.\nLatest terminal output:\nCollecting numpy\nDownloading numpy.whl (20 MB)\n━━━━━━━━━━━━━━ 12/20 MB 8 MB/s",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.7823,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.9373,
+              "service": 0.0152,
+              "monitor": 0.0248,
+              "unknown": 0.0227
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 109,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 21.182
+      },
+      "wall_ms": 22.598,
+      "correct": true
+    },
+    {
+      "id": "pip-download",
+      "method": "last4",
+      "expected": "command",
+      "state": "Current command: pip install numpy\nLifecycle: command is still running.\nLatest terminal output:\nCollecting numpy\nDownloading numpy.whl (20 MB)\n━━━━━━━━━━━━━━ 12/20 MB 8 MB/s",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.7823,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.9373,
+              "service": 0.0152,
+              "monitor": 0.0248,
+              "unknown": 0.0227
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 109,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 21.996
+      },
+      "wall_ms": 23.66,
+      "correct": true
+    },
+    {
+      "id": "pip-download",
+      "method": "last1",
+      "expected": "command",
+      "state": "Current command: pip install numpy\nLifecycle: command is still running.\nLatest terminal output:\n━━━━━━━━━━━━━━ 12/20 MB 8 MB/s",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.5847,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.8457,
+              "service": 0.0224,
+              "monitor": 0.0909,
+              "unknown": 0.041
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 94,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 20.826
+      },
+      "wall_ms": 22.211,
+      "correct": true
+    },
+    {
+      "id": "old-http-current-build",
+      "method": "full",
+      "expected": "command",
+      "state": "Current command: npm run build\nLifecycle: command is still running.\nLatest terminal output:\nEarlier shell command: node server.js\nServer listening on port 3000\n^C\n$ npm run build\nBuilding production assets\nTransforming modules 30%\nTransforming modules 40%\nTransforming modules 50%",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.8391,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.957,
+              "service": 0.0136,
+              "monitor": 0.0103,
+              "unknown": 0.0191
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 129,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 26.3
+      },
+      "wall_ms": 27.739,
+      "correct": true
+    },
+    {
+      "id": "old-http-current-build",
+      "method": "last4",
+      "expected": "command",
+      "state": "Current command: npm run build\nLifecycle: command is still running.\nLatest terminal output:\nBuilding production assets\nTransforming modules 30%\nTransforming modules 40%\nTransforming modules 50%",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.8594,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.9634,
+              "service": 0.0067,
+              "monitor": 0.0133,
+              "unknown": 0.0166
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 102,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 23.942
+      },
+      "wall_ms": 25.292,
+      "correct": true
+    },
+    {
+      "id": "old-http-current-build",
+      "method": "last1",
+      "expected": "command",
+      "state": "Current command: npm run build\nLifecycle: command is still running.\nLatest terminal output:\nTransforming modules 50%",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.2856,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.6332,
+              "service": 0.0441,
+              "monitor": 0.0982,
+              "unknown": 0.2245
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 84,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 19.192
+      },
+      "wall_ms": 20.52,
+      "correct": true
+    },
+    {
+      "id": "docs-stream",
+      "method": "full",
+      "expected": "command",
+      "state": "Current command: python3 render_manual.py\nLifecycle: command is still running.\nLatest terminal output:\nRendering manual page 4/80\nWriting quoted example: Server ready to accept connections\nRendering manual page 5/80\nWriting quoted example: Listening on port 7000",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.5472,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0713,
+              "service": 0.8316,
+              "monitor": 0.0678,
+              "unknown": 0.0294
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 122,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 22.645
+      },
+      "wall_ms": 24.055,
+      "correct": false
+    },
+    {
+      "id": "docs-stream",
+      "method": "last4",
+      "expected": "command",
+      "state": "Current command: python3 render_manual.py\nLifecycle: command is still running.\nLatest terminal output:\nRendering manual page 4/80\nWriting quoted example: Server ready to accept connections\nRendering manual page 5/80\nWriting quoted example: Listening on port 7000",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.5472,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.0713,
+              "service": 0.8316,
+              "monitor": 0.0678,
+              "unknown": 0.0294
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 122,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 25.33
+      },
+      "wall_ms": 26.721,
+      "correct": false
+    },
+    {
+      "id": "docs-stream",
+      "method": "last1",
+      "expected": "command",
+      "state": "Current command: python3 render_manual.py\nLifecycle: command is still running.\nLatest terminal output:\nWriting quoted example: Listening on port 7000",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.0713,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "service",
+            "probabilities": {
+              "command": 0.166,
+              "service": 0.3595,
+              "monitor": 0.3549,
+              "unknown": 0.1196
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 94,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 19.657
+      },
+      "wall_ms": 21.83,
+      "correct": false
+    },
+    {
+      "id": "quiet-worker",
+      "method": "full",
+      "expected": "unknown",
+      "state": "Current command: ./worker\nLifecycle: command is still running.\nLatest terminal output:\nJob 713\nTick 4\nTick 5",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.185,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.3145,
+              "service": 0.0867,
+              "monitor": 0.5125,
+              "unknown": 0.0863
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 90,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 19.73
+      },
+      "wall_ms": 21.256,
+      "correct": false
+    },
+    {
+      "id": "quiet-worker",
+      "method": "last4",
+      "expected": "unknown",
+      "state": "Current command: ./worker\nLifecycle: command is still running.\nLatest terminal output:\nJob 713\nTick 4\nTick 5",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.185,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.3145,
+              "service": 0.0867,
+              "monitor": 0.5125,
+              "unknown": 0.0863
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 90,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 20.167
+      },
+      "wall_ms": 21.489,
+      "correct": false
+    },
+    {
+      "id": "quiet-worker",
+      "method": "last1",
+      "expected": "unknown",
+      "state": "Current command: ./worker\nLifecycle: command is still running.\nLatest terminal output:\nTick 5",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.0815,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.1749,
+              "service": 0.2272,
+              "monitor": 0.459,
+              "unknown": 0.1389
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 80,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 18.634
+      },
+      "wall_ms": 19.897,
+      "correct": false
+    },
+    {
+      "id": "unqualified-ready",
+      "method": "full",
+      "expected": "unknown",
+      "state": "Current command: ./tool\nLifecycle: command is still running.\nLatest terminal output:\nConfiguration loaded\nReady",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.101,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.1775,
+              "service": 0.186,
+              "monitor": 0.4935,
+              "unknown": 0.1429
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 81,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 19.22
+      },
+      "wall_ms": 20.746,
+      "correct": false
+    },
+    {
+      "id": "unqualified-ready",
+      "method": "last4",
+      "expected": "unknown",
+      "state": "Current command: ./tool\nLifecycle: command is still running.\nLatest terminal output:\nConfiguration loaded\nReady",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.101,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.1775,
+              "service": 0.186,
+              "monitor": 0.4935,
+              "unknown": 0.1429
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 81,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 22.904
+      },
+      "wall_ms": 24.428,
+      "correct": false
+    },
+    {
+      "id": "unqualified-ready",
+      "method": "last1",
+      "expected": "unknown",
+      "state": "Current command: ./tool\nLifecycle: command is still running.\nLatest terminal output:\nReady",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.1574,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.1074,
+              "service": 0.3305,
+              "monitor": 0.4771,
+              "unknown": 0.085
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 78,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 24.589
+      },
+      "wall_ms": 26.002,
+      "correct": false
+    },
+    {
+      "id": "blank-output",
+      "method": "full",
+      "expected": "unknown",
+      "state": "Current command: ./runner\nLifecycle: command is still running.\nLatest terminal output:\n",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.0701,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.3898,
+              "service": 0.1274,
+              "monitor": 0.321,
+              "unknown": 0.1617
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 77,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 25.21
+      },
+      "wall_ms": 27.106,
+      "correct": false
+    },
+    {
+      "id": "blank-output",
+      "method": "last4",
+      "expected": "unknown",
+      "state": "Current command: ./runner\nLifecycle: command is still running.\nLatest terminal output:\n",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.0701,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.3898,
+              "service": 0.1274,
+              "monitor": 0.321,
+              "unknown": 0.1617
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 77,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 22.122
+      },
+      "wall_ms": 23.625,
+      "correct": false
+    },
+    {
+      "id": "blank-output",
+      "method": "last1",
+      "expected": "unknown",
+      "state": "Current command: ./runner\nLifecycle: command is still running.\nLatest terminal output:\n",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.0701,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "command",
+            "probabilities": {
+              "command": 0.3898,
+              "service": 0.1274,
+              "monitor": 0.321,
+              "unknown": 0.1617
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 77,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 21.782
+      },
+      "wall_ms": 23.108,
+      "correct": false
+    },
+    {
+      "id": "cn-file-watch",
+      "method": "full",
+      "expected": "monitor",
+      "state": "Current command: ./watch-files\nLifecycle: command is still running.\nLatest terminal output:\n初始化完成\n正在监视目录，文件变化时重新执行\n检测到配置更新\n重新执行完成\n继续等待文件变化",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.9434,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.0039,
+              "service": 0.0032,
+              "monitor": 0.9879,
+              "unknown": 0.005
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 109,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 25.013
+      },
+      "wall_ms": 26.472,
+      "correct": true
+    },
+    {
+      "id": "cn-file-watch",
+      "method": "last4",
+      "expected": "monitor",
+      "state": "Current command: ./watch-files\nLifecycle: command is still running.\nLatest terminal output:\n正在监视目录，文件变化时重新执行\n检测到配置更新\n重新执行完成\n继续等待文件变化",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.9166,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.0058,
+              "service": 0.0054,
+              "monitor": 0.9808,
+              "unknown": 0.008
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 106,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 20.563
+      },
+      "wall_ms": 21.945,
+      "correct": true
+    },
+    {
+      "id": "cn-file-watch",
+      "method": "last1",
+      "expected": "monitor",
+      "state": "Current command: ./watch-files\nLifecycle: command is still running.\nLatest terminal output:\n继续等待文件变化",
+      "response": {
+        "model": "laya-rl-agent",
+        "answers": {
+          "kind": {
+            "type": "choice",
+            "confidence": 0.8764,
+            "action": {
+              "act_probability": 1.0
+            },
+            "choice": "monitor",
+            "probabilities": {
+              "command": 0.0087,
+              "service": 0.0073,
+              "monitor": 0.9689,
+              "unknown": 0.0151
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 84,
+          "output_tokens": 0
+        },
+        "elapsed_ms": 18.351
+      },
+      "wall_ms": 19.879,
+      "correct": true
+    }
+  ]
+}
