@@ -1,0 +1,2978 @@
+{
+  "schema": "itermate-vela-prompt/v1",
+  "phase": "dev",
+  "prompt": {
+    "id": "chinese",
+    "kind": "choice",
+    "instructions": "判断这条助手回复是否真的在向用户提问。疑问表达即使没有问号也算，完成工作后的追问也算。仅陈述等待确认、命令或请求不算提问。排除引用、代码示例、自问自答和说明标题。判断整条消息，不是只看末句。",
+    "criteria": {
+      "normal": "没有向用户提出实际问题；包括陈述、祈使请求、等待确认、引用和自问自答。",
+      "question": "助手以疑问表达向用户提问，希望用户回答这个问题。"
+    }
+  },
+  "model": {
+    "repo": "vllm-sr/Vela-2.0-0.3B",
+    "revision": "d6f03aa9baca4f9017fa8f8e9c2764d3bed3f409",
+    "files": [
+      ".gitattributes",
+      "DISTRIBUTION_TERMS.md",
+      "EVALUATION.md",
+      "LICENSE",
+      "LICENSES/Transformers-Apache-2.0.txt",
+      "LICENSES/Upstream-MIT.txt",
+      "LICENSES/gemma/GEMMA_PROHIBITED_USE_POLICY.html",
+      "LICENSES/gemma/GEMMA_TERMS.html",
+      "LICENSES/gemma/Notice",
+      "LICENSES/gemma/TOKENIZER_TERMS.md",
+      "LICENSING_STATUS.md",
+      "MODIFICATIONS.md",
+      "NOTICE",
+      "NOTICE_SOURCES.json",
+      "PARITY.md",
+      "README.md",
+      "TRAINING.md",
+      "USAGE.md",
+      "assets/architecture/01-vela-2.0-0.3b-architecture.png",
+      "assets/architecture/01-vela-2.0-0.3b-architecture.svg",
+      "assets/architecture/05-encoder-attention-geglu.png",
+      "assets/architecture/05-encoder-attention-geglu.svg",
+      "assets/architecture/06-encoder-readouts.png",
+      "assets/architecture/06-encoder-readouts.svg",
+      "assets/vela2-banner.jpg",
+      "assets/vela2-family.jpg",
+      "calibration.json",
+      "config.json",
+      "configuration_vela2.py",
+      "figures/fig_delta_vs_vela.png",
+      "model.safetensors",
+      "modeling_vela2.py",
+      "onnx/model.onnx",
+      "onnx/model_fp16.onnx",
+      "pii_calibration_fit.json",
+      "special_tokens_map.json",
+      "tokenizer.json",
+      "tokenizer_config.json",
+      "vela2_inference.py",
+      "vela2_serve.py"
+    ]
+  },
+  "frozen": {
+    "development.json": "c0825721c01946d855048049ca0d464e26d4aa99158ce433f7b6f4958da8ac70",
+    "holdout.json": "af7fdd48be50ae1ccc59e2b4b3b75d090746f0ac9e495efa74a1f4df75873ba6",
+    "prompts.json": "c3b49d563d9db138a585830351a6c033adacb850e702696fd9e5e2e12b22a909",
+    "policy.json": "abfd6eead75d4c43925a8dafd319217a304add99ab6c0ca4ae1d1b59887e7d32"
+  },
+  "script_sha256": "830553b345a835f2aa05686313104b082957eff49fb77ca0895f58567703385d",
+  "platform": "macOS-26.5.1-arm64-arm-64bit",
+  "torch": "2.14.1",
+  "transformers": "5.19.0",
+  "backend": "torch-cpu-fp32-4threads",
+  "load_ms": 485.1557919755578,
+  "warmup_ms": 51.50054208934307,
+  "warmup": [
+    "normal",
+    {
+      "model": "vllm-sr/Vela-2.0-0.3B",
+      "answers": {
+        "reply": {
+          "type": "choice",
+          "choice": "normal",
+          "confidence": 0.9384673098461205,
+          "probabilities": {
+            "normal": 0.9692336549230602,
+            "question": 0.030766345076939768
+          }
+        }
+      },
+      "usage": {
+        "input_tokens": 120,
+        "output_tokens": 0
+      }
+    }
+  ],
+  "started_at": "2026-10-10T19:17:22+0800",
+  "status": "complete",
+  "rows": [
+    {
+      "id": "question-zh-choice",
+      "expected": "question",
+      "category": "choice",
+      "language": "zh",
+      "split": "new",
+      "text": "你希望使用方案 A 还是 B？",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9936843772254045,
+            "probabilities": {
+              "normal": 0.003157811387297748,
+              "question": 0.9968421886127022
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 123,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 44.92962500080466
+    },
+    {
+      "id": "question-en-choice",
+      "expected": "question",
+      "category": "choice",
+      "language": "en",
+      "split": "new",
+      "text": "Which option do you prefer, A or B?",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9608059187859513,
+            "probabilities": {
+              "normal": 0.019597040607024364,
+              "question": 0.9804029593929757
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 124,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 73.71154194697738
+    },
+    {
+      "id": "question-zh-permission",
+      "expected": "question",
+      "category": "permission",
+      "language": "zh",
+      "split": "new",
+      "text": "我可以开始修改了吗？",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9079682005172407,
+            "probabilities": {
+              "normal": 0.04601589974137965,
+              "question": 0.9539841002586203
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 120,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 44.21054199337959
+    },
+    {
+      "id": "question-en-permission",
+      "expected": "question",
+      "category": "permission",
+      "language": "en",
+      "split": "new",
+      "text": "May I begin making the changes?",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8944386120631083,
+            "probabilities": {
+              "normal": 0.05278069396844589,
+              "question": 0.9472193060315541
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 121,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 46.724250074476004
+    },
+    {
+      "id": "question-zh-optional-followup",
+      "expected": "question",
+      "category": "optional-followup",
+      "language": "zh",
+      "split": "new",
+      "text": "文档已经写完。是否还需要我更新示例？",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.8064123891007684,
+            "probabilities": {
+              "normal": 0.9032061945503842,
+              "question": 0.09679380544961586
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 51.7384170088917
+    },
+    {
+      "id": "question-en-optional-followup",
+      "expected": "question",
+      "category": "optional-followup",
+      "language": "en",
+      "split": "new",
+      "text": "The documentation is done. Would you like me to update the examples too?",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.7150669550349504,
+            "probabilities": {
+              "normal": 0.14246652248252484,
+              "question": 0.8575334775174752
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 129,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 61.96516705676913
+    },
+    {
+      "id": "question-zh-missing-information",
+      "expected": "question",
+      "category": "missing-information",
+      "language": "zh",
+      "split": "new",
+      "text": "目标分支叫什么名字？",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9848458840321426,
+            "probabilities": {
+              "normal": 0.007577057983928683,
+              "question": 0.9924229420160713
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 121,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 51.61445797421038
+    },
+    {
+      "id": "question-en-missing-information",
+      "expected": "question",
+      "category": "missing-information",
+      "language": "en",
+      "split": "new",
+      "text": "What is the name of the target branch?",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9870733149220785,
+            "probabilities": {
+              "normal": 0.006463342538960774,
+              "question": 0.9935366574610393
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 123,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 41.16454208269715
+    },
+    {
+      "id": "question-zh-confirmation",
+      "expected": "question",
+      "category": "confirmation",
+      "language": "zh",
+      "split": "new",
+      "text": "这个范围是否符合你的预期？",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9602981251023638,
+            "probabilities": {
+              "normal": 0.01985093744881818,
+              "question": 0.980149062551182
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 121,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 41.66216589510441
+    },
+    {
+      "id": "question-en-confirmation",
+      "expected": "question",
+      "category": "confirmation",
+      "language": "en",
+      "split": "new",
+      "text": "Does this scope match what you expected?",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9021666082810725,
+            "probabilities": {
+              "normal": 0.04891669585946379,
+              "question": 0.9510833041405363
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 122,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 47.19729186035693
+    },
+    {
+      "id": "question-zh-no-question-mark",
+      "expected": "question",
+      "category": "no-question-mark",
+      "language": "zh",
+      "split": "new",
+      "text": "你希望保留哪一个版本",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.7120660141177222,
+            "probabilities": {
+              "normal": 0.1439669929411389,
+              "question": 0.8560330070588611
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 120,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 45.89316691271961
+    },
+    {
+      "id": "question-en-no-question-mark",
+      "expected": "question",
+      "category": "no-question-mark",
+      "language": "en",
+      "split": "new",
+      "text": "Which version would you like to keep",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.4821946163438724,
+            "probabilities": {
+              "normal": 0.2589026918280638,
+              "question": 0.7410973081719362
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 121,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 55.17729208804667
+    },
+    {
+      "id": "question-zh-question-then-statement",
+      "expected": "question",
+      "category": "question-then-statement",
+      "language": "zh",
+      "split": "new",
+      "text": "你想选哪个方案？我会等你的答复。",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.7661690136690169,
+            "probabilities": {
+              "normal": 0.11691549316549159,
+              "question": 0.8830845068345085
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 58.02574986591935
+    },
+    {
+      "id": "question-en-question-then-statement",
+      "expected": "question",
+      "category": "question-then-statement",
+      "language": "en",
+      "split": "new",
+      "text": "Which plan would you like to choose? I will wait for your answer.",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8465536184422215,
+            "probabilities": {
+              "normal": 0.07672319077888926,
+              "question": 0.9232768092211108
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 129,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 76.79170789197087
+    },
+    {
+      "id": "question-zh-quote-then-real",
+      "expected": "question",
+      "category": "quote-then-real",
+      "language": "zh",
+      "split": "new",
+      "text": "日志里有“是否继续？”这个旧提示。你现在想重试吗？",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9589059950695151,
+            "probabilities": {
+              "normal": 0.020547002465242402,
+              "question": 0.9794529975347576
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 131,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 74.37541685067117
+    },
+    {
+      "id": "question-en-quote-then-real",
+      "expected": "question",
+      "category": "quote-then-real",
+      "language": "en",
+      "split": "new",
+      "text": "The log contains the old prompt 'Continue?'. Would you like to retry now?",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9668447291987298,
+            "probabilities": {
+              "normal": 0.01657763540063507,
+              "question": 0.9834223645993648
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 131,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 56.50058411993086
+    },
+    {
+      "id": "question-zh-old-negation-new-question",
+      "expected": "question",
+      "category": "old-negation-new-question",
+      "language": "zh",
+      "split": "new",
+      "text": "旧问题不用回答。新方案是否按这个范围执行？",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.16635243554269952,
+            "probabilities": {
+              "normal": 0.41682378222865024,
+              "question": 0.5831762177713498
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 127,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 55.35912490449846
+    },
+    {
+      "id": "question-en-old-negation-new-question",
+      "expected": "question",
+      "category": "old-negation-new-question",
+      "language": "en",
+      "split": "new",
+      "text": "No need to answer the old question. Should I implement the new plan within this scope?",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.26157394016549484,
+            "probabilities": {
+              "normal": 0.3692130299172526,
+              "question": 0.6307869700827474
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 132,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 54.00000000372529
+    },
+    {
+      "id": "question-zh-debug-information",
+      "expected": "question",
+      "category": "debug-information",
+      "language": "zh",
+      "split": "new",
+      "text": "你使用的是哪个操作系统？",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9969367245151453,
+            "probabilities": {
+              "normal": 0.0015316377424273954,
+              "question": 0.9984683622575726
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 120,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 66.062250174582
+    },
+    {
+      "id": "question-en-debug-information",
+      "expected": "question",
+      "category": "debug-information",
+      "language": "en",
+      "split": "new",
+      "text": "Which operating system are you using?",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9852322574687314,
+            "probabilities": {
+              "normal": 0.007383871265634289,
+              "question": 0.9926161287343658
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 121,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 53.47295803949237
+    },
+    {
+      "id": "question-zh-short",
+      "expected": "question",
+      "category": "short",
+      "language": "zh",
+      "split": "new",
+      "text": "要继续吗？",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9877746130856107,
+            "probabilities": {
+              "normal": 0.006112693457194642,
+              "question": 0.9938873065428053
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 118,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 47.063915990293026
+    },
+    {
+      "id": "question-en-short",
+      "expected": "question",
+      "category": "short",
+      "language": "en",
+      "split": "new",
+      "text": "Continue?",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.5251084673679522,
+            "probabilities": {
+              "normal": 0.7625542336839761,
+              "question": 0.2374457663160239
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 116,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 53.64120798185468
+    },
+    {
+      "id": "question-zh-indirect-interrogative",
+      "expected": "question",
+      "category": "indirect-interrogative",
+      "language": "zh",
+      "split": "new",
+      "text": "你能告诉我错误发生在什么时候吗？",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9702439310689417,
+            "probabilities": {
+              "normal": 0.01487803446552918,
+              "question": 0.9851219655344708
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 123,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 55.6401249486953
+    },
+    {
+      "id": "question-en-indirect-interrogative",
+      "expected": "question",
+      "category": "indirect-interrogative",
+      "language": "en",
+      "split": "new",
+      "text": "Could you tell me when the error occurred?",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9577423608932646,
+            "probabilities": {
+              "normal": 0.021128819553367685,
+              "question": 0.9788711804466322
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 123,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 53.07175009511411
+    },
+    {
+      "id": "normal-zh-completed",
+      "expected": "normal",
+      "category": "completed",
+      "language": "zh",
+      "split": "new",
+      "text": "已完成修改，编译通过。相关变更已经保存。",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9669835522415898,
+            "probabilities": {
+              "normal": 0.9834917761207949,
+              "question": 0.016508223879205076
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 50.13404204510152
+    },
+    {
+      "id": "normal-en-completed",
+      "expected": "normal",
+      "category": "completed",
+      "language": "en",
+      "split": "new",
+      "text": "The implementation is complete. The build passed and all changes are saved.",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9609939584350872,
+            "probabilities": {
+              "normal": 0.9804969792175435,
+              "question": 0.01950302078245639
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 128,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 46.57108290120959
+    },
+    {
+      "id": "normal-zh-implicit-confirmation",
+      "expected": "normal",
+      "category": "implicit-confirmation",
+      "language": "zh",
+      "split": "new",
+      "text": "确认后，我会修改解析逻辑并重新评审。",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9720341503816211,
+            "probabilities": {
+              "normal": 0.9860170751908106,
+              "question": 0.013982924809189473
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 127,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 47.27058298885822
+    },
+    {
+      "id": "normal-en-implicit-confirmation",
+      "expected": "normal",
+      "category": "implicit-confirmation",
+      "language": "en",
+      "split": "new",
+      "text": "Once you confirm, I will modify the parser and review it again.",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9088566216425039,
+            "probabilities": {
+              "normal": 0.9544283108212519,
+              "question": 0.045571689178748036
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 128,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 68.7617501243949
+    },
+    {
+      "id": "normal-zh-waiting-statement",
+      "expected": "normal",
+      "category": "waiting-statement",
+      "language": "zh",
+      "split": "new",
+      "text": "工作已暂停，等待你授权后继续。",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9581923980455468,
+            "probabilities": {
+              "normal": 0.9790961990227733,
+              "question": 0.02090380097722657
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 124,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 47.77495819143951
+    },
+    {
+      "id": "normal-en-waiting-statement",
+      "expected": "normal",
+      "category": "waiting-statement",
+      "language": "en",
+      "split": "new",
+      "text": "Work is paused until you authorize me to continue.",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.6923752020674727,
+            "probabilities": {
+              "normal": 0.8461876010337364,
+              "question": 0.1538123989662636
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 124,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 61.7768750526011
+    },
+    {
+      "id": "normal-zh-imperative-confirmation",
+      "expected": "normal",
+      "category": "imperative-confirmation",
+      "language": "zh",
+      "split": "new",
+      "text": "请确认范围后我再开始。",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.8812955225307029,
+            "probabilities": {
+              "normal": 0.9406477612653514,
+              "question": 0.05935223873464856
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 122,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 47.18695813789964
+    },
+    {
+      "id": "normal-en-imperative-confirmation",
+      "expected": "normal",
+      "category": "imperative-confirmation",
+      "language": "en",
+      "split": "new",
+      "text": "Please confirm the scope before I begin.",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.6821001415966372,
+            "probabilities": {
+              "normal": 0.8410500707983186,
+              "question": 0.1589499292016814
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 122,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 55.7409580796957
+    },
+    {
+      "id": "normal-zh-imperative-choice",
+      "expected": "normal",
+      "category": "imperative-choice",
+      "language": "zh",
+      "split": "new",
+      "text": "请选择保留旧配置，或切换到新配置。",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.25310852581805,
+            "probabilities": {
+              "normal": 0.37344573709097495,
+              "question": 0.6265542629090249
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 54.13116700947285
+    },
+    {
+      "id": "normal-en-imperative-choice",
+      "expected": "normal",
+      "category": "imperative-choice",
+      "language": "en",
+      "split": "new",
+      "text": "Please choose whether to retain the old configuration or switch to the new one.",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9329773883755388,
+            "probabilities": {
+              "normal": 0.03351130581223065,
+              "question": 0.9664886941877694
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 129,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 47.60616715066135
+    },
+    {
+      "id": "normal-zh-self-answered",
+      "expected": "normal",
+      "category": "self-answered",
+      "language": "zh",
+      "split": "new",
+      "text": "为什么构建失败？因为缺少依赖。我已经补齐依赖并完成构建。",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.5510636765392575,
+            "probabilities": {
+              "normal": 0.7755318382696287,
+              "question": 0.22446816173037118
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 130,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 49.71658391878009
+    },
+    {
+      "id": "normal-en-self-answered",
+      "expected": "normal",
+      "category": "self-answered",
+      "language": "en",
+      "split": "new",
+      "text": "Why did the build fail? A dependency was missing. I have added it and completed the build.",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.6477963845720811,
+            "probabilities": {
+              "normal": 0.17610180771395945,
+              "question": 0.8238981922860406
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 134,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 50.80745811574161
+    },
+    {
+      "id": "normal-zh-quoted-example",
+      "expected": "normal",
+      "category": "quoted-example",
+      "language": "zh",
+      "split": "new",
+      "text": "以下只是文档中的引用示例，不是在向你提问：\n> 你希望使用方案 A 还是 B？",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9129224418113285,
+            "probabilities": {
+              "normal": 0.9564612209056642,
+              "question": 0.04353877909433567
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 56.656125001609325
+    },
+    {
+      "id": "normal-en-quoted-example",
+      "expected": "normal",
+      "category": "quoted-example",
+      "language": "en",
+      "split": "new",
+      "text": "This is only a quoted documentation example, not a question to you:\n> Which option do you prefer, A or B?",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9393727466520789,
+            "probabilities": {
+              "normal": 0.9696863733260395,
+              "question": 0.030313626673960564
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 140,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 53.1573339831084
+    },
+    {
+      "id": "normal-zh-code-example",
+      "expected": "normal",
+      "category": "code-example",
+      "language": "zh",
+      "split": "new",
+      "text": "示例代码如下：\n```python\nprint(\"是否继续？\")\n```",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.6852652954264566,
+            "probabilities": {
+              "normal": 0.8426326477132283,
+              "question": 0.15736735228677168
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 130,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 58.37458302266896
+    },
+    {
+      "id": "normal-en-code-example",
+      "expected": "normal",
+      "category": "code-example",
+      "language": "en",
+      "split": "new",
+      "text": "Here is the example code:\n```python\nprint(\"Continue?\")\n```",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.8322301887425066,
+            "probabilities": {
+              "normal": 0.9161150943712534,
+              "question": 0.08388490562874674
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 130,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 78.6157080437988
+    },
+    {
+      "id": "normal-zh-historical-question",
+      "expected": "normal",
+      "category": "historical-question",
+      "language": "zh",
+      "split": "new",
+      "text": "我之前问过你是否继续，你已经确认，现在任务完成。",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.5364097814988297,
+            "probabilities": {
+              "normal": 0.7682048907494149,
+              "question": 0.2317951092505852
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 130,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 54.20075007714331
+    },
+    {
+      "id": "normal-en-historical-question",
+      "expected": "normal",
+      "category": "historical-question",
+      "language": "en",
+      "split": "new",
+      "text": "I previously asked whether to continue. You already confirmed, and the task is now complete.",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.568256259595312,
+            "probabilities": {
+              "normal": 0.784128129797656,
+              "question": 0.21587187020234394
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 132,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 58.23229206725955
+    },
+    {
+      "id": "normal-zh-negative-request",
+      "expected": "normal",
+      "category": "negative-request",
+      "language": "zh",
+      "split": "new",
+      "text": "请勿回复。工作已经完成，无需确认。",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9559136995611367,
+            "probabilities": {
+              "normal": 0.9779568497805683,
+              "question": 0.022043150219431644
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 125,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 47.82704194076359
+    },
+    {
+      "id": "normal-en-negative-request",
+      "expected": "normal",
+      "category": "negative-request",
+      "language": "en",
+      "split": "new",
+      "text": "Do not reply. The work is complete and no confirmation is needed.",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9557844999435355,
+            "probabilities": {
+              "normal": 0.9778922499717677,
+              "question": 0.022107750028232218
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 128,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 54.34599984437227
+    },
+    {
+      "id": "normal-zh-question-heading",
+      "expected": "normal",
+      "category": "question-heading",
+      "language": "zh",
+      "split": "new",
+      "text": "## 如何配置？\n打开设置，填写路径，然后保存。这就是完整步骤。",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.2154718342744592,
+            "probabilities": {
+              "normal": 0.6077359171372296,
+              "question": 0.3922640828627704
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 132,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 54.926250129938126
+    },
+    {
+      "id": "normal-en-question-heading",
+      "expected": "normal",
+      "category": "question-heading",
+      "language": "en",
+      "split": "new",
+      "text": "## How do you configure it?\nOpen Settings, enter the path, and save. Those are the complete steps.",
+      "round": 1,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.17713240420848747,
+            "probabilities": {
+              "normal": 0.41143379789575624,
+              "question": 0.5885662021042437
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 46.83195799589157
+    },
+    {
+      "id": "normal-zh-future-gate",
+      "expected": "normal",
+      "category": "future-gate",
+      "language": "zh",
+      "split": "new",
+      "text": "确认后我会继续执行，直到测试通过。",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9522673165489159,
+            "probabilities": {
+              "normal": 0.976133658274458,
+              "question": 0.023866341725542004
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 125,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 44.1534579731524
+    },
+    {
+      "id": "normal-en-future-gate",
+      "expected": "normal",
+      "category": "future-gate",
+      "language": "en",
+      "split": "new",
+      "text": "After you confirm, I will continue until the tests pass.",
+      "round": 1,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9202315113006416,
+            "probabilities": {
+              "normal": 0.9601157556503208,
+              "question": 0.03988424434967923
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 45.00537505373359
+    },
+    {
+      "id": "question-zh-choice",
+      "expected": "question",
+      "category": "choice",
+      "language": "zh",
+      "split": "new",
+      "text": "你希望使用方案 A 还是 B？",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9936843772254045,
+            "probabilities": {
+              "normal": 0.003157811387297748,
+              "question": 0.9968421886127022
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 123,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 49.04299997724593
+    },
+    {
+      "id": "question-en-choice",
+      "expected": "question",
+      "category": "choice",
+      "language": "en",
+      "split": "new",
+      "text": "Which option do you prefer, A or B?",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9608059187859513,
+            "probabilities": {
+              "normal": 0.019597040607024364,
+              "question": 0.9804029593929757
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 124,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 51.15941702388227
+    },
+    {
+      "id": "question-zh-permission",
+      "expected": "question",
+      "category": "permission",
+      "language": "zh",
+      "split": "new",
+      "text": "我可以开始修改了吗？",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9079682005172407,
+            "probabilities": {
+              "normal": 0.04601589974137965,
+              "question": 0.9539841002586203
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 120,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 48.8855829462409
+    },
+    {
+      "id": "question-en-permission",
+      "expected": "question",
+      "category": "permission",
+      "language": "en",
+      "split": "new",
+      "text": "May I begin making the changes?",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8944386120631083,
+            "probabilities": {
+              "normal": 0.05278069396844589,
+              "question": 0.9472193060315541
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 121,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 44.24816695973277
+    },
+    {
+      "id": "question-zh-optional-followup",
+      "expected": "question",
+      "category": "optional-followup",
+      "language": "zh",
+      "split": "new",
+      "text": "文档已经写完。是否还需要我更新示例？",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.8064123891007684,
+            "probabilities": {
+              "normal": 0.9032061945503842,
+              "question": 0.09679380544961586
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 68.96591698750854
+    },
+    {
+      "id": "question-en-optional-followup",
+      "expected": "question",
+      "category": "optional-followup",
+      "language": "en",
+      "split": "new",
+      "text": "The documentation is done. Would you like me to update the examples too?",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.7150669550349504,
+            "probabilities": {
+              "normal": 0.14246652248252484,
+              "question": 0.8575334775174752
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 129,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 52.17287503182888
+    },
+    {
+      "id": "question-zh-missing-information",
+      "expected": "question",
+      "category": "missing-information",
+      "language": "zh",
+      "split": "new",
+      "text": "目标分支叫什么名字？",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9848458840321426,
+            "probabilities": {
+              "normal": 0.007577057983928683,
+              "question": 0.9924229420160713
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 121,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 46.74312495626509
+    },
+    {
+      "id": "question-en-missing-information",
+      "expected": "question",
+      "category": "missing-information",
+      "language": "en",
+      "split": "new",
+      "text": "What is the name of the target branch?",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9870733149220785,
+            "probabilities": {
+              "normal": 0.006463342538960774,
+              "question": 0.9935366574610393
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 123,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 51.164875039830804
+    },
+    {
+      "id": "question-zh-confirmation",
+      "expected": "question",
+      "category": "confirmation",
+      "language": "zh",
+      "split": "new",
+      "text": "这个范围是否符合你的预期？",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9602981251023638,
+            "probabilities": {
+              "normal": 0.01985093744881818,
+              "question": 0.980149062551182
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 121,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 63.455082941800356
+    },
+    {
+      "id": "question-en-confirmation",
+      "expected": "question",
+      "category": "confirmation",
+      "language": "en",
+      "split": "new",
+      "text": "Does this scope match what you expected?",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9021666082810725,
+            "probabilities": {
+              "normal": 0.04891669585946379,
+              "question": 0.9510833041405363
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 122,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 56.06908421032131
+    },
+    {
+      "id": "question-zh-no-question-mark",
+      "expected": "question",
+      "category": "no-question-mark",
+      "language": "zh",
+      "split": "new",
+      "text": "你希望保留哪一个版本",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.7120660141177222,
+            "probabilities": {
+              "normal": 0.1439669929411389,
+              "question": 0.8560330070588611
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 120,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 41.33962490595877
+    },
+    {
+      "id": "question-en-no-question-mark",
+      "expected": "question",
+      "category": "no-question-mark",
+      "language": "en",
+      "split": "new",
+      "text": "Which version would you like to keep",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.4821946163438724,
+            "probabilities": {
+              "normal": 0.2589026918280638,
+              "question": 0.7410973081719362
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 121,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 44.48520904406905
+    },
+    {
+      "id": "question-zh-question-then-statement",
+      "expected": "question",
+      "category": "question-then-statement",
+      "language": "zh",
+      "split": "new",
+      "text": "你想选哪个方案？我会等你的答复。",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.7661690136690169,
+            "probabilities": {
+              "normal": 0.11691549316549159,
+              "question": 0.8830845068345085
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 47.86137514747679
+    },
+    {
+      "id": "question-en-question-then-statement",
+      "expected": "question",
+      "category": "question-then-statement",
+      "language": "en",
+      "split": "new",
+      "text": "Which plan would you like to choose? I will wait for your answer.",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.8465536184422215,
+            "probabilities": {
+              "normal": 0.07672319077888926,
+              "question": 0.9232768092211108
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 129,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 54.62891701608896
+    },
+    {
+      "id": "question-zh-quote-then-real",
+      "expected": "question",
+      "category": "quote-then-real",
+      "language": "zh",
+      "split": "new",
+      "text": "日志里有“是否继续？”这个旧提示。你现在想重试吗？",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9589059950695151,
+            "probabilities": {
+              "normal": 0.020547002465242402,
+              "question": 0.9794529975347576
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 131,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 55.20170903764665
+    },
+    {
+      "id": "question-en-quote-then-real",
+      "expected": "question",
+      "category": "quote-then-real",
+      "language": "en",
+      "split": "new",
+      "text": "The log contains the old prompt 'Continue?'. Would you like to retry now?",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9668447291987298,
+            "probabilities": {
+              "normal": 0.01657763540063507,
+              "question": 0.9834223645993648
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 131,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 54.43812510930002
+    },
+    {
+      "id": "question-zh-old-negation-new-question",
+      "expected": "question",
+      "category": "old-negation-new-question",
+      "language": "zh",
+      "split": "new",
+      "text": "旧问题不用回答。新方案是否按这个范围执行？",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.16635243554269952,
+            "probabilities": {
+              "normal": 0.41682378222865024,
+              "question": 0.5831762177713498
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 127,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 46.74745793454349
+    },
+    {
+      "id": "question-en-old-negation-new-question",
+      "expected": "question",
+      "category": "old-negation-new-question",
+      "language": "en",
+      "split": "new",
+      "text": "No need to answer the old question. Should I implement the new plan within this scope?",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.26157394016549484,
+            "probabilities": {
+              "normal": 0.3692130299172526,
+              "question": 0.6307869700827474
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 132,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 78.22937495075166
+    },
+    {
+      "id": "question-zh-debug-information",
+      "expected": "question",
+      "category": "debug-information",
+      "language": "zh",
+      "split": "new",
+      "text": "你使用的是哪个操作系统？",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9969367245151453,
+            "probabilities": {
+              "normal": 0.0015316377424273954,
+              "question": 0.9984683622575726
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 120,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 45.093500055372715
+    },
+    {
+      "id": "question-en-debug-information",
+      "expected": "question",
+      "category": "debug-information",
+      "language": "en",
+      "split": "new",
+      "text": "Which operating system are you using?",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9852322574687314,
+            "probabilities": {
+              "normal": 0.007383871265634289,
+              "question": 0.9926161287343658
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 121,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 53.19458292797208
+    },
+    {
+      "id": "question-zh-short",
+      "expected": "question",
+      "category": "short",
+      "language": "zh",
+      "split": "new",
+      "text": "要继续吗？",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9877746130856107,
+            "probabilities": {
+              "normal": 0.006112693457194642,
+              "question": 0.9938873065428053
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 118,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 60.820459155365825
+    },
+    {
+      "id": "question-en-short",
+      "expected": "question",
+      "category": "short",
+      "language": "en",
+      "split": "new",
+      "text": "Continue?",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.5251084673679522,
+            "probabilities": {
+              "normal": 0.7625542336839761,
+              "question": 0.2374457663160239
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 116,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 74.33112501166761
+    },
+    {
+      "id": "question-zh-indirect-interrogative",
+      "expected": "question",
+      "category": "indirect-interrogative",
+      "language": "zh",
+      "split": "new",
+      "text": "你能告诉我错误发生在什么时候吗？",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9702439310689417,
+            "probabilities": {
+              "normal": 0.01487803446552918,
+              "question": 0.9851219655344708
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 123,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 60.512415831908584
+    },
+    {
+      "id": "question-en-indirect-interrogative",
+      "expected": "question",
+      "category": "indirect-interrogative",
+      "language": "en",
+      "split": "new",
+      "text": "Could you tell me when the error occurred?",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9577423608932646,
+            "probabilities": {
+              "normal": 0.021128819553367685,
+              "question": 0.9788711804466322
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 123,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 43.460833141580224
+    },
+    {
+      "id": "normal-zh-completed",
+      "expected": "normal",
+      "category": "completed",
+      "language": "zh",
+      "split": "new",
+      "text": "已完成修改，编译通过。相关变更已经保存。",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9669835522415898,
+            "probabilities": {
+              "normal": 0.9834917761207949,
+              "question": 0.016508223879205076
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 46.53933295048773
+    },
+    {
+      "id": "normal-en-completed",
+      "expected": "normal",
+      "category": "completed",
+      "language": "en",
+      "split": "new",
+      "text": "The implementation is complete. The build passed and all changes are saved.",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9609939584350872,
+            "probabilities": {
+              "normal": 0.9804969792175435,
+              "question": 0.01950302078245639
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 128,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 45.92566704377532
+    },
+    {
+      "id": "normal-zh-implicit-confirmation",
+      "expected": "normal",
+      "category": "implicit-confirmation",
+      "language": "zh",
+      "split": "new",
+      "text": "确认后，我会修改解析逻辑并重新评审。",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9720341503816211,
+            "probabilities": {
+              "normal": 0.9860170751908106,
+              "question": 0.013982924809189473
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 127,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 50.9771250654012
+    },
+    {
+      "id": "normal-en-implicit-confirmation",
+      "expected": "normal",
+      "category": "implicit-confirmation",
+      "language": "en",
+      "split": "new",
+      "text": "Once you confirm, I will modify the parser and review it again.",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9088566216425039,
+            "probabilities": {
+              "normal": 0.9544283108212519,
+              "question": 0.045571689178748036
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 128,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 45.625749975442886
+    },
+    {
+      "id": "normal-zh-waiting-statement",
+      "expected": "normal",
+      "category": "waiting-statement",
+      "language": "zh",
+      "split": "new",
+      "text": "工作已暂停，等待你授权后继续。",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9581923980455468,
+            "probabilities": {
+              "normal": 0.9790961990227733,
+              "question": 0.02090380097722657
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 124,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 51.61920888349414
+    },
+    {
+      "id": "normal-en-waiting-statement",
+      "expected": "normal",
+      "category": "waiting-statement",
+      "language": "en",
+      "split": "new",
+      "text": "Work is paused until you authorize me to continue.",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.6923752020674727,
+            "probabilities": {
+              "normal": 0.8461876010337364,
+              "question": 0.1538123989662636
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 124,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 45.79762485809624
+    },
+    {
+      "id": "normal-zh-imperative-confirmation",
+      "expected": "normal",
+      "category": "imperative-confirmation",
+      "language": "zh",
+      "split": "new",
+      "text": "请确认范围后我再开始。",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.8812955225307029,
+            "probabilities": {
+              "normal": 0.9406477612653514,
+              "question": 0.05935223873464856
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 122,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 71.4672920294106
+    },
+    {
+      "id": "normal-en-imperative-confirmation",
+      "expected": "normal",
+      "category": "imperative-confirmation",
+      "language": "en",
+      "split": "new",
+      "text": "Please confirm the scope before I begin.",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.6821001415966372,
+            "probabilities": {
+              "normal": 0.8410500707983186,
+              "question": 0.1589499292016814
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 122,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 46.08925012871623
+    },
+    {
+      "id": "normal-zh-imperative-choice",
+      "expected": "normal",
+      "category": "imperative-choice",
+      "language": "zh",
+      "split": "new",
+      "text": "请选择保留旧配置，或切换到新配置。",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.25310852581805,
+            "probabilities": {
+              "normal": 0.37344573709097495,
+              "question": 0.6265542629090249
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 55.82758388482034
+    },
+    {
+      "id": "normal-en-imperative-choice",
+      "expected": "normal",
+      "category": "imperative-choice",
+      "language": "en",
+      "split": "new",
+      "text": "Please choose whether to retain the old configuration or switch to the new one.",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.9329773883755388,
+            "probabilities": {
+              "normal": 0.03351130581223065,
+              "question": 0.9664886941877694
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 129,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 58.82391706109047
+    },
+    {
+      "id": "normal-zh-self-answered",
+      "expected": "normal",
+      "category": "self-answered",
+      "language": "zh",
+      "split": "new",
+      "text": "为什么构建失败？因为缺少依赖。我已经补齐依赖并完成构建。",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.5510636765392575,
+            "probabilities": {
+              "normal": 0.7755318382696287,
+              "question": 0.22446816173037118
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 130,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 58.34616697393358
+    },
+    {
+      "id": "normal-en-self-answered",
+      "expected": "normal",
+      "category": "self-answered",
+      "language": "en",
+      "split": "new",
+      "text": "Why did the build fail? A dependency was missing. I have added it and completed the build.",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.6477963845720811,
+            "probabilities": {
+              "normal": 0.17610180771395945,
+              "question": 0.8238981922860406
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 134,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 51.86579190194607
+    },
+    {
+      "id": "normal-zh-quoted-example",
+      "expected": "normal",
+      "category": "quoted-example",
+      "language": "zh",
+      "split": "new",
+      "text": "以下只是文档中的引用示例，不是在向你提问：\n> 你希望使用方案 A 还是 B？",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9129224418113285,
+            "probabilities": {
+              "normal": 0.9564612209056642,
+              "question": 0.04353877909433567
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 139,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 47.33879189006984
+    },
+    {
+      "id": "normal-en-quoted-example",
+      "expected": "normal",
+      "category": "quoted-example",
+      "language": "en",
+      "split": "new",
+      "text": "This is only a quoted documentation example, not a question to you:\n> Which option do you prefer, A or B?",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9393727466520789,
+            "probabilities": {
+              "normal": 0.9696863733260395,
+              "question": 0.030313626673960564
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 140,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 49.063583835959435
+    },
+    {
+      "id": "normal-zh-code-example",
+      "expected": "normal",
+      "category": "code-example",
+      "language": "zh",
+      "split": "new",
+      "text": "示例代码如下：\n```python\nprint(\"是否继续？\")\n```",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.6852652954264566,
+            "probabilities": {
+              "normal": 0.8426326477132283,
+              "question": 0.15736735228677168
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 130,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 50.126958172768354
+    },
+    {
+      "id": "normal-en-code-example",
+      "expected": "normal",
+      "category": "code-example",
+      "language": "en",
+      "split": "new",
+      "text": "Here is the example code:\n```python\nprint(\"Continue?\")\n```",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.8322301887425066,
+            "probabilities": {
+              "normal": 0.9161150943712534,
+              "question": 0.08388490562874674
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 130,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 53.17454203031957
+    },
+    {
+      "id": "normal-zh-historical-question",
+      "expected": "normal",
+      "category": "historical-question",
+      "language": "zh",
+      "split": "new",
+      "text": "我之前问过你是否继续，你已经确认，现在任务完成。",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.5364097814988297,
+            "probabilities": {
+              "normal": 0.7682048907494149,
+              "question": 0.2317951092505852
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 130,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 52.39187506958842
+    },
+    {
+      "id": "normal-en-historical-question",
+      "expected": "normal",
+      "category": "historical-question",
+      "language": "en",
+      "split": "new",
+      "text": "I previously asked whether to continue. You already confirmed, and the task is now complete.",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.568256259595312,
+            "probabilities": {
+              "normal": 0.784128129797656,
+              "question": 0.21587187020234394
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 132,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 54.5196661259979
+    },
+    {
+      "id": "normal-zh-negative-request",
+      "expected": "normal",
+      "category": "negative-request",
+      "language": "zh",
+      "split": "new",
+      "text": "请勿回复。工作已经完成，无需确认。",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9559136995611367,
+            "probabilities": {
+              "normal": 0.9779568497805683,
+              "question": 0.022043150219431644
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 125,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 46.162249986082315
+    },
+    {
+      "id": "normal-en-negative-request",
+      "expected": "normal",
+      "category": "negative-request",
+      "language": "en",
+      "split": "new",
+      "text": "Do not reply. The work is complete and no confirmation is needed.",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9557844999435355,
+            "probabilities": {
+              "normal": 0.9778922499717677,
+              "question": 0.022107750028232218
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 128,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 66.07037503272295
+    },
+    {
+      "id": "normal-zh-question-heading",
+      "expected": "normal",
+      "category": "question-heading",
+      "language": "zh",
+      "split": "new",
+      "text": "## 如何配置？\n打开设置，填写路径，然后保存。这就是完整步骤。",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.2154718342744592,
+            "probabilities": {
+              "normal": 0.6077359171372296,
+              "question": 0.3922640828627704
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 132,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 51.813125144690275
+    },
+    {
+      "id": "normal-en-question-heading",
+      "expected": "normal",
+      "category": "question-heading",
+      "language": "en",
+      "split": "new",
+      "text": "## How do you configure it?\nOpen Settings, enter the path, and save. Those are the complete steps.",
+      "round": 2,
+      "predicted": "question",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "question",
+            "confidence": 0.17713240420848747,
+            "probabilities": {
+              "normal": 0.41143379789575624,
+              "question": 0.5885662021042437
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 138,
+          "output_tokens": 0
+        }
+      },
+      "correct": false,
+      "elapsed_ms": 58.767582988366485
+    },
+    {
+      "id": "normal-zh-future-gate",
+      "expected": "normal",
+      "category": "future-gate",
+      "language": "zh",
+      "split": "new",
+      "text": "确认后我会继续执行，直到测试通过。",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9522673165489159,
+            "probabilities": {
+              "normal": 0.976133658274458,
+              "question": 0.023866341725542004
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 125,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 62.32670811004937
+    },
+    {
+      "id": "normal-en-future-gate",
+      "expected": "normal",
+      "category": "future-gate",
+      "language": "en",
+      "split": "new",
+      "text": "After you confirm, I will continue until the tests pass.",
+      "round": 2,
+      "predicted": "normal",
+      "raw": {
+        "model": "vllm-sr/Vela-2.0-0.3B",
+        "answers": {
+          "reply": {
+            "type": "choice",
+            "choice": "normal",
+            "confidence": 0.9202315113006416,
+            "probabilities": {
+              "normal": 0.9601157556503208,
+              "question": 0.03988424434967923
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 126,
+          "output_tokens": 0
+        }
+      },
+      "correct": true,
+      "elapsed_ms": 59.77520905435085
+    }
+  ],
+  "finished_at": "2026-10-10T19:17:27+0800"
+}

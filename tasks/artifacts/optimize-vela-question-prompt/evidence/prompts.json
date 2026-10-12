@@ -1,0 +1,112 @@
+[
+  {
+    "id": "baseline",
+    "kind": "choice",
+    "instructions": "Does this assistant message actually ask the user a question? Count direct questions even without a question mark or when work is already done. Ignore quoted/code questions and questions the assistant answers itself. Statements about waiting for confirmation and imperative requests are NOT questions. Judge the message, not terminal status or whether a reply is needed.",
+    "criteria": {
+      "normal": "No actual question directed at the user. Includes statements, imperative requests, implicit confirmation gates, quoted/code questions and self-answered questions.",
+      "question": "The assistant actually asks the user a question seeking an answer, choice or confirmation. A question mark and a blocked task are not required."
+    }
+  },
+  {
+    "id": "minimal",
+    "kind": "choice",
+    "instructions": "Is the assistant asking the user a question in this message?",
+    "criteria": {
+      "normal": "No question is being asked of the user.",
+      "question": "The assistant is asking the user a question."
+    }
+  },
+  {
+    "id": "speech-act",
+    "kind": "choice",
+    "instructions": "Classify the assistant message as a question addressed to the user or a non-question. Requests and waiting statements are not questions. Ignore quoted, code, rhetorical and self-answered questions.",
+    "criteria": {
+      "normal": "Statement, command, request, quotation, example, or explanation; not an actual question to the user.",
+      "question": "An actual interrogative addressed to the user, asking for an answer. Includes optional follow-up questions."
+    }
+  },
+  {
+    "id": "grammar",
+    "kind": "choice",
+    "instructions": "Does the assistant use an interrogative to ask the user something? Interrogatives may lack punctuation. A command such as \"Please confirm\" and a conditional such as \"Once you confirm\" are not interrogatives. Ignore questions inside examples or answered by the assistant.",
+    "criteria": {
+      "normal": "No genuine user-directed interrogative.",
+      "question": "Contains a genuine user-directed interrogative."
+    }
+  },
+  {
+    "id": "chinese",
+    "kind": "choice",
+    "instructions": "判断这条助手回复是否真的在向用户提问。疑问表达即使没有问号也算，完成工作后的追问也算。仅陈述等待确认、命令或请求不算提问。排除引用、代码示例、自问自答和说明标题。判断整条消息，不是只看末句。",
+    "criteria": {
+      "normal": "没有向用户提出实际问题；包括陈述、祈使请求、等待确认、引用和自问自答。",
+      "question": "助手以疑问表达向用户提问，希望用户回答这个问题。"
+    }
+  },
+  {
+    "id": "bilingual",
+    "kind": "choice",
+    "instructions": "Is there an actual question from the assistant to the user? 是否真的在向用户提问？Do not count commands, waiting-for-approval statements, quotations or self-answered questions. 命令、等待确认、引用和自问自答不算。",
+    "criteria": {
+      "normal": "No actual question to the user / 没有向用户提问",
+      "question": "Actual question to the user / 确实向用户提问"
+    }
+  },
+  {
+    "id": "examples",
+    "kind": "choice",
+    "instructions": "Decide whether the assistant actually asks the user a question. Ignore questions in quotations, code, headings answered below, and self-answered questions. Examples: \"May I begin making the changes?\" -> question; \"确认后，我会修改解析逻辑并重新评审。\" -> normal; \"Please confirm the scope before I begin.\" -> normal; \"Why did the build fail? A dependency was missing.\" -> normal; \"Which version would you like to keep\" -> question; \"The documentation is done. Would you like me to update the examples too?\" -> question.",
+    "criteria": {
+      "normal": "No question is being asked of the user.",
+      "question": "The assistant is asking the user a question."
+    }
+  },
+  {
+    "id": "recipient",
+    "kind": "choice",
+    "instructions": "Read the message as the user receiving it. Is the assistant directly asking YOU a question, rather than describing, quoting or answering a question? Classify statements, instructions and requests without an interrogative as normal.",
+    "criteria": {
+      "normal": "No interrogative question addressed to me.",
+      "question": "An interrogative question addressed to me."
+    }
+  },
+  {
+    "id": "noul",
+    "kind": "noul",
+    "instructions": "Does this assistant message contain a genuine question directed to the user? Exclude commands, implicit approval gates, quotes, code, rhetorical and self-answered questions.",
+    "criteria": {
+      "false": "No actual question to the user.",
+      "true": "At least one actual question to the user."
+    }
+  },
+  {
+    "id": "typed-answer",
+    "kind": "choice",
+    "instructions": "Does this assistant message actually ask the user a question? Count direct questions even without a question mark or when work is already done. Ignore quoted/code questions and questions the assistant answers itself. Statements about waiting for confirmation and imperative requests are NOT questions. Judge the message, not terminal status or whether a reply is needed.",
+    "criteria": {
+      "normal": "No actual question directed at the user. Includes statements, imperative requests, implicit confirmation gates, quoted/code questions and self-answered questions.",
+      "question": "The assistant actually asks the user a question seeking an answer, choice or confirmation. A question mark and a blocked task are not required."
+    },
+    "typed_state": true
+  },
+  {
+    "id": "typed-examples",
+    "kind": "choice",
+    "instructions": "Determine whether the assistant asks the user an actual question. Examples: \"May I begin making the changes?\" -> question; \"确认后，我会修改解析逻辑并重新评审。\" -> normal; \"Please confirm the scope before I begin.\" -> normal; \"Why did the build fail? A dependency was missing.\" -> normal; \"Which version would you like to keep\" -> question; \"The documentation is done. Would you like me to update the examples too?\" -> question.",
+    "criteria": {
+      "normal": "No question is being asked of the user.",
+      "question": "The assistant is asking the user a question."
+    },
+    "typed_state": true
+  },
+  {
+    "id": "positive-first",
+    "kind": "choice",
+    "instructions": "Does the assistant ask a question of the user? A literal question mark alone is insufficient. Statements awaiting permission and imperative requests are not questions. Exclude quotes, code and self-answered questions.",
+    "criteria": {
+      "question": "The assistant is asking the user a question.",
+      "normal": "No question is being asked of the user."
+    }
+  }
+]
