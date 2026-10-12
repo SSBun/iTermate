@@ -1,0 +1,407 @@
+TAP version 13
+# Subtest: 真实本地 Laya：普通回答与待回复问题
+    # Subtest: normal-zh-completed
+    not ok 1 - normal-zh-completed
+      ---
+      duration_ms: 101.416958
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 normal，实际 unknown
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:1442:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # {"id":"normal-zh-completed","expected":"normal","text":"已完成修改，编译通过。相关变更已经保存。","outcome":"model_result","choice":"unknown","stateProbability":0.3343,"needsReplyProbability":0.0069,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":78.071,"serverElapsedMs":71.075,"attempts":1,"withinPiDeadline":true}
+    # Subtest: normal-en-completed
+    not ok 2 - normal-en-completed
+      ---
+      duration_ms: 37.770375
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 normal，实际 unknown
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"normal-en-completed","expected":"normal","text":"The implementation is complete. The build passed and all changes are saved.","outcome":"model_result","choice":"unknown","stateProbability":0.4195,"needsReplyProbability":0.0021,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":37.367,"serverElapsedMs":29.799,"attempts":1,"withinPiDeadline":true}
+    # Subtest: normal-zh-no-reply
+    not ok 3 - normal-zh-no-reply
+      ---
+      duration_ms: 39.960083
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 normal，实际 running
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"normal-zh-no-reply","expected":"normal","text":"请勿回复。工作已经完成，无需确认。","outcome":"model_result","choice":"running","stateProbability":0.3447,"needsReplyProbability":0.5436,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":38.918,"serverElapsedMs":29.703,"attempts":1,"withinPiDeadline":true}
+    # Subtest: normal-en-no-reply
+    not ok 4 - normal-en-no-reply
+      ---
+      duration_ms: 35.9945
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 normal，实际 running
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"normal-en-no-reply","expected":"normal","text":"The work is complete. No reply or confirmation is needed.","outcome":"model_result","choice":"running","stateProbability":0.3803,"needsReplyProbability":0.8206,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":35.519,"serverElapsedMs":30.205,"attempts":1,"withinPiDeadline":true}
+    # Subtest: normal-zh-quoted-example
+    not ok 5 - normal-zh-quoted-example
+      ---
+      duration_ms: 43.375833
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 normal，实际 unknown
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"normal-zh-quoted-example","expected":"normal","text":"文档已更新。以下只是引用示例，不是在向你提问：\\n> 你希望使用方案 A 还是 B？","outcome":"model_result","choice":"unknown","stateProbability":0.8885,"needsReplyProbability":0.18,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":43.159,"serverElapsedMs":37.024,"attempts":1,"withinPiDeadline":true}
+    # Subtest: normal-en-code-example
+    not ok 6 - normal-en-code-example
+      ---
+      duration_ms: 36.993417
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 normal，实际 awaitingInput
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"normal-en-code-example","expected":"normal","text":"The documentation is complete. This is example text, not a request:\\n```text\\nPlease confirm before I proceed.\\n```","outcome":"model_result","choice":"awaitingInput","stateProbability":0.5555,"needsReplyProbability":0.9551,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":36.834,"serverElapsedMs":31.828,"attempts":1,"withinPiDeadline":true}
+    # Subtest: normal-zh-self-answered
+    not ok 7 - normal-zh-self-answered
+      ---
+      duration_ms: 31.96425
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 normal，实际 unknown
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"normal-zh-self-answered","expected":"normal","text":"为什么构建失败？因为缺少依赖。我已经补齐依赖并完成构建。","outcome":"model_result","choice":"unknown","stateProbability":0.4669,"needsReplyProbability":0.7718,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":31.792,"serverElapsedMs":27.976,"attempts":1,"withinPiDeadline":true}
+    # Subtest: normal-zh-completed-confirmation
+    not ok 8 - normal-zh-completed-confirmation
+      ---
+      duration_ms: 128.521375
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 normal，实际 awaitingInput
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"normal-zh-completed-confirmation","expected":"normal","text":"确认后我提交成功，测试通过。","outcome":"model_result","choice":"awaitingInput","stateProbability":0.382,"needsReplyProbability":0.2411,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":128.219,"serverElapsedMs":124.53,"attempts":1,"withinPiDeadline":true}
+    # Subtest: question-zh-choice
+    not ok 9 - question-zh-choice
+      ---
+      duration_ms: 30.859083
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 question，实际 unknown
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"question-zh-choice","expected":"question","text":"你希望使用方案 A 还是 B？","outcome":"model_result","choice":"unknown","stateProbability":0.6571,"needsReplyProbability":0.6824,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":30.388,"serverElapsedMs":28.303,"attempts":1,"withinPiDeadline":true}
+    # Subtest: question-en-choice
+    not ok 10 - question-en-choice
+      ---
+      duration_ms: 30.923125
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 question，实际 unknown
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"question-en-choice","expected":"question","text":"Which option do you prefer, A or B?","outcome":"model_result","choice":"unknown","stateProbability":0.4387,"needsReplyProbability":0.0834,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":30.081,"serverElapsedMs":26.75,"attempts":1,"withinPiDeadline":true}
+    # Subtest: question-en-proceed
+    not ok 11 - question-en-proceed
+      ---
+      duration_ms: 32.821791
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 question，实际 unknown
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"question-en-proceed","expected":"question","text":"May I proceed with these changes?","outcome":"model_result","choice":"unknown","stateProbability":0.6189,"needsReplyProbability":0.0341,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":32.486,"serverElapsedMs":27.371,"attempts":1,"withinPiDeadline":true}
+    # Subtest: question-en-confirm
+    not ok 12 - question-en-confirm
+      ---
+      duration_ms: 30.757125
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 question，实际 unknown
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"question-en-confirm","expected":"question","text":"Please confirm the scope before I begin.","outcome":"model_result","choice":"unknown","stateProbability":0.6656,"needsReplyProbability":0.5922,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":30.491,"serverElapsedMs":26.732,"attempts":1,"withinPiDeadline":true}
+    # Subtest: question-zh-implicit-write
+    not ok 13 - question-zh-implicit-write
+      ---
+      duration_ms: 32.5005
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 question，实际 unknown
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"question-zh-implicit-write","expected":"question","text":"确认后我写入并校验。","outcome":"model_result","choice":"unknown","stateProbability":0.5995,"needsReplyProbability":0.0751,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":32.301,"serverElapsedMs":28.618,"attempts":1,"withinPiDeadline":true}
+    # Subtest: question-zh-screenshot
+    not ok 14 - question-zh-screenshot
+      ---
+      duration_ms: 30.388542
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 question，实际 unknown
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"question-zh-screenshot","expected":"question","text":"确认后，我会修改解析逻辑并重新评审。","outcome":"model_result","choice":"unknown","stateProbability":0.6252,"needsReplyProbability":0.1516,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":30.234,"serverElapsedMs":27.725,"attempts":1,"withinPiDeadline":true}
+    # Subtest: question-zh-future-condition
+    not ok 15 - question-zh-future-condition
+      ---
+      duration_ms: 32.035959
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类错误：预期 question，实际 idle
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:151:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"question-zh-future-condition","expected":"question","text":"确认后我会继续执行，直到测试通过。","outcome":"model_result","choice":"idle","stateProbability":0.336,"needsReplyProbability":0.0526,"adoptedDecision":null,"classificationPassed":false,"adoptionPassed":false,"elapsedMs":31.853,"serverElapsedMs":29.799,"attempts":1,"withinPiDeadline":true}
+    # Subtest: question-zh-old-negation-new-question
+    not ok 16 - question-zh-old-negation-new-question
+      ---
+      duration_ms: 33.811667
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7258'
+      failureType: 'testCodeFailure'
+      error: |-
+        分类未达到 iTermate 采用门槛：state=0.3488, needs_reply=0.5029
+        
+        false !== true
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:152:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # {"id":"question-zh-old-negation-new-question","expected":"question","text":"请勿回复旧问题。按这个范围实现，可以吗？","outcome":"model_result","choice":"awaitingInput","stateProbability":0.3488,"needsReplyProbability":0.5029,"adoptedDecision":null,"classificationPassed":true,"adoptionPassed":false,"elapsedMs":33.649,"serverElapsedMs":31.092,"attempts":1,"withinPiDeadline":true}
+    1..16
+not ok 1 - 真实本地 Laya：普通回答与待回复问题
+  ---
+  duration_ms: 711.695084
+  type: 'suite'
+  location: '/Users/caishilin/Desktop/personal/iTermate/integrations/laya/answer-types.test.ts:2:7069'
+  failureType: 'subtestsFailed'
+  error: '16 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 16
+# suites 1
+# pass 0
+# fail 16
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 903.503791

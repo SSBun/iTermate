@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: either positive signal preserves a pending question
+ok 1 - either positive signal preserves a pending question
+  ---
+  duration_ms: 1.553125
+  type: 'test'
+  ...
+# Subtest: uncertain or malformed model output falls back instead of becoming false
+ok 2 - uncertain or malformed model output falls back instead of becoming false
+  ---
+  duration_ms: 1.595917
+  type: 'test'
+  ...
+# Subtest: recognizes explicit confirmation gates
+ok 3 - recognizes explicit confirmation gates
+  ---
+  duration_ms: 1.077584
+  type: 'test'
+  ...
+# Subtest: recognizes short action-scoped approval questions without a separate waiting clause
+ok 4 - recognizes short action-scoped approval questions without a separate waiting clause
+  ---
+  duration_ms: 0.521667
+  type: 'test'
+  ...
+# Subtest: recognizes approval, selection, and clarification gates
+ok 5 - recognizes approval, selection, and clarification gates
+  ---
+  duration_ms: 0.26025
+  type: 'test'
+  ...
+# Subtest: recognizes direct closing questions and implicit confirmation requests
+ok 6 - recognizes direct closing questions and implicit confirmation requests
+  ---
+  duration_ms: 0.259042
+  type: 'test'
+  ...
+# Subtest: does not ask for a reply when the request is negated or already fulfilled
+ok 7 - does not ask for a reply when the request is negated or already fulfilled
+  ---
+  duration_ms: 0.765583
+  type: 'test'
+  ...
+# Subtest: all confirmation actions share the same completed-action exclusion
+ok 8 - all confirmation actions share the same completed-action exclusion
+  ---
+  duration_ms: 0.149417
+  type: 'test'
+  ...
+# Subtest: completed results are not confused with future conditions or noun modifiers
+ok 9 - completed results are not confused with future conditions or noun modifiers
+  ---
+  duration_ms: 0.451083
+  type: 'test'
+  ...
+# Subtest: future modals and terminal conditions preserve confirmation requests
+ok 10 - future modals and terminal conditions preserve confirmation requests
+  ---
+  duration_ms: 0.7395
+  type: 'test'
+  ...
+# Subtest: rejects negated waiting in both languages
+ok 11 - rejects negated waiting in both languages
+  ---
+  duration_ms: 0.233209
+  type: 'test'
+  ...
+# Subtest: does not treat examples, code, or optional offers as blocking questions
+ok 12 - does not treat examples, code, or optional offers as blocking questions
+  ---
+  duration_ms: 0.222333
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 290.069041

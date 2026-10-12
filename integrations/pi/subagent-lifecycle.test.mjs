@@ -12,7 +12,12 @@ const source = stripTypeScriptTypes(await readFile(
   new URL("./iTermate-integration.ts", import.meta.url), "utf8",
 ));
 
-async function harness({ count = 2, terminal = "iTerm.app", mode = "tui" } = {}) {
+async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model } = {}) {
+  let modelEnabled = model !== undefined;
+  let modelProvider = "laya";
+  let modelEpoch = 0;
+  const configuration = () => JSON.stringify({ provider: modelProvider, revision: `epoch-${modelEpoch}`, analysisEnabled: modelEnabled, serviceEnabled: true });
+  const modelRequests = [];
   let now = 10000;
   let timerID = 0;
   let idle = true;
@@ -51,12 +56,45 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui" } = {})
     process: { pid: 123, env: { TERM_PROGRAM: terminal, ITERM_SESSION_ID: "w0:session-1" } },
     performance: { now: () => now }, setTimeout, clearTimeout, Buffer, URL,
   });
-  const unavailable = async () => { throw new Error("Optional model is disabled"); };
+  const unavailable = () => { throw new Error("Archive I/O is unavailable in lifecycle tests"); };
   const mocks = {
     "node:crypto": { randomUUID },
-    "node:fs/promises": { readFile: unavailable, access: unavailable },
-    "node:fs": { existsSync: () => false },
-    "node:http": { request: () => { throw new Error("Unexpected network request"); } },
+    "node:fs/promises": {
+      readFile: async (path) => {
+        if (path.endsWith("configuration.json")) return configuration();
+        assert.ok(modelEnabled);
+        if (path.endsWith("analysis-enabled")) return `epoch-${modelEpoch}`;
+        if (path.endsWith("endpoint.json")) return JSON.stringify({ url: "http://127.0.0.1:1234", provider: modelProvider, instance: `worker-${modelEpoch}` });
+        assert.ok(path.endsWith("api-token"));
+        return "isolated-token";
+      },
+    },
+    "node:fs": {
+      readFileSync: (path) => path.endsWith("configuration.json") ? configuration() : unavailable(),
+      existsSync: () => modelEnabled,
+    },
+    "node:http": { request: (options, receive) => {
+      assert.equal(options.path, "/v1/question");
+      assert.ok(modelEnabled, "Unexpected model request");
+      const provider = modelProvider;
+      const instance = `worker-${modelEpoch}`;
+      const request = new EventEmitter();
+      let destroyed = false;
+      request.destroy = () => { destroyed = true; };
+      request.end = (body) => {
+        modelRequests.push(JSON.parse(body));
+        queueMicrotask(() => {
+          if (destroyed) return;
+          const response = new EventEmitter();
+          response.statusCode = model.statusCode ?? 200;
+          receive(response);
+          model.onResponse?.();
+          response.emit("data", JSON.stringify({ answers: model.answers, provider, instance }));
+          response.emit("end");
+        });
+      };
+      return request;
+    } },
     "node:child_process": { execFileSync: () => "ttys001" },
     "node:net": {
       connect: (path, connected) => {
@@ -116,7 +154,9 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui" } = {})
     await flush();
   }
   return {
-    reports, queries, responses, advance, emit,
+    reports, queries, responses, modelRequests, advance, emit,
+    setModelEnabled: (enabled) => { modelEnabled = enabled; modelEpoch += 1; },
+    setProvider: (provider) => { modelProvider = provider; modelEpoch += 1; },
     elapseWithoutCallbacks: (milliseconds) => { now += milliseconds; },
     setResponse: (response) => { defaultResponse = response; },
     get now() { return now; },
@@ -210,6 +250,121 @@ test("explicit questions retain awaitingInput alongside child activity", async (
   await h.emit("session_shutdown");
 });
 
+for (const terminal of ["iTerm.app", "ghostty"]) {
+  test(`${terminal}: a positive participation decision retains implicit confirmation`, async () => {
+    const h = await harness({ count: 0, terminal, model: { answers: {
+      question: { type: "choice", choice: "question", probabilities: { normal: 0.01, question: 0.99 } },
+    } } });
+    await h.emit("session_start");
+    await h.advance(0);
+    await h.emit("agent_start");
+    await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop",
+      content: [{ type: "text", text: "确认后我写入并校验。" }] }] });
+    await h.emit("agent_settled");
+    assert.equal(h.modelRequests.length, 1);
+    assert.equal(h.reports.at(-1).status, "awaitingInput");
+    await h.advance(10000);
+    assert.equal(h.reports.at(-1).status, "awaitingInput");
+    assert.equal(h.reports.at(-1).heartbeat, true);
+    await h.emit("agent_start");
+    assert.equal(h.reports.at(-1).status, "running");
+    await h.emit("session_shutdown");
+  });
+
+  test(`${terminal}: model-only question remains pending when analysis is disabled`, async () => {
+    const h = await harness({ count: 0, terminal, model: { answers: {
+      question: { type: "choice", choice: "question", probabilities: { normal: 0.01, question: 0.99 } },
+    } } });
+    await h.emit("session_start");
+    await h.advance(0);
+    await h.emit("agent_start");
+    await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop",
+      content: [{ type: "text", text: "Continue?" }] }] });
+    await h.emit("agent_settled");
+    assert.equal(h.modelRequests.length, 1);
+    assert.equal(h.reports.at(-1).status, "awaitingInput");
+    h.setModelEnabled(false);
+    await h.advance(10000);
+    assert.equal(h.reports.at(-1).status, "awaitingInput");
+    assert.equal(h.reports.at(-1).heartbeat, true);
+    assert.equal(h.modelRequests.length, 1);
+    await h.emit("agent_start");
+    await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop",
+      content: [{ type: "text", text: "Work complete." }] }] });
+    await h.emit("agent_settled");
+    assert.equal(h.reports.at(-1).status, "finished");
+    await h.emit("session_shutdown");
+  });
+}
+
+test("negated requests and completed confirmation narratives do not retain a question", async () => {
+  const h = await harness({ count: 0, model: { answers: {
+    question: { type: "choice", choice: "normal", probabilities: { normal: 0.99, question: 0.01 } },
+  } } });
+  await h.emit("session_start");
+  await h.advance(0);
+  const completedReplies = [
+    "请勿回复。", "确认后我已经提交。", "确认后我保存好了文件。",
+    "确认后我开始了测试。", "确认后我提交成功，测试通过。",
+  ];
+  for (const text of completedReplies) {
+    await h.emit("agent_start");
+    await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop",
+      content: [{ type: "text", text }] }] });
+    await h.emit("agent_settled");
+    assert.equal(h.reports.at(-1).status, "finished", text);
+    await h.advance(10000);
+    assert.equal(h.reports.at(-1).status, "finished", text);
+  }
+  assert.equal(h.modelRequests.length, completedReplies.length);
+  assert.equal(h.reports.some((report) => report.status === "awaitingInput"), false);
+  await h.emit("session_shutdown");
+});
+
+test("unavailable selected model keeps lifecycle completion without heuristic fallback", async () => {
+  const h = await harness({ count: 0, model: { statusCode: 429 } });
+  await h.emit("session_start");
+  await h.advance(0);
+  await h.emit("agent_start");
+  await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop",
+    content: [{ type: "text", text: "Which option do you prefer?" }] }] });
+  await h.emit("agent_settled");
+  assert.equal(h.modelRequests.length, 1);
+  assert.equal(h.reports.at(-1).status, "finished");
+  await h.emit("session_shutdown");
+});
+
+test("a negated old request cannot cancel the new closing question", async () => {
+  const h = await harness({ count: 0 });
+  await h.emit("session_start");
+  await h.advance(0);
+  await h.emit("agent_start");
+  await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop",
+    content: [{ type: "text", text: "请勿回复旧问题。按这个范围实现，可以吗？" }] }] });
+  await h.emit("agent_settled");
+  assert.equal(h.reports.at(-1).status, "awaitingInput");
+  await h.advance(10000);
+  assert.equal(h.reports.at(-1).status, "awaitingInput");
+  assert.equal(h.reports.at(-1).heartbeat, true);
+  await h.emit("session_shutdown");
+});
+
+test("a future confirmation remains leased with model analysis disabled", async () => {
+  const h = await harness({ count: 0 });
+  await h.emit("session_start");
+  await h.advance(0);
+  await h.emit("agent_start");
+  await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop",
+    content: [{ type: "text", text: "确认后我会继续执行，直到测试通过。" }] }] });
+  await h.emit("agent_settled");
+  assert.equal(h.reports.at(-1).status, "awaitingInput");
+  await h.advance(10000);
+  assert.equal(h.reports.at(-1).status, "awaitingInput");
+  assert.equal(h.reports.at(-1).heartbeat, true);
+  assert.equal(h.modelRequests.length, 0);
+  await h.emit("session_shutdown");
+});
+
 test("Ghostty uses TTY and ignores inherited iTerm session identity", async () => {
   const h = await settledHarness({ terminal: "ghostty" });
   const report = h.reports.at(-1);
@@ -269,6 +424,65 @@ test("known parent activity remains leased when only the child observation becom
   assert.equal(h.reports.at(-1).status, "running");
   assert.equal(h.reports.at(-1).hasRunningSubagents, false);
   assert.ok(h.now - h.reports.at(-1).at <= 2000);
+  await h.emit("session_shutdown");
+});
+
+for (const provider of ["laya", "vela"]) {
+  test(`${provider}: selected question model is used and full text is preserved`, async () => {
+    const h = await harness({ count: 0, model: { answers: {
+      question: { type: "choice", choice: "question", probabilities: { normal: 0.2, question: 0.8 } },
+    } } });
+    h.setProvider(provider);
+    await h.emit("session_start");
+    await h.advance(0);
+    await h.emit("agent_start");
+    const text = "Context. ".repeat(180) + "May I proceed?";
+    await h.advance(4000);
+    assert.equal(h.modelRequests.length, 0);
+    await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text }] }] });
+    assert.equal(h.modelRequests.length, 0);
+    await h.emit("agent_settled");
+    assert.equal(h.modelRequests[0].state, text);
+    assert.equal(h.reports.at(-1).status, "awaitingInput");
+    await h.advance(12000);
+    assert.equal(h.modelRequests.length, 1);
+    assert.equal(h.reports.at(-1).status, "awaitingInput");
+    await h.emit("agent_start");
+    assert.equal(h.reports.at(-1).status, "running");
+    assert.equal(h.modelRequests.length, 1);
+    await h.emit("session_shutdown");
+  });
+}
+
+for (const provider of ["laya", "vela"]) {
+  test(`${provider}: confirmation, choice and missing information keep user participation pending`, async () => {
+    const h = await harness({ count: 0, model: { answers: {
+      question: { type: "choice", choice: "question", probabilities: { normal: 0.1, question: 0.9 } },
+    } } });
+    h.setProvider(provider);
+    await h.emit("session_start");
+    await h.advance(0);
+    for (const text of ["请确认范围。", "确认后我再继续。", "请选择方案 A 或 B。", "请提供项目路径。", "已完成，还需要更新示例吗？"]) {
+      await h.emit("agent_start");
+      await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text }] }] });
+      await h.emit("agent_settled");
+      assert.equal(h.reports.at(-1).status, "awaitingInput", text);
+    }
+    await h.emit("session_shutdown");
+  });
+}
+
+test("provider changes reject the old worker's late positive response", async () => {
+  const model = { answers: { question: { type: "choice", choice: "question", probabilities: { normal: 0.1, question: 0.9 } } } };
+  const h = await harness({ count: 0, model });
+  model.onResponse = () => h.setProvider("vela");
+  await h.emit("session_start");
+  await h.advance(0);
+  await h.emit("agent_start");
+  await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text: "May I proceed?" }] }] });
+  await h.emit("agent_settled");
+  assert.equal(h.modelRequests.length, 1);
+  assert.equal(h.reports.at(-1).status, "finished");
   await h.emit("session_shutdown");
 });
 

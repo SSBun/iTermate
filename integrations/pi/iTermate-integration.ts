@@ -1,7 +1,7 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { randomUUID } from "node:crypto";
-import { readFile, access } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
 import { request as httpRequest } from "node:http";
 import { execFileSync } from "node:child_process";
 import { connect, type Socket } from "node:net";
@@ -71,12 +71,31 @@ export function needsReply(text: string): boolean {
   // Short approval gates already imply waiting; they need no second sentence
   // saying "I will wait". Keep them action-scoped to avoid rhetorical questions.
   const approvalGate = /(?:按(?:这个|上述|以上|该)(?:范围|方案|计划|方式|步骤|设计|配置|目标)[^。！？?\n]{0,24}[，,]\s*(?:可以|行|好)(?:吗|么)|(?:这样|这么)(?:实现|修改|调整|处理|执行|继续|安排)[，,]?\s*(?:可以|行|好)(?:吗|么))[？?]\s*$/u.test(tail);
-  const request = [
+  const requests = [
     /(?:是否|能否)[^。！？\n]{0,80}[？?]|\b(?:can|could|would|will) you (?:confirm|choose|select|provide)\b|请(?:你|您)?[^。！？\n]{0,30}(?:确认|选择|回复|提供|补充)|(?:你|您)(?:更希望|希望|选择|倾向)[^。！？\n]{0,80}[？?]|\bplease\s+(?:confirm|choose|select|reply|provide)\b/i,
     /请(?:你|您)?[^。！？\n]{0,30}(?:批准|授权|决定|告知|告诉我|回答|选定)|(?:你|您)(?:更偏好|更倾向于?|想要)[^。！？\n]{0,80}[？?]/,
     /\b(?:please|(?:can|could|would|will) you)\s+(?:approve|authorize|pick|decide|answer|clarify|specify|tell me|let me know)\b/i,
     /\b(?:which|what)\b[^.!?\n]{0,60}\b(?:do|would) you\s+(?:prefer|choose|want|like)\b[^.!?\n]{0,40}\?|\b(?:may|should|can) I\s+(?:proceed|continue|start|begin)\b[^.!?\n]{0,40}\?/i,
-  ].some((pattern) => pattern.test(tail));
+  ];
+  const request = requests.some((pattern) => pattern.test(tail));
+  // A direct closing request needs no second sentence promising to wait.
+  // Inspect the final sentence so a question already answered in the reply
+  // does not remain pending.
+  const finalSentence = tail.match(/[^。！？.!?\n]+[。！？.!?]?/g)?.at(-1)?.trim() ?? "";
+  if (/请(?:你|您)?\s*(?:先|暂时)?\s*(?:勿|不要|别)[^。！？\n]{0,20}(?:回复|回答|确认|批准|授权|选择|提供|补充)/u.test(finalSentence)) {
+    return false;
+  }
+  const directRequest = requests.some((pattern) => pattern.test(finalSentence))
+    && !/\bwhenever convenient\b/i.test(finalSentence);
+  const confirmation = finalSentence.match(/^(?:确认|批准|授权|回复|选择)(?:后|之后)[，,]?\s*(?:我(?:们)?)?(再|才|会|将|就)?(?:写入|校验|修改|更新|保存|提交|开始|继续|执行|进行)([^。！？.!?\n]{0,30})[。.!！]?$/u);
+  // Check the remainder after ANY recognized action, so the action vocabulary
+  // and perfective-aspect exclusions cannot drift into separate lists.
+  const confirmationGate = confirmation !== null
+    && !/^(?:好|完|成功|失败|通过|结束|完毕|完成)?(?:了|过)|了$/u.test(confirmation[2])
+    // A future modal or an explicit terminal condition describes a planned
+    // result, not an already observed result. Keep that tense information.
+    && (confirmation[1] !== undefined || /(?:直到|直至)/u.test(confirmation[2])
+      || !/(?:成功|失败|通过|完毕|完成|结束)(?=[，,]|$)/u.test(confirmation[2]));
   const waiting = [
     /(?:确认|选择|回复|回答|提供|补充)[^。！？\n]{0,20}(?:后|之后)[^。！？\n]{0,20}(?:开始|继续|执行|进行)|(?:等待|等你|等您)[^。！？\n]{0,20}(?:确认|选择|回复|回答)|\b(?:before I (?:begin|start|continue|proceed)|(?:once|after) you (?:confirm|choose|reply)|waiting for your (?:reply|confirmation|answer))\b/i,
     /(?:批准|授权|决定|选定|答复)[^。！？\n]{0,20}(?:后|之后)[^。！？\n]{0,20}(?:开始|继续|执行|进行)|(?:等待|等候|等你|等您)[^。！？\n]{0,20}(?:批准|授权|决定|选定|答复|补充|提供)/,
@@ -84,7 +103,7 @@ export function needsReply(text: string): boolean {
     /\b(?:waiting for|awaiting) your (?:response|approval|authorization|decision|choice|input|reply|confirmation|answer)\b|\b(?:once|after) you (?:approve|authorize|select|pick|decide|answer|respond|provide|clarify|specify)\b|\b(?:before I can|before we|until you (?:confirm|approve|authorize|choose|select|reply|respond|provide))\b[^.!?\n]{0,40}\b(?:begin|start|continue|proceed)\b/i,
     /\b(?:cannot|can't|can’t)\s+(?:continue|proceed|start|begin)\s+(?:without your (?:confirmation|approval|authorization|reply|response|input)|until you (?:confirm|approve|authorize|choose|select|reply|respond|provide))\b/i,
   ].some((pattern) => pattern.test(tail));
-  return approvalGate || (request && waiting);
+  return approvalGate || confirmationGate || directRequest || (request && waiting);
 }
 
 function report(
@@ -155,6 +174,7 @@ function report(
   });
 }
 
+// Legacy terminal-state parser retained for diagnostic clients, not Pi question decisions.
 // Undefined means unavailable or uncertain, not a negative classification.
 export function modelReplyDecision(answers: unknown): boolean | undefined {
   if (!answers || typeof answers !== "object") return undefined;
@@ -176,18 +196,52 @@ export function modelReplyDecision(answers: unknown): boolean | undefined {
   return undefined;
 }
 
-// The optional HTTP inference request has an 800 ms deadline.
+// The binary product question means current user participation, not interrogative grammar.
+// It is distinct from the legacy terminal-state parser above.
+export function modelQuestionDecision(answers: unknown): boolean | undefined {
+  if (!answers || typeof answers !== "object") return undefined;
+  const value = (answers as { question?: { type?: unknown; choice?: unknown; probabilities?: Record<string, unknown> } }).question;
+  if (value?.type !== "choice" || (value.choice !== "question" && value.choice !== "normal")) return undefined;
+  const question = value.probabilities?.question;
+  const normal = value.probabilities?.normal;
+  if (typeof question !== "number" || typeof normal !== "number"
+    || !Number.isFinite(question) || !Number.isFinite(normal)
+    || question < 0 || question > 1 || normal < 0 || normal > 1
+    || Math.abs(question + normal - 1) > 0.02) return undefined;
+  if ((value.choice === "question" && question < normal) || (value.choice === "normal" && normal < question)) return undefined;
+  return value.choice === "question";
+}
+
+function usesModelForQuestions(): boolean {
+  const directory = join(supportDirectory, "Laya");
+  const configuration = join(directory, "configuration.json");
+  try {
+    const value = JSON.parse(readFileSync(configuration, "utf8"));
+    return typeof value?.analysisEnabled === "boolean" ? value.analysisEnabled : true;
+  } catch {
+    // Malformed configuration is not permission to silently use a different classifier.
+    return existsSync(configuration) || existsSync(join(directory, "analysis-enabled"));
+  }
+}
+
+// The optional HTTP inference request has an 800 ms deadline; do not truncate the message.
 async function classifyReplyWithModel(text: string): Promise<boolean | undefined> {
-  if (!text.trim()) return undefined;
+  if (!text.trim() || text.length > 3000) return undefined;
   try {
     const directory = join(supportDirectory, "Laya");
-    await access(join(directory, "analysis-enabled"));
-    const endpoint = JSON.parse(await readFile(join(directory, "endpoint.json"), "utf8"));
+    const paths = ["configuration.json", "analysis-enabled", "endpoint.json"].map(name => join(directory, name));
+    const identity = await Promise.all(paths.map(path => readFile(path, "utf8")));
+    const configuration = JSON.parse(identity[0]);
+    const endpoint = JSON.parse(identity[2]);
+    if (configuration.analysisEnabled !== true || configuration.serviceEnabled !== true
+      || !["laya", "vela"].includes(configuration.provider)
+      || typeof configuration.revision !== "string" || identity[1] !== configuration.revision
+      || endpoint.provider !== configuration.provider || typeof endpoint.instance !== "string") return undefined;
     const url = new URL(endpoint.url);
     if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || !url.port) return undefined;
     const token = (await readFile(join(directory, "api-token"), "utf8")).trim();
-    const body = JSON.stringify({ state: text.slice(-1500) });
-    return await new Promise<boolean | undefined>((resolve) => {
+    const body = JSON.stringify({ state: text });
+    const decision = await new Promise<boolean | undefined>((resolve) => {
       let finished = false;
       const finish = (value: boolean | undefined) => {
         if (finished) return;
@@ -197,7 +251,7 @@ async function classifyReplyWithModel(text: string): Promise<boolean | undefined
         resolve(value);
       };
       const request = httpRequest({
-        hostname: "127.0.0.1", port: url.port, path: "/v1/session", method: "POST",
+        hostname: "127.0.0.1", port: url.port, path: "/v1/question", method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
       }, (response) => {
         let result = "";
@@ -208,8 +262,9 @@ async function classifyReplyWithModel(text: string): Promise<boolean | undefined
         response.on("error", () => finish(undefined));
         response.on("end", () => {
           try {
-            finish(response.statusCode === 200
-              ? modelReplyDecision(JSON.parse(result).answers) : undefined);
+            const payload = JSON.parse(result);
+            finish(response.statusCode === 200 && payload.provider === endpoint.provider && payload.instance === endpoint.instance
+              ? modelQuestionDecision(payload.answers) : undefined);
           } catch { finish(undefined); }
         });
       });
@@ -217,6 +272,8 @@ async function classifyReplyWithModel(text: string): Promise<boolean | undefined
       request.on("error", () => finish(undefined));
       request.end(body);
     });
+    const current = await Promise.all(paths.map(path => readFile(path, "utf8")));
+    return current.every((value, index) => value === identity[index]) ? decision : undefined;
   } catch { return undefined; }
 }
 
@@ -225,7 +282,6 @@ export default function (pi: ExtensionAPI): void {
   let agentRunning = false;
   let replyPending = false;
   let lastAssistantText = "";
-  let modelDecision: boolean | undefined;
   let promptOpen = false;
   let baseStatus: Status = "idle";
   let active = false;
@@ -239,7 +295,6 @@ export default function (pi: ExtensionAPI): void {
   let fleetTimer: ReturnType<typeof setTimeout> | undefined;
   let fleetRequest: Promise<void> | undefined;
   let cancelFleetRequest: (() => void) | undefined;
-
   // Query the public, current-session DTO, not tool text or historical messages.
   function refreshFleet(): Promise<void> {
     if (!active) return Promise.resolve();
@@ -338,15 +393,10 @@ export default function (pi: ExtensionAPI): void {
       return;
     }
     heartbeatPausedForFleet = false;
-    if (modelDecision !== undefined && !existsSync(join(supportDirectory, "Laya", "analysis-enabled"))) {
-      modelDecision = undefined;
-      baseStatus = replyPending ? "awaitingInput" : "finished";
-      confirmed = false; // A changed classification needs a full transition, not a lease renewal.
-    }
     const status = visibleStatus();
     const leased = status === "running" || status === "awaitingInput";
-    // A model-derived negative decision watches the enable marker without
-    // repeatedly reporting completion or changing its timestamp.
+    // A confirmed question stays pending until the next turn or navigation,
+    // even if optional model analysis is subsequently disabled.
     const accepted = !leased && confirmed ? true : await queueReport(
       status,
       status === "finished" ? (agentFailed ? 1 : 0) : undefined,
@@ -356,7 +406,7 @@ export default function (pi: ExtensionAPI): void {
     if (generation !== heartbeatGeneration) return;
     // Retry the full transition until acknowledged, not a heartbeat that the
     // receiver might reject against its previous idle/finished state.
-    if (leased || modelDecision !== undefined || (!accepted && retries > 0)) {
+    if (leased || (!accepted && retries > 0)) {
       heartbeatTimer = setTimeout(
         () => void sendHeartbeat(generation, accepted, leased ? 3 : retries - 1), 2000,
       );
@@ -373,7 +423,6 @@ export default function (pi: ExtensionAPI): void {
     active = ctx.mode === "tui";
     baseStatus = "idle";
     lastAssistantText = "";
-    modelDecision = undefined;
     agentRunning = false;
     replyPending = false;
     promptOpen = false;
@@ -394,7 +443,6 @@ export default function (pi: ExtensionAPI): void {
   pi.on("agent_start", () => {
     agentFailed = false;
     agentRunning = true;
-    modelDecision = undefined;
     lastAssistantText = "";
     replyPending = false;
     baseStatus = "running";
@@ -412,23 +460,26 @@ export default function (pi: ExtensionAPI): void {
     lastAssistantText = message.stopReason === "stop"
       ? message.content.flatMap((block) => block.type === "text" ? [block.text] : []).join("\n")
       : "";
-    replyPending = needsReply(lastAssistantText); // Cached fallback, not the primary decision.
+    replyPending = !usesModelForQuestions() && needsReply(lastAssistantText);
   });
   pi.on("agent_settled", async (_event, ctx) => {
     if (!active || !ctx.isIdle()) return;
     stopHeartbeat();
+    const modelAssistance = usesModelForQuestions();
+    if (modelAssistance) replyPending = false;
     // Establish the lifecycle fallback before awaiting optional inference so UI
     // prompt events during that wait cannot restore the old running state.
-    modelDecision = undefined;
     baseStatus = replyPending ? "awaitingInput" : "finished";
     const generation = heartbeatGeneration;
     await refreshFleet();
-    const decision = !agentFailed && !promptOpen
+    const decision = modelAssistance && !agentFailed && !promptOpen
       ? await classifyReplyWithModel(lastAssistantText) : undefined;
     if (!active || !ctx.isIdle() || generation !== heartbeatGeneration) return;
-    modelDecision = existsSync(join(supportDirectory, "Laya", "analysis-enabled"))
-      ? decision : undefined;
-    baseStatus = (modelDecision ?? replyPending) ? "awaitingInput" : "finished";
+    // Model assistance decides whether user participation is requested or awaited.
+    // Legacy text heuristics do not override the selected model's binary decision.
+    // Unavailability leaves explicit lifecycle status; it never selects another model.
+    if (modelAssistance) replyPending = usesModelForQuestions() && decision === true;
+    baseStatus = replyPending ? "awaitingInput" : "finished";
     return publish();
   });
   pi.on("ui_prompt_start", (event, ctx) => {
@@ -442,7 +493,6 @@ export default function (pi: ExtensionAPI): void {
     return publish();
   });
   pi.on("session_tree", () => {
-    modelDecision = undefined;
     lastAssistantText = "";
     replyPending = false;
     // Pi still holds its branch-navigation busy flag during this event.

@@ -1,0 +1,109 @@
+TAP version 13
+# (node:91458) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:91458) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+# Subtest: active children keep a settled parent running; only zero completes
+ok 1 - active children keep a settled parent running; only zero completes
+  ---
+  duration_ms: 5.914084
+  type: 'test'
+  ...
+# Subtest: TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged positive count
+ok 2 - TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged positive count
+  ---
+  duration_ms: 5.934875
+  type: 'test'
+  ...
+# Subtest: unavailable fleet expires child-only reporting without false completion, then recovers
+ok 3 - unavailable fleet expires child-only reporting without false completion, then recovers
+  ---
+  duration_ms: 3.958041
+  type: 'test'
+  ...
+# Subtest: explicit questions retain awaitingInput alongside child activity
+ok 4 - explicit questions retain awaitingInput alongside child activity
+  ---
+  duration_ms: 2.735542
+  type: 'test'
+  ...
+# Subtest: iTerm.app: explicit question survives a negative model and lease refresh
+ok 5 - iTerm.app: explicit question survives a negative model and lease refresh
+  ---
+  duration_ms: 3.8435
+  type: 'test'
+  ...
+# Subtest: iTerm.app: model-only question remains pending when analysis is disabled
+ok 6 - iTerm.app: model-only question remains pending when analysis is disabled
+  ---
+  duration_ms: 2.4885
+  type: 'test'
+  ...
+# Subtest: ghostty: explicit question survives a negative model and lease refresh
+ok 7 - ghostty: explicit question survives a negative model and lease refresh
+  ---
+  duration_ms: 3.632708
+  type: 'test'
+  ...
+# Subtest: ghostty: model-only question remains pending when analysis is disabled
+ok 8 - ghostty: model-only question remains pending when analysis is disabled
+  ---
+  duration_ms: 2.304
+  type: 'test'
+  ...
+# Subtest: negated requests and completed confirmation narratives do not retain a question
+ok 9 - negated requests and completed confirmation narratives do not retain a question
+  ---
+  duration_ms: 2.75425
+  type: 'test'
+  ...
+# Subtest: unavailable model does not turn a direct question into completion
+ok 10 - unavailable model does not turn a direct question into completion
+  ---
+  duration_ms: 1.657417
+  type: 'test'
+  ...
+# Subtest: Ghostty uses TTY and ignores inherited iTerm session identity
+ok 11 - Ghostty uses TTY and ignores inherited iTerm session identity
+  ---
+  duration_ms: 1.642167
+  type: 'test'
+  ...
+# Subtest: shutdown cancels in-flight observation and prevents stale replies from publishing
+ok 12 - shutdown cancels in-flight observation and prevents stale replies from publishing
+  ---
+  duration_ms: 1.725625
+  type: 'test'
+  ...
+# Subtest: session startup restores active child work without replaying conversation history
+ok 13 - session startup restores active child work without replaying conversation history
+  ---
+  duration_ms: 1.369458
+  type: 'test'
+  ...
+# Subtest: malformed or failed observations cannot clear active children or fabricate success
+ok 14 - malformed or failed observations cannot clear active children or fabricate success
+  ---
+  duration_ms: 8.727208
+  type: 'test'
+  ...
+# Subtest: known parent activity remains leased when only the child observation becomes unavailable
+ok 15 - known parent activity remains leased when only the child observation becomes unavailable
+  ---
+  duration_ms: 1.987583
+  type: 'test'
+  ...
+# Subtest: non-TUI child runtimes do not query or report parent terminal activity
+ok 16 - non-TUI child runtimes do not query or report parent terminal activity
+  ---
+  duration_ms: 0.663959
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 130.394833

@@ -1,0 +1,115 @@
+TAP version 13
+# (node:21153) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:21153) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+# Subtest: active children keep a settled parent running; only zero completes
+ok 1 - active children keep a settled parent running; only zero completes
+  ---
+  duration_ms: 19.664167
+  type: 'test'
+  ...
+# Subtest: TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged positive count
+ok 2 - TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged positive count
+  ---
+  duration_ms: 17.336792
+  type: 'test'
+  ...
+# Subtest: unavailable fleet expires child-only reporting without false completion, then recovers
+ok 3 - unavailable fleet expires child-only reporting without false completion, then recovers
+  ---
+  duration_ms: 6.675
+  type: 'test'
+  ...
+# Subtest: explicit questions retain awaitingInput alongside child activity
+ok 4 - explicit questions retain awaitingInput alongside child activity
+  ---
+  duration_ms: 11.766708
+  type: 'test'
+  ...
+# Subtest: iTerm.app: explicit question survives a negative model and lease refresh
+ok 5 - iTerm.app: explicit question survives a negative model and lease refresh
+  ---
+  duration_ms: 24.019958
+  type: 'test'
+  ...
+# Subtest: iTerm.app: model-only question remains pending when analysis is disabled
+ok 6 - iTerm.app: model-only question remains pending when analysis is disabled
+  ---
+  duration_ms: 56.923167
+  type: 'test'
+  ...
+# Subtest: ghostty: explicit question survives a negative model and lease refresh
+ok 7 - ghostty: explicit question survives a negative model and lease refresh
+  ---
+  duration_ms: 15.519084
+  type: 'test'
+  ...
+# Subtest: ghostty: model-only question remains pending when analysis is disabled
+ok 8 - ghostty: model-only question remains pending when analysis is disabled
+  ---
+  duration_ms: 16.774791
+  type: 'test'
+  ...
+# Subtest: negated requests and completed confirmation narratives do not retain a question
+ok 9 - negated requests and completed confirmation narratives do not retain a question
+  ---
+  duration_ms: 12.709125
+  type: 'test'
+  ...
+# Subtest: unavailable model does not turn a direct question into completion
+ok 10 - unavailable model does not turn a direct question into completion
+  ---
+  duration_ms: 4.328
+  type: 'test'
+  ...
+# Subtest: a negated old request cannot cancel the new closing question
+ok 11 - a negated old request cannot cancel the new closing question
+  ---
+  duration_ms: 7.33025
+  type: 'test'
+  ...
+# Subtest: Ghostty uses TTY and ignores inherited iTerm session identity
+ok 12 - Ghostty uses TTY and ignores inherited iTerm session identity
+  ---
+  duration_ms: 7.741041
+  type: 'test'
+  ...
+# Subtest: shutdown cancels in-flight observation and prevents stale replies from publishing
+ok 13 - shutdown cancels in-flight observation and prevents stale replies from publishing
+  ---
+  duration_ms: 22.380791
+  type: 'test'
+  ...
+# Subtest: session startup restores active child work without replaying conversation history
+ok 14 - session startup restores active child work without replaying conversation history
+  ---
+  duration_ms: 5.973417
+  type: 'test'
+  ...
+# Subtest: malformed or failed observations cannot clear active children or fabricate success
+ok 15 - malformed or failed observations cannot clear active children or fabricate success
+  ---
+  duration_ms: 5.11475
+  type: 'test'
+  ...
+# Subtest: known parent activity remains leased when only the child observation becomes unavailable
+ok 16 - known parent activity remains leased when only the child observation becomes unavailable
+  ---
+  duration_ms: 4.950166
+  type: 'test'
+  ...
+# Subtest: non-TUI child runtimes do not query or report parent terminal activity
+ok 17 - non-TUI child runtimes do not query or report parent terminal activity
+  ---
+  duration_ms: 2.694584
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 427.733792
