@@ -1,0 +1,110 @@
+Command line invocation:
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/xcodebuild -project iTermate.xcodeproj -scheme iTermate -configuration Debug -destination platform=macOS -derivedDataPath /tmp/itermate-archive-summary-build "-only-testing:iTermateTests/PiSessionArchiveTests" test
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  Sparkle: https://github.com/sparkle-project/Sparkle @ 2.9.4
+
+2026-10-10 11:54:12.325 xcodebuild[12178:112059948] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:macOS, arch:arm64, id:00008132-0016511C0CD9801C, name:My Mac }
+{ platform:macOS, arch:x86_64, id:00008132-0016511C0CD9801C, name:My Mac }
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (3 targets)
+    Target 'iTermateTests' in project 'iTermate'
+        ➜ Explicit dependency on target 'iTermate' in project 'iTermate'
+    Target 'iTermate' in project 'iTermate'
+        ➜ Explicit dependency on target 'Sparkle' in project 'Sparkle'
+    Target 'Sparkle' in project 'Sparkle' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ClangStatCache /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk /tmp/itermate-archive-summary-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -o /tmp/itermate-archive-summary-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent --timestamp\=none --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app: replacing existing signature
+
+Validate /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-validationUtility /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app -no-validate-extension -infoplist-subpath Contents/Info.plist
+
+RegisterWithLaunchServices /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister -f -R -trusted /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app
+
+2026-10-10 11:54:17.085674+0800 iTermate[12622:112061073] [Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-10 11:54:17.085708+0800 iTermate[12622:112061073] [Application] Error registering app with intents framework: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-10 11:54:17.086288+0800 iTermate[12622:112061084] [Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-10 11:54:17.086352+0800 iTermate[12622:112061084] [Connection] Unable to re-register with Process Instance Registry, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-10 11:54:17.086931+0800 iTermate[12622:112061073] [Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-10 11:54:17.086984+0800 iTermate[12622:112061073] [Connection] Unable to re-register with Process Instance Registry, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-10 11:54:17.087432+0800 iTermate[12622:112061073] [Connection] Will NOT re-try to establish the connection
+2026-10-10 11:54:17.087470+0800 iTermate[12622:112061084] [Connection] Unable to get synchronousRemoteObjectProxy, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+2026-10-10 11:54:17.087483+0800 iTermate[12622:112061084] [Connection] Unable to re-register with Process Instance Registry, error: Error Domain=NSCocoaErrorDomain Code=4097 "connection to service named com.apple.linkd.autoShortcut" UserInfo={NSDebugDescription=connection to service named com.apple.linkd.autoShortcut}
+Test Suite 'Selected tests' started at 2026-10-10 11:54:17.320.
+Test Suite 'iTermateTests.xctest' started at 2026-10-10 11:54:17.320.
+Test Suite 'PiSessionArchiveTests' started at 2026-10-10 11:54:17.320.
+Test Case '-[iTermateTests.PiSessionArchiveTests testEmptyOrOversizedSummaryIsRejected]' started.
+Test Case '-[iTermateTests.PiSessionArchiveTests testEmptyOrOversizedSummaryIsRejected]' passed (0.005 seconds).
+Test Case '-[iTermateTests.PiSessionArchiveTests testManifestCannotRedirectTranscriptOutsideArchive]' started.
+Test Case '-[iTermateTests.PiSessionArchiveTests testManifestCannotRedirectTranscriptOutsideArchive]' passed (0.001 seconds).
+Test Case '-[iTermateTests.PiSessionArchiveTests testNativeHeaderAndChecksumAreRequired]' started.
+Test Case '-[iTermateTests.PiSessionArchiveTests testNativeHeaderAndChecksumAreRequired]' passed (0.001 seconds).
+Test Case '-[iTermateTests.PiSessionArchiveTests testSummaryIsPreservedAndLegacyArchivesRemainReadable]' started.
+Test Case '-[iTermateTests.PiSessionArchiveTests testSummaryIsPreservedAndLegacyArchivesRemainReadable]' passed (0.001 seconds).
+Test Case '-[iTermateTests.PiSessionArchiveTests testTranscriptSymlinksAreRejected]' started.
+Test Case '-[iTermateTests.PiSessionArchiveTests testTranscriptSymlinksAreRejected]' passed (0.001 seconds).
+Test Suite 'PiSessionArchiveTests' passed at 2026-10-10 11:54:17.332.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.011 (0.012) seconds
+Test Suite 'iTermateTests.xctest' passed at 2026-10-10 11:54:17.332.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.011 (0.012) seconds
+Test Suite 'Selected tests' passed at 2026-10-10 11:54:17.332.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.011 (0.012) seconds
+2026-10-10 11:54:17.611 xcodebuild[12178:112059948] [MT] IDETestOperationsObserverDebug: 3.216 elapsed -- Testing started completed.
+2026-10-10 11:54:17.611 xcodebuild[12178:112059948] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-10-10 11:54:17.611 xcodebuild[12178:112059948] [MT] IDETestOperationsObserverDebug: 3.216 sec, +3.216 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/itermate-archive-summary-build/Logs/Test/Test-iTermate-2026.10.10_11-54-12-+0800.xcresult
+
+** TEST SUCCEEDED ** [5.448 sec]
+
+Testing started

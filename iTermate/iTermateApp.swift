@@ -205,7 +205,7 @@ final class ComradePanel: NSPanel, NSWindowDelegate {
         )
 
         contentView = PanelHostingView(
-            rootView: PanelContent(store: store, settings: settings)
+            rootView: PanelContent(store: store, settings: settings, archives: store.piArchives)
         )
         level = .floating
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
@@ -428,7 +428,9 @@ private struct PanelContent: View {
     @Environment(\.colorScheme) private var systemColorScheme
     @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
-    @State private var collapsedSectionIDs: Set<String> = []
+    @ObservedObject var archives: PiSessionArchives
+    private static let archiveSectionID = "archive:pi"
+    @State private var collapsedSectionIDs: Set<String> = [PanelContent.archiveSectionID]
     @State private var hoveredSessionID: String?
     @State private var hoveredCloseButtonSessionID: String?
 
@@ -468,10 +470,12 @@ private struct PanelContent: View {
                 }
                 if sessionGroups.isEmpty {
                     statusView("No \(terminalName) sessions", showsProgress: false)
-                } else {
-                    sessionList
                 }
             }
+            if let archiveError = archives.error {
+                Text(archiveError).font(panelFont(0.85)).foregroundStyle(.red)
+            }
+            sessionList
 
             Spacer(minLength: 0)
 
@@ -502,6 +506,9 @@ private struct PanelContent: View {
         .padding(1)
         .tint(settings.accentColor)
         .environment(\.colorScheme, effectiveColorScheme)
+        .onChange(of: collapsedSectionIDs.contains(Self.archiveSectionID)) { isCollapsed in
+            if !isCollapsed { archives.refresh() }
+        }
     }
 
     @ViewBuilder
@@ -598,6 +605,7 @@ private struct PanelContent: View {
 
     private var collapsibleSectionIDs: Set<String> {
         var ids = Set(sessionGroups.map(\.id))
+        ids.insert(Self.archiveSectionID)
         if showsTabHeaders {
             ids.formUnion(
                 sessionGroups.flatMap { group in
@@ -613,7 +621,7 @@ private struct PanelContent: View {
     private var sessionList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 2) {
-                ForEach(sessionGroups) { group in
+                ForEach(store.connectionState == .connected ? sessionGroups : []) { group in
                     let containsFocusedSession = settings.sessionListStyle == .projectPath
                         && group.sessions.contains(where: \.isFocused)
                     VStack(alignment: .leading, spacing: 2) {
@@ -650,6 +658,62 @@ private struct PanelContent: View {
                                 )
                         }
                     }
+                }
+                archiveSection
+            }
+        }
+    }
+
+    private var archiveSection: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Button {
+                toggleSection(Self.archiveSectionID)
+            } label: {
+                HStack(spacing: 6) {
+                    disclosureIcon(isCollapsed: collapsedSectionIDs.contains(Self.archiveSectionID))
+                    Image(systemName: "archivebox")
+                    Text("Archive")
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+            }
+            .buttonStyle(.plain)
+            .font(headerFont())
+            .padding(.top, 5)
+            .accessibilityLabel(collapsedSectionIDs.contains(Self.archiveSectionID) ? "Expand Archive" : "Collapse Archive")
+
+            if !collapsedSectionIDs.contains(Self.archiveSectionID) {
+                if archives.records.isEmpty {
+                    Text("No archived Pi sessions")
+                        .font(panelFont(0.85))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                }
+                ForEach(archives.records) { record in
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(record.name.isEmpty ? "Pi session" : record.name)
+                                .lineLimit(1)
+                            Text(record.cwd)
+                                .font(panelFont(0.8))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        Button("Resume") { store.resumePiArchive(record) }
+                            .font(panelFont(0.8))
+                            .buttonStyle(.plain)
+                            .disabled(archives.isBusy)
+                            .accessibilityLabel("Resume archived Pi session \(record.name), \(record.sessionId), in \(record.terminal)")
+                    }
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .help("\(record.summary ?? "No summary available for this archive.")\n\n\(record.terminal) · \(record.sessionId) · \(Date(timeIntervalSince1970: record.archivedAt).formatted(date: .abbreviated, time: .shortened))")
                 }
             }
         }
@@ -976,6 +1040,12 @@ private struct PanelContent: View {
                 : Color.clear
         )
         .clipShape(RoundedRectangle(cornerRadius: 7))
+        .contextMenu {
+            Button("Archive Pi Session") {
+                store.archivePiSession(item.session, in: store.terminalApp ?? .iTerm2)
+            }
+            .disabled(!archives.canArchive(item.session, terminal: store.terminalApp ?? .iTerm2))
+        }
         .overlay {
             ActiveHoverRegion { isHovered in
                 if isHovered {

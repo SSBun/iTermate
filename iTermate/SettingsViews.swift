@@ -715,6 +715,11 @@ struct SettingsView: View {
                     Label("Status Animation", systemImage: "waveform.path")
                 }
 
+            PiArchivesSettingsView(archives: store.piArchives, store: store)
+                .tabItem {
+                    Label("Archives", systemImage: "archivebox")
+                }
+
             StatisticsSettingsView(store: store)
                 .tabItem {
                     Label("Statistics", systemImage: "chart.bar")

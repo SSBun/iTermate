@@ -1,0 +1,829 @@
+diff --git a/iTermate.xcodeproj/project.pbxproj b/iTermate.xcodeproj/project.pbxproj
+index 7cc7d9e..9d617a6 100644
+--- a/iTermate.xcodeproj/project.pbxproj
++++ b/iTermate.xcodeproj/project.pbxproj
+@@ -7,8 +7,10 @@
+ 	objects = {
+ 
+ /* Begin PBXBuildFile section */
++		5710E93BFF050C2919D03D58 /* PiSessionArchives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B64B776E9CA4A9EFBFB2C08 /* PiSessionArchives.swift */; };
+ 		5B5F89FB907820C9055C9184 /* iTermate.bash in Resources */ = {isa = PBXBuildFile; fileRef = 0448C28D1F048069AA0A0D18 /* iTermate.bash */; };
+ 		5FB71DAE674AB719CA12F02B /* iTermate.fish in Resources */ = {isa = PBXBuildFile; fileRef = 2754035B6E0A92CE752D09E5 /* iTermate.fish */; };
++		81CDDEC1358C6082F1D554F4 /* PiSessionArchiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B652704E42F76E84D47DEDB /* PiSessionArchiveTests.swift */; };
+ 		854F100B60C750D06E8DF1EC /* iTermateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8719B6809A3EC4D52A306 /* iTermateApp.swift */; };
+ 		85814D5023E76DE82EB7F95C /* agent-connection-prompt.md in Resources */ = {isa = PBXBuildFile; fileRef = EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */; };
+ 		897BF8EC3951B3FE3BB72763 /* FinishedSessionShortcutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C38928251D32A7255116F91 /* FinishedSessionShortcutTests.swift */; };
+@@ -48,6 +50,7 @@
+ 		05A3AA7BB59AC8672303E16B /* iTermate.zsh */ = {isa = PBXFileReference; path = iTermate.zsh; sourceTree = "<group>"; };
+ 		06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViews.swift; sourceTree = "<group>"; };
+ 		0A5616016F9CC20D9F3ADD3E /* iTermate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iTermate.app; sourceTree = BUILT_PRODUCTS_DIR; };
++		0B64B776E9CA4A9EFBFB2C08 /* PiSessionArchives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiSessionArchives.swift; sourceTree = "<group>"; };
+ 		1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinishedSessionShortcut.swift; sourceTree = "<group>"; };
+ 		26707EC6497714316C11E6B6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+ 		2754035B6E0A92CE752D09E5 /* iTermate.fish */ = {isa = PBXFileReference; path = iTermate.fish; sourceTree = "<group>"; };
+@@ -56,6 +59,7 @@
+ 		455EA3C557B1FB8D058C4337 /* iTermate-integration.ts */ = {isa = PBXFileReference; path = "iTermate-integration.ts"; sourceTree = "<group>"; };
+ 		4C2C567B6DE8991B12C843C6 /* AgentIntegrationManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIntegrationManagerTests.swift; sourceTree = "<group>"; };
+ 		5AC44468A07DBECAD73989BA /* ItermBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItermBridge.swift; sourceTree = "<group>"; };
++		6B652704E42F76E84D47DEDB /* PiSessionArchiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiSessionArchiveTests.swift; sourceTree = "<group>"; };
+ 		778A5491FBE924DD5E2ED781 /* iTermate-laya.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-laya.py"; sourceTree = "<group>"; };
+ 		7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelService.swift; sourceTree = "<group>"; };
+ 		88ED6137D49AA3F3F967AC35 /* iTermate-status.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-status.py"; sourceTree = "<group>"; };
+@@ -138,6 +142,7 @@
+ 				5AC44468A07DBECAD73989BA /* ItermBridge.swift */,
+ 				7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */,
+ 				2964CC35CF647092E51DBA87 /* PanelLayout.swift */,
++				0B64B776E9CA4A9EFBFB2C08 /* PiSessionArchives.swift */,
+ 				FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */,
+ 				06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */,
+ 				F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */,
+@@ -169,6 +174,7 @@
+ 				8C38928251D32A7255116F91 /* FinishedSessionShortcutTests.swift */,
+ 				EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */,
+ 				AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */,
++				6B652704E42F76E84D47DEDB /* PiSessionArchiveTests.swift */,
+ 				8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */,
+ 			);
+ 			path = iTermateTests;
+@@ -287,6 +293,7 @@
+ 				897BF8EC3951B3FE3BB72763 /* FinishedSessionShortcutTests.swift in Sources */,
+ 				D70EAEE488EDDDCA530D505D /* ItermBridgeTests.swift in Sources */,
+ 				CD6C91A30902A7FCEE57204D /* PanelLayoutTests.swift in Sources */,
++				81CDDEC1358C6082F1D554F4 /* PiSessionArchiveTests.swift in Sources */,
+ 				9EA014E904BFB2839F940EBA /* SessionNotificationTests.swift in Sources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+@@ -300,6 +307,7 @@
+ 				FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */,
+ 				F8FB3990DA0A51BF7DD6065B /* LocalModelService.swift in Sources */,
+ 				D2C6987CA2110DB3371B778F /* PanelLayout.swift in Sources */,
++				5710E93BFF050C2919D03D58 /* PiSessionArchives.swift in Sources */,
+ 				AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */,
+ 				EAECC190D6FF2D443E6ABD91 /* SettingsViews.swift in Sources */,
+ 				B3841525F058DCEF4B08CC48 /* TerminalStatusServer.swift in Sources */,
+diff --git a/iTermate/ItermBridge.swift b/iTermate/ItermBridge.swift
+index 4c8c50f..c2c4c5a 100644
+--- a/iTermate/ItermBridge.swift
++++ b/iTermate/ItermBridge.swift
+@@ -319,6 +319,7 @@ struct AgentCompletionStatistics: Equatable {
+ }
+ 
+ final class ItermStore: ObservableObject {
++    let piArchives = PiSessionArchives()
+     @Published private(set) var terminalApp: TerminalApp?
+     @Published private(set) var connectionState: BridgeConnectionState = .connecting
+     @Published private(set) var windows: [TerminalWindowSnapshot] = []
+@@ -381,6 +382,7 @@ final class ItermStore: ObservableObject {
+         guard !isStarted else { return }
+         isStarted = true
+         terminalStatusServer.start()
++        piArchives.start()
+         let statusExpiryTimer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+             self?.expireTerminalStatuses()
+         }
+@@ -399,6 +401,7 @@ final class ItermStore: ObservableObject {
+         statusExpiryTimer?.invalidate()
+         statusExpiryTimer = nil
+         terminalStatusServer.stop()
++        piArchives.stop()
+         if iTermClientIsStarted {
+             iTermClient.stop()
+             iTermClientIsStarted = false
+@@ -526,6 +529,69 @@ final class ItermStore: ObservableObject {
+         }
+     }
+ 
++    func archivePiSession(_ session: TerminalSessionSnapshot, in terminal: TerminalApp) {
++        Task { @MainActor in
++            do {
++                let shellPID = try await piArchives.archive(session, terminal: terminal)
++                guard Self.isRunning(terminal) else { return }
++                let completion: (String?) -> Void = { [weak self] failure in
++                    if let failure { self?.piArchives.error = "Archive saved, but terminal close failed: \(failure)" }
++                }
++                switch terminal {
++                case .iTerm2: iTermClient.closeArchivedSession(sessionID: session.id, shellPID: shellPID, completion: completion)
++                case .ghostty: ghosttyClient.closeArchivedSession(terminalID: session.id, tty: session.tty ?? "", shellPID: shellPID, completion: completion)
++                }
++            } catch {
++                piArchives.error = error.localizedDescription
++            }
++        }
++    }
++
++    func resumePiArchive(_ record: PiArchiveRecord) {
++        Task { @MainActor in
++            guard !piArchives.isBusy else { return }
++            do {
++                let location = try await piArchives.prepareResume(record)
++                let terminal = record.terminalApp
++                let launch: @MainActor () -> Void = { [weak self] in
++                    guard let self else { return }
++                    let finish: (String?) -> Void = { [weak self] error in
++                        guard let self else { return }
++                        if let error { self.piArchives.finishResume(error: error); return }
++                        Task { @MainActor in
++                            do {
++                                try await self.piArchives.waitForResume(location)
++                                self.piArchives.finishResume(error: nil)
++                            } catch { self.piArchives.finishResume(error: error.localizedDescription) }
++                        }
++                    }
++                    if terminal == .iTerm2 {
++                        self.startClient(for: .iTerm2)
++                        self.iTermClient.resumePiSession(location, completion: finish)
++                    } else {
++                        self.ghosttyClient.resumePiSession(location, completion: finish)
++                    }
++                }
++                if Self.isRunning(terminal) { launch(); return }
++                guard let applicationURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleIdentifier) else {
++                    piArchives.finishResume(error: "\(terminal.displayName) is not installed. The archive is unchanged.")
++                    return
++                }
++                let configuration = NSWorkspace.OpenConfiguration()
++                configuration.activates = true
++                let didOpen: @MainActor @Sendable (Error?) -> Void = { [weak self] error in
++                    if let error { self?.piArchives.finishResume(error: error.localizedDescription) }
++                    else { launch() }
++                }
++                NSWorkspace.shared.openApplication(at: applicationURL, configuration: configuration) { _, error in
++                    Task { @MainActor in didOpen(error) }
++                }
++            } catch {
++                piArchives.finishResume(error: error.localizedDescription)
++            }
++        }
++    }
++
+     func close(sessionID: String) {
+         switch terminalApp ?? .iTerm2 {
+         case .iTerm2:
+@@ -1048,6 +1114,17 @@ final class ItermBridgeClient {
+         queue.async { [weak self] in self?.send(request) }
+     }
+ 
++    func closeArchivedSession(sessionID: String, shellPID: Int32, completion: @escaping (String?) -> Void) {
++        perform(SessionActionRequest(type: "closeArchivedSession", requestId: UUID().uuidString,
++                                     sessionId: sessionID, expectedShellPID: shellPID), completion: completion)
++    }
++
++    func resumePiSession(_ location: PiResumeLocation, completion: @escaping (String?) -> Void) {
++        perform(SessionActionRequest(type: "resumePiSession", requestId: UUID().uuidString,
++                                     path: location.cwd, piSessionId: location.sessionID,
++                                     sessionDirectory: location.directory.path), completion: completion)
++    }
++
+     func openProject(
+         atPath path: String,
+         completion: @escaping (String?) -> Void
+@@ -1316,6 +1393,29 @@ final class GhosttyClient {
+         perform(.close, terminalID: terminalID)
+     }
+ 
++    func closeArchivedSession(terminalID: String, tty: String, shellPID: Int32, completion: @escaping (String?) -> Void) {
++        queue.async {
++            do {
++                guard Self.isGhosttyRunning else { throw GhosttyScriptError("Ghostty is not running") }
++                _ = try Self.runScript(script: Self.archiveCloseScript, arguments: [terminalID, tty, String(shellPID)])
++                DispatchQueue.main.async { completion(nil) }
++            } catch {
++                DispatchQueue.main.async { completion(error.localizedDescription) }
++            }
++        }
++    }
++
++    func resumePiSession(_ location: PiResumeLocation, completion: @escaping (String?) -> Void) {
++        queue.async {
++            do {
++                _ = try Self.runScript(script: Self.resumeScript, arguments: [location.cwd, location.sessionID, location.directory.path])
++                DispatchQueue.main.async { completion(nil) }
++            } catch {
++                DispatchQueue.main.async { completion("Could not resume Pi in Ghostty: \(error.localizedDescription)") }
++            }
++        }
++    }
++
+     private func loadSnapshot() {
+         do {
+             guard Self.isGhosttyRunning else {
+@@ -1406,6 +1506,43 @@ final class GhosttyClient {
+         return output
+     }
+ 
++    private static let archiveCloseScript = #"""
++    on run argv
++        set terminalID to item 1 of argv
++        set expectedTTY to item 2 of argv
++        set expectedPID to (item 3 of argv) as integer
++        tell application "Ghostty"
++            if not (exists (first terminal whose id is terminalID)) then return
++            set targetTerminal to first terminal whose id is terminalID
++            if tty of targetTerminal is not expectedTTY or pid of targetTerminal is not expectedPID then
++                error "Terminal ownership changed or the original shell is not idle; left open."
++            end if
++            close targetTerminal
++        end tell
++    end run
++    """#
++
++    private static let resumeScript = #"""
++    on run argv
++        set cwdValue to item 1 of argv
++        set sessionValue to item 2 of argv
++        set directoryValue to item 3 of argv
++        set sessionArgument to sessionValue
++        if sessionValue ends with ".jsonl" then set sessionArgument to directoryValue & "/archive_" & sessionValue & ".jsonl"
++        set innerCommand to "cd -- " & quoted form of cwdValue & " && pi --session " & quoted form of sessionArgument & " --session-dir " & quoted form of directoryValue
++        set commandValue to "/bin/zsh -lic " & quoted form of innerCommand
++        tell application "Ghostty"
++            set config to new surface configuration from {initial working directory:cwdValue, command:commandValue}
++            if (count of windows) > 0 then
++                new tab in front window with configuration config
++            else
++                new window with configuration config
++            end if
++            activate
++        end tell
++    end run
++    """#
++
+     private static let snapshotScript = #"""
+     function optional(getter, fallback) {
+         try {
+@@ -1505,17 +1642,26 @@ private struct SessionActionRequest: Encodable {
+     let requestId: String
+     let sessionId: String?
+     let path: String?
++    let piSessionId: String?
++    let sessionDirectory: String?
++    let expectedShellPID: Int32?
+ 
+     init(
+         type: String,
+         requestId: String,
+         sessionId: String? = nil,
+-        path: String? = nil
++        path: String? = nil,
++        piSessionId: String? = nil,
++        sessionDirectory: String? = nil,
++        expectedShellPID: Int32? = nil
+     ) {
+         self.type = type
+         self.requestId = requestId
+         self.sessionId = sessionId
+         self.path = path
++        self.piSessionId = piSessionId
++        self.sessionDirectory = sessionDirectory
++        self.expectedShellPID = expectedShellPID
+     }
+ }
+ 
+diff --git a/iTermate/SettingsViews.swift b/iTermate/SettingsViews.swift
+index 5933356..74927aa 100644
+--- a/iTermate/SettingsViews.swift
++++ b/iTermate/SettingsViews.swift
+@@ -715,6 +715,11 @@ struct SettingsView: View {
+                     Label("Status Animation", systemImage: "waveform.path")
+                 }
+ 
++            PiArchivesSettingsView(archives: store.piArchives, store: store)
++                .tabItem {
++                    Label("Archives", systemImage: "archivebox")
++                }
++
+             StatisticsSettingsView(store: store)
+                 .tabItem {
+                     Label("Statistics", systemImage: "chart.bar")
+diff --git a/iTermate/iTermateApp.swift b/iTermate/iTermateApp.swift
+index cd5f393..6b0558a 100644
+--- a/iTermate/iTermateApp.swift
++++ b/iTermate/iTermateApp.swift
+@@ -205,7 +205,7 @@ final class ComradePanel: NSPanel, NSWindowDelegate {
+         )
+ 
+         contentView = PanelHostingView(
+-            rootView: PanelContent(store: store, settings: settings)
++            rootView: PanelContent(store: store, settings: settings, archives: store.piArchives)
+         )
+         level = .floating
+         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
+@@ -428,6 +428,7 @@ private struct PanelContent: View {
+     @Environment(\.colorScheme) private var systemColorScheme
+     @ObservedObject var store: ItermStore
+     @ObservedObject var settings: AppSettings
++    @ObservedObject var archives: PiSessionArchives
+     @State private var collapsedSectionIDs: Set<String> = []
+     @State private var hoveredSessionID: String?
+     @State private var hoveredCloseButtonSessionID: String?
+@@ -466,6 +467,9 @@ private struct PanelContent: View {
+                         .font(panelFont(0.85))
+                         .foregroundStyle(.red)
+                 }
++                if let archiveError = archives.error {
++                    Text(archiveError).font(panelFont(0.85)).foregroundStyle(.red)
++                }
+                 if sessionGroups.isEmpty {
+                     statusView("No \(terminalName) sessions", showsProgress: false)
+                 } else {
+@@ -980,6 +984,12 @@ private struct PanelContent: View {
+                 : Color.clear
+         )
+         .clipShape(RoundedRectangle(cornerRadius: 7))
++        .contextMenu {
++            Button("Archive Pi Session…") {
++                confirmArchive(item.session, terminal: store.terminalApp ?? .iTerm2)
++            }
++            .disabled(!archives.canArchive(item.session, terminal: store.terminalApp ?? .iTerm2))
++        }
+         .overlay {
+             ActiveHoverRegion { isHovered in
+                 if isHovered {
+@@ -992,6 +1002,19 @@ private struct PanelContent: View {
+         }
+     }
+ 
++    private func confirmArchive(_ session: TerminalSessionSnapshot, terminal: TerminalApp) {
++        let alert = NSAlert()
++        alert.messageText = "Archive this Pi session?"
++        alert.informativeText = "Save a private local snapshot, quit Pi normally, then close this terminal. The original Pi record is kept. Running work, active subagents and open Pi dialogs must finish first; clear any unsent editor draft. You can resume the archive from Settings → Archives."
++        alert.alertStyle = .warning
++        alert.addButton(withTitle: "Archive and Close")
++        alert.addButton(withTitle: "Cancel")
++        NSApplication.shared.activate(ignoringOtherApps: true)
++        if alert.runModal() == .alertFirstButtonReturn {
++            store.archivePiSession(session, in: terminal)
++        }
++    }
++
+     private func sessionName(_ session: TerminalSessionSnapshot) -> String {
+         let name = session.name.trimmingCharacters(in: .whitespacesAndNewlines)
+         return name.isEmpty ? "Session" : name
+@@ -1086,7 +1109,7 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
+     /// Styles offered for this state; the question glyph belongs only to waiting.
+     var availableStyles: [SessionStatusAnimationStyle] {
+         let presets: [SessionStatusAnimationStyle] = [.alien, .robot, .classic]
+-        return self == .agentAwaitingInput ? [.questionMark] + presets : presets
++        return self == .agentAwaitingInput ? [.questionMark] : presets
+     }
+ 
+     var defaultStyle: SessionStatusAnimationStyle {
+diff --git a/iTermateBridge/iTermateBridge.py b/iTermateBridge/iTermateBridge.py
+index 5d0ae91..2f7a809 100644
+--- a/iTermateBridge/iTermateBridge.py
++++ b/iTermateBridge/iTermateBridge.py
+@@ -4,6 +4,7 @@ import asyncio
+ import fcntl
+ import json
+ import os
++import re
+ import shlex
+ import sys
+ import time
+@@ -111,6 +112,16 @@ class Bridge:
+         request_id = request.get("requestId")
+         action = request.get("type")
+ 
++        if action == "resumePiSession":
++            try:
++                await self.resume_pi_session(request)
++            except Exception as error:
++                await self.send_action_result(writer, request_id, False, str(error))
++                return
++            await self.send_action_result(writer, request_id, True, None)
++            await self.publish_snapshot()
++            return
++
+         if action == "activateNextFinishedSession":
+             try:
+                 await self.activate_next_finished_session()
+@@ -194,17 +205,29 @@ class Bridge:
+             await self.publish_snapshot()
+             return
+ 
+-        if action not in {"activateSession", "closeSession"}:
++        if action not in {"activateSession", "closeSession", "closeArchivedSession"}:
+             await self.send_action_result(writer, request_id, False, "Unknown action")
+             return
+ 
+         session = self.app.get_session_by_id(session_id)
+         if session is None:
+-            await self.send_action_result(writer, request_id, False, "Session not found")
++            await self.send_action_result(
++                writer, request_id, action == "closeArchivedSession",
++                None if action == "closeArchivedSession" else "Session not found"
++            )
+             return
+ 
+         try:
+-            if action == "closeSession":
++            if action == "closeArchivedSession":
++                expected_pid = request.get("expectedShellPID")
++                if isinstance(expected_pid, bool) or not isinstance(expected_pid, int) or expected_pid <= 1:
++                    raise ValueError("Invalid archived session owner")
++                job_pid = await session.async_get_variable("jobPid")
++                prompt = await self.current_prompt(session_id)
++                if job_pid not in (expected_pid, str(expected_pid)) or (prompt is not None and prompt.state == iterm2.PromptState.RUNNING):
++                    raise ValueError("Original shell is not idle or terminal ownership changed; left open")
++                await session.async_close(force=False)
++            elif action == "closeSession":
+                 await session.async_close()
+             else:
+                 await session.async_activate()
+@@ -294,6 +317,47 @@ class Bridge:
+         await tab.current_session.async_activate()
+         await self.app.async_activate(raise_all_windows=False)
+ 
++    async def resume_pi_session(self, request):
++        cwd = request.get("path")
++        session_id = request.get("piSessionId")
++        directory = request.get("sessionDirectory")
++        if not isinstance(cwd, str) or not os.path.isabs(cwd) or "\0" in cwd or not os.path.isdir(cwd):
++            raise ValueError("Original working directory is unavailable")
++        if not isinstance(session_id, str) or not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9._-]{0,126}[A-Za-z0-9])?", session_id):
++            raise ValueError("Invalid Pi session ID")
++        root = os.path.realpath(os.path.join(SUPPORT_DIRECTORY, "ResumedPiSessions"))
++        if not isinstance(directory, str) or not os.path.isabs(directory) or "\0" in directory:
++            raise ValueError("Invalid resume directory")
++        directory = os.path.realpath(directory)
++        if os.path.dirname(directory) != root:
++            raise ValueError("Resume copy must belong to iTermate")
++        transcript = os.path.join(directory, f"archive_{session_id}.jsonl")
++        if os.path.realpath(transcript) != transcript:
++            raise ValueError("Resume transcript must not be a symbolic link")
++        with open(transcript, encoding="utf-8") as stream:
++            header = json.loads(stream.readline(65536))
++        if header.get("type") != "session" or header.get("id") != session_id or header.get("cwd") != cwd:
++            raise ValueError("Resume transcript identity does not match")
++        # Pi interprets an argument ending in .jsonl as a path, even if it is a custom ID.
++        session_argument = transcript if session_id.endswith(".jsonl") else session_id
++        command = "cd -- " + shlex.quote(cwd) + " && pi --session " + shlex.quote(session_argument)
++        command += " --session-dir " + shlex.quote(directory)
++        profile = iterm2.LocalWriteOnlyProfile()
++        profile.set_initial_directory_mode(iterm2.InitialWorkingDirectory.INITIAL_WORKING_DIRECTORY_CUSTOM)
++        profile.set_custom_directory(cwd)
++        profile.set_use_custom_command("Yes")
++        profile.set_command("/bin/zsh -lic " + shlex.quote(command))
++        window = self.app.current_window
++        if window is None:
++            window = await iterm2.Window.async_create(self.connection, profile_customizations=profile)
++            tab = window.current_tab if window is not None else None
++        else:
++            tab = await window.async_create_tab(profile_customizations=profile)
++        if tab is None or tab.current_session is None:
++            raise RuntimeError("Could not create a terminal for the archived Pi session")
++        await tab.current_session.async_activate()
++        await self.app.async_activate(raise_all_windows=False)
++
+     async def monitor_iterm_connection(self):
+         await self.connection.websocket.wait_closed()
+         raise ConnectionError("iTerm2 disconnected")
+diff --git a/integrations/pi/iTermate-integration.ts b/integrations/pi/iTermate-integration.ts
+index f48d858..30db546 100644
+--- a/integrations/pi/iTermate-integration.ts
++++ b/integrations/pi/iTermate-integration.ts
+@@ -1,10 +1,10 @@
+-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+-import { randomUUID } from "node:crypto";
++import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
++import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+ import { readFile, access } from "node:fs/promises";
+-import { existsSync } from "node:fs";
++import { chmodSync, closeSync, existsSync, fsyncSync, mkdirSync, mkdtempSync, openSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+ import { request as httpRequest } from "node:http";
+ import { execFileSync } from "node:child_process";
+-import { connect, type Socket } from "node:net";
++import { connect, createServer, type Socket } from "node:net";
+ import { homedir } from "node:os";
+ import { join } from "node:path";
+ 
+@@ -71,12 +71,20 @@ export function needsReply(text: string): boolean {
+   // Short approval gates already imply waiting; they need no second sentence
+   // saying "I will wait". Keep them action-scoped to avoid rhetorical questions.
+   const approvalGate = /(?:按(?:这个|上述|以上|该)(?:范围|方案|计划|方式|步骤|设计|配置|目标)[^。！？?\n]{0,24}[，,]\s*(?:可以|行|好)(?:吗|么)|(?:这样|这么)(?:实现|修改|调整|处理|执行|继续|安排)[，,]?\s*(?:可以|行|好)(?:吗|么))[？?]\s*$/u.test(tail);
+-  const request = [
++  const requests = [
+     /(?:是否|能否)[^。！？\n]{0,80}[？?]|\b(?:can|could|would|will) you (?:confirm|choose|select|provide)\b|请(?:你|您)?[^。！？\n]{0,30}(?:确认|选择|回复|提供|补充)|(?:你|您)(?:更希望|希望|选择|倾向)[^。！？\n]{0,80}[？?]|\bplease\s+(?:confirm|choose|select|reply|provide)\b/i,
+     /请(?:你|您)?[^。！？\n]{0,30}(?:批准|授权|决定|告知|告诉我|回答|选定)|(?:你|您)(?:更偏好|更倾向于?|想要)[^。！？\n]{0,80}[？?]/,
+     /\b(?:please|(?:can|could|would|will) you)\s+(?:approve|authorize|pick|decide|answer|clarify|specify|tell me|let me know)\b/i,
+     /\b(?:which|what)\b[^.!?\n]{0,60}\b(?:do|would) you\s+(?:prefer|choose|want|like)\b[^.!?\n]{0,40}\?|\b(?:may|should|can) I\s+(?:proceed|continue|start|begin)\b[^.!?\n]{0,40}\?/i,
+-  ].some((pattern) => pattern.test(tail));
++  ];
++  const request = requests.some((pattern) => pattern.test(tail));
++  // A direct closing request needs no second sentence promising to wait.
++  // Inspect the final sentence so a question already answered in the reply
++  // does not remain pending.
++  const finalSentence = tail.match(/[^。！？.!?\n]+[。！？.!?]?/g)?.at(-1)?.trim() ?? "";
++  const directRequest = requests.some((pattern) => pattern.test(finalSentence))
++    && !/\bwhenever convenient\b/i.test(finalSentence);
++  const confirmationGate = /^(?:确认|批准|授权|回复|选择)(?:后|之后)[^。！？.!?\n]{0,20}(?:写入|校验|修改|更新|保存|提交|开始|继续|执行|进行)[^。！？.!?\n]{0,30}[。.!！]?$/u.test(finalSentence);
+   const waiting = [
+     /(?:确认|选择|回复|回答|提供|补充)[^。！？\n]{0,20}(?:后|之后)[^。！？\n]{0,20}(?:开始|继续|执行|进行)|(?:等待|等你|等您)[^。！？\n]{0,20}(?:确认|选择|回复|回答)|\b(?:before I (?:begin|start|continue|proceed)|(?:once|after) you (?:confirm|choose|reply)|waiting for your (?:reply|confirmation|answer))\b/i,
+     /(?:批准|授权|决定|选定|答复)[^。！？\n]{0,20}(?:后|之后)[^。！？\n]{0,20}(?:开始|继续|执行|进行)|(?:等待|等候|等你|等您)[^。！？\n]{0,20}(?:批准|授权|决定|选定|答复|补充|提供)/,
+@@ -84,7 +92,7 @@ export function needsReply(text: string): boolean {
+     /\b(?:waiting for|awaiting) your (?:response|approval|authorization|decision|choice|input|reply|confirmation|answer)\b|\b(?:once|after) you (?:approve|authorize|select|pick|decide|answer|respond|provide|clarify|specify)\b|\b(?:before I can|before we|until you (?:confirm|approve|authorize|choose|select|reply|respond|provide))\b[^.!?\n]{0,40}\b(?:begin|start|continue|proceed)\b/i,
+     /\b(?:cannot|can't|can’t)\s+(?:continue|proceed|start|begin)\s+(?:without your (?:confirmation|approval|authorization|reply|response|input)|until you (?:confirm|approve|authorize|choose|select|reply|respond|provide))\b/i,
+   ].some((pattern) => pattern.test(tail));
+-  return approvalGate || (request && waiting);
++  return approvalGate || confirmationGate || directRequest || (request && waiting);
+ }
+ 
+ function report(
+@@ -220,12 +228,174 @@ async function classifyReplyWithModel(text: string): Promise<boolean | undefined
+   } catch { return undefined; }
+ }
+ 
++// Private per-process discovery avoids guessing session files from titles or cwd.
++function startArchiveEndpoint(ctx: ExtensionContext, canArchive: () => boolean, refresh: () => Promise<void>) {
++  const liveDirectory = join(homedir(), ".iTermate", "pi-live");
++  const archiveDirectory = join(supportDirectory, "ArchivedPiSessions");
++  const identity = randomUUID();
++  const socketPath = join(liveDirectory, `${identity.slice(0, 16)}.sock`);
++  const descriptorPath = join(liveDirectory, `${identity}.json`);
++  const token = randomBytes(32).toString("hex");
++  let closing = false;
++  let stopped = false;
++  let ownsSocket = false;
++  let timer: ReturnType<typeof setInterval> | undefined;
++  const clients = new Set<Socket>();
++  const metadata = () => ({
++    version: 1, id: identity, pid: process.pid, parentPid: process.ppid, token, socketPath,
++    terminal: iTermSessionID() ? "iTerm2" : "Ghostty",
++    terminalSessionId: iTermSessionID() ?? null, tty: tty ?? null,
++    sessionId: ctx.sessionManager.getSessionId(),
++    sessionFile: ctx.sessionManager.getSessionFile() ?? "", cwd: ctx.sessionManager.getCwd(),
++    name: (ctx.sessionManager.getSessionName() ?? "Pi session").slice(0, 200),
++    canArchive: !closing && canArchive() && !!ctx.sessionManager.getSessionFile(),
++    updatedAt: Date.now() / 1000,
++  });
++  const publish = () => {
++    if (stopped) return;
++    try {
++      const temporary = descriptorPath + ".tmp";
++      writeFileSync(temporary, JSON.stringify(metadata()), { mode: 0o600 });
++      renameSync(temporary, descriptorPath);
++    } catch { /* Discovery failure must not affect the Agent. */ }
++  };
++  const durableWrite = (path: string, data: string) => {
++    const fd = openSync(path, "wx", 0o600);
++    try { writeFileSync(fd, data); fsyncSync(fd); } finally { closeSync(fd); }
++  };
++  const server = createServer((socket) => {
++    clients.add(socket);
++    let ownsClosing = false;
++    let shutdownRequested = false;
++    const releaseClosing = () => {
++      if (ownsClosing && !shutdownRequested) {
++        ownsClosing = false;
++        closing = false;
++        publish();
++      }
++    };
++    socket.on("close", () => { clients.delete(socket); releaseClosing(); });
++    socket.on("error", releaseClosing);
++    socket.setTimeout(10000, () => socket.destroy());
++    let buffer = "";
++    let handled = false;
++    socket.on("data", async (data) => {
++      if (handled) return;
++      buffer += data.toString();
++      if (buffer.length > 8192) { socket.destroy(); return; }
++      if (!buffer.includes("\n")) return;
++      handled = true;
++      let staging: string | undefined;
++      try {
++        const request = JSON.parse(buffer.split("\n", 1)[0]);
++        const supplied = Buffer.from(typeof request.token === "string" ? request.token : "");
++        if (supplied.length !== token.length || !timingSafeEqual(supplied, Buffer.from(token))
++          || request.action !== "archive" || request.sessionId !== ctx.sessionManager.getSessionId()) {
++          throw new Error("Pi session identity or authorization changed. Refresh and retry.");
++        }
++        if (closing || stopped) throw new Error("Archive already in progress.");
++        closing = true;
++        ownsClosing = true;
++        publish();
++        await refresh();
++        if (stopped || socket.destroyed || request.sessionId !== ctx.sessionManager.getSessionId() || !canArchive()) {
++          throw new Error("Pi is busy, has pending input, or child activity cannot be safely ruled out.");
++        }
++        const info = metadata();
++        const header = ctx.sessionManager.getHeader();
++        const entries = ctx.sessionManager.getEntries();
++        const leafId = ctx.sessionManager.getLeafId();
++        if (!info.sessionFile || !header || header.id !== info.sessionId || header.cwd !== info.cwd
++          || !/^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,126}[A-Za-z0-9])?$/.test(info.sessionId)) {
++          throw new Error("This Pi session cannot be archived as a resumable file.");
++        }
++        // A non-context anchor preserves the currently selected branch, even
++        // when /tree moved the leaf without appending a conversation entry.
++        const anchor = { type: "custom", id: randomUUID(), parentId: leafId,
++          timestamp: new Date().toISOString(), customType: "itermate.archive", data: {} };
++        const lines: string[] = [];
++        let bytes = 0;
++        for (const entry of [header, ...entries, anchor]) {
++          const line = JSON.stringify(entry) + "\n";
++          bytes += Buffer.byteLength(line);
++          if (bytes > 64 * 1024 * 1024) throw new Error("Session exceeds the 64 MiB archive limit.");
++          lines.push(line);
++        }
++        const transcript = lines.join("");
++        mkdirSync(archiveDirectory, { recursive: true, mode: 0o700 });
++        chmodSync(archiveDirectory, 0o700);
++        staging = mkdtempSync(join(archiveDirectory, ".pending-"));
++        const archiveId = randomUUID();
++        const filename = `archive_${info.sessionId}.jsonl`;
++        const digest = createHash("sha256").update(transcript).digest("hex");
++        durableWrite(join(staging, filename), transcript);
++        if (createHash("sha256").update(readFileSync(join(staging, filename))).digest("hex") !== digest) {
++          throw new Error("Archive verification failed; Pi will remain open.");
++        }
++        durableWrite(join(staging, "manifest.json"), JSON.stringify({
++          version: 1, id: archiveId, sessionId: info.sessionId, name: info.name,
++          cwd: info.cwd, archivedAt: Date.now() / 1000, filename, sha256: digest,
++          originalSessionFile: info.sessionFile, terminal: info.terminal,
++        }));
++        renameSync(staging, join(archiveDirectory, archiveId));
++        staging = undefined;
++        const directoryFD = openSync(archiveDirectory, "r");
++        try { fsyncSync(directoryFD); } finally { closeSync(directoryFD); }
++        socket.end(JSON.stringify({ ok: true, archiveId }) + "\n", () => {
++          // Graceful Pi shutdown runs its normal persistence/cleanup handlers.
++          // iTermate closes the terminal only after independently checking the
++          // archive and observing this exact process exit.
++          if (stopped || socket.destroyed) { releaseClosing(); return; }
++          shutdownRequested = true;
++          ctx.shutdown();
++        });
++      } catch (error) {
++        if (staging) { try { rmSync(staging, { recursive: true }); } catch {} }
++        releaseClosing();
++        publish();
++        socket.end(JSON.stringify({ ok: false, error: error instanceof Error ? error.message : "Archive failed." }) + "\n");
++      }
++    });
++  });
++  const stop = () => {
++    if (stopped) return;
++    stopped = true;
++    clearInterval(timer);
++    try { server.close(); } catch {}
++    for (const socket of clients) socket.destroy();
++    for (const path of [descriptorPath, descriptorPath + ".tmp", ...(ownsSocket ? [socketPath] : [])]) {
++      try { rmSync(path, { force: true }); } catch {}
++    }
++  };
++  server.maxConnections = 4;
++  server.on("error", stop);
++  try {
++    if (Buffer.byteLength(socketPath) >= 104) throw new Error("Socket path too long");
++    mkdirSync(liveDirectory, { recursive: true, mode: 0o700 });
++    chmodSync(liveDirectory, 0o700);
++    server.listen(socketPath, () => {
++      ownsSocket = true;
++      if (stopped) {
++        try { rmSync(socketPath, { force: true }); } catch {}
++        return;
++      }
++      try {
++        chmodSync(socketPath, 0o600);
++        publish();
++        timer = setInterval(publish, 2000);
++        timer.unref();
++      } catch { stop(); }
++    });
++    server.unref();
++  } catch { stop(); }
++  return { stop, isClosing: () => closing };
++}
++
+ export default function (pi: ExtensionAPI): void {
+   let agentFailed = false;
+   let agentRunning = false;
+   let replyPending = false;
+   let lastAssistantText = "";
+-  let modelDecision: boolean | undefined;
+   let promptOpen = false;
+   let baseStatus: Status = "idle";
+   let active = false;
+@@ -239,6 +409,17 @@ export default function (pi: ExtensionAPI): void {
+   let fleetTimer: ReturnType<typeof setTimeout> | undefined;
+   let fleetRequest: Promise<void> | undefined;
+   let cancelFleetRequest: (() => void) | undefined;
++  let archiveEndpoint: ReturnType<typeof startArchiveEndpoint> | undefined;
++
++  pi.on("input", () => archiveEndpoint?.isClosing() ? { action: "handled" } : undefined);
++  pi.on("session_before_switch", () => archiveEndpoint?.isClosing() ? { cancel: true } : undefined);
++  pi.on("session_before_fork", () => archiveEndpoint?.isClosing() ? { cancel: true } : undefined);
++  pi.on("session_before_tree", () => archiveEndpoint?.isClosing() ? { cancel: true } : undefined);
++  pi.on("session_before_compact", () => archiveEndpoint?.isClosing() ? { cancel: true } : undefined);
++  pi.on("cache_warming_decision", () => archiveEndpoint?.isClosing() ? { action: "stop" } : undefined);
++  pi.on("user_bash", () => {
++    if (archiveEndpoint?.isClosing()) throw new Error("Pi is being archived; wait for the operation to finish.");
++  });
+ 
+   // Query the public, current-session DTO, not tool text or historical messages.
+   function refreshFleet(): Promise<void> {
+@@ -338,15 +519,10 @@ export default function (pi: ExtensionAPI): void {
+       return;
+     }
+     heartbeatPausedForFleet = false;
+-    if (modelDecision !== undefined && !existsSync(join(supportDirectory, "Laya", "analysis-enabled"))) {
+-      modelDecision = undefined;
+-      baseStatus = replyPending ? "awaitingInput" : "finished";
+-      confirmed = false; // A changed classification needs a full transition, not a lease renewal.
+-    }
+     const status = visibleStatus();
+     const leased = status === "running" || status === "awaitingInput";
+-    // A model-derived negative decision watches the enable marker without
+-    // repeatedly reporting completion or changing its timestamp.
++    // A confirmed question stays pending until the next turn or navigation,
++    // even if optional model analysis is subsequently disabled.
+     const accepted = !leased && confirmed ? true : await queueReport(
+       status,
+       status === "finished" ? (agentFailed ? 1 : 0) : undefined,
+@@ -356,7 +532,7 @@ export default function (pi: ExtensionAPI): void {
+     if (generation !== heartbeatGeneration) return;
+     // Retry the full transition until acknowledged, not a heartbeat that the
+     // receiver might reject against its previous idle/finished state.
+-    if (leased || modelDecision !== undefined || (!accepted && retries > 0)) {
++    if (leased || (!accepted && retries > 0)) {
+       heartbeatTimer = setTimeout(
+         () => void sendHeartbeat(generation, accepted, leased ? 3 : retries - 1), 2000,
+       );
+@@ -373,7 +549,6 @@ export default function (pi: ExtensionAPI): void {
+     active = ctx.mode === "tui";
+     baseStatus = "idle";
+     lastAssistantText = "";
+-    modelDecision = undefined;
+     agentRunning = false;
+     replyPending = false;
+     promptOpen = false;
+@@ -381,6 +556,13 @@ export default function (pi: ExtensionAPI): void {
+     heartbeatPausedForFleet = false;
+     fleetObservedAt = 0;
+     fleetGeneration += 1;
++    archiveEndpoint?.stop();
++    archiveEndpoint = active && (iTermSessionID() || tty)
++      ? startArchiveEndpoint(ctx, () => active && !agentRunning && !promptOpen
++        && ctx.isIdle() && !ctx.hasPendingMessages() && !ctx.ui.getEditorText().trim() && !hasRunningSubagents
++        && (!pi.getAllTools().some(tool => tool.name === "subagent")
++          || (fleetObservedAt > 0 && performance.now() - fleetObservedAt <= 6000)), refreshFleet)
++      : undefined;
+     // Let other extensions restore their state before the first observation.
+     if (active) fleetTimer = setTimeout(() => void pollFleet(fleetGeneration), 0);
+     return publish();
+@@ -394,7 +576,6 @@ export default function (pi: ExtensionAPI): void {
+   pi.on("agent_start", () => {
+     agentFailed = false;
+     agentRunning = true;
+-    modelDecision = undefined;
+     lastAssistantText = "";
+     replyPending = false;
+     baseStatus = "running";
+@@ -412,23 +593,24 @@ export default function (pi: ExtensionAPI): void {
+     lastAssistantText = message.stopReason === "stop"
+       ? message.content.flatMap((block) => block.type === "text" ? [block.text] : []).join("\n")
+       : "";
+-    replyPending = needsReply(lastAssistantText); // Cached fallback, not the primary decision.
++    replyPending = needsReply(lastAssistantText);
+   });
+   pi.on("agent_settled", async (_event, ctx) => {
+     if (!active || !ctx.isIdle()) return;
+     stopHeartbeat();
+     // Establish the lifecycle fallback before awaiting optional inference so UI
+     // prompt events during that wait cannot restore the old running state.
+-    modelDecision = undefined;
+     baseStatus = replyPending ? "awaitingInput" : "finished";
+     const generation = heartbeatGeneration;
+     await refreshFleet();
+     const decision = !agentFailed && !promptOpen
+       ? await classifyReplyWithModel(lastAssistantText) : undefined;
+     if (!active || !ctx.isIdle() || generation !== heartbeatGeneration) return;
+-    modelDecision = existsSync(join(supportDirectory, "Laya", "analysis-enabled"))
+-      ? decision : undefined;
+-    baseStatus = (modelDecision ?? replyPending) ? "awaitingInput" : "finished";
++    // Either positive signal is sufficient. A model's negative/uncertain
++    // result must not erase an explicit request already found in the reply.
++    replyPending ||= existsSync(join(supportDirectory, "Laya", "analysis-enabled"))
++      && decision === true;
++    baseStatus = replyPending ? "awaitingInput" : "finished";
+     return publish();
+   });
+   pi.on("ui_prompt_start", (event, ctx) => {
+@@ -442,7 +624,6 @@ export default function (pi: ExtensionAPI): void {
+     return publish();
+   });
+   pi.on("session_tree", () => {
+-    modelDecision = undefined;
+     lastAssistantText = "";
+     replyPending = false;
+     // Pi still holds its branch-navigation busy flag during this event.
+@@ -450,6 +631,8 @@ export default function (pi: ExtensionAPI): void {
+     return publish();
+   });
+   pi.on("session_shutdown", () => {
++    archiveEndpoint?.stop();
++    archiveEndpoint = undefined;
+     if (!active) return;
+     active = false;
+     fleetGeneration += 1;

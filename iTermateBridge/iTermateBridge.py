@@ -4,6 +4,7 @@ import asyncio
 import fcntl
 import json
 import os
+import re
 import shlex
 import sys
 import time
@@ -106,6 +107,16 @@ class Bridge:
         request_id = request.get("requestId")
         action = request.get("type")
 
+        if action == "resumePiSession":
+            try:
+                await self.resume_pi_session(request)
+            except Exception as error:
+                await self.send_action_result(writer, request_id, False, str(error))
+                return
+            await self.send_action_result(writer, request_id, True, None)
+            await self.publish_snapshot()
+            return
+
         if action == "activateNextFinishedSession":
             try:
                 await self.activate_next_finished_session()
@@ -189,17 +200,46 @@ class Bridge:
             await self.publish_snapshot()
             return
 
-        if action not in {"activateSession", "closeSession"}:
+        if action not in {"activateSession", "closeSession", "closeArchivedSession"}:
             await self.send_action_result(writer, request_id, False, "Unknown action")
             return
 
         session = self.app.get_session_by_id(session_id)
         if session is None:
-            await self.send_action_result(writer, request_id, False, "Session not found")
+            await self.send_action_result(
+                writer, request_id, action == "closeArchivedSession",
+                None if action == "closeArchivedSession" else "Session not found"
+            )
             return
 
         try:
-            if action == "closeSession":
+            if action == "closeArchivedSession":
+                expected_pid = request.get("expectedShellPID")
+                if isinstance(expected_pid, bool) or not isinstance(expected_pid, int) or expected_pid <= 1:
+                    raise ValueError("Invalid archived session owner")
+                # Pi exit can precede iTerm's foreground-job/prompt refresh.
+                # Wait briefly for the original shell, never force-close a new job.
+                for attempt in range(30):
+                    session = self.app.get_session_by_id(session_id)
+                    if session is None:
+                        break  # The exact pane is already closed.
+                    job_pid = await session.async_get_variable("jobPid")
+                    prompt = await self.current_prompt(session_id)
+                    if job_pid in (expected_pid, str(expected_pid)):
+                        if prompt is None or prompt.state != iterm2.PromptState.RUNNING:
+                            await session.async_close(force=False)
+                            break
+                    elif str(job_pid).isdigit() and int(job_pid) > 1:
+                        try:
+                            os.kill(int(job_pid), 0)
+                        except ProcessLookupError:
+                            pass  # A stale exited Pi PID may still be displayed.
+                        else:
+                            raise ValueError("Another process owns this terminal; left open")
+                    if attempt == 29:
+                        raise ValueError("Original shell is not idle or terminal ownership changed; left open")
+                    await asyncio.sleep(0.1)
+            elif action == "closeSession":
                 await session.async_close()
             else:
                 await session.async_activate()
@@ -286,6 +326,47 @@ class Bridge:
 
         if tab is None or tab.current_session is None:
             raise RuntimeError("Could not create iTerm2 session")
+        await tab.current_session.async_activate()
+        await self.app.async_activate(raise_all_windows=False)
+
+    async def resume_pi_session(self, request):
+        cwd = request.get("path")
+        session_id = request.get("piSessionId")
+        directory = request.get("sessionDirectory")
+        if not isinstance(cwd, str) or not os.path.isabs(cwd) or "\0" in cwd or not os.path.isdir(cwd):
+            raise ValueError("Original working directory is unavailable")
+        if not isinstance(session_id, str) or not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9._-]{0,126}[A-Za-z0-9])?", session_id):
+            raise ValueError("Invalid Pi session ID")
+        root = os.path.realpath(os.path.join(SUPPORT_DIRECTORY, "ResumedPiSessions"))
+        if not isinstance(directory, str) or not os.path.isabs(directory) or "\0" in directory:
+            raise ValueError("Invalid resume directory")
+        directory = os.path.realpath(directory)
+        if os.path.dirname(directory) != root:
+            raise ValueError("Resume copy must belong to iTermate")
+        transcript = os.path.join(directory, f"archive_{session_id}.jsonl")
+        if os.path.realpath(transcript) != transcript:
+            raise ValueError("Resume transcript must not be a symbolic link")
+        with open(transcript, encoding="utf-8") as stream:
+            header = json.loads(stream.readline(65536))
+        if header.get("type") != "session" or header.get("id") != session_id or header.get("cwd") != cwd:
+            raise ValueError("Resume transcript identity does not match")
+        # Pi interprets an argument ending in .jsonl as a path, even if it is a custom ID.
+        session_argument = transcript if session_id.endswith(".jsonl") else session_id
+        command = "cd -- " + shlex.quote(cwd) + " && pi --session " + shlex.quote(session_argument)
+        command += " --session-dir " + shlex.quote(directory)
+        profile = iterm2.LocalWriteOnlyProfile()
+        profile.set_initial_directory_mode(iterm2.InitialWorkingDirectory.INITIAL_WORKING_DIRECTORY_CUSTOM)
+        profile.set_custom_directory(cwd)
+        profile.set_use_custom_command("Yes")
+        profile.set_command("/bin/zsh -lic " + shlex.quote(command))
+        window = self.app.current_window
+        if window is None:
+            window = await iterm2.Window.async_create(self.connection, profile_customizations=profile)
+            tab = window.current_tab if window is not None else None
+        else:
+            tab = await window.async_create_tab(profile_customizations=profile)
+        if tab is None or tab.current_session is None:
+            raise RuntimeError("Could not create a terminal for the archived Pi session")
         await tab.current_session.async_activate()
         await self.app.async_activate(raise_all_windows=False)
 

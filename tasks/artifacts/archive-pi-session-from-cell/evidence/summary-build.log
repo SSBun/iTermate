@@ -1,0 +1,908 @@
+Command line invocation:
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/xcodebuild -project iTermate.xcodeproj -scheme iTermate -configuration Debug -destination platform=macOS -derivedDataPath /tmp/itermate-archive-summary-build build-for-testing
+
+Resolve Package Graph
+
+Fetching from https://github.com/sparkle-project/Sparkle (cached)
+
+Creating working copy of package ‘Sparkle’
+
+Checking out 2.9.4 of package ‘Sparkle’
+
+
+Resolved source packages:
+  Sparkle: https://github.com/sparkle-project/Sparkle @ 2.9.4
+
+2026-10-10 11:36:38.667 xcodebuild[3081:111891337] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:macOS, arch:arm64, id:00008132-0016511C0CD9801C, name:My Mac }
+{ platform:macOS, arch:x86_64, id:00008132-0016511C0CD9801C, name:My Mac }
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (3 targets)
+    Target 'iTermateTests' in project 'iTermate'
+        ➜ Explicit dependency on target 'iTermate' in project 'iTermate'
+    Target 'iTermate' in project 'iTermate'
+        ➜ Explicit dependency on target 'Sparkle' in project 'Sparkle'
+    Target 'Sparkle' in project 'Sparkle' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: f7e107e4de6e49b6776e7b7e35c3ea74
+Build description path: /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/XCBuildData/f7e107e4de6e49b6776e7b7e35c3ea74.xcbuilddata
+CreateBuildDirectory /tmp/itermate-archive-summary-build/Build/Products
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-archive-summary-build/Build/Products
+
+CreateBuildDirectory /tmp/itermate-archive-summary-build/Build/Intermediates.noindex
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-archive-summary-build/Build/Intermediates.noindex
+
+ClangStatCache /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk /tmp/itermate-archive-summary-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -o /tmp/itermate-archive-summary-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+
+CreateBuildDirectory /tmp/itermate-archive-summary-build/Build/Products/Debug
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-archive-summary-build/Build/Products/Debug
+
+CreateBuildDirectory /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+CreateBuildDirectory /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/ExplicitPrecompiledModules
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+CreateBuildDirectory /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate-0c11025b443859bc9d9b166c9f525db8-VFS/all-product-headers.yaml
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate-0c11025b443859bc9d9b166c9f525db8-VFS/all-product-headers.yaml
+
+CreateBuildDirectory /tmp/itermate-archive-summary-build/Build/Products/Debug/PackageFrameworks
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-archive-summary-build/Build/Products/Debug/PackageFrameworks
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-project-headers.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-project-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-generated-files.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-generated-files.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/empty-iTermateTests.plist (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/empty-iTermateTests.plist
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-target-headers.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-non-framework-target-headers.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-own-target-headers.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-own-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyStaticMetadataFileList (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyMetadataFileList (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyMetadataFileList
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_const_extract_protocols.json (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_const_extract_protocols.json
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftConstValuesFileList (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.LinkFileList (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.LinkFileList
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-OutputFileMap.json (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-OutputFileMap.json
+
+MkDir /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest
+
+MkDir /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents
+
+MkDir /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS
+
+ProcessXCFramework /tmp/itermate-archive-summary-build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework /tmp/itermate-archive-summary-build/Build/Products/Debug/Sparkle.framework macos
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-process-xcframework --xcframework /tmp/itermate-archive-summary-build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework --platform macos --target-path /tmp/itermate-archive-summary-build/Build/Products/Debug
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibInstallName-normal-arm64.txt (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibInstallName-normal-arm64.txt
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibPath-normal-arm64.txt (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-non-framework-target-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyStaticMetadataFileList (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyMetadataFileList (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyMetadataFileList
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftConstValuesFileList (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.LinkFileList (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.LinkFileList
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json
+
+MkDir /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+MkDir /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns
+
+WriteAuxiliaryFile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/Entitlements.plist (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    write-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/Entitlements.plist
+
+MkDir /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS
+
+MkDir /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+MkDir /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents
+
+MkDir /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app
+
+ProcessProductPackaging "" /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Entitlements:
+    
+    {
+    "com.apple.security.get-task-allow" = 1;
+}
+    
+    builtin-productPackagingUtility -entitlements -format xml -o /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent
+
+ProcessProductPackagingDER /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent.der (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /usr/bin/derq query -f xml -i /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent -o /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent.der --raw
+
+Ld /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib normal (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -dynamiclib -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-archive-summary-build/Build/Products/Debug -F/tmp/itermate-archive-summary-build/Build/Products/Debug -install_name @rpath/iTermate.debug.dylib -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat -Xlinker -no_adhoc_codesign -o /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib
+
+GenerateAssetSymbols /Users/caishilin/Desktop/personal/iTermate/iTermate/Assets.xcassets (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/actool /Users/caishilin/Desktop/personal/iTermate/iTermate/Assets.xcassets --compile /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources --output-format human-readable-text --notices --warnings --export-dependency-info /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies --output-partial-info-plist /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist --app-icon AppIcon --enable-on-demand-resources NO --development-region en --target-device mac --minimum-deployment-target 13.0 --platform macosx --bundle-identifier com.caishilin.iTermate --generate-swift-asset-symbol-extensions NO --generate-swift-asset-symbols /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift --generate-objc-asset-symbols /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.compilation-results */
+/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.h
+/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift
+
+
+CpResource /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermateBridge.py /Users/caishilin/Desktop/personal/iTermate/iTermateBridge/iTermateBridge.py (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/iTermateBridge/iTermateBridge.py /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate.zsh /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.zsh (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.zsh /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+MkDir /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned
+
+CpResource /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate.fish /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.fish (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.fish /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate.bash /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.bash (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/shell/iTermate.bash /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+MkDir /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/unthinned (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/unthinned
+
+CpResource /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate-status.py /Users/caishilin/Desktop/personal/iTermate/integrations/status/iTermate-status.py (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/status/iTermate-status.py /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate-laya.py /Users/caishilin/Desktop/personal/iTermate/integrations/laya/iTermate-laya.py (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/laya/iTermate-laya.py /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate-integration.ts /Users/caishilin/Desktop/personal/iTermate/integrations/pi/iTermate-integration.ts (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/pi/iTermate-integration.ts /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources/agent-connection-prompt.md /Users/caishilin/Desktop/personal/iTermate/integrations/laya/agent-connection-prompt.md (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /Users/caishilin/Desktop/personal/iTermate/integrations/laya/agent-connection-prompt.md /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestSwiftSupport.dylib /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestBundleInject.dylib /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libXCTestBundleInject.dylib (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libXCTestBundleInject.dylib /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUnit.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCUnit.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCUnit.framework /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUIAutomation.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/XCUIAutomation.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/XCUIAutomation.framework /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestSupport.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTestSupport.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTestSupport.framework /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestCore.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTestCore.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTestCore.framework /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTest.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTAutomationSupport.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Testing.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/Testing.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/Testing.framework /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework /tmp/itermate-archive-summary-build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable /tmp/itermate-archive-summary-build/SourcePackages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+CompileAssetCatalogVariant thinned /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources /Users/caishilin/Desktop/personal/iTermate/iTermate/Assets.xcassets (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/actool /Users/caishilin/Desktop/personal/iTermate/iTermate/Assets.xcassets --compile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies_thinned --output-partial-info-plist /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --enable-on-demand-resources NO --development-region en --target-device mac --minimum-deployment-target 13.0 --platform macosx
+/* com.apple.actool.compilation-results */
+/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_thinned
+/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned/AppIcon.icns
+/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned/Assets.car
+
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestBundleInject.dylib (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestBundleInject.dylib
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestBundleInject.dylib: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestSwiftSupport.dylib (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestSwiftSupport.dylib
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestSwiftSupport.dylib: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUnit.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUnit.framework
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUnit.framework: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUIAutomation.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUIAutomation.framework
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUIAutomation.framework: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestSupport.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestSupport.framework
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestSupport.framework: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestCore.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestCore.framework
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestCore.framework: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTest.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTest.framework
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTest.framework: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTAutomationSupport.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTAutomationSupport.framework
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTAutomationSupport.framework: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Testing.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Testing.framework
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Testing.framework: replacing existing signature
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework/Versions/B (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework/Versions/B
+/tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework/Versions/B: replacing existing signature
+
+LinkAssetCatalog /Users/caishilin/Desktop/personal/iTermate/iTermate/Assets.xcassets (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-linkAssetCatalog --thinned /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned --thinned-dependencies /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_thinned --unthinned /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/unthinned --unthinned-dependencies /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_unthinned --output /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources --plist-output /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist
+note: Emplaced /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources/AppIcon.icns (in target 'iTermate' from project 'iTermate')
+note: Emplaced /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources/Assets.car (in target 'iTermate' from project 'iTermate')
+
+ProcessInfoPlistFile /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Info.plist /Users/caishilin/Desktop/personal/iTermate/iTermate/Info.plist (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-infoPlistUtility /Users/caishilin/Desktop/personal/iTermate/iTermate/Info.plist -producttype com.apple.product-type.application -genpkginfo /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PkgInfo -expandbuildsettings -platform macosx -additionalcontentfile /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist -scanforprivacyfile /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework -o /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Info.plist
+
+SwiftDriver iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-SwiftDriver -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-archive-summary-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-archive-summary-build/Build/Products/Debug -F /tmp/itermate-archive-summary-build/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-archive-summary-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-archive-summary-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Products/Debug/include -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/SwiftShims-BF4KW8Z5J1KPGJU47XVFOINGZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_AvailabilityInternal-E16VERIO7G9UMBQZADWP2QMAB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_Builtin_float-9UV4G6XI8N1OHLYBSKEK0Y0XC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/ptrauth-8QU05X30EXF2BHX3DAEA1V6OD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_Builtin_stdbool-6OWIF1BO96NL441683WRE2BIQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_Builtin_stddef-6U6AMBV1JXLZHI0EBC1GEM2BS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/DeveloperToolsSupport-VGKXPSJYFOCV18X2QP1WVN1F.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/ptrcheck-BW7G5C09S0RA5T53N0IHHM3TJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_SwiftConcurrencyShims-32VMQRIR4GLIAJ8UJ4E314CUS.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_Builtin_stdarg-5YA0AJJTS97BK7ASDX9TWGT0L.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_DarwinFoundation1-AG6D0QI6AZ3QJVQDWJDYLLSOD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_Builtin_limits-7DAP5E1QMX20GQYH2N2I0XH8B.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_DarwinFoundation2-5QD3QUEYMP9LH3P9RIV10LOVM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_Builtin_tgmath-3WKG27AFY16VT0V459FJDWQ0R.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_Builtin_stdint-C9DEBYUHVYTR6AT8B6QCYY0M1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/sys_types-AXXDOZXCW2UFZA94UT25WT0O8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/OpenGL-7WURYZNDZN6KTZ09UJOOCVO9Q.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_DarwinFoundation3-MHHXN3FOK95LZJ9PAF4ZIJUG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_Builtin_stdatomic-C8Y5YM0E3KF51FKJEUO91URZF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/libDER-A3IMDQSAT6UYFBBGDVYWMOAZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_Builtin_intrinsics-2KO6YMIJR15SRGF9N83BKNLFU.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/_Builtin_inttypes-7ZUQP9RHXNTQQEP06HWD68B8P.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/Darwin-8GKDOSZ72ISH0ORJTCB6U5D9U.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/simd-B7TQQP4D0G4J83OVB5M98GM4T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/CUPS-D1FEZJ9XUZC086AWJY8ESMXCR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/libkern-8DU5OA5MMWX39VYJRQ1CFRW0L.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/launch-D9VN0RU73O4RZX5NOIW0IZG1B.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/MachO-DY6Y1U89RX8SP0JR3Y4M1YKDY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/Spatial-BS57GLNX2D0UELYLNNKRBAZL8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/ObjectiveC-6YSNGJX9Z3P80JGRSDHRD0Y5C.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/os_object-6VEQH175RG57LLUA1NCQE0PJ2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/os_workgroup-47912G74VAB14GAQ5HFD477MR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/Dispatch-1R44IQUJJBD3G74UNZGXJA7HQ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/XPC-48KOU2O8BCL4E3A1QX4BNKTNF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/dnssd-27XQVQEIB3C4SGS2BUSDLNIDB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/CoreFoundation-3LDTC11XKQARFSHYTLG0A0DSZ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/os-CDB4SYPL7C6YF2VZBN07M7TFO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/Security-2WDWYI1GI8K88FU56DWXUD2VP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/CFNetwork-BJJ68FV4CQ9QASMLJ4TJG31N8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/ColorSync-9FZTKA4T9UNB86RE6KRJNQQCY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/IOKit-AMGEUOD4BDBPNO37ZXZPDLJLK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/CoreGraphics-AU9Z71YT6CH7BMNCW43XWV5T4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/DiskArbitration-5EQ45HF1RVONKM03IAP64Z1KA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/CoreServices-BGPBM27B4JDWYSTDROJPIOFGM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/ImageIO-41DJJJKYCIBILXJLVVP98CTL1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/CoreText-4DS31P3EFKWAOGZ83ZAIXHW6U.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/Foundation-D0N1Z4UH7ZB335KRCNNGZCT0I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/UniformTypeIdentifiers-EJMHJONMHRMLM7VMF35CKN1X9.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/ServiceManagement-3ORLE4JQCYCYJA4TMF7UTFUS5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/Sparkle-4OCJ9KY4099YK8BZH3CNXFYM3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/DataDetection-6BTKVEPGSLS7PFYFELEJ2CI7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/CoreTransferable-CSG2NJ03ZHQFTSCIF49K4QGGM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/CoreData-BWSC81BKAKVAQTQVTQ253QWYH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/Accessibility-6XLA4AE54VBZ8YA6RZO8W4886.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/Network-2QIX4JXZ6RDY0L394F5K1GFTM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/IOSurface-8ASOL6OEOT3ACYHFTBV14J4CH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/UserNotifications-4W1KHBD26PBZE78ZE6N47KS05.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/ApplicationServices-CCG257IUMHEIOLWA4FORB62OY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/OSLog-3S0TDXHKX359J3G3WQUTWBYYP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/LocalAuthentication-6P2ZR5VZLEGSFQM4HI82FNVLN.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/Symbols-E64YDFPNBE4YJIZCXMG8PO6F4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/Metal-6HSGD69PLT3GVZF7Y4Q2DNDUP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/Carbon-60G1VTGLCPTG7FDWCLKK7HL7U.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/CoreVideo-BV3BNPVSVZ3KPTA7356XLQOFX.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/CoreImage-DVYXUA0KE5FCZCYVYWMUWQOCL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/QuartzCore-EOM5P150ZSKDE8Y8BUPDZ3BUX.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/SwiftUICore-2EXGW50TTYW9E6I8XB6VSF25E.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/AppKit-98N1P663Y6L54XXE6882VDAA6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/ModuleCache.noindex/SwiftUI-9VQ7XDGEQX2L9L5UQO2L9PZF7.pcm
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ iTermate (in target 'iTermate' from project 'iTermate')
+
+EmitSwiftModule normal arm64 (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ GeneratedAssetSymbols.swift /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+SwiftCompile normal arm64 /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ SessionNotifications.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ iTermateApp.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ AgentIntegrations.swift,\ FinishedSessionShortcut.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/AgentIntegrations.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/FinishedSessionShortcut.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/AgentIntegrations.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/FinishedSessionShortcut.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ LocalModelService.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/LocalModelService.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/LocalModelService.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ ItermBridge.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/ItermBridge.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/ItermBridge.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ PanelLayout.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/PanelLayout.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/PanelLayout.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ PiSessionArchives.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ TerminalStatusServer.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/TerminalStatusServer.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/TerminalStatusServer.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ SettingsViews.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for iTermate (in target 'iTermate' from project 'iTermate')
+
+SwiftDriver\ Compilation\ Requirements iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-archive-summary-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-archive-summary-build/Build/Products/Debug -F /tmp/itermate-archive-summary-build/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-archive-summary-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-archive-summary-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Products/Debug/include -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftMergeGeneratedHeaders /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/iTermate-Swift.h /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-swiftHeaderTool -arch arm64 /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -o /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/iTermate-Swift.h
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftmodule /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftmodule
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftdoc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftdoc (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftdoc /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftdoc
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.abi.json /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.abi.json (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.abi.json /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.abi.json
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftsourceinfo (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftsourceinfo /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo
+
+SwiftDriver iTermateTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-SwiftDriver -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermateTests -Onone -enforce-exclusivity\=checked @/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList -DDEBUG -plugin-path /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-archive-summary-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-archive-summary-build/Build/Products/Debug -Isystem /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib -F /tmp/itermate-archive-summary-build/Build/Products/Debug -F /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-archive-summary-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-archive-summary-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-generated-files.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-own-target-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-project-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Products/Debug/include -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling TerminalStatusServer.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCUIAutomation-40SRQV8BASGQCXXNGYUDDM9S3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCTest-ADJQL0JIBWQ3ICX5WJP2OJ5UN.pcm
+
+SwiftExplicitDependencyCompileModuleFromInterface arm64 /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCUIAutomation-3BATV61ZIM9EJ.swiftmodule
+
+SwiftExplicitDependencyCompileModuleFromInterface arm64 /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCTest-DKHZDGBG97DS.swiftmodule
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ iTermateTests (in target 'iTermateTests' from project 'iTermate')
+
+EmitSwiftModule normal arm64 (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ PiSessionArchiveTests.swift /Users/caishilin/Desktop/personal/iTermate/iTermateTests/PiSessionArchiveTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermateTests/PiSessionArchiveTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ SessionNotificationTests.swift /Users/caishilin/Desktop/personal/iTermate/iTermateTests/SessionNotificationTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermateTests/SessionNotificationTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for iTermateTests (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriver\ Compilation\ Requirements iTermateTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermateTests -Onone -enforce-exclusivity\=checked @/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList -DDEBUG -plugin-path /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-archive-summary-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-archive-summary-build/Build/Products/Debug -Isystem /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib -F /tmp/itermate-archive-summary-build/Build/Products/Debug -F /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-archive-summary-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-archive-summary-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-generated-files.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-own-target-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-project-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Products/Debug/include -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling PanelLayout.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 Compiling\ FinishedSessionShortcutTests.swift /Users/caishilin/Desktop/personal/iTermate/iTermateTests/FinishedSessionShortcutTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermateTests/FinishedSessionShortcutTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftMergeGeneratedHeaders /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources/iTermateTests-Swift.h /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-Swift.h (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-swiftHeaderTool -arch arm64 /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-Swift.h -o /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources/iTermateTests-Swift.h
+
+SwiftDriverJobDiscovery normal arm64 Compiling AgentIntegrations.swift, FinishedSessionShortcut.swift (in target 'iTermate' from project 'iTermate')
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.swiftmodule /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.swiftmodule
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.swiftdoc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftdoc (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftdoc /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.swiftdoc
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.abi.json /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.abi.json (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.abi.json /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.abi.json
+
+Copy /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermateTests.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftsourceinfo (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftsourceinfo /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermateTests.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo
+
+SwiftCompile normal arm64 Compiling\ ItermBridgeTests.swift /Users/caishilin/Desktop/personal/iTermate/iTermateTests/ItermBridgeTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermateTests/ItermBridgeTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 Compiling\ PanelLayoutTests.swift /Users/caishilin/Desktop/personal/iTermate/iTermateTests/PanelLayoutTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermateTests/PanelLayoutTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ AgentIntegrationManagerTests.swift /Users/caishilin/Desktop/personal/iTermate/iTermateTests/AgentIntegrationManagerTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermateTests/AgentIntegrationManagerTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling FinishedSessionShortcutTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling SessionNotificationTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling ItermBridge.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling PiSessionArchiveTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling ItermBridgeTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling LocalModelService.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AgentIntegrationManagerTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling PanelLayoutTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriver\ Compilation iTermateTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-Swift-Compilation -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermateTests -Onone -enforce-exclusivity\=checked @/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList -DDEBUG -plugin-path /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-archive-summary-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-archive-summary-build/Build/Products/Debug -Isystem /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib -F /tmp/itermate-archive-summary-build/Build/Products/Debug -F /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-archive-summary-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-archive-summary-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-generated-files.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-own-target-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-project-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Products/Debug/include -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriver\ Compilation iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-Swift-Compilation -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-archive-summary-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-archive-summary-build/Build/Products/Debug -F /tmp/itermate-archive-summary-build/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-archive-summary-build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-archive-summary-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-archive-summary-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/tmp/itermate-archive-summary-build/Build/Products/Debug/include -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+Ld /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib normal (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -dynamiclib -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -L/tmp/itermate-archive-summary-build/Build/Products/Debug -F/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -F/tmp/itermate-archive-summary-build/Build/Products/Debug -filelist /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.LinkFileList -install_name @rpath/iTermate.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/../Frameworks -Xlinker -object_path_lto -Xlinker /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat -fobjc-link-runtime -fprofile-instr-generate -L/Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule @/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-linker-args.resp -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -framework Sparkle -Xlinker -no_adhoc_codesign -o /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib
+
+ConstructStubExecutorLinkFileList /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    construct-stub-executor-link-file-list /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'iTermate' from project 'iTermate')
+
+Ld /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate normal (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-archive-summary-build/Build/Products/Debug -F/tmp/itermate-archive-summary-build/Build/Products/Debug -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/../Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib -Xlinker -no_adhoc_codesign -o /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate
+
+CopySwiftLibs /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib --scan-folder /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks --scan-folder /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns --scan-folder /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Library/SystemExtensions --scan-folder /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Extensions --platform macosx --toolchain /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+
+ExtractAppIntentsMetadata (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name iTermate --sdk-root /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk --xcode-version 17C52 --platform-family macOS --deployment-target 13.0 --bundle-identifier com.caishilin.iTermate --output /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/Resources --target-triple arm64-apple-macos13.0 --binary-file /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate --dependency-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat --stringsdata-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList --metadata-file-list /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyMetadataFileList --static-metadata-file-list /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-10 11:36:53.531 appintentsmetadataprocessor[5036:111894668] Starting appintentsmetadataprocessor export
+2026-10-10 11:36:53.532 appintentsmetadataprocessor[5036:111894668] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+Ld /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS/iTermateTests normal (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -bundle -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -L/tmp/itermate-archive-summary-build/Build/Products/Debug -L/Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib -F/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -F/tmp/itermate-archive-summary-build/Build/Products/Debug -iframework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks -filelist /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path/../Frameworks -Xlinker -rpath -Xlinker @executable_path/../Frameworks -bundle_loader /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate -Xlinker -object_path_lto -Xlinker /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_dependency_info.dat -fobjc-link-runtime -fprofile-instr-generate -L/Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule @/tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-linker-args.resp -Xlinker -needed_framework -Xlinker XCTest -framework XCTest -Xlinker -needed-lXCTestSwiftSupport -lXCTestSwiftSupport /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib -Xlinker -no_adhoc_codesign -o /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS/iTermateTests
+ld: warning: building for macOS-13.0, but linking with dylib '@rpath/XCTest.framework/Versions/A/XCTest' which was built for newer version 14.0
+ld: warning: building for macOS-13.0, but linking with dylib '@rpath/libXCTestSwiftSupport.dylib' which was built for newer version 14.0
+
+ProcessInfoPlistFile /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Info.plist /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/empty-iTermateTests.plist (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-infoPlistUtility /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/empty-iTermateTests.plist -producttype com.apple.product-type.bundle.unit-test -expandbuildsettings -platform macosx -o /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Info.plist
+
+CopySwiftLibs /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS/iTermateTests --scan-folder /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Frameworks --scan-folder /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/PlugIns --scan-folder /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Library/SystemExtensions --scan-folder /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Extensions --platform macosx --toolchain /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Frameworks --strip-bitcode --scan-executable /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+
+ExtractAppIntentsMetadata (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name iTermateTests --sdk-root /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk --xcode-version 17C52 --platform-family macOS --deployment-target 13.0 --bundle-identifier com.caishilin.iTermateTests --output /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Resources --target-triple arm64-apple-macos13.0 --binary-file /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS/iTermateTests --dependency-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_dependency_info.dat --stringsdata-file /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList --metadata-file-list /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyMetadataFileList --static-metadata-file-list /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-10 11:36:53.880 appintentsmetadataprocessor[5121:111894781] Starting appintentsmetadataprocessor export
+2026-10-10 11:36:53.882 appintentsmetadataprocessor[5121:111894781] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest
+
+RegisterExecutionPolicyException /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-RegisterExecutionPolicyException /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest
+
+Touch /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest (in target 'iTermateTests' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /usr/bin/touch -c /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib
+
+CodeSign /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements /tmp/itermate-archive-summary-build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent --timestamp\=none --generate-entitlement-der /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app
+
+RegisterExecutionPolicyException /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-RegisterExecutionPolicyException /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app
+
+Validate /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-validationUtility /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app -no-validate-extension -infoplist-subpath Contents/Info.plist
+
+Touch /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /usr/bin/touch -c /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app
+
+RegisterWithLaunchServices /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister -f -R -trusted /tmp/itermate-archive-summary-build/Build/Products/Debug/iTermate.app
+
+** TEST BUILD SUCCEEDED ** [15.620 sec]
+

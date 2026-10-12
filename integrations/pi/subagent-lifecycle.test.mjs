@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { readFile } from "node:fs/promises";
 import { stripTypeScriptTypes } from "node:module";
 import { EventEmitter } from "node:events";
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { join } from "node:path";
 import { SourceTextModule, SyntheticModule, createContext } from "node:vm";
 
@@ -54,11 +54,11 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model 
   }
   const context = createContext({
     process: { pid: 123, env: { TERM_PROGRAM: terminal, ITERM_SESSION_ID: "w0:session-1" } },
-    performance: { now: () => now }, setTimeout, clearTimeout, Buffer, URL,
+    performance: { now: () => now }, setTimeout, clearTimeout, clearInterval: clearTimeout, Buffer, URL,
   });
   const unavailable = () => { throw new Error("Archive I/O is unavailable in lifecycle tests"); };
   const mocks = {
-    "node:crypto": { randomUUID },
+    "node:crypto": { createHash, randomBytes, randomUUID, timingSafeEqual },
     "node:fs/promises": {
       readFile: async (path) => {
         if (path.endsWith("configuration.json")) return configuration();
@@ -70,7 +70,12 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model 
       },
     },
     "node:fs": {
+      ...Object.fromEntries([
+        "chmodSync", "closeSync", "fsyncSync", "mkdirSync", "mkdtempSync",
+        "openSync", "renameSync", "writeFileSync",
+      ].map((name) => [name, unavailable])),
       readFileSync: (path) => path.endsWith("configuration.json") ? configuration() : unavailable(),
+      rmSync: () => {},
       existsSync: () => modelEnabled,
     },
     "node:http": { request: (options, receive) => {
@@ -97,6 +102,9 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model 
     } },
     "node:child_process": { execFileSync: () => "ttys001" },
     "node:net": {
+      // Archive startup reaches the intentional mkdirSync failure above;
+      // no real listener or filesystem operation is used by this harness.
+      createServer: () => Object.assign(new EventEmitter(), { close: () => {} }),
       connect: (path, connected) => {
         const socket = new EventEmitter();
         socket.setTimeout = () => socket;

@@ -318,6 +318,7 @@ struct AgentCompletionStatistics: Equatable {
 }
 
 final class ItermStore: ObservableObject {
+    let piArchives = PiSessionArchives()
     @Published private(set) var terminalApp: TerminalApp?
     @Published private(set) var connectionState: BridgeConnectionState = .connecting
     @Published private(set) var windows: [TerminalWindowSnapshot] = []
@@ -382,6 +383,7 @@ final class ItermStore: ObservableObject {
         guard !isStarted else { return }
         isStarted = true
         terminalStatusServer.start()
+        piArchives.start()
         let statusExpiryTimer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
             self?.expireTerminalStatuses()
             self?.refreshVenomDebugMonitoring()
@@ -403,6 +405,7 @@ final class ItermStore: ObservableObject {
         venomMonitorScanID = nil
         venomDebugMonitoringSessions = [:]
         terminalStatusServer.stop()
+        piArchives.stop()
         if iTermClientIsStarted {
             iTermClient.stop()
             iTermClientIsStarted = false
@@ -531,6 +534,69 @@ final class ItermStore: ObservableObject {
                 publishGhosttyWindows()
             }
             ghosttyClient.activate(terminalID: sessionID)
+        }
+    }
+
+    func archivePiSession(_ session: TerminalSessionSnapshot, in terminal: TerminalApp) {
+        Task { @MainActor in
+            do {
+                let shellPID = try await piArchives.archive(session, terminal: terminal)
+                guard Self.isRunning(terminal) else { return }
+                let completion: (String?) -> Void = { [weak self] failure in
+                    if let failure { self?.piArchives.error = "Archive saved, but terminal close failed: \(failure)" }
+                }
+                switch terminal {
+                case .iTerm2: iTermClient.closeArchivedSession(sessionID: session.id, shellPID: shellPID, completion: completion)
+                case .ghostty: ghosttyClient.closeArchivedSession(terminalID: session.id, tty: session.tty ?? "", shellPID: shellPID, completion: completion)
+                }
+            } catch {
+                piArchives.error = error.localizedDescription
+            }
+        }
+    }
+
+    func resumePiArchive(_ record: PiArchiveRecord) {
+        Task { @MainActor in
+            guard !piArchives.isBusy else { return }
+            do {
+                let location = try await piArchives.prepareResume(record)
+                let terminal = record.terminalApp
+                let launch: @MainActor () -> Void = { [weak self] in
+                    guard let self else { return }
+                    let finish: (String?) -> Void = { [weak self] error in
+                        guard let self else { return }
+                        if let error { self.piArchives.finishResume(error: error); return }
+                        Task { @MainActor in
+                            do {
+                                try await self.piArchives.waitForResume(location)
+                                self.piArchives.finishResume(error: nil)
+                            } catch { self.piArchives.finishResume(error: error.localizedDescription) }
+                        }
+                    }
+                    if terminal == .iTerm2 {
+                        self.startClient(for: .iTerm2)
+                        self.iTermClient.resumePiSession(location, completion: finish)
+                    } else {
+                        self.ghosttyClient.resumePiSession(location, completion: finish)
+                    }
+                }
+                if Self.isRunning(terminal) { launch(); return }
+                guard let applicationURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleIdentifier) else {
+                    piArchives.finishResume(error: "\(terminal.displayName) is not installed. The archive is unchanged.")
+                    return
+                }
+                let configuration = NSWorkspace.OpenConfiguration()
+                configuration.activates = true
+                let didOpen: @MainActor @Sendable (Error?) -> Void = { [weak self] error in
+                    if let error { self?.piArchives.finishResume(error: error.localizedDescription) }
+                    else { launch() }
+                }
+                NSWorkspace.shared.openApplication(at: applicationURL, configuration: configuration) { _, error in
+                    Task { @MainActor in didOpen(error) }
+                }
+            } catch {
+                piArchives.finishResume(error: error.localizedDescription)
+            }
         }
     }
 
@@ -1092,6 +1158,17 @@ final class ItermBridgeClient {
         queue.async { [weak self] in self?.send(request) }
     }
 
+    func closeArchivedSession(sessionID: String, shellPID: Int32, completion: @escaping (String?) -> Void) {
+        perform(SessionActionRequest(type: "closeArchivedSession", requestId: UUID().uuidString,
+                                     sessionId: sessionID, expectedShellPID: shellPID), completion: completion)
+    }
+
+    func resumePiSession(_ location: PiResumeLocation, completion: @escaping (String?) -> Void) {
+        perform(SessionActionRequest(type: "resumePiSession", requestId: UUID().uuidString,
+                                     path: location.cwd, piSessionId: location.sessionID,
+                                     sessionDirectory: location.directory.path), completion: completion)
+    }
+
     func openProject(
         atPath path: String,
         completion: @escaping (String?) -> Void
@@ -1360,6 +1437,29 @@ final class GhosttyClient {
         perform(.close, terminalID: terminalID)
     }
 
+    func closeArchivedSession(terminalID: String, tty: String, shellPID: Int32, completion: @escaping (String?) -> Void) {
+        queue.async {
+            do {
+                guard Self.isGhosttyRunning else { throw GhosttyScriptError("Ghostty is not running") }
+                _ = try Self.runScript(script: Self.archiveCloseScript, arguments: [terminalID, tty, String(shellPID)])
+                DispatchQueue.main.async { completion(nil) }
+            } catch {
+                DispatchQueue.main.async { completion(error.localizedDescription) }
+            }
+        }
+    }
+
+    func resumePiSession(_ location: PiResumeLocation, completion: @escaping (String?) -> Void) {
+        queue.async {
+            do {
+                _ = try Self.runScript(script: Self.resumeScript, arguments: [location.cwd, location.sessionID, location.directory.path])
+                DispatchQueue.main.async { completion(nil) }
+            } catch {
+                DispatchQueue.main.async { completion("Could not resume Pi in Ghostty: \(error.localizedDescription)") }
+            }
+        }
+    }
+
     private func loadSnapshot() {
         do {
             guard Self.isGhosttyRunning else {
@@ -1449,6 +1549,43 @@ final class GhosttyClient {
         }
         return output
     }
+
+    private static let archiveCloseScript = #"""
+    on run argv
+        set terminalID to item 1 of argv
+        set expectedTTY to item 2 of argv
+        set expectedPID to (item 3 of argv) as integer
+        tell application "Ghostty"
+            if not (exists (first terminal whose id is terminalID)) then return
+            set targetTerminal to first terminal whose id is terminalID
+            if tty of targetTerminal is not expectedTTY or pid of targetTerminal is not expectedPID then
+                error "Terminal ownership changed or the original shell is not idle; left open."
+            end if
+            close targetTerminal
+        end tell
+    end run
+    """#
+
+    private static let resumeScript = #"""
+    on run argv
+        set cwdValue to item 1 of argv
+        set sessionValue to item 2 of argv
+        set directoryValue to item 3 of argv
+        set sessionArgument to sessionValue
+        if sessionValue ends with ".jsonl" then set sessionArgument to directoryValue & "/archive_" & sessionValue & ".jsonl"
+        set innerCommand to "cd -- " & quoted form of cwdValue & " && pi --session " & quoted form of sessionArgument & " --session-dir " & quoted form of directoryValue
+        set commandValue to "/bin/zsh -lic " & quoted form of innerCommand
+        tell application "Ghostty"
+            set config to new surface configuration from {initial working directory:cwdValue, command:commandValue}
+            if (count of windows) > 0 then
+                new tab in front window with configuration config
+            else
+                new window with configuration config
+            end if
+            activate
+        end tell
+    end run
+    """#
 
     private static let snapshotScript = #"""
     function optional(getter, fallback) {
@@ -1549,17 +1686,26 @@ private struct SessionActionRequest: Encodable {
     let requestId: String
     let sessionId: String?
     let path: String?
+    let piSessionId: String?
+    let sessionDirectory: String?
+    let expectedShellPID: Int32?
 
     init(
         type: String,
         requestId: String,
         sessionId: String? = nil,
-        path: String? = nil
+        path: String? = nil,
+        piSessionId: String? = nil,
+        sessionDirectory: String? = nil,
+        expectedShellPID: Int32? = nil
     ) {
         self.type = type
         self.requestId = requestId
         self.sessionId = sessionId
         self.path = path
+        self.piSessionId = piSessionId
+        self.sessionDirectory = sessionDirectory
+        self.expectedShellPID = expectedShellPID
     }
 }
 
