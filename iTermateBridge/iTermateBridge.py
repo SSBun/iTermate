@@ -60,6 +60,7 @@ class Bridge:
         self.command_monitor_unavailable = set()
         self.agent_managed_session_ids = set()
         self.agent_heartbeat_times = {}
+        self.agent_report_sequences = {}
         self.session_statuses = {}
         self.session_names = {}
         self.ignore_prompt_events_until = 0
@@ -190,9 +191,39 @@ class Bridge:
                     writer, request_id, False, "Invalid subagent activity"
                 )
                 return
+            recovery = request.get("recovery", False)
+            reporter_id = request.get("reporterId")
+            sequence = request.get("sequence")
+            if not isinstance(recovery, bool) or (recovery and (status == "detached" or heartbeat)):
+                await self.send_action_result(writer, request_id, False, "Invalid recovery")
+                return
+            has_sequence = reporter_id is not None or sequence is not None or recovery
+            if has_sequence and (
+                not isinstance(reporter_id, str) or not 1 <= len(reporter_id) <= 128
+                or isinstance(sequence, bool) or not isinstance(sequence, int)
+                or not 1 <= sequence <= 9007199254740991
+            ):
+                await self.send_action_result(writer, request_id, False, "Invalid report sequence")
+                return
+            key = (session_id, reporter_id)
+            if has_sequence and sequence <= self.agent_report_sequences.get(key, 0):
+                await self.send_action_result(writer, request_id, False, "Stale report")
+                return
+            if recovery:
+                current = self.session_statuses.get(session_id, {})
+                if self.app.get_session_by_id(session_id) is None:
+                    await self.send_action_result(writer, request_id, False, "Session no longer exists")
+                    return
+                if current.get("activityKind") == "agent" and current.get("status"):
+                    await self.send_action_result(writer, request_id, False, "Agent status is already known")
+                    return
             accepted = self.set_agent_status(
                 session_id, status, exit_status, heartbeat, has_running_subagents
             )
+            if accepted and has_sequence:
+                self.agent_report_sequences[key] = sequence
+            if accepted and recovery and status in {"running", "awaitingInput"}:
+                self.agent_heartbeat_times[session_id] = heartbeat_time()
             await self.send_action_result(
                 writer, request_id, accepted,
                 None if accepted else "Stale heartbeat"
@@ -415,6 +446,10 @@ class Bridge:
                 self.agent_managed_session_ids.discard(session_id)
                 self.agent_heartbeat_times.pop(session_id, None)
                 self.session_statuses.pop(session_id, None)
+                self.agent_report_sequences = {
+                    key: value for key, value in self.agent_report_sequences.items()
+                    if key[0] != session_id
+                }
 
             await asyncio.sleep(1)
 

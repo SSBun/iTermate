@@ -73,7 +73,8 @@ struct TerminalStatusRegistry {
     mutating func apply(
         _ report: TerminalStatusReport,
         now: TimeInterval = Date().timeIntervalSince1970,
-        uptime: TimeInterval = ProcessInfo.processInfo.systemUptime
+        uptime: TimeInterval = ProcessInfo.processInfo.systemUptime,
+        recovering: Bool = false
     ) -> Bool {
         guard terminalIDsByTTY[report.tty] != nil else { return false }
         guard report.state != .awaitingInput || report.source == .agent else {
@@ -85,6 +86,8 @@ struct TerminalStatusRegistry {
         }
         var ttyState = states[report.tty] ?? TTYState()
         let current = report.source == .agent ? ttyState.agent : ttyState.shell
+        // A pulled observation may fill a gap, never replace a live event or a focused idle state.
+        if recovering && (report.source != .agent || current?.status != nil) { return false }
 
         if let current {
             if current.reporterID == report.reporterID {

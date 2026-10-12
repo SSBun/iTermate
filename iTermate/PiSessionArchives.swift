@@ -37,7 +37,27 @@ private struct LivePiSession: Decodable {
     let name: String
     let canArchive: Bool
     let supportsSummary: Bool?
+    let supportsStatus: Bool?
     let updatedAt: TimeInterval
+}
+
+/// An authenticated observation, not a command to advance or terminate the Pi session.
+struct PiStatusSnapshot: Decodable {
+    let version: Int
+    let instanceId: String
+    let sessionId: String
+    let reporterId: String
+    let sequence: Int
+    let status: TerminalSessionStatus?
+    let exitStatus: Int?
+    let hasRunningSubagents: Bool
+
+    var isValid: Bool {
+        version == 1 && UUID(uuidString: reporterId) != nil && sequence > 0
+            && sequence <= 9_007_199_254_740_991
+            && (status == .finished ? exitStatus.map { (0...255).contains($0) } == true : exitStatus == nil)
+            && (!hasRunningSubagents || status == .running || status == .awaitingInput)
+    }
 }
 
 struct PiResumeLocation: Sendable {
@@ -108,6 +128,26 @@ final class PiSessionArchives: ObservableObject {
                 : (session.tty != nil && live.tty == session.tty)
         }
         return matches.count == 1 ? matches.first : nil
+    }
+
+    func canQueryStatus(_ session: TerminalSessionSnapshot, terminal: TerminalApp) -> Bool {
+        descriptor(for: session, terminal: terminal)?.supportsStatus == true
+    }
+
+    @MainActor
+    func queryStatus(_ session: TerminalSessionSnapshot, terminal: TerminalApp) async throws -> PiStatusSnapshot? {
+        refreshLiveSessions()
+        guard let live = descriptor(for: session, terminal: terminal), live.supportsStatus == true else { return nil }
+        let data = try await PiArchiveRPC.response(socketPath: live.socketPath, payload: [
+            "action": "status", "token": live.token, "sessionId": live.sessionId,
+        ], timeout: 3)
+        let snapshot = try JSONDecoder().decode(PiStatusSnapshot.self, from: data)
+        refreshLiveSessions()
+        guard let current = descriptor(for: session, terminal: terminal),
+              current.id == live.id, current.pid == live.pid, current.sessionId == live.sessionId,
+              snapshot.instanceId == live.id, snapshot.sessionId == live.sessionId,
+              snapshot.isValid else { return nil }
+        return snapshot
     }
 
     func canArchive(_ session: TerminalSessionSnapshot, terminal: TerminalApp) -> Bool {

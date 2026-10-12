@@ -317,6 +317,30 @@ struct AgentCompletionStatistics: Equatable {
     let day: Int
 }
 
+/// Bounded round-robin reservations; a saturated tick must not skip waiting candidates.
+struct PiStatusRecoveryScheduler {
+    private(set) var inFlight: Set<String> = []
+    private var cursor = 0
+
+    mutating func reserve(from candidates: [String]) -> [Int] {
+        guard !candidates.isEmpty, inFlight.count < 4 else { return [] }
+        let start = cursor % candidates.count
+        var selected: [Int] = []
+        for offset in 0..<candidates.count {
+            guard inFlight.count < 4 else { break }
+            let index = (start + offset) % candidates.count
+            guard inFlight.insert(candidates[index]).inserted else { continue }
+            selected.append(index)
+            cursor = (index + 1) % candidates.count
+        }
+        return selected
+    }
+
+    mutating func complete(_ key: String) {
+        inFlight.remove(key)
+    }
+}
+
 final class ItermStore: ObservableObject {
     let piArchives = PiSessionArchives()
     @Published private(set) var terminalApp: TerminalApp?
@@ -362,6 +386,8 @@ final class ItermStore: ObservableObject {
     private var terminalStatusRegistry = TerminalStatusRegistry()
     private var statusExpiryTimer: Timer?
     private var venomMonitorScanID: UUID?
+    private var piRecoveryGeneration = 0
+    private var piRecoveryScheduler = PiStatusRecoveryScheduler()
     private var lastActiveGhosttyTerminalID: String?
     private var iTermAgentCompletionTracker = SessionCompletionTracker()
     private var ghosttyAgentCompletionTracker = SessionCompletionTracker()
@@ -387,6 +413,7 @@ final class ItermStore: ObservableObject {
         let statusExpiryTimer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
             self?.expireTerminalStatuses()
             self?.refreshVenomDebugMonitoring()
+            self?.recoverUnknownPiStatuses()
         }
         RunLoop.main.add(statusExpiryTimer, forMode: .common)
         self.statusExpiryTimer = statusExpiryTimer
@@ -404,6 +431,7 @@ final class ItermStore: ObservableObject {
         statusExpiryTimer = nil
         venomMonitorScanID = nil
         venomDebugMonitoringSessions = [:]
+        invalidatePiStatusRecovery()
         terminalStatusServer.stop()
         piArchives.stop()
         if iTermClientIsStarted {
@@ -433,6 +461,7 @@ final class ItermStore: ObservableObject {
     }
 
     func reconnectAfterWake() {
+        invalidatePiStatusRecovery()
         venomMonitorScanID = nil
         venomDebugMonitoringSessions = [:]
         if terminalStatusRegistry.clearRunning() {
@@ -678,6 +707,7 @@ final class ItermStore: ObservableObject {
     func updateConnectionState(_ state: BridgeConnectionState) {
         iTermConnectionState = state
         if state != .connected {
+            invalidatePiStatusRecovery()
             bridgeIsCompatible = false
             latestSequence = 0
             lastLoggedSnapshotCounts = nil
@@ -956,6 +986,55 @@ final class ItermStore: ObservableObject {
         return true
     }
 
+    private func invalidatePiStatusRecovery() {
+        piRecoveryGeneration += 1
+        // Keep old requests counted until they finish, so reconnects cannot exceed the limit.
+    }
+
+    private func recoverUnknownPiStatuses() {
+        guard isStarted else { return }
+        let sources: [(TerminalApp, [TerminalWindowSnapshot])] = [
+            (.iTerm2, iTermConnectionState == .connected ? iTermWindows : []),
+            (.ghostty, ghosttyConnectionState == .connected ? ghosttyWindows : []),
+        ]
+        let candidates = sources.flatMap { terminal, windows in
+            windows.flatMap(\.tabs).flatMap(\.sessions).compactMap { session -> (TerminalApp, TerminalSessionSnapshot)? in
+                guard (session.activityKind != .agent || session.status == nil),
+                      piArchives.canQueryStatus(session, terminal: terminal) else { return nil }
+                return (terminal, session)
+            }
+        }
+        let keys = candidates.map { "\($0.0.displayName):\($0.1.id)" }
+        for index in piRecoveryScheduler.reserve(from: keys) {
+            let (terminal, session) = candidates[index]
+            let key = keys[index]
+            let generation = piRecoveryGeneration
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                defer { piRecoveryScheduler.complete(key) }
+                guard isStarted, generation == piRecoveryGeneration else { return }
+                guard let observation = try? await piArchives.queryStatus(session, terminal: terminal),
+                      let status = observation.status,
+                      isStarted, generation == piRecoveryGeneration else { return }
+                let currentWindows = terminal == .iTerm2 ? iTermWindows : ghosttyWindows
+                guard let current = currentWindows.flatMap(\.tabs).flatMap(\.sessions).first(where: { $0.id == session.id }),
+                      current.tty == session.tty, current.statusChangedAt == session.statusChangedAt,
+                      current.status == session.status, current.activityKind == session.activityKind,
+                      current.activityKind != .agent || current.status == nil else { return }
+                if terminal == .iTerm2 {
+                    iTermClient.recoverSessionStatus(sessionID: session.id, observation: observation)
+                } else if let tty = session.tty, let state = TerminalStatusReport.State(rawValue: status.rawValue) {
+                    let report = TerminalStatusReport(
+                        tty: tty, source: .agent, reporterID: observation.reporterId,
+                        sequence: observation.sequence, state: state, exitStatus: observation.exitStatus,
+                        heartbeat: false, hasRunningSubagents: observation.hasRunningSubagents
+                    )
+                    if terminalStatusRegistry.apply(report, recovering: true) { publishGhosttyWindows() }
+                }
+            }
+        }
+    }
+
     /// A presentation-only refinement; Agent lifecycle and completion tracking remain authoritative.
     func isVenomDebugMonitoring(_ session: TerminalSessionSnapshot) -> Bool {
         guard session.status == .running, session.activityKind == .command,
@@ -1058,6 +1137,7 @@ final class ItermStore: ObservableObject {
         ghosttyRefreshIsPending = false
         ghosttyConnectionState = state
         if state != .connected {
+            invalidatePiStatusRecovery()
             ghosttySourceWindows = []
             ghosttyWindows = []
             ghosttySnapshotIsReady = false
@@ -1190,6 +1270,25 @@ final class ItermBridgeClient {
         )
     }
 
+    func recoverSessionStatus(sessionID: String, observation: PiStatusSnapshot) {
+        struct Request: Encodable {
+            let type = "setSessionStatus"
+            let requestId = "pi-recovery-" + UUID().uuidString
+            let recovery = true
+            let sessionId: String
+            let status: TerminalSessionStatus?
+            let reporterId: String
+            let sequence: Int
+            let exitStatus: Int?
+            let hasRunningSubagents: Bool
+        }
+        let request = Request(sessionId: sessionID, status: observation.status,
+                              reporterId: observation.reporterId, sequence: observation.sequence,
+                              exitStatus: observation.exitStatus, hasRunningSubagents: observation.hasRunningSubagents)
+        // Recovery observations must not be queued across a disconnect.
+        queue.async { [weak self] in _ = self?.send(request) }
+    }
+
     func resetSessionStatuses() {
         queue.async { [weak self] in
             guard let self else { return }
@@ -1269,6 +1368,8 @@ final class ItermBridgeClient {
             do {
                 let message = try JSONDecoder().decode(BridgeMessage.self, from: Data(line))
                 if message.type == "actionResult", let requestID = message.requestId {
+                    // A no-longer-needed recovery is normal, not a failed user action.
+                    if requestID.hasPrefix("pi-recovery-") { continue }
                     finishAction(
                         requestID: requestID,
                         error: message.ok == true

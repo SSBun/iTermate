@@ -1,0 +1,858 @@
+--- baseline/integrations/pi/iTermate-integration.ts
++++ current/integrations/pi/iTermate-integration.ts
+@@ -117,12 +117,15 @@
+ 
+   return new Promise((resolve) => {
+     const requestId = randomUUID();
++    const sequence = ++reportSequence;
+     const request = sessionID
+       ? {
+           version: 7,
+           type: "setSessionStatus",
+           requestId,
+           sessionId: sessionID,
++          reporterId,
++          sequence,
+           status,
+           exitStatus,
+           heartbeat,
+@@ -135,7 +138,7 @@
+           tty,
+           source: "agent",
+           reporterId,
+-          sequence: ++reportSequence,
++          sequence,
+           status,
+           exitStatus,
+           heartbeat,
+@@ -298,7 +301,12 @@
+ }
+ 
+ // Private per-process discovery avoids guessing session files from titles or cwd.
+-function startArchiveEndpoint(ctx: ExtensionContext, canArchive: () => boolean, refresh: () => Promise<void>) {
++function startArchiveEndpoint(
++  ctx: ExtensionContext,
++  canArchive: () => boolean,
++  refresh: () => Promise<void>,
++  readStatus: () => Promise<{ status: Status | null; exitStatus?: number; hasRunningSubagents: boolean }>,
++) {
+   const liveDirectory = join(homedir(), ".iTermate", "pi-live");
+   const archiveDirectory = join(supportDirectory, "ArchivedPiSessions");
+   const identity = randomUUID();
+@@ -319,6 +327,7 @@
+     name: (ctx.sessionManager.getSessionName() ?? "Pi session").slice(0, 200),
+     canArchive: !closing && canArchive() && !!ctx.sessionManager.getSessionFile(),
+     supportsSummary: true,
++    supportsStatus: true,
+     updatedAt: Date.now() / 1000,
+   });
+   const publish = () => {
+@@ -361,10 +370,22 @@
+         const request = JSON.parse(buffer.split("\n", 1)[0]);
+         const supplied = Buffer.from(typeof request.token === "string" ? request.token : "");
+         if (supplied.length !== token.length || !timingSafeEqual(supplied, Buffer.from(token))
+-          || request.action !== "archive" || request.sessionId !== ctx.sessionManager.getSessionId()) {
++          || !["archive", "status"].includes(request.action) || request.sessionId !== ctx.sessionManager.getSessionId()) {
+           throw new Error("Pi session identity or authorization changed. Refresh and retry.");
+         }
+         if (closing || stopped) throw new Error("Archive already in progress.");
++        if (request.action === "status") {
++          const state = await readStatus();
++          if (closing || stopped || socket.destroyed || request.sessionId !== ctx.sessionManager.getSessionId()) {
++            throw new Error("Pi session changed during the status query.");
++          }
++          socket.end(JSON.stringify({
++            ok: true, version: 1, instanceId: identity,
++            sessionId: ctx.sessionManager.getSessionId(), reporterId,
++            sequence: ++reportSequence, ...state,
++          }) + "\n");
++          return;
++        }
+         closing = true;
+         ownsClosing = true;
+         publish();
+@@ -644,7 +665,23 @@
+       ? startArchiveEndpoint(ctx, () => active && !agentRunning && !promptOpen
+         && ctx.isIdle() && !ctx.hasPendingMessages() && !ctx.ui.getEditorText().trim() && !hasRunningSubagents
+         && (!pi.getAllTools().some(tool => tool.name === "subagent")
+-          || (fleetObservedAt > 0 && performance.now() - fleetObservedAt <= 6000)), refreshFleet)
++          || (fleetObservedAt > 0 && performance.now() - fleetObservedAt <= 6000)), refreshFleet, async () => {
++            await refreshFleet();
++            const fleetIsFresh = fleetObservedAt > 0 && performance.now() - fleetObservedAt <= 6000;
++            const childrenUnknown = pi.getAllTools().some(tool => tool.name === "subagent") && !fleetIsFresh;
++            // Reading status must not publish, restart heartbeats, invoke a model, or mutate the session.
++            const status: Status | null = !active ? null
++              : promptOpen || baseStatus === "awaitingInput" ? "awaitingInput"
++              : agentRunning || !ctx.isIdle() ? "running"
++              : childrenUnknown ? null
++              : hasRunningSubagents ? "running" : baseStatus;
++            return {
++              status,
++              exitStatus: status === "finished" ? (agentFailed ? 1 : 0) : undefined,
++              hasRunningSubagents: fleetIsFresh && hasRunningSubagents
++                && (status === "running" || status === "awaitingInput"),
++            };
++          })
+       : undefined;
+     // Let other extensions restore their state before the first observation.
+     if (active) fleetTimer = setTimeout(() => void pollFleet(fleetGeneration), 0);
+--- baseline/iTermate/PiSessionArchives.swift
++++ current/iTermate/PiSessionArchives.swift
+@@ -37,7 +37,27 @@
+     let name: String
+     let canArchive: Bool
+     let supportsSummary: Bool?
++    let supportsStatus: Bool?
+     let updatedAt: TimeInterval
++}
++
++/// An authenticated observation, not a command to advance or terminate the Pi session.
++struct PiStatusSnapshot: Decodable {
++    let version: Int
++    let instanceId: String
++    let sessionId: String
++    let reporterId: String
++    let sequence: Int
++    let status: TerminalSessionStatus?
++    let exitStatus: Int?
++    let hasRunningSubagents: Bool
++
++    var isValid: Bool {
++        version == 1 && UUID(uuidString: reporterId) != nil && sequence > 0
++            && sequence <= 9_007_199_254_740_991
++            && (status == .finished ? exitStatus.map { (0...255).contains($0) } == true : exitStatus == nil)
++            && (!hasRunningSubagents || status == .running || status == .awaitingInput)
++    }
+ }
+ 
+ struct PiResumeLocation: Sendable {
+@@ -110,6 +130,26 @@
+         return matches.count == 1 ? matches.first : nil
+     }
+ 
++    func canQueryStatus(_ session: TerminalSessionSnapshot, terminal: TerminalApp) -> Bool {
++        descriptor(for: session, terminal: terminal)?.supportsStatus == true
++    }
++
++    @MainActor
++    func queryStatus(_ session: TerminalSessionSnapshot, terminal: TerminalApp) async throws -> PiStatusSnapshot? {
++        refreshLiveSessions()
++        guard let live = descriptor(for: session, terminal: terminal), live.supportsStatus == true else { return nil }
++        let data = try await PiArchiveRPC.response(socketPath: live.socketPath, payload: [
++            "action": "status", "token": live.token, "sessionId": live.sessionId,
++        ], timeout: 3)
++        let snapshot = try JSONDecoder().decode(PiStatusSnapshot.self, from: data)
++        refreshLiveSessions()
++        guard let current = descriptor(for: session, terminal: terminal),
++              current.id == live.id, current.pid == live.pid, current.sessionId == live.sessionId,
++              snapshot.instanceId == live.id, snapshot.sessionId == live.sessionId,
++              snapshot.isValid else { return nil }
++        return snapshot
++    }
++
+     func canArchive(_ session: TerminalSessionSnapshot, terminal: TerminalApp) -> Bool {
+         guard !isBusy, session.activityKind == .agent, session.status != .running,
+               session.hasRunningSubagents != true, let live = descriptor(for: session, terminal: terminal)
+@@ -300,14 +340,23 @@
+     private let connection: NWConnection
+     private let queue = DispatchQueue(label: "com.caishilin.iTermate.pi-archive")
+     private var buffer = Data()
+-    private var completion: ((Result<String, Error>) -> Void)?
+-
+-    private init(socketPath: String, completion: @escaping (Result<String, Error>) -> Void) {
++    private var completion: ((Result<Data, Error>) -> Void)?
++
++    private init(socketPath: String, completion: @escaping (Result<Data, Error>) -> Void) {
+         connection = NWConnection(to: .unix(path: socketPath), using: .tcp)
+         self.completion = completion
+     }
+ 
+     static func request(socketPath: String, payload: [String: String]) async throws -> String {
++        let data = try await response(socketPath: socketPath, payload: payload, timeout: 90)
++        guard let value = try JSONSerialization.jsonObject(with: data) as? [String: Any],
++              let id = value["archiveId"] as? String else {
++            throw PiArchiveError("Pi did not confirm the archive.")
++        }
++        return id
++    }
++
++    static func response(socketPath: String, payload: [String: String], timeout: TimeInterval) async throws -> Data {
+         var data = try JSONEncoder().encode(payload)
+         data.append(0x0a)
+         let payloadData = data
+@@ -325,7 +374,7 @@
+                 default: break
+                 }
+             }
+-            rpc.queue.asyncAfter(deadline: .now() + 90) {
++            rpc.queue.asyncAfter(deadline: .now() + timeout) {
+                 rpc.finish(.failure(PiArchiveError("Pi archive request timed out. Check Archives before retrying; the terminal was not closed.")))
+             }
+             rpc.connection.start(queue: rpc.queue)
+@@ -340,8 +389,8 @@
+             }
+             if let newline = self.buffer.firstIndex(of: 0x0a),
+                let value = try? JSONSerialization.jsonObject(with: Data(self.buffer[..<newline])) as? [String: Any] {
+-                if value["ok"] as? Bool == true, let id = value["archiveId"] as? String {
+-                    self.finish(.success(id))
++                if value["ok"] as? Bool == true {
++                    self.finish(.success(Data(self.buffer[..<newline])))
+                 } else {
+                     self.finish(.failure(PiArchiveError(value["error"] as? String ?? "Pi refused the archive request.")))
+                 }
+@@ -351,7 +400,7 @@
+         }
+     }
+ 
+-    private func finish(_ result: Result<String, Error>) {
++    private func finish(_ result: Result<Data, Error>) {
+         guard let completion else { return }
+         self.completion = nil
+         connection.stateUpdateHandler = nil
+--- baseline/iTermate/ItermBridge.swift
++++ current/iTermate/ItermBridge.swift
+@@ -363,6 +363,9 @@
+     private var terminalStatusRegistry = TerminalStatusRegistry()
+     private var statusExpiryTimer: Timer?
+     private var venomMonitorScanID: UUID?
++    private var piRecoveryGeneration = 0
++    private var piRecoveryInFlight: Set<String> = []
++    private var piRecoveryCursor = 0
+     private var lastActiveGhosttyTerminalID: String?
+     private var iTermAgentCompletionTracker = SessionCompletionTracker()
+     private var ghosttyAgentCompletionTracker = SessionCompletionTracker()
+@@ -388,6 +391,7 @@
+         let statusExpiryTimer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+             self?.expireTerminalStatuses()
+             self?.refreshVenomDebugMonitoring()
++            self?.recoverUnknownPiStatuses()
+         }
+         RunLoop.main.add(statusExpiryTimer, forMode: .common)
+         self.statusExpiryTimer = statusExpiryTimer
+@@ -405,6 +409,7 @@
+         statusExpiryTimer = nil
+         venomMonitorScanID = nil
+         venomDebugMonitoringSessions = [:]
++        invalidatePiStatusRecovery()
+         terminalStatusServer.stop()
+         piArchives.stop()
+         if iTermClientIsStarted {
+@@ -434,6 +439,7 @@
+     }
+ 
+     func reconnectAfterWake() {
++        invalidatePiStatusRecovery()
+         venomMonitorScanID = nil
+         venomDebugMonitoringSessions = [:]
+         if terminalStatusRegistry.clearRunning() {
+@@ -679,6 +685,7 @@
+     func updateConnectionState(_ state: BridgeConnectionState) {
+         iTermConnectionState = state
+         if state != .connected {
++            invalidatePiStatusRecovery()
+             bridgeIsCompatible = false
+             latestSequence = 0
+             lastLoggedSnapshotCounts = nil
+@@ -957,6 +964,59 @@
+         return true
+     }
+ 
++    private func invalidatePiStatusRecovery() {
++        piRecoveryGeneration += 1
++        // Keep old requests counted until they finish, so reconnects cannot exceed the limit.
++    }
++
++    private func recoverUnknownPiStatuses() {
++        guard isStarted else { return }
++        let sources: [(TerminalApp, [TerminalWindowSnapshot])] = [
++            (.iTerm2, iTermConnectionState == .connected ? iTermWindows : []),
++            (.ghostty, ghosttyConnectionState == .connected ? ghosttyWindows : []),
++        ]
++        let candidates = sources.flatMap { terminal, windows in
++            windows.flatMap(\.tabs).flatMap(\.sessions).compactMap { session -> (TerminalApp, TerminalSessionSnapshot)? in
++                guard (session.activityKind != .agent || session.status == nil),
++                      piArchives.canQueryStatus(session, terminal: terminal) else { return nil }
++                return (terminal, session)
++            }
++        }
++        guard !candidates.isEmpty else { return }
++        let start = piRecoveryCursor % candidates.count
++        piRecoveryCursor = (start + 4) % candidates.count
++        for offset in 0..<candidates.count {
++            guard piRecoveryInFlight.count < 4 else { break }
++            let (terminal, session) = candidates[(start + offset) % candidates.count]
++            let key = "\(terminal.displayName):\(session.id)"
++            guard piRecoveryInFlight.insert(key).inserted else { continue }
++            let generation = piRecoveryGeneration
++            Task { @MainActor [weak self] in
++                guard let self else { return }
++                defer { piRecoveryInFlight.remove(key) }
++                guard isStarted, generation == piRecoveryGeneration else { return }
++                guard let observation = try? await piArchives.queryStatus(session, terminal: terminal),
++                      let status = observation.status,
++                      isStarted, generation == piRecoveryGeneration else { return }
++                let currentWindows = terminal == .iTerm2 ? iTermWindows : ghosttyWindows
++                guard let current = currentWindows.flatMap(\.tabs).flatMap(\.sessions).first(where: { $0.id == session.id }),
++                      current.tty == session.tty, current.statusChangedAt == session.statusChangedAt,
++                      current.status == session.status, current.activityKind == session.activityKind,
++                      current.activityKind != .agent || current.status == nil else { return }
++                if terminal == .iTerm2 {
++                    iTermClient.recoverSessionStatus(sessionID: session.id, observation: observation)
++                } else if let tty = session.tty, let state = TerminalStatusReport.State(rawValue: status.rawValue) {
++                    let report = TerminalStatusReport(
++                        tty: tty, source: .agent, reporterID: observation.reporterId,
++                        sequence: observation.sequence, state: state, exitStatus: observation.exitStatus,
++                        heartbeat: false, hasRunningSubagents: observation.hasRunningSubagents
++                    )
++                    if terminalStatusRegistry.apply(report, recovering: true) { publishGhosttyWindows() }
++                }
++            }
++        }
++    }
++
+     /// A presentation-only refinement; Agent lifecycle and completion tracking remain authoritative.
+     func isVenomDebugMonitoring(_ session: TerminalSessionSnapshot) -> Bool {
+         guard session.status == .running, session.activityKind == .command,
+@@ -1059,6 +1119,7 @@
+         ghosttyRefreshIsPending = false
+         ghosttyConnectionState = state
+         if state != .connected {
++            invalidatePiStatusRecovery()
+             ghosttySourceWindows = []
+             ghosttyWindows = []
+             ghosttySnapshotIsReady = false
+@@ -1189,6 +1250,25 @@
+             SessionActionRequest(type: "activateNextFinishedSession", requestId: UUID().uuidString),
+             completion: completion
+         )
++    }
++
++    func recoverSessionStatus(sessionID: String, observation: PiStatusSnapshot) {
++        struct Request: Encodable {
++            let type = "setSessionStatus"
++            let requestId = "pi-recovery-" + UUID().uuidString
++            let recovery = true
++            let sessionId: String
++            let status: TerminalSessionStatus?
++            let reporterId: String
++            let sequence: Int
++            let exitStatus: Int?
++            let hasRunningSubagents: Bool
++        }
++        let request = Request(sessionId: sessionID, status: observation.status,
++                              reporterId: observation.reporterId, sequence: observation.sequence,
++                              exitStatus: observation.exitStatus, hasRunningSubagents: observation.hasRunningSubagents)
++        // Recovery observations must not be queued across a disconnect.
++        queue.async { [weak self] in _ = self?.send(request) }
+     }
+ 
+     func resetSessionStatuses() {
+@@ -1270,6 +1350,8 @@
+             do {
+                 let message = try JSONDecoder().decode(BridgeMessage.self, from: Data(line))
+                 if message.type == "actionResult", let requestID = message.requestId {
++                    // A no-longer-needed recovery is normal, not a failed user action.
++                    if requestID.hasPrefix("pi-recovery-") { continue }
+                     finishAction(
+                         requestID: requestID,
+                         error: message.ok == true
+--- baseline/iTermate/TerminalStatusServer.swift
++++ current/iTermate/TerminalStatusServer.swift
+@@ -73,7 +73,8 @@
+     mutating func apply(
+         _ report: TerminalStatusReport,
+         now: TimeInterval = Date().timeIntervalSince1970,
+-        uptime: TimeInterval = ProcessInfo.processInfo.systemUptime
++        uptime: TimeInterval = ProcessInfo.processInfo.systemUptime,
++        recovering: Bool = false
+     ) -> Bool {
+         guard terminalIDsByTTY[report.tty] != nil else { return false }
+         guard report.state != .awaitingInput || report.source == .agent else {
+@@ -85,6 +86,8 @@
+         }
+         var ttyState = states[report.tty] ?? TTYState()
+         let current = report.source == .agent ? ttyState.agent : ttyState.shell
++        // A pulled observation may fill a gap, never replace a live event or a focused idle state.
++        if recovering && (report.source != .agent || current?.status != nil) { return false }
+ 
+         if let current {
+             if current.reporterID == report.reporterID {
+--- baseline/iTermate/SessionNotifications.swift
++++ current/iTermate/SessionNotifications.swift
+@@ -3,7 +3,7 @@
+ import UserNotifications
+ 
+ struct SessionCompletionTracker {
+-    private var previousRunningSessionIDs: Set<String>?
++    private var previousRunningSessions: [String: TerminalSessionSnapshot]?
+ 
+     mutating func completions(
+         in windows: [TerminalWindowSnapshot],
+@@ -12,14 +12,17 @@
+         let sessions = windows.flatMap(\.tabs).flatMap(\.sessions).filter {
+             activityKind == nil || $0.activityKind == activityKind
+         }
+-        let runningSessionIDs = Set(
+-            sessions.lazy.filter { $0.status == .running }.map(\.id)
++        let runningSessions = Dictionary(
++            sessions.lazy.filter { $0.status == .running }.map { ($0.id, $0) },
++            uniquingKeysWith: { first, _ in first }
+         )
+-        defer { previousRunningSessionIDs = runningSessionIDs }
++        defer { previousRunningSessions = runningSessions }
+ 
+-        guard let previousRunningSessionIDs else { return [] }
++        guard let previousRunningSessions else { return [] }
+         return sessions.filter {
+-            $0.status == .finished && previousRunningSessionIDs.contains($0.id)
++            guard $0.status == .finished, let previous = previousRunningSessions[$0.id] else { return false }
++            // Replacing a shell fallback with a recovered Agent state is not a completion event.
++            return previous.activityKind == $0.activityKind
+         }
+     }
+ }
+--- baseline/iTermateBridge/iTermateBridge.py
++++ current/iTermateBridge/iTermateBridge.py
+@@ -65,6 +65,7 @@
+         self.command_monitor_unavailable = set()
+         self.agent_managed_session_ids = set()
+         self.agent_heartbeat_times = {}
++        self.agent_report_sequences = {}
+         self.session_statuses = {}
+         self.session_names = {}
+         self.ignore_prompt_events_until = 0
+@@ -195,9 +196,39 @@
+                     writer, request_id, False, "Invalid subagent activity"
+                 )
+                 return
++            recovery = request.get("recovery", False)
++            reporter_id = request.get("reporterId")
++            sequence = request.get("sequence")
++            if not isinstance(recovery, bool) or (recovery and (status == "detached" or heartbeat)):
++                await self.send_action_result(writer, request_id, False, "Invalid recovery")
++                return
++            has_sequence = reporter_id is not None or sequence is not None or recovery
++            if has_sequence and (
++                not isinstance(reporter_id, str) or not 1 <= len(reporter_id) <= 128
++                or isinstance(sequence, bool) or not isinstance(sequence, int)
++                or not 1 <= sequence <= 9007199254740991
++            ):
++                await self.send_action_result(writer, request_id, False, "Invalid report sequence")
++                return
++            key = (session_id, reporter_id)
++            if has_sequence and sequence <= self.agent_report_sequences.get(key, 0):
++                await self.send_action_result(writer, request_id, False, "Stale report")
++                return
++            if recovery:
++                current = self.session_statuses.get(session_id, {})
++                if self.app.get_session_by_id(session_id) is None:
++                    await self.send_action_result(writer, request_id, False, "Session no longer exists")
++                    return
++                if current.get("activityKind") == "agent" and current.get("status"):
++                    await self.send_action_result(writer, request_id, False, "Agent status is already known")
++                    return
+             accepted = self.set_agent_status(
+                 session_id, status, exit_status, heartbeat, has_running_subagents
+             )
++            if accepted and has_sequence:
++                self.agent_report_sequences[key] = sequence
++            if accepted and recovery and status in {"running", "awaitingInput"}:
++                self.agent_heartbeat_times[session_id] = heartbeat_time()
+             await self.send_action_result(
+                 writer, request_id, accepted,
+                 None if accepted else "Stale heartbeat"
+@@ -420,6 +451,10 @@
+                 self.agent_managed_session_ids.discard(session_id)
+                 self.agent_heartbeat_times.pop(session_id, None)
+                 self.session_statuses.pop(session_id, None)
++                self.agent_report_sequences = {
++                    key: value for key, value in self.agent_report_sequences.items()
++                    if key[0] != session_id
++                }
+ 
+             await asyncio.sleep(1)
+ 
+--- baseline/integrations/pi/archive-lifecycle.test.mjs
++++ current/integrations/pi/archive-lifecycle.test.mjs
+@@ -9,7 +9,7 @@
+ 
+ const source = stripTypeScriptTypes(fs.readFileSync(new URL("./iTermate-integration.ts", import.meta.url), "utf8"));
+ 
+-async function harness({ complete, disconnectAfterResponse = false, writeError = false } = {}) {
++async function harness({ complete, disconnectAfterResponse = false, writeError = false, fleetCount = 0, fleetAvailable = true, hasSubagentTool = false } = {}) {
+   const home = fs.mkdtempSync("/tmp/itermate-archive-");
+   const handlers = new Map();
+   const events = new EventEmitter();
+@@ -21,6 +21,8 @@
+   let busy = false;
+   const responses = [];
+   const snapshots = [];
++  const reports = [];
++  let sessionId = "native-session";
+   const setTimeout = (fn, delay) => {
+     const timer = globalThis.setTimeout(() => { timers.delete(timer); fn(); }, delay);
+     timers.add(timer);
+@@ -60,6 +62,7 @@
+         socket.setTimeout = () => socket;
+         socket.write = (line) => {
+           const request = JSON.parse(line);
++          reports.push(request);
+           queueMicrotask(() => socket.emit("data", Buffer.from(JSON.stringify({ type: "actionResult", requestId: request.requestId, ok: true }) + "\n")));
+         };
+         queueMicrotask(connected);
+@@ -82,7 +85,7 @@
+     shutdown: () => { shutdowns += 1; },
+     modelRegistry: { complete: complete ?? (async () => ({ stopReason: "stop", content: [{ type: "text", text: "修改分页逻辑，待运行验证。" }] })) },
+     sessionManager: {
+-      getSessionId: () => "native-session", getSessionFile: () => "/original/native-session.jsonl",
++      getSessionId: () => sessionId, getSessionFile: () => "/original/native-session.jsonl",
+       getCwd: () => "/original/project", getSessionName: () => "Archive fixture", getLeafId: () => leaf,
+       getHeader: () => ({ type: "session", version: 3, id: "native-session", cwd: "/original/project", timestamp: "2026-01-01T00:00:00Z" }),
+       getEntries: () => [{ type: "message", id: "leaf", parentId: null, timestamp: "2026-01-01T00:00:01Z", message: { role: "user", content: "修改分页逻辑", timestamp: 1 } }],
+@@ -90,12 +93,14 @@
+     },
+   };
+   module.namespace.default({
+-    on: (name, handler) => handlers.set(name, handler), getAllTools: () => [],
++    on: (name, handler) => handlers.set(name, handler), getAllTools: () => hasSubagentTool ? [{ name: "subagent" }] : [],
+     events: {
+       on: (name, handler) => { events.on(name, handler); return () => events.off(name, handler); },
+-      emit: (_name, request) => queueMicrotask(() => events.emit(`subagents:rpc:v1:reply:${request.requestId}`, {
+-        version: 1, requestId: request.requestId, success: true, data: { fleet: { version: 1, totalActive: 0 } },
+-      })),
++      emit: (_name, request) => {
++        if (fleetAvailable) queueMicrotask(() => events.emit(`subagents:rpc:v1:reply:${request.requestId}`, {
++          version: 1, requestId: request.requestId, success: true, data: { fleet: { version: 1, totalActive: fleetCount } },
++        }));
++      },
+     },
+   });
+   await handlers.get("session_start")({}, ctx);
+@@ -126,7 +131,10 @@
+   };
+   accept(socket);
+   return {
+-    responses, snapshots, socket,
++    responses, snapshots, socket, reports, descriptor,
++    emit: (name, event = {}) => handlers.get(name)?.(event, ctx),
++    setSessionId: (value) => { sessionId = value; },
++    queryStatus: (overrides = {}) => socket.listeners("data")[0](Buffer.from(JSON.stringify({ action: "status", sessionId: descriptor.sessionId, token: descriptor.token, ...overrides }) + "\n")),
+     get shutdowns() { return shutdowns; },
+     get inputBlocked() { return handlers.get("input")({}, ctx)?.action === "handled"; },
+     setLeaf: (value) => { leaf = value; }, setBusy: (value) => { busy = value; },
+@@ -216,6 +224,81 @@
+   }
+ });
+ 
++for (const state of ["idle", "running", "awaitingInput", "finished"]) {
++  test(`readonly status returns ${state} without publishing, invoking a model, or closing Pi`, async () => {
++    let modelCalls = 0;
++    const h = await harness({ complete: async () => { modelCalls += 1; throw new Error("Unexpected model call"); } });
++    try {
++      assert.equal(h.descriptor.supportsStatus, true);
++      if (state === "running") h.setBusy(true);
++      if (state === "awaitingInput") await h.emit("ui_prompt_start", { kind: "confirm" });
++      if (state === "finished") {
++        await h.emit("agent_start");
++        await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text: "Done." }] }] });
++        await h.emit("agent_settled");
++      }
++      const sent = h.reports.length;
++      await h.queryStatus();
++      const response = h.responses[0];
++      assert.equal(response.ok, true);
++      assert.equal(response.status, state);
++      assert.equal(response.instanceId, h.descriptor.id);
++      assert.equal(response.sessionId, h.descriptor.sessionId);
++      assert.equal(response.reporterId, h.reports.at(-1).reporterId);
++      assert.ok(response.sequence > h.reports.at(-1).sequence);
++      assert.equal(h.reports.length, sent);
++      assert.equal(modelCalls, 0);
++      assert.equal(h.shutdowns, 0);
++      assert.equal(h.inputBlocked, false);
++      assert.equal(h.snapshots.length, 0);
++      await h.emit("agent_start");
++      assert.ok(h.reports.at(-1).sequence > response.sequence);
++    } finally { await h.dispose(); }
++  });
++}
++
++test("readonly status rejects invalid token and stale session identity", async () => {
++  for (const overrides of [{ token: "wrong" }, { sessionId: "old-session" }]) {
++    const h = await harness();
++    try {
++      await h.queryStatus(overrides);
++      assert.equal(h.responses[0].ok, false);
++      assert.equal(h.shutdowns, 0);
++      assert.equal(h.inputBlocked, false);
++    } finally { await h.dispose(); }
++  }
++});
++
++test("readonly status refuses an identity change during the asynchronous observation", async () => {
++  const h = await harness();
++  try {
++    const query = h.queryStatus();
++    h.setSessionId("new-session");
++    await query;
++    assert.equal(h.responses[0].ok, false);
++    assert.equal(h.shutdowns, 0);
++  } finally { await h.dispose(); }
++});
++
++test("readonly status keeps unknown fleet unknown rather than reporting idle", async () => {
++  const h = await harness({ hasSubagentTool: true, fleetAvailable: false });
++  try {
++    await h.queryStatus();
++    assert.equal(h.responses[0].ok, true);
++    assert.equal(h.responses[0].status, null);
++    assert.equal(h.responses[0].hasRunningSubagents, false);
++  } finally { await h.dispose(); }
++});
++
++test("readonly status includes confirmed child activity after the parent settles", async () => {
++  const h = await harness({ hasSubagentTool: true, fleetCount: 2 });
++  try {
++    await h.queryStatus();
++    assert.equal(h.responses[0].status, "running");
++    assert.equal(h.responses[0].hasRunningSubagents, true);
++  } finally { await h.dispose(); }
++});
++
+ test("a failed response write retains the archive but does not exit", async () => {
+   const h = await harness({ writeError: true });
+   try {
+--- baseline/iTermateTests/PiStatusRecoveryTests.swift
++++ current/iTermateTests/PiStatusRecoveryTests.swift
+@@ -0,0 +1,84 @@
++import XCTest
++@testable import iTermate
++
++final class PiStatusRecoveryTests: XCTestCase {
++    private let tty = "/dev/ttys001"
++
++    private func report(_ state: TerminalStatusReport.State, sequence: Int, source: SessionActivityKind = .agent) -> TerminalStatusReport {
++        TerminalStatusReport(tty: tty, source: source, reporterID: "pi", sequence: sequence,
++                             state: state, exitStatus: state == .finished ? 0 : nil, heartbeat: false)
++    }
++
++    func testRecoveryDoesNotOverrideFocusedIdleOrNewPush() {
++        var registry = TerminalStatusRegistry()
++        registry.reconcile(terminals: [tty: "pane"])
++        XCTAssertTrue(registry.apply(report(.finished, sequence: 1)))
++        XCTAssertTrue(registry.activate(tty: tty))
++        XCTAssertFalse(registry.apply(report(.finished, sequence: 2), recovering: true))
++        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .idle)
++        XCTAssertTrue(registry.apply(report(.running, sequence: 3)))
++        XCTAssertFalse(registry.apply(report(.idle, sequence: 4), recovering: true))
++        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .running)
++    }
++
++    func testRecoveryFillsAgentGapOverShellFallback() {
++        var registry = TerminalStatusRegistry()
++        registry.reconcile(terminals: [tty: "pane"])
++        XCTAssertTrue(registry.apply(report(.running, sequence: 1, source: .command)))
++        XCTAssertTrue(registry.apply(report(.idle, sequence: 1), recovering: true))
++        XCTAssertEqual(registry.visibleStatus(for: tty)?.activityKind, .agent)
++        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .idle)
++    }
++
++    func testDetachAndLeaseKeepSequenceProtection() {
++        var registry = TerminalStatusRegistry()
++        registry.reconcile(terminals: [tty: "pane"])
++        XCTAssertTrue(registry.apply(report(.running, sequence: 1), uptime: 10))
++        XCTAssertTrue(registry.apply(report(.detached, sequence: 3)))
++        XCTAssertFalse(registry.apply(report(.finished, sequence: 2), recovering: true))
++        XCTAssertNil(registry.visibleStatus(for: tty))
++        XCTAssertTrue(registry.apply(report(.running, sequence: 4), uptime: 20, recovering: true))
++        XCTAssertTrue(registry.expireStaleAgentHeartbeats(uptime: 29))
++        XCTAssertNil(registry.visibleStatus(for: tty))
++        XCTAssertTrue(registry.apply(report(.finished, sequence: 5), recovering: true))
++    }
++
++    func testUnmappedTTYCannotBeRecovered() {
++        var registry = TerminalStatusRegistry()
++        XCTAssertFalse(registry.apply(report(.idle, sequence: 1), recovering: true))
++    }
++
++    func testRestoringAgentFinishedOverShellDoesNotCreateACompletion() {
++        func windows(_ status: TerminalSessionStatus, kind: SessionActivityKind) -> [TerminalWindowSnapshot] {
++            let session = TerminalSessionSnapshot(id: "pane", name: "Pi", path: nil, tty: tty,
++                windowId: "window", tabId: "tab", isActive: false, isMinimized: false,
++                status: status, activityKind: kind, exitStatus: nil, statusChangedAt: nil)
++            return [TerminalWindowSnapshot(id: "window", number: 1, isActive: false,
++                tabs: [TerminalTabSnapshot(id: "tab", title: "tab", isSelected: false, sessions: [session])])]
++        }
++        var tracker = SessionCompletionTracker()
++        XCTAssertTrue(tracker.completions(in: windows(.running, kind: .command)).isEmpty)
++        XCTAssertTrue(tracker.completions(in: windows(.finished, kind: .agent)).isEmpty)
++        XCTAssertTrue(tracker.completions(in: windows(.running, kind: .agent)).isEmpty)
++        XCTAssertEqual(tracker.completions(in: windows(.finished, kind: .agent)).count, 1)
++        XCTAssertTrue(tracker.completions(in: windows(.running, kind: .command)).isEmpty)
++        XCTAssertEqual(tracker.completions(in: windows(.finished, kind: .command)).count, 1)
++        XCTAssertTrue(tracker.completions(in: windows(.finished, kind: .command)).isEmpty)
++    }
++
++    func testSnapshotValidationAndUnknownState() {
++        let id = UUID().uuidString
++        func snapshot(_ state: TerminalSessionStatus?, sequence: Int = 1, exitStatus: Int? = nil, children: Bool = false) -> PiStatusSnapshot {
++            PiStatusSnapshot(version: 1, instanceId: id, sessionId: "session", reporterId: id,
++                             sequence: sequence, status: state, exitStatus: exitStatus, hasRunningSubagents: children)
++        }
++        XCTAssertTrue(snapshot(nil).isValid)
++        XCTAssertTrue(snapshot(.awaitingInput, children: true).isValid)
++        XCTAssertTrue(snapshot(.finished, exitStatus: 0).isValid)
++        XCTAssertFalse(snapshot(.finished).isValid)
++        XCTAssertFalse(snapshot(.idle, children: true).isValid)
++        XCTAssertFalse(snapshot(.running, sequence: 0).isValid)
++        XCTAssertFalse(snapshot(.running, sequence: 9_007_199_254_740_992).isValid)
++        XCTAssertFalse(snapshot(.running, exitStatus: 0).isValid)
++    }
++}
+--- baseline/iTermateBridge/test_status_recovery.py
++++ current/iTermateBridge/test_status_recovery.py
+@@ -0,0 +1,89 @@
++import asyncio
++import importlib.util
++import json
++from pathlib import Path
++from types import SimpleNamespace
++import unittest
++
++spec = importlib.util.spec_from_file_location("bridge_source", Path(__file__).with_name("iTermateBridge.py"))
++module = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(module)
++
++
++class RecordingBridge(module.Bridge):
++    def __init__(self):
++        super().__init__(None, SimpleNamespace(get_session_by_id=lambda _: object()))
++        self.responses = []
++        self.snapshots = 0
++
++    async def send_action_result(self, writer, request_id, ok, error):
++        self.responses.append((ok, error))
++
++    async def publish_snapshot(self, target=None):
++        self.snapshots += 1
++
++    def report(self, status, sequence=1, recovery=False, **extra):
++        payload = dict(type="setSessionStatus", sessionId="pane", status=status,
++                       reporterId="pi-instance", sequence=sequence, recovery=recovery, **extra)
++        asyncio.run(self.handle_command(None, json.dumps(payload).encode()))
++        return self.responses[-1][0]
++
++
++class StatusRecoveryTests(unittest.TestCase):
++    def test_missing_idle_and_finished_can_be_restored(self):
++        for status in ("idle", "finished", "awaitingInput", "running"):
++            bridge = RecordingBridge()
++            self.assertTrue(bridge.report(status, recovery=True))
++            self.assertEqual(bridge.session_statuses["pane"]["status"], status)
++            self.assertEqual(bridge.session_statuses["pane"]["activityKind"], "agent")
++
++    def test_recovery_never_overwrites_known_agent_or_focused_idle(self):
++        bridge = RecordingBridge()
++        self.assertTrue(bridge.report("finished", sequence=1))
++        bridge.clear_finished_status("pane")
++        self.assertEqual(bridge.session_statuses["pane"]["status"], "idle")
++        self.assertFalse(bridge.report("finished", sequence=2, recovery=True))
++        self.assertEqual(bridge.session_statuses["pane"]["status"], "idle")
++        self.assertTrue(bridge.report("running", sequence=3))
++        self.assertFalse(bridge.report("idle", sequence=4, recovery=True))
++        self.assertEqual(bridge.session_statuses["pane"]["status"], "running")
++
++    def test_recovery_can_replace_shell_fallback_but_has_a_running_lease(self):
++        bridge = RecordingBridge()
++        bridge.set_session_status("pane", "running")
++        self.assertTrue(bridge.report("running", recovery=True))
++        observed = bridge.agent_heartbeat_times["pane"]
++        bridge.expire_stale_agent_heartbeats(observed + 9)
++        self.assertNotIn("pane", bridge.session_statuses)
++
++    def test_detach_tombstone_rejects_an_older_query(self):
++        bridge = RecordingBridge()
++        self.assertTrue(bridge.report("running", sequence=1))
++        self.assertTrue(bridge.report("detached", sequence=3))
++        self.assertFalse(bridge.report("finished", sequence=2, recovery=True))
++        self.assertNotIn("pane", bridge.session_statuses)
++
++    def test_recovered_sequence_rejects_older_push_and_accepts_newer_push(self):
++        bridge = RecordingBridge()
++        self.assertTrue(bridge.report("finished", sequence=3, recovery=True))
++        self.assertFalse(bridge.report("running", sequence=2))
++        self.assertEqual(bridge.session_statuses["pane"]["status"], "finished")
++        self.assertTrue(bridge.report("running", sequence=4))
++
++    def test_deleted_session_and_invalid_sequences_are_rejected(self):
++        bridge = RecordingBridge()
++        for sequence in (True, 0, -1, 9007199254740992, "1"):
++            self.assertFalse(bridge.report("idle", sequence=sequence, recovery=True))
++        bridge.app.get_session_by_id = lambda _: None
++        self.assertFalse(bridge.report("idle", recovery=True))
++        self.assertFalse(bridge.session_statuses)
++
++    def test_legacy_unsequenced_agent_reports_remain_supported(self):
++        bridge = RecordingBridge()
++        payload = dict(type="setSessionStatus", sessionId="pane", status="idle")
++        asyncio.run(bridge.handle_command(None, json.dumps(payload).encode()))
++        self.assertTrue(bridge.responses[-1][0])
++
++
++if __name__ == "__main__":
++    unittest.main()
+--- baseline/iTermate.xcodeproj/project.pbxproj
++++ current/iTermate.xcodeproj/project.pbxproj
+@@ -7,6 +7,7 @@
+ 	objects = {
+ 
+ /* Begin PBXBuildFile section */
++		3C23D61D4969774FEA271D3B /* PiStatusRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C392679BCA47875383F75E60 /* PiStatusRecoveryTests.swift */; };
+ 		5710E93BFF050C2919D03D58 /* PiSessionArchives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B64B776E9CA4A9EFBFB2C08 /* PiSessionArchives.swift */; };
+ 		5B5F89FB907820C9055C9184 /* iTermate.bash in Resources */ = {isa = PBXBuildFile; fileRef = 0448C28D1F048069AA0A0D18 /* iTermate.bash */; };
+ 		5FB71DAE674AB719CA12F02B /* iTermate.fish in Resources */ = {isa = PBXBuildFile; fileRef = 2754035B6E0A92CE752D09E5 /* iTermate.fish */; };
+@@ -71,6 +72,7 @@
+ 		98A663F51BCEE90A4D694DFD /* iTermateBridge.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = iTermateBridge.py; sourceTree = "<group>"; };
+ 		9BF8CFF4C87D1CF8C9E3F93E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+ 		AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelLayoutTests.swift; sourceTree = "<group>"; };
++		C392679BCA47875383F75E60 /* PiStatusRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiStatusRecoveryTests.swift; sourceTree = "<group>"; };
+ 		E19ED60DFB350BCCD35BB7D4 /* iTermateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iTermateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+ 		EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItermBridgeTests.swift; sourceTree = "<group>"; };
+ 		EF446CB40F5AEAE84DA0D6FF /* agent-connection-prompt.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "agent-connection-prompt.md"; sourceTree = "<group>"; };
+@@ -178,6 +180,7 @@
+ 				EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */,
+ 				AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */,
+ 				6B652704E42F76E84D47DEDB /* PiSessionArchiveTests.swift */,
++				C392679BCA47875383F75E60 /* PiStatusRecoveryTests.swift */,
+ 				8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */,
+ 			);
+ 			path = iTermateTests;
+@@ -297,6 +300,7 @@
+ 				D70EAEE488EDDDCA530D505D /* ItermBridgeTests.swift in Sources */,
+ 				CD6C91A30902A7FCEE57204D /* PanelLayoutTests.swift in Sources */,
+ 				81CDDEC1358C6082F1D554F4 /* PiSessionArchiveTests.swift in Sources */,
++				3C23D61D4969774FEA271D3B /* PiStatusRecoveryTests.swift in Sources */,
+ 				9EA014E904BFB2839F940EBA /* SessionNotificationTests.swift in Sources */,
+ 			);
+ 			runOnlyForDeploymentPostprocessing = 0;
+--- baseline/tasks/context.md
++++ current/tasks/context.md
+@@ -71,6 +71,18 @@
+ - General 中的全局快捷键由 `FinishedSessionShortcut` 使用系统热键 API 注册，配置由 `AppSettings` 持久化；动作固定路由 iTerm2 Bridge，不依赖当前前台终端或面板分组顺序。Bridge 按实际 Window/Tab/Session 顺序从当前项之后循环，只选 `activityKind=agent`，依次优先其他 awaitingInput（问号）、finished、running、idle Agent；普通命令、当前项、未知及独立模型推测均不参与，待回复、运行中及空闲目标不执行完成状态清理，聚焦不会清除问号。
+ - 状态菜单打开时刷新正在运行的终端数据源；`ItermStore` 分别保留两端快照与完成转换基线，只把可确认的 Agent Running 相加，并只累计退出状态为 0 的 Agent 完成。收藏项目操作固定路由到 iTerm2 Bridge；Bridge 在同一动作内用动态 `path` 判断首个精确匹配 Session，只有确认不存在时才通过 `LocalWriteOnlyProfile` 的自定义初始目录创建 Tab 或 Window，并以 `actionResult` 驱动菜单成功关闭或失败提示。
+ 
++## CTX-pi-status-recovery — Pi 状态主动恢复
++- Scope: Pi已存在但Agent状态缺失时的认证查询、跨终端恢复、乱序防护和旧集成能力边界。
++- Paths: `integrations/pi/iTermate-integration.ts`, `iTermate/PiSessionArchives.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/SessionNotifications.swift`, `iTermateBridge/iTermateBridge.py`
++- Keywords: Pi, status, recovery, reconnect, heartbeat, unknown, idle, finished, readonly, supportsStatus
++- Authority: `integrations/pi/iTermate-integration.ts`, `iTermate/PiSessionArchives.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/SessionNotifications.swift`, `iTermateBridge/iTermateBridge.py`
++- Recheck: 状态协议、Pi生命周期、私有发现身份、补查调度、连接代际、接收端序列或完成追踪变化时复查。
++
++### Workflows
++- Pi私有端点以supportsStatus声明能力；status请求验证token与原生Session ID，返回实例身份、当前状态、来源ID/序列及子代理标记，不发布状态、不调用模型、不归档或关闭会话。无法确认子代理且父Agent不忙时返回未知，不用canArchive推断空闲。
++- Store在既有两秒定时器中扫描缺失Agent状态的会话，最多4个在途请求，每次3秒截止；iTerm2用明确Session ID匹配，Ghostty用唯一TTY匹配。查回后重新核验实例与当前快照，连接/唤醒/停止代际失效的结果丢弃；iTerm2接收端和Ghostty registry均只填补缺失Agent状态，不覆盖新推送或聚焦后的idle。
++- 查询快照和正常Pi推送共用单调序列；接收端拒绝迟到消息并保留detached序列保护。恢复的running/awaitingInput有租约；状态来源由普通Shell变为Agent的finished不计作完成事件。旧集成缺少supportsStatus时不查询，源码更新仍需通过既有安装入口并在Pi中reload后生效。
++
+ ## 工程与组件
+ 
+ - Session 状态快照以 `activityKind` 保存由真实观察路径确定的 `agent` 或 `command` 类型，UI 不根据 Session 名称猜测；非空状态使用 36×16pt 的 AppKit `NSView` 以 20 FPS 绘制 18×8 点阵动画，Agent 使用外星人、普通命令使用机器人，二者均带状态条并以动作和语义色区分运行、成功、失败及未知结果；点亮像素保持全不透明并通过语义色向白色混合表现亮度，未点亮像素透明，以保证模糊背景上的对比度；由 Agent lifecycle 明确确认的 idle 显示低透明度静止外星人图标，普通命令空闲与未知状态不显示；减少动态效果时所有图标停在静态关键帧。——权威来源：[`iTermateBridge.py`](../iTermateBridge/iTermateBridge.py)、[`ItermBridge.swift`](../iTermate/ItermBridge.swift) 与 [`iTermateApp.swift`](../iTermate/iTermateApp.swift)

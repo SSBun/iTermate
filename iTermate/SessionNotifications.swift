@@ -3,7 +3,7 @@ import Foundation
 import UserNotifications
 
 struct SessionCompletionTracker {
-    private var previousRunningSessionIDs: Set<String>?
+    private var previousRunningSessions: [String: TerminalSessionSnapshot]?
 
     mutating func completions(
         in windows: [TerminalWindowSnapshot],
@@ -12,14 +12,17 @@ struct SessionCompletionTracker {
         let sessions = windows.flatMap(\.tabs).flatMap(\.sessions).filter {
             activityKind == nil || $0.activityKind == activityKind
         }
-        let runningSessionIDs = Set(
-            sessions.lazy.filter { $0.status == .running }.map(\.id)
+        let runningSessions = Dictionary(
+            sessions.lazy.filter { $0.status == .running }.map { ($0.id, $0) },
+            uniquingKeysWith: { first, _ in first }
         )
-        defer { previousRunningSessionIDs = runningSessionIDs }
+        defer { previousRunningSessions = runningSessions }
 
-        guard let previousRunningSessionIDs else { return [] }
+        guard let previousRunningSessions else { return [] }
         return sessions.filter {
-            $0.status == .finished && previousRunningSessionIDs.contains($0.id)
+            guard $0.status == .finished, let previous = previousRunningSessions[$0.id] else { return false }
+            // Replacing a shell fallback with a recovered Agent state is not a completion event.
+            return previous.activityKind == $0.activityKind
         }
     }
 }

@@ -1,0 +1,234 @@
+--- reviewed/integrations/pi/iTermate-integration.ts
++++ current/integrations/pi/iTermate-integration.ts
+@@ -1,6 +1,6 @@
+ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+ import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+-import { readFile, access } from "node:fs/promises";
++import { readFile } from "node:fs/promises";
+ import { chmodSync, closeSync, existsSync, fsyncSync, mkdirSync, mkdtempSync, openSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+ import { request as httpRequest } from "node:http";
+ import { execFileSync } from "node:child_process";
+@@ -198,18 +198,50 @@
+   return undefined;
+ }
+ 
+-// The optional HTTP inference request has an 800 ms deadline.
++// Direct question classification is distinct from the legacy terminal-state parser above.
++export function modelQuestionDecision(answers: unknown): boolean | undefined {
++  if (!answers || typeof answers !== "object") return undefined;
++  const value = (answers as { question?: { type?: unknown; choice?: unknown; probabilities?: Record<string, unknown> } }).question;
++  if (value?.type !== "choice" || (value.choice !== "question" && value.choice !== "normal")) return undefined;
++  const question = value.probabilities?.question;
++  const normal = value.probabilities?.normal;
++  if (typeof question !== "number" || typeof normal !== "number"
++    || !Number.isFinite(question) || !Number.isFinite(normal)
++    || question < 0 || question > 1 || normal < 0 || normal > 1
++    || Math.abs(question + normal - 1) > 0.02) return undefined;
++  if ((value.choice === "question" && question < normal) || (value.choice === "normal" && normal < question)) return undefined;
++  return value.choice === "question";
++}
++
++function usesModelForQuestions(): boolean {
++  const directory = join(supportDirectory, "Laya");
++  const configuration = join(directory, "configuration.json");
++  try {
++    return JSON.parse(readFileSync(configuration, "utf8")).analysisEnabled === true;
++  } catch {
++    // Malformed configuration is not permission to silently use a different classifier.
++    return existsSync(configuration) || existsSync(join(directory, "analysis-enabled"));
++  }
++}
++
++// The optional HTTP inference request has an 800 ms deadline; do not truncate the message.
+ async function classifyReplyWithModel(text: string): Promise<boolean | undefined> {
+-  if (!text.trim()) return undefined;
++  if (!text.trim() || text.length > 3000) return undefined;
+   try {
+     const directory = join(supportDirectory, "Laya");
+-    await access(join(directory, "analysis-enabled"));
+-    const endpoint = JSON.parse(await readFile(join(directory, "endpoint.json"), "utf8"));
++    const paths = ["configuration.json", "analysis-enabled", "endpoint.json"].map(name => join(directory, name));
++    const identity = await Promise.all(paths.map(path => readFile(path, "utf8")));
++    const configuration = JSON.parse(identity[0]);
++    const endpoint = JSON.parse(identity[2]);
++    if (configuration.analysisEnabled !== true || configuration.serviceEnabled !== true
++      || !["laya", "vela"].includes(configuration.provider)
++      || typeof configuration.revision !== "string" || identity[1] !== configuration.revision
++      || endpoint.provider !== configuration.provider || typeof endpoint.instance !== "string") return undefined;
+     const url = new URL(endpoint.url);
+     if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || !url.port) return undefined;
+     const token = (await readFile(join(directory, "api-token"), "utf8")).trim();
+-    const body = JSON.stringify({ state: text.slice(-1500) });
+-    return await new Promise<boolean | undefined>((resolve) => {
++    const body = JSON.stringify({ state: text });
++    const decision = await new Promise<boolean | undefined>((resolve) => {
+       let finished = false;
+       const finish = (value: boolean | undefined) => {
+         if (finished) return;
+@@ -219,7 +251,7 @@
+         resolve(value);
+       };
+       const request = httpRequest({
+-        hostname: "127.0.0.1", port: url.port, path: "/v1/session", method: "POST",
++        hostname: "127.0.0.1", port: url.port, path: "/v1/question", method: "POST",
+         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", "Content-Length": Buffer.byteLength(body) },
+       }, (response) => {
+         let result = "";
+@@ -230,8 +262,9 @@
+         response.on("error", () => finish(undefined));
+         response.on("end", () => {
+           try {
+-            finish(response.statusCode === 200
+-              ? modelReplyDecision(JSON.parse(result).answers) : undefined);
++            const payload = JSON.parse(result);
++            finish(response.statusCode === 200 && payload.provider === endpoint.provider && payload.instance === endpoint.instance
++              ? modelQuestionDecision(payload.answers) : undefined);
+           } catch { finish(undefined); }
+         });
+       });
+@@ -239,6 +272,8 @@
+       request.on("error", () => finish(undefined));
+       request.end(body);
+     });
++    const current = await Promise.all(paths.map(path => readFile(path, "utf8")));
++    return current.every((value, index) => value === identity[index]) ? decision : undefined;
+   } catch { return undefined; }
+ }
+ 
+@@ -713,23 +748,24 @@
+     lastAssistantText = message.stopReason === "stop"
+       ? message.content.flatMap((block) => block.type === "text" ? [block.text] : []).join("\n")
+       : "";
+-    replyPending = needsReply(lastAssistantText);
++    replyPending = !usesModelForQuestions() && needsReply(lastAssistantText);
+   });
+   pi.on("agent_settled", async (_event, ctx) => {
+     if (!active || !ctx.isIdle()) return;
+     stopHeartbeat();
++    const modelAssistance = usesModelForQuestions();
++    if (modelAssistance) replyPending = false;
+     // Establish the lifecycle fallback before awaiting optional inference so UI
+     // prompt events during that wait cannot restore the old running state.
+     baseStatus = replyPending ? "awaitingInput" : "finished";
+     const generation = heartbeatGeneration;
+     await refreshFleet();
+-    const decision = !agentFailed && !promptOpen
++    const decision = modelAssistance && !agentFailed && !promptOpen
+       ? await classifyReplyWithModel(lastAssistantText) : undefined;
+     if (!active || !ctx.isIdle() || generation !== heartbeatGeneration) return;
+-    // Either positive signal is sufficient. A model's negative/uncertain
+-    // result must not erase an explicit request already found in the reply.
+-    replyPending ||= existsSync(join(supportDirectory, "Laya", "analysis-enabled"))
+-      && decision === true;
++    // Model assistance classifies actual questions, not the legacy implicit-reply heuristic.
++    // Unavailability leaves explicit lifecycle status; it never selects another model.
++    if (modelAssistance) replyPending = usesModelForQuestions() && decision === true;
+     baseStatus = replyPending ? "awaitingInput" : "finished";
+     return publish();
+   });
+--- reviewed/iTermateBridge/iTermateBridge.py
++++ current/iTermateBridge/iTermateBridge.py
+@@ -10,6 +10,7 @@
+ import time
+ import urllib.request
+ import urllib.parse
++from pathlib import Path
+ 
+ SUPPORT_DIRECTORY = os.path.expanduser(
+     "~/Library/Application Support/iTermate"
+@@ -811,7 +812,9 @@
+     async def update_model_observation(self):
+         """仅在没有真实状态时，从可见文本产生短期辅助标签。"""
+         directory = os.path.join(SUPPORT_DIRECTORY, "Laya")
+-        if not os.path.exists(os.path.join(directory, "analysis-enabled")):
++        try:
++            identity = self.model_identity(directory)
++        except (OSError, ValueError, KeyError, TypeError):
+             self.model_observations.clear()
+             return
+         sessions = [
+@@ -823,7 +826,7 @@
+         live_ids = {session.session_id for session in sessions}
+         self.model_observations = {
+             key: value for key, value in self.model_observations.items()
+-            if key in live_ids and now - value[1] < 8
++            if key in live_ids and now - value[1] < 8 and len(value) == 3 and value[2] == identity
+         }
+         if not sessions:
+             return
+@@ -835,7 +838,9 @@
+             text = "\n".join(screen.line(index).string for index in range(screen.number_of_lines))[-1500:]
+             if not text.strip():
+                 return
+-            answer = await asyncio.to_thread(self.request_model_observation, directory, text)
++            answer = await asyncio.to_thread(self.request_model_observation, directory, text, identity)
++            if self.model_identity(directory) != identity:
++                return
+             if self.session_statuses.get(session.session_id, {}).get("status"):
+                 return
+             state = answer.get("state", {})
+@@ -846,14 +851,34 @@
+                 return
+             if choice == "awaitingInput" and answer.get("needs_reply", {}).get("noul", 0) < 0.6:
+                 return
+-            self.model_observations[session.session_id] = (choice, time.monotonic())
++            self.model_observations[session.session_id] = (choice, time.monotonic(), identity)
+         except Exception:
+             self.model_observations.pop(session.session_id, None)
+ 
+     @staticmethod
+-    def request_model_observation(directory, text):
+-        with open(os.path.join(directory, "endpoint.json")) as stream:
+-            endpoint = json.load(stream)
++    def model_identity(directory):
++        identity = tuple(Path(directory, name).read_text() for name in
++                         ("configuration.json", "analysis-enabled", "endpoint.json"))
++        configuration = json.loads(identity[0])
++        endpoint = json.loads(identity[2])
++        if not isinstance(configuration, dict) or not isinstance(endpoint, dict):
++            raise ValueError("Invalid decision model configuration")
++        if (configuration.get("analysisEnabled") is not True
++                or configuration.get("serviceEnabled") is not True
++                or configuration.get("provider") not in {"laya", "vela"}
++                or not isinstance(configuration.get("revision"), str)
++                or identity[1] != configuration["revision"]
++                or endpoint.get("provider") != configuration["provider"]
++                or not isinstance(endpoint.get("instance"), str)):
++            raise ValueError("Local decision model is not ready for this configuration")
++        return identity
++
++    @staticmethod
++    def request_model_observation(directory, text, identity=None):
++        identity = identity or Bridge.model_identity(directory)
++        if Bridge.model_identity(directory) != identity:
++            raise ValueError("Decision model changed")
++        endpoint = json.loads(identity[2])
+         url = urllib.parse.urlparse(endpoint["url"])
+         if url.scheme != "http" or url.hostname != "127.0.0.1" or not url.port:
+             raise ValueError("Invalid local endpoint")
+@@ -869,15 +894,22 @@
+                 return None
+         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+         with opener.open(request, timeout=0.8) as response:
+-            return json.loads(response.read(16384))["answers"]
++            result = json.loads(response.read(16384))
++        if (Bridge.model_identity(directory) != identity
++                or result.get("provider") != endpoint["provider"]
++                or result.get("instance") != endpoint["instance"]):
++            raise ValueError("Stale decision model response")
++        return result["answers"]
+ 
+     def model_state(self, session_id):
+         if self.session_statuses.get(session_id, {}).get("status"):
+             return None
+-        if not os.path.exists(os.path.join(SUPPORT_DIRECTORY, "Laya", "analysis-enabled")):
++        try:
++            identity = self.model_identity(os.path.join(SUPPORT_DIRECTORY, "Laya"))
++        except (OSError, ValueError, KeyError, TypeError):
+             return None
+         observation = self.model_observations.get(session_id)
+-        if observation and time.monotonic() - observation[1] < 8:
++        if observation and len(observation) == 3 and observation[2] == identity and time.monotonic() - observation[1] < 8:
+             return observation[0]
+         return None
+ 

@@ -117,12 +117,15 @@ function report(
 
   return new Promise((resolve) => {
     const requestId = randomUUID();
+    const sequence = ++reportSequence;
     const request = sessionID
       ? {
           version: 7,
           type: "setSessionStatus",
           requestId,
           sessionId: sessionID,
+          reporterId,
+          sequence,
           status,
           exitStatus,
           heartbeat,
@@ -135,7 +138,7 @@ function report(
           tty,
           source: "agent",
           reporterId,
-          sequence: ++reportSequence,
+          sequence,
           status,
           exitStatus,
           heartbeat,
@@ -340,6 +343,7 @@ function startArchiveEndpoint(
   ctx: ExtensionContext,
   canArchive: () => boolean,
   refresh: () => Promise<void>,
+  readStatus: () => Promise<{ status: Status | null; exitStatus?: number; hasRunningSubagents: boolean }>,
 ) {
   const liveDirectory = join(homedir(), ".iTermate", "pi-live");
   const archiveDirectory = join(supportDirectory, "ArchivedPiSessions");
@@ -361,6 +365,7 @@ function startArchiveEndpoint(
     name: (ctx.sessionManager.getSessionName() ?? "Pi session").slice(0, 200),
     canArchive: !closing && canArchive() && !!ctx.sessionManager.getSessionFile(),
     supportsSummary: true,
+    supportsStatus: true,
     updatedAt: Date.now() / 1000,
   });
   const publish = () => {
@@ -403,10 +408,22 @@ function startArchiveEndpoint(
         const request = JSON.parse(buffer.split("\n", 1)[0]);
         const supplied = Buffer.from(typeof request.token === "string" ? request.token : "");
         if (supplied.length !== token.length || !timingSafeEqual(supplied, Buffer.from(token))
-          || request.action !== "archive" || request.sessionId !== ctx.sessionManager.getSessionId()) {
+          || !["archive", "status"].includes(request.action) || request.sessionId !== ctx.sessionManager.getSessionId()) {
           throw new Error("Pi session identity or authorization changed. Refresh and retry.");
         }
         if (closing || stopped) throw new Error("Archive already in progress.");
+        if (request.action === "status") {
+          const state = await readStatus();
+          if (closing || stopped || socket.destroyed || request.sessionId !== ctx.sessionManager.getSessionId()) {
+            throw new Error("Pi session changed during the status query.");
+          }
+          socket.end(JSON.stringify({
+            ok: true, version: 1, instanceId: identity,
+            sessionId: ctx.sessionManager.getSessionId(), reporterId,
+            sequence: ++reportSequence, ...state,
+          }) + "\n");
+          return;
+        }
         closing = true;
         ownsClosing = true;
         publish();
@@ -686,7 +703,23 @@ export default function (pi: ExtensionAPI): void {
       ? startArchiveEndpoint(ctx, () => active && !agentRunning && !promptOpen
         && ctx.isIdle() && !ctx.hasPendingMessages() && !ctx.ui.getEditorText().trim() && !hasRunningSubagents
         && (!pi.getAllTools().some(tool => tool.name === "subagent")
-          || (fleetObservedAt > 0 && performance.now() - fleetObservedAt <= 6000)), refreshFleet)
+          || (fleetObservedAt > 0 && performance.now() - fleetObservedAt <= 6000)), refreshFleet, async () => {
+            await refreshFleet();
+            const fleetIsFresh = fleetObservedAt > 0 && performance.now() - fleetObservedAt <= 6000;
+            const childrenUnknown = pi.getAllTools().some(tool => tool.name === "subagent") && !fleetIsFresh;
+            // Reading status must not publish, restart heartbeats, invoke a model, or mutate the session.
+            const status: Status | null = !active ? null
+              : promptOpen || baseStatus === "awaitingInput" ? "awaitingInput"
+              : agentRunning || !ctx.isIdle() ? "running"
+              : childrenUnknown ? null
+              : hasRunningSubagents ? "running" : baseStatus;
+            return {
+              status,
+              exitStatus: status === "finished" ? (agentFailed ? 1 : 0) : undefined,
+              hasRunningSubagents: fleetIsFresh && hasRunningSubagents
+                && (status === "running" || status === "awaitingInput"),
+            };
+          })
       : undefined;
     // Let other extensions restore their state before the first observation.
     if (active) fleetTimer = setTimeout(() => void pollFleet(fleetGeneration), 0);

@@ -134,6 +134,7 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
     responses, snapshots, socket, reports, descriptor,
     emit: (name, event = {}) => handlers.get(name)?.(event, ctx),
     setSessionId: (value) => { sessionId = value; },
+    queryStatus: (overrides = {}) => socket.listeners("data")[0](Buffer.from(JSON.stringify({ action: "status", sessionId: descriptor.sessionId, token: descriptor.token, ...overrides }) + "\n")),
     get shutdowns() { return shutdowns; },
     get inputBlocked() { return handlers.get("input")({}, ctx)?.action === "handled"; },
     setLeaf: (value) => { leaf = value; }, setBusy: (value) => { busy = value; },
@@ -221,6 +222,81 @@ test("branch or activity changes during summary prevent archival and exit", asyn
       assert.equal(h.inputBlocked, false);
     } finally { await h.dispose(); }
   }
+});
+
+for (const state of ["idle", "running", "awaitingInput", "finished"]) {
+  test(`readonly status returns ${state} without publishing, invoking a model, or closing Pi`, async () => {
+    let modelCalls = 0;
+    const h = await harness({ complete: async () => { modelCalls += 1; throw new Error("Unexpected model call"); } });
+    try {
+      assert.equal(h.descriptor.supportsStatus, true);
+      if (state === "running") h.setBusy(true);
+      if (state === "awaitingInput") await h.emit("ui_prompt_start", { kind: "confirm" });
+      if (state === "finished") {
+        await h.emit("agent_start");
+        await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text: "Done." }] }] });
+        await h.emit("agent_settled");
+      }
+      const sent = h.reports.length;
+      await h.queryStatus();
+      const response = h.responses[0];
+      assert.equal(response.ok, true);
+      assert.equal(response.status, state);
+      assert.equal(response.instanceId, h.descriptor.id);
+      assert.equal(response.sessionId, h.descriptor.sessionId);
+      assert.equal(response.reporterId, h.reports.at(-1).reporterId);
+      assert.ok(response.sequence > h.reports.at(-1).sequence);
+      assert.equal(h.reports.length, sent);
+      assert.equal(modelCalls, 0);
+      assert.equal(h.shutdowns, 0);
+      assert.equal(h.inputBlocked, false);
+      assert.equal(h.snapshots.length, 0);
+      await h.emit("agent_start");
+      assert.ok(h.reports.at(-1).sequence > response.sequence);
+    } finally { await h.dispose(); }
+  });
+}
+
+test("readonly status rejects invalid token and stale session identity", async () => {
+  for (const overrides of [{ token: "wrong" }, { sessionId: "old-session" }]) {
+    const h = await harness();
+    try {
+      await h.queryStatus(overrides);
+      assert.equal(h.responses[0].ok, false);
+      assert.equal(h.shutdowns, 0);
+      assert.equal(h.inputBlocked, false);
+    } finally { await h.dispose(); }
+  }
+});
+
+test("readonly status refuses an identity change during the asynchronous observation", async () => {
+  const h = await harness();
+  try {
+    const query = h.queryStatus();
+    h.setSessionId("new-session");
+    await query;
+    assert.equal(h.responses[0].ok, false);
+    assert.equal(h.shutdowns, 0);
+  } finally { await h.dispose(); }
+});
+
+test("readonly status keeps unknown fleet unknown rather than reporting idle", async () => {
+  const h = await harness({ hasSubagentTool: true, fleetAvailable: false });
+  try {
+    await h.queryStatus();
+    assert.equal(h.responses[0].ok, true);
+    assert.equal(h.responses[0].status, null);
+    assert.equal(h.responses[0].hasRunningSubagents, false);
+  } finally { await h.dispose(); }
+});
+
+test("readonly status includes confirmed child activity after the parent settles", async () => {
+  const h = await harness({ hasSubagentTool: true, fleetCount: 2 });
+  try {
+    await h.queryStatus();
+    assert.equal(h.responses[0].status, "running");
+    assert.equal(h.responses[0].hasRunningSubagents, true);
+  } finally { await h.dispose(); }
 });
 
 test("a failed response write retains the archive but does not exit", async () => {
