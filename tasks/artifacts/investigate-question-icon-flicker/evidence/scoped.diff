@@ -1,0 +1,395 @@
+--- before/docs/local-model-api.md
++++ docs/local-model-api.md
+@@ -82,7 +82,7 @@
+ 
+ - `answers.state`：仅 `awaitingInput` 或 `idle`，判断最新回复是否需要用户继续参与，不预测执行过程。
+ - 与 `/v1/question` 共享用户参与语义；不再返回 `needs_reply`，不再使用0.85状态概率与0.6回复概率的双重过滤。
+-- 原生运行状态优先。`awaitingInput` 显示问号，点击不清除；`idle` 回复先高亮，点击后灰显。原生协议中的 `finished` 保留为未读回复标记，不再显示 Agent 成功/失败图标。模型辅助路径用最新屏幕文本变化识别新回复；没有生命周期事件且文本完全相同时，无法识别为新一轮。
++- 原生运行状态优先。`awaitingInput` 显示问号，点击不清除；`idle` 回复先高亮，点击后灰显。原生协议中的 `finished` 保留为未读回复标记，不再显示 Agent 成功/失败图标。此兼容接口仅供显式 API 调用；iTermate 不再调用它轮询屏幕。产品只通过已接入的回答结束 hook 调用 `/v1/question`。
+ 
+ 这是推断，不会直接修改任何 Session。客户端必须保留真实生命周期优先级；不要根据一条文本把正在运行的进程标成完成。
+ 
+@@ -146,7 +146,8 @@
+ - Pi 交互集成仅在Agent settled后使用最后一条成功结束的助手文本。启用模型分析时调用 `/v1/question`，由所选模型判断用户参与需求，不将旧规则与模型结果做OR合并；关闭分析时保留既有规则行为。新一轮输入、切换分支、子代理活动和明确UI提问事件仍优先。
+ - 用户参与决策取合法二分类的最大概率选项，不套用旧终端状态0.85门槛。校验两类概率、选择一致性和provider/instance，响应后再次比对配置revision、许可与端点。配置改变或过期响应被丢弃，不切换到其他模型。
+ - 请求超时800ms、不可用、忙、非法结果或完整消息超过3000字符时，不截断后猜测、不换模型，也不把错误当作normal分类；本轮仅保留明确生命周期状态（已结束而非模型确认无需用户参与）。已确认的等待仍由心跳保持直到下一轮或导航，切换模型只作用于后续判定。安装旧版本集成的Pi需通过应用安装入口更新并重新加载，不能只替换源码。
+-- iTerm2 对没有真实状态的 Session 轮流读取可见终端文本末尾（最多 1500 字符），每个周期最多分析一个，结果最长保存 8 秒。界面以带问号的模型辅助标签显示，不写回权威状态，不计入完成次数或完成通知。不是按 Session 名称推测，也不能保证可见屏幕等于最后一条助手消息。
++- 只在 Pi 的 `agent_settled` hook（回答结束且会话空闲）触发模型分析，输入为本轮最后一条助手回复，不抓取终端屏幕、不轮询分类、不设置8秒模型结果过期。等待状态由生命周期心跳续租，心跳不调用模型；新一轮或会话导航清理旧状态。新一轮 generation 及模型身份校验拒绝迟到结果。
++- 没有接入回答结束 hook 的会话不做模型猜测，仍可显示已接入的真实运行/完成事件。Bridge 快照刷新与 Agent 心跳不是模型轮询，保留断开连接时的租约失效机制。
+ - Ghostty 无法通过当前 AppleScript 接口读取正文；Pi 集成可以提供消息，其余没有集成的 Session 保持未知。
+ - Laya常驻占用内存/GPU，Vela占用内存/CPU；同一App只保持所选worker。模型样例不能证明所有语言和终端UI都能准确判断；未执行真实用户会话的切换验收时不得把编译通过当作视觉验收。
+ 
+--- before/iTermate/iTermateApp.swift
++++ iTermate/iTermateApp.swift
+@@ -641,7 +641,7 @@
+                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
+                                     sessionButton(item)
+                                         .id(
+-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none"):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
++                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                         )
+                                         .padding(.leading, hasTabHeader ? 12 : 0)
+                                 }
+@@ -1003,20 +1003,6 @@
+                         .accessibilityElement(children: .combine)
+                     }
+ 
+-                    if item.session.status == nil, let estimate = item.session.modelState {
+-                        if estimate == .awaitingInput {
+-                            AgentWaitingStatusView(
+-                                style: .questionMark,
+-                                color: settings.statusAnimationColor(for: .agentAwaitingInput)
+-                            )
+-                            .frame(width: 36, height: 16)
+-                            .help("Waiting for your reply — local model estimate")
+-                            .accessibilityLabel("Waiting for your reply — local model estimate")
+-                        } else if estimate == .idle {
+-                            AgentIdleStatusView(isHighlighted: item.session.modelResponseUnread == true)
+-                        }
+-                    }
+-
+                     if item.session.isMinimized == true {
+                         Image(systemName: "rectangle.compress.vertical")
+                             .foregroundStyle(.secondary)
+--- before/iTermate/ItermBridge.swift
++++ iTermate/ItermBridge.swift
+@@ -132,8 +132,6 @@
+     let exitStatus: Int?
+     let statusChangedAt: TimeInterval?
+     /// A short-lived estimate, never used for lifecycle notifications or completion counts.
+-    var modelState: TerminalSessionStatus? = nil
+-    var modelResponseUnread: Bool? = nil
+     /// Confirmed Pi child activity; absent for integrations without this signal.
+     var hasRunningSubagents: Bool? = nil
+ }
+--- before/iTermate/LocalModelService.swift
++++ iTermate/LocalModelService.swift
+@@ -569,7 +569,7 @@
+                 }
+                 Text("Bearer authentication required. The port may change on restart. Clients can read endpoint.json and api-token in the Laya support directory. Quitting iTermate stops the service.")
+                     .font(.caption).foregroundStyle(.secondary)
+-                Text("Pi classifies whether the last assistant reply asks or waits for your participation, including confirmation, choices, authorization or missing information. Requests and implicit approval gates count even without a question mark; completion reports and autonomous progress do not. Model errors/timeouts keep explicit lifecycle status; no other model is used. Disabling assistance retains legacy rules. Classification is experimental and is not guaranteed to exceed 90% accuracy. iTerm2 may estimate unknown states from visible text; Ghostty without an integration remains unknown.")
++                Text("Pi classifies whether the last assistant reply asks or waits for your participation, including confirmation, choices, authorization or missing information. Requests and implicit approval gates count even without a question mark; completion reports and autonomous progress do not. Model errors/timeouts keep explicit lifecycle status; no other model is used. Disabling assistance retains legacy rules. Classification is experimental and is not guaranteed to exceed 90% accuracy. Classification runs only after the Agent finishes answering through its lifecycle hook. Terminal screens are never scanned; sessions without this hook are not classified.")
+                     .font(.caption).foregroundStyle(.secondary)
+             }
+         }
+--- before/iTermateBridge/test_response_status.py
++++ iTermateBridge/test_response_status.py
+@@ -1,96 +1,28 @@
+-"""回复二分类与显式已读回归；只运行提取的产品方法，不连接终端。"""
++"""只保留生命周期回复状态，不连接终端或调用模型。"""
+ import ast
+-import asyncio
+-import os
+ from pathlib import Path
+-import time
+ from types import SimpleNamespace
+ import unittest
+ 
+-TREE = ast.parse(Path(__file__).with_name('iTermateBridge.py').read_text())
++SOURCE = Path(__file__).with_name('iTermateBridge.py').read_text()
++TREE = ast.parse(SOURCE)
+ CLASS = next(node for node in TREE.body if isinstance(node, ast.ClassDef) and node.name == 'Bridge')
+-NAMESPACE = dict(asyncio=asyncio, os=os, time=time, SUPPORT_DIRECTORY='/unused')
+-for name in ['update_model_observation', 'clear_finished_status']:
+-    method = next(node for node in CLASS.body if getattr(node, 'name', None) == name)
+-    exec(compile(ast.Module(body=[method], type_ignores=[]), '<product-method>', 'exec'), NAMESPACE)
++NAMESPACE = {}
++METHOD = next(node for node in CLASS.body if getattr(node, 'name', None) == 'clear_finished_status')
++exec(compile(ast.Module(body=[METHOD], type_ignores=[]), '<product-method>', 'exec'), NAMESPACE)
+ 
+ 
+-class ResponseStatusTests(unittest.IsolatedAsyncioTestCase):
+-    def make_bridge(self, choice='awaitingInput'):
+-        screen = SimpleNamespace(number_of_lines=1, line=lambda index: SimpleNamespace(string='请确认范围。'))
+-        async def contents(): return screen
+-        session = SimpleNamespace(session_id='one', async_get_screen_contents=contents)
+-        bridge = SimpleNamespace(
+-            app=SimpleNamespace(windows=[SimpleNamespace(tabs=[SimpleNamespace(all_sessions=[session])])]),
+-            session_statuses={}, model_observations={}, model_response_texts={}, model_read_responses={},
+-            model_cursor=0, agent_managed_session_ids={'one'},
+-            model_identity=lambda directory: ('stable',),
+-            request_model_observation=lambda *args: {'state': {'type': 'choice', 'choice': choice, 'probabilities': {
+-                choice: 0.7, ('idle' if choice == 'awaitingInput' else 'awaitingInput'): 0.3}}})
++class ResponseStatusTests(unittest.TestCase):
++    def test_bridge_has_no_screen_classifier_or_model_snapshot(self):
++        methods = {getattr(node, 'name', None) for node in CLASS.body}
++        self.assertFalse(methods & {'update_model_observation', 'model_state', 'request_model_observation'})
++        self.assertNotIn('async_get_screen_contents', SOURCE)
++        self.assertNotIn('modelState', SOURCE)
++        self.assertNotIn('modelResponseUnread', SOURCE)
++
++    def test_only_explicit_activation_acknowledges_native_completion(self):
++        bridge = SimpleNamespace(session_statuses={}, agent_managed_session_ids={'one'})
+         bridge.set_session_status = lambda key, status, **kwargs: bridge.session_statuses.update({key: {'status': status, 'activityKind': 'agent'}})
+-        return bridge
+-
+-    async def test_binary_waiting_does_not_require_second_probability(self):
+-        bridge = self.make_bridge()
+-        await NAMESPACE['update_model_observation'](bridge)
+-        self.assertEqual(bridge.model_observations['one'][0], 'awaitingInput')
+-        NAMESPACE['clear_finished_status'](bridge, 'one')
+-        self.assertEqual(bridge.model_observations['one'][0], 'awaitingInput')
+-
+-    async def test_changed_screen_discards_inflight_result(self):
+-        bridge = self.make_bridge()
+-        session = bridge.app.windows[0].tabs[0].all_sessions[0]
+-        calls = 0
+-        async def contents():
+-            nonlocal calls
+-            calls += 1
+-            text = '请确认范围。' if calls == 1 else '已完成。'
+-            return SimpleNamespace(number_of_lines=1, line=lambda index: SimpleNamespace(string=text))
+-        session.async_get_screen_contents = contents
+-        await NAMESPACE['update_model_observation'](bridge)
+-        self.assertNotIn('one', bridge.model_observations)
+-
+-    async def test_native_status_arriving_during_inference_wins(self):
+-        bridge = self.make_bridge()
+-        request = bridge.request_model_observation
+-        def respond(*args):
+-            bridge.session_statuses['one'] = {'status': 'running', 'activityKind': 'agent'}
+-            return request(*args)
+-        bridge.request_model_observation = respond
+-        await NAMESPACE['update_model_observation'](bridge)
+-        self.assertNotIn('one', bridge.model_observations)
+-        self.assertEqual(bridge.session_statuses['one']['status'], 'running')
+-
+-    async def test_invalid_binary_response_is_not_displayed(self):
+-        for probabilities in [{}, {'idle': True, 'awaitingInput': False},
+-                              {'idle': 0.9, 'awaitingInput': 0.9},
+-                              {'idle': 0.9, 'awaitingInput': 0.1},
+-                              {'idle': float('nan'), 'awaitingInput': 0.7}]:
+-            bridge = self.make_bridge()
+-            bridge.request_model_observation = lambda *args: {'state': {
+-                'type': 'choice', 'choice': 'awaitingInput', 'probabilities': probabilities}}
+-            await NAMESPACE['update_model_observation'](bridge)
+-            self.assertNotIn('one', bridge.model_observations)
+-
+-    async def test_closed_session_discards_inflight_result(self):
+-        bridge = self.make_bridge()
+-        request = bridge.request_model_observation
+-        def respond(*args):
+-            bridge.app.windows.clear()
+-            return request(*args)
+-        bridge.request_model_observation = respond
+-        await NAMESPACE['update_model_observation'](bridge)
+-        self.assertNotIn('one', bridge.model_observations)
+-
+-    async def test_model_idle_read_identity_survives_refresh(self):
+-        bridge = self.make_bridge('idle')
+-        await NAMESPACE['update_model_observation'](bridge)
+-        NAMESPACE['clear_finished_status'](bridge, 'one')
+-        await NAMESPACE['update_model_observation'](bridge)
+-        self.assertEqual(bridge.model_read_responses['one'], bridge.model_response_texts['one'])
+-
+-    async def test_only_explicit_activation_acknowledges_native_completion(self):
+-        bridge = self.make_bridge()
+         bridge.session_statuses['one'] = {'status': 'finished', 'activityKind': 'agent'}
+         NAMESPACE['clear_finished_status'](bridge, 'one', acknowledge_agent=False)
+         self.assertEqual(bridge.session_statuses['one']['status'], 'finished')
+--- before/iTermateBridge/iTermateBridge.py
++++ iTermateBridge/iTermateBridge.py
+@@ -8,9 +8,6 @@
+ import shlex
+ import sys
+ import time
+-import urllib.request
+-import urllib.parse
+-from pathlib import Path
+ 
+ SUPPORT_DIRECTORY = os.path.expanduser(
+     "~/Library/Application Support/iTermate"
+@@ -59,11 +56,6 @@
+         self.sequence = 0
+         self.snapshot_lock = asyncio.Lock()
+         self.finished_navigation_lock = asyncio.Lock()
+-        self.model_observations = {}
+-        self.model_response_texts = {}
+-        self.model_read_responses = {}
+-        self.model_task = None
+-        self.model_cursor = 0
+         self.command_monitor_tasks = {}
+         self.command_monitor_unavailable = set()
+         self.agent_managed_session_ids = set()
+@@ -786,8 +778,6 @@
+         return session.session_id if session is not None else None
+ 
+     def clear_finished_status(self, session_id, acknowledge_agent=True):
+-        if acknowledge_agent and session_id in getattr(self, "model_response_texts", {}):
+-            self.model_read_responses[session_id] = self.model_response_texts[session_id]
+         status = self.session_statuses.get(session_id)
+         if status is not None and status.get("activityKind") == "agent" and not acknowledge_agent:
+             return
+@@ -811,128 +801,7 @@
+             else:
+                 self.expire_stale_agent_heartbeats(heartbeat_time())
+             last_tick = now
+-            if self.model_task is None or self.model_task.done():
+-                self.model_task = asyncio.create_task(self.update_model_observation())
+             await self.publish_snapshot()
+-
+-    async def update_model_observation(self):
+-        """仅在没有真实状态时，从可见文本产生短期辅助标签。"""
+-        directory = os.path.join(SUPPORT_DIRECTORY, "Laya")
+-        try:
+-            identity = self.model_identity(directory)
+-        except (OSError, ValueError, KeyError, TypeError):
+-            self.model_observations.clear()
+-            return
+-        sessions = [
+-            session for window in self.app.windows for tab in window.tabs
+-            for session in tab.all_sessions
+-            if not self.session_statuses.get(session.session_id, {}).get("status")
+-        ]
+-        now = time.monotonic()
+-        live_ids = {session.session_id for session in sessions}
+-        self.model_response_texts = {key: value for key, value in self.model_response_texts.items() if key in live_ids}
+-        self.model_read_responses = {key: value for key, value in self.model_read_responses.items() if key in live_ids}
+-        self.model_observations = {
+-            key: value for key, value in self.model_observations.items()
+-            if key in live_ids and now - value[1] < 8 and len(value) == 3 and value[2] == identity
+-        }
+-        if not sessions:
+-            return
+-        self.model_cursor %= len(sessions)
+-        session = sessions[self.model_cursor]
+-        self.model_cursor += 1
+-        try:
+-            screen = await asyncio.wait_for(session.async_get_screen_contents(), 1)
+-            text = "\n".join(screen.line(index).string for index in range(screen.number_of_lines))[-1500:]
+-            if not text.strip() or self.model_response_texts.get(session.session_id) != text:
+-                self.model_observations.pop(session.session_id, None)
+-            if not text.strip():
+-                return
+-            answer = await asyncio.to_thread(self.request_model_observation, directory, text, identity)
+-            # Re-read the source after inference: a valid worker response may still
+-            # describe a screen that changed while the model was running.
+-            current_screen = await asyncio.wait_for(session.async_get_screen_contents(), 1)
+-            current_text = "\n".join(current_screen.line(index).string for index in range(current_screen.number_of_lines))[-1500:]
+-            if (current_text != text or self.model_identity(directory) != identity
+-                    or self.session_statuses.get(session.session_id, {}).get("status")
+-                    or not any(current is session for window in self.app.windows
+-                               for tab in window.tabs for current in tab.all_sessions)):
+-                self.model_observations.pop(session.session_id, None)
+-                return
+-            state = answer.get("state", {})
+-            choice = state.get("choice")
+-            probabilities = state.get("probabilities", {})
+-            waiting = probabilities.get("awaitingInput")
+-            idle = probabilities.get("idle")
+-            if (state.get("type") != "choice" or choice not in {"awaitingInput", "idle"}
+-                    or any(type(value) not in (int, float) or not 0 <= value <= 1 for value in (waiting, idle))
+-                    or abs(waiting + idle - 1) > 0.02
+-                    or (choice == "awaitingInput" and waiting < idle)
+-                    or (choice == "idle" and idle < waiting)):
+-                self.model_observations.pop(session.session_id, None)
+-                return
+-            self.model_observations[session.session_id] = (choice, time.monotonic(), identity)
+-            self.model_response_texts[session.session_id] = text
+-        except Exception:
+-            self.model_observations.pop(session.session_id, None)
+-
+-    @staticmethod
+-    def model_identity(directory):
+-        identity = tuple(Path(directory, name).read_text() for name in
+-                         ("configuration.json", "analysis-enabled", "endpoint.json"))
+-        configuration = json.loads(identity[0])
+-        endpoint = json.loads(identity[2])
+-        if not isinstance(configuration, dict) or not isinstance(endpoint, dict):
+-            raise ValueError("Invalid decision model configuration")
+-        if (configuration.get("analysisEnabled") is not True
+-                or configuration.get("serviceEnabled") is not True
+-                or configuration.get("provider") not in {"laya", "vela"}
+-                or not isinstance(configuration.get("revision"), str)
+-                or identity[1] != configuration["revision"]
+-                or endpoint.get("provider") != configuration["provider"]
+-                or not isinstance(endpoint.get("instance"), str)):
+-            raise ValueError("Local decision model is not ready for this configuration")
+-        return identity
+-
+-    @staticmethod
+-    def request_model_observation(directory, text, identity=None):
+-        identity = identity or Bridge.model_identity(directory)
+-        if Bridge.model_identity(directory) != identity:
+-            raise ValueError("Decision model changed")
+-        endpoint = json.loads(identity[2])
+-        url = urllib.parse.urlparse(endpoint["url"])
+-        if url.scheme != "http" or url.hostname != "127.0.0.1" or not url.port:
+-            raise ValueError("Invalid local endpoint")
+-        with open(os.path.join(directory, "api-token")) as stream:
+-            token = stream.read().strip()
+-        request = urllib.request.Request(
+-            f"http://127.0.0.1:{url.port}/v1/session",
+-            data=json.dumps({"state": text}).encode(),
+-            headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"},
+-        )
+-        class NoRedirect(urllib.request.HTTPRedirectHandler):
+-            def redirect_request(self, *args, **kwargs):
+-                return None
+-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+-        with opener.open(request, timeout=0.8) as response:
+-            result = json.loads(response.read(16384))
+-        if (Bridge.model_identity(directory) != identity
+-                or result.get("provider") != endpoint["provider"]
+-                or result.get("instance") != endpoint["instance"]):
+-            raise ValueError("Stale decision model response")
+-        return result["answers"]
+-
+-    def model_state(self, session_id):
+-        if self.session_statuses.get(session_id, {}).get("status"):
+-            return None
+-        try:
+-            identity = self.model_identity(os.path.join(SUPPORT_DIRECTORY, "Laya"))
+-        except (OSError, ValueError, KeyError, TypeError):
+-            return None
+-        observation = self.model_observations.get(session_id)
+-        if observation and len(observation) == 3 and observation[2] == identity and time.monotonic() - observation[1] < 8:
+-            return observation[0]
+-        return None
+ 
+     async def publish_snapshot(self, target=None):
+         if target is None and not self.clients:
+@@ -1070,12 +939,6 @@
+                         "exitStatus": self.session_statuses.get(
+                             session.session_id, {}
+                         ).get("exitStatus"),
+-                        "modelState": self.model_state(session.session_id),
+-                        "modelResponseUnread": (
+-                            session.session_id in self.model_response_texts
+-                            and self.model_read_responses.get(session.session_id)
+-                            != self.model_response_texts[session.session_id]
+-                        ),
+                         "hasRunningSubagents": self.session_statuses.get(
+                             session.session_id, {}
+                         ).get("hasRunningSubagents", False),
+@@ -1770,7 +1633,6 @@
+         assert activated[-1] == "0"  # Current finished is excluded; wrap to running.
+         assert navigation.session_statuses["0"] == {"status": "running", "activityKind": "agent", "statusChangedAt": 123}
+         navigation.session_statuses.pop("0")
+-        navigation.model_observations["0"] = ("running", time.monotonic())
+         await navigation.activate_next_finished_session()
+         assert activated[-1] == "1"  # Idle is eligible only after higher-priority Agents are absent.
+         assert navigation.session_statuses["1"] == {"status": "idle", "activityKind": "agent", "statusChangedAt": 789}
+--- before/integrations/pi/subagent-lifecycle.test.mjs
++++ integrations/pi/subagent-lifecycle.test.mjs
+@@ -445,10 +445,19 @@
+     await h.advance(0);
+     await h.emit("agent_start");
+     const text = "Context. ".repeat(180) + "May I proceed?";
++    await h.advance(4000);
++    assert.equal(h.modelRequests.length, 0);
+     await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text }] }] });
++    assert.equal(h.modelRequests.length, 0);
+     await h.emit("agent_settled");
+     assert.equal(h.modelRequests[0].state, text);
+     assert.equal(h.reports.at(-1).status, "awaitingInput");
++    await h.advance(12000);
++    assert.equal(h.modelRequests.length, 1);
++    assert.equal(h.reports.at(-1).status, "awaitingInput");
++    await h.emit("agent_start");
++    assert.equal(h.reports.at(-1).status, "running");
++    assert.equal(h.modelRequests.length, 1);
+     await h.emit("session_shutdown");
+   });
+ }

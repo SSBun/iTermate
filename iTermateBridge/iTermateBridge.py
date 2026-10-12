@@ -7,8 +7,6 @@ import os
 import shlex
 import sys
 import time
-import urllib.request
-import urllib.parse
 
 SUPPORT_DIRECTORY = os.path.expanduser(
     "~/Library/Application Support/iTermate"
@@ -57,9 +55,6 @@ class Bridge:
         self.sequence = 0
         self.snapshot_lock = asyncio.Lock()
         self.finished_navigation_lock = asyncio.Lock()
-        self.model_observations = {}
-        self.model_task = None
-        self.model_cursor = 0
         self.command_monitor_tasks = {}
         self.command_monitor_unavailable = set()
         self.agent_managed_session_ids = set()
@@ -321,7 +316,7 @@ class Bridge:
         async with iterm2.FocusMonitor(self.connection) as monitor:
             while True:
                 await monitor.async_get_next_update()
-                self.clear_finished_status(self.current_active_session_id())
+                self.clear_finished_status(self.current_active_session_id(), acknowledge_agent=False)
                 await self.publish_snapshot()
 
     async def monitor_commands(self):
@@ -666,8 +661,10 @@ class Bridge:
         session = window.current_tab.current_session
         return session.session_id if session is not None else None
 
-    def clear_finished_status(self, session_id):
+    def clear_finished_status(self, session_id, acknowledge_agent=True):
         status = self.session_statuses.get(session_id)
+        if status is not None and status.get("activityKind") == "agent" and not acknowledge_agent:
+            return
         if status is None or status.get("status") != "finished":
             return
         if (
@@ -688,82 +685,7 @@ class Bridge:
             else:
                 self.expire_stale_agent_heartbeats(heartbeat_time())
             last_tick = now
-            if self.model_task is None or self.model_task.done():
-                self.model_task = asyncio.create_task(self.update_model_observation())
             await self.publish_snapshot()
-
-    async def update_model_observation(self):
-        """仅在没有真实状态时，从可见文本产生短期辅助标签。"""
-        directory = os.path.join(SUPPORT_DIRECTORY, "Laya")
-        if not os.path.exists(os.path.join(directory, "analysis-enabled")):
-            self.model_observations.clear()
-            return
-        sessions = [
-            session for window in self.app.windows for tab in window.tabs
-            for session in tab.all_sessions
-            if not self.session_statuses.get(session.session_id, {}).get("status")
-        ]
-        now = time.monotonic()
-        live_ids = {session.session_id for session in sessions}
-        self.model_observations = {
-            key: value for key, value in self.model_observations.items()
-            if key in live_ids and now - value[1] < 8
-        }
-        if not sessions:
-            return
-        self.model_cursor %= len(sessions)
-        session = sessions[self.model_cursor]
-        self.model_cursor += 1
-        try:
-            screen = await asyncio.wait_for(session.async_get_screen_contents(), 1)
-            text = "\n".join(screen.line(index).string for index in range(screen.number_of_lines))[-1500:]
-            if not text.strip():
-                return
-            answer = await asyncio.to_thread(self.request_model_observation, directory, text)
-            if self.session_statuses.get(session.session_id, {}).get("status"):
-                return
-            state = answer.get("state", {})
-            choice = state.get("choice")
-            probability = state.get("probabilities", {}).get(choice, 0)
-            if choice not in {"running", "awaitingInput", "idle"} or probability < 0.85:
-                self.model_observations.pop(session.session_id, None)
-                return
-            if choice == "awaitingInput" and answer.get("needs_reply", {}).get("noul", 0) < 0.6:
-                return
-            self.model_observations[session.session_id] = (choice, time.monotonic())
-        except Exception:
-            self.model_observations.pop(session.session_id, None)
-
-    @staticmethod
-    def request_model_observation(directory, text):
-        with open(os.path.join(directory, "endpoint.json")) as stream:
-            endpoint = json.load(stream)
-        url = urllib.parse.urlparse(endpoint["url"])
-        if url.scheme != "http" or url.hostname != "127.0.0.1" or not url.port:
-            raise ValueError("Invalid local endpoint")
-        with open(os.path.join(directory, "api-token")) as stream:
-            token = stream.read().strip()
-        request = urllib.request.Request(
-            f"http://127.0.0.1:{url.port}/v1/session",
-            data=json.dumps({"state": text}).encode(),
-            headers={"Authorization": "Bearer " + token, "Content-Type": "application/json"},
-        )
-        class NoRedirect(urllib.request.HTTPRedirectHandler):
-            def redirect_request(self, *args, **kwargs):
-                return None
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
-        with opener.open(request, timeout=0.8) as response:
-            return json.loads(response.read(16384))["answers"]
-
-    def model_state(self, session_id):
-        if self.session_statuses.get(session_id, {}).get("status"):
-            return None
-        if not os.path.exists(os.path.join(SUPPORT_DIRECTORY, "Laya", "analysis-enabled")):
-            return None
-        observation = self.model_observations.get(session_id)
-        if observation and time.monotonic() - observation[1] < 8:
-            return observation[0]
-        return None
 
     async def publish_snapshot(self, target=None):
         if target is None and not self.clients:
@@ -901,7 +823,6 @@ class Bridge:
                         "exitStatus": self.session_statuses.get(
                             session.session_id, {}
                         ).get("exitStatus"),
-                        "modelState": self.model_state(session.session_id),
                         "hasRunningSubagents": self.session_statuses.get(
                             session.session_id, {}
                         ).get("hasRunningSubagents", False),
@@ -1596,7 +1517,6 @@ def self_test():
         assert activated[-1] == "0"  # Current finished is excluded; wrap to running.
         assert navigation.session_statuses["0"] == {"status": "running", "activityKind": "agent", "statusChangedAt": 123}
         navigation.session_statuses.pop("0")
-        navigation.model_observations["0"] = ("running", time.monotonic())
         await navigation.activate_next_finished_session()
         assert activated[-1] == "1"  # Idle is eligible only after higher-priority Agents are absent.
         assert navigation.session_statuses["1"] == {"status": "idle", "activityKind": "agent", "statusChangedAt": 789}

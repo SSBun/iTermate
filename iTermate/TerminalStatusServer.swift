@@ -188,12 +188,13 @@ struct TerminalStatusRegistry {
     @discardableResult
     mutating func activate(
         tty: String,
+        acknowledgeAgent: Bool = true,
         now: TimeInterval = Date().timeIntervalSince1970
     ) -> Bool {
         guard var ttyState = states[tty] else { return false }
         var changed = false
 
-        if let agent = ttyState.agent, agent.status == .finished {
+        if acknowledgeAgent, let agent = ttyState.agent, agent.status == .finished {
             ttyState.agent = Channel(
                 reporterID: agent.reporterID,
                 sequence: agent.sequence,

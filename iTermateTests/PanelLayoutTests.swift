@@ -296,7 +296,7 @@ final class PanelLayoutTests: XCTestCase {
         )
     }
 
-    func testWaitingStatusPreferencesPersistAndResetColor() {
+    func testWaitingStatusAlwaysUsesQuestionMarkAndPreservesColor() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)
         let staleSettings = AppSettings(configURL: configURL)
@@ -306,13 +306,13 @@ final class PanelLayoutTests: XCTestCase {
         staleSettings.setStatusAnimationStyle(.classic, for: .agentRunning)
 
         let restored = AppSettings(configURL: configURL)
-        XCTAssertEqual(restored.statusAnimationStyle(for: .agentAwaitingInput), .robot)
+        XCTAssertEqual(restored.statusAnimationStyle(for: .agentAwaitingInput), .questionMark)
         XCTAssertNotNil(restored.statusAnimationCustomColor(for: .agentAwaitingInput))
         XCTAssertEqual(restored.statusAnimationStyle(for: .agentRunning), .classic)
         restored.setStatusAnimationColor(nil, for: .agentAwaitingInput)
         let reset = AppSettings(configURL: configURL)
         XCTAssertNil(reset.statusAnimationCustomColor(for: .agentAwaitingInput))
-        XCTAssertEqual(reset.statusAnimationStyle(for: .agentAwaitingInput), .robot)
+        XCTAssertEqual(reset.statusAnimationStyle(for: .agentAwaitingInput), .questionMark)
         reset.setStatusAnimationStyle(.questionMark, for: .agentAwaitingInput)
         XCTAssertEqual(AppSettings(configURL: configURL).statusAnimationStyle(for: .agentAwaitingInput), .questionMark)
     }

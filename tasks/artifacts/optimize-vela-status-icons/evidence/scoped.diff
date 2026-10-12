@@ -1,0 +1,103 @@
+--- before/iTermateBridge/iTermateBridge.py
++++ iTermateBridge/iTermateBridge.py
+@@ -844,17 +844,31 @@
+         try:
+             screen = await asyncio.wait_for(session.async_get_screen_contents(), 1)
+             text = "\n".join(screen.line(index).string for index in range(screen.number_of_lines))[-1500:]
++            if not text.strip() or self.model_response_texts.get(session.session_id) != text:
++                self.model_observations.pop(session.session_id, None)
+             if not text.strip():
+                 return
+             answer = await asyncio.to_thread(self.request_model_observation, directory, text, identity)
+-            if self.model_identity(directory) != identity:
+-                return
+-            if self.session_statuses.get(session.session_id, {}).get("status"):
++            # Re-read the source after inference: a valid worker response may still
++            # describe a screen that changed while the model was running.
++            current_screen = await asyncio.wait_for(session.async_get_screen_contents(), 1)
++            current_text = "\n".join(current_screen.line(index).string for index in range(current_screen.number_of_lines))[-1500:]
++            if (current_text != text or self.model_identity(directory) != identity
++                    or self.session_statuses.get(session.session_id, {}).get("status")
++                    or not any(current is session for window in self.app.windows
++                               for tab in window.tabs for current in tab.all_sessions)):
++                self.model_observations.pop(session.session_id, None)
+                 return
+             state = answer.get("state", {})
+             choice = state.get("choice")
+-            probability = state.get("probabilities", {}).get(choice, 0)
+-            if choice not in {"awaitingInput", "idle"} or not isinstance(probability, (int, float)) or not 0 <= probability <= 1:
++            probabilities = state.get("probabilities", {})
++            waiting = probabilities.get("awaitingInput")
++            idle = probabilities.get("idle")
++            if (state.get("type") != "choice" or choice not in {"awaitingInput", "idle"}
++                    or any(type(value) not in (int, float) or not 0 <= value <= 1 for value in (waiting, idle))
++                    or abs(waiting + idle - 1) > 0.02
++                    or (choice == "awaitingInput" and waiting < idle)
++                    or (choice == "idle" and idle < waiting)):
+                 self.model_observations.pop(session.session_id, None)
+                 return
+             self.model_observations[session.session_id] = (choice, time.monotonic(), identity)
+--- before/iTermateBridge/test_response_status.py
++++ iTermateBridge/test_response_status.py
+@@ -25,7 +25,8 @@
+             session_statuses={}, model_observations={}, model_response_texts={}, model_read_responses={},
+             model_cursor=0, agent_managed_session_ids={'one'},
+             model_identity=lambda directory: ('stable',),
+-            request_model_observation=lambda *args: {'state': {'choice': choice, 'probabilities': {choice: 0.7}}})
++            request_model_observation=lambda *args: {'state': {'type': 'choice', 'choice': choice, 'probabilities': {
++                choice: 0.7, ('idle' if choice == 'awaitingInput' else 'awaitingInput'): 0.3}}})
+         bridge.set_session_status = lambda key, status, **kwargs: bridge.session_statuses.update({key: {'status': status, 'activityKind': 'agent'}})
+         return bridge
+ 
+@@ -35,6 +36,51 @@
+         self.assertEqual(bridge.model_observations['one'][0], 'awaitingInput')
+         NAMESPACE['clear_finished_status'](bridge, 'one')
+         self.assertEqual(bridge.model_observations['one'][0], 'awaitingInput')
++
++    async def test_changed_screen_discards_inflight_result(self):
++        bridge = self.make_bridge()
++        session = bridge.app.windows[0].tabs[0].all_sessions[0]
++        calls = 0
++        async def contents():
++            nonlocal calls
++            calls += 1
++            text = '请确认范围。' if calls == 1 else '已完成。'
++            return SimpleNamespace(number_of_lines=1, line=lambda index: SimpleNamespace(string=text))
++        session.async_get_screen_contents = contents
++        await NAMESPACE['update_model_observation'](bridge)
++        self.assertNotIn('one', bridge.model_observations)
++
++    async def test_native_status_arriving_during_inference_wins(self):
++        bridge = self.make_bridge()
++        request = bridge.request_model_observation
++        def respond(*args):
++            bridge.session_statuses['one'] = {'status': 'running', 'activityKind': 'agent'}
++            return request(*args)
++        bridge.request_model_observation = respond
++        await NAMESPACE['update_model_observation'](bridge)
++        self.assertNotIn('one', bridge.model_observations)
++        self.assertEqual(bridge.session_statuses['one']['status'], 'running')
++
++    async def test_invalid_binary_response_is_not_displayed(self):
++        for probabilities in [{}, {'idle': True, 'awaitingInput': False},
++                              {'idle': 0.9, 'awaitingInput': 0.9},
++                              {'idle': 0.9, 'awaitingInput': 0.1},
++                              {'idle': float('nan'), 'awaitingInput': 0.7}]:
++            bridge = self.make_bridge()
++            bridge.request_model_observation = lambda *args: {'state': {
++                'type': 'choice', 'choice': 'awaitingInput', 'probabilities': probabilities}}
++            await NAMESPACE['update_model_observation'](bridge)
++            self.assertNotIn('one', bridge.model_observations)
++
++    async def test_closed_session_discards_inflight_result(self):
++        bridge = self.make_bridge()
++        request = bridge.request_model_observation
++        def respond(*args):
++            bridge.app.windows.clear()
++            return request(*args)
++        bridge.request_model_observation = respond
++        await NAMESPACE['update_model_observation'](bridge)
++        self.assertNotIn('one', bridge.model_observations)
+ 
+     async def test_model_idle_read_identity_survives_refresh(self):
+         bridge = self.make_bridge('idle')

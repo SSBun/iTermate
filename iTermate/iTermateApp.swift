@@ -632,7 +632,7 @@ private struct PanelContent: View {
                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
                                     sessionButton(item)
                                         .id(
-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.modelState?.rawValue ?? "none"):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
                                         )
                                         .padding(.leading, hasTabHeader ? 12 : 0)
                                 }
@@ -874,10 +874,10 @@ private struct PanelContent: View {
                             .help("Waiting for your reply")
                             .accessibilityLabel("Waiting for your reply")
                     } else if
-                        item.session.status == .idle,
+                        item.session.status == .idle || item.session.status == .finished,
                         item.session.activityKind == .agent
                     {
-                        AgentIdleStatusView()
+                        AgentIdleStatusView(isHighlighted: item.session.status == .finished)
                     } else if
                         let status = item.session.status,
                         let animation = SessionStatusAnimation(session: item.session)
@@ -923,17 +923,6 @@ private struct PanelContent: View {
                             }
                         }
                         .accessibilityElement(children: .combine)
-                    }
-
-                    if item.session.status == nil, let estimate = item.session.modelState {
-                        Label(
-                            estimate == .awaitingInput ? "Reply?" : (estimate == .running ? "Running?" : "Idle?"),
-                            systemImage: "brain"
-                        )
-                        .font(panelFont(0.8))
-                        .foregroundStyle(.secondary)
-                        .help("Local model estimate, not a confirmed lifecycle state")
-                        .accessibilityLabel("Local model estimate: \(estimate.rawValue)")
                     }
 
                     if item.session.isMinimized == true {
@@ -1093,7 +1082,7 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
     /// Styles offered for this state; the question glyph belongs only to waiting.
     var availableStyles: [SessionStatusAnimationStyle] {
         let presets: [SessionStatusAnimationStyle] = [.alien, .robot, .classic]
-        return self == .agentAwaitingInput ? [.questionMark] + presets : presets
+        return self == .agentAwaitingInput ? [.questionMark] : presets
     }
 
     var defaultStyle: SessionStatusAnimationStyle {
@@ -1600,6 +1589,8 @@ private struct AgentQuestionStatusView: View {
 }
 
 private struct AgentIdleStatusView: View {
+    var isHighlighted = false
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
 
@@ -1607,13 +1598,13 @@ private struct AgentIdleStatusView: View {
         SessionStatusMatrix(
             animation: .agentRunning,
             style: .alien,
-            customColor: .secondaryLabelColor,
-            animates: false
+            customColor: isHighlighted ? .controlAccentColor : .secondaryLabelColor,
+            animates: !reduceMotion
         )
         .frame(width: 36, height: 16)
-        .opacity(isVisible ? 0.3 : 0)
-        .help("Agent idle — waiting for input")
-        .accessibilityLabel("Agent idle — waiting for input")
+        .opacity(isVisible ? (isHighlighted ? 1 : 0.3) : 0)
+        .help(isHighlighted ? "Agent idle — unread response" : "Agent idle")
+        .accessibilityLabel(isHighlighted ? "Agent idle — unread response" : "Agent idle")
         .onAppear {
             if reduceMotion {
                 isVisible = true

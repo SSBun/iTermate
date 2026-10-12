@@ -132,7 +132,6 @@ struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
     let exitStatus: Int?
     let statusChangedAt: TimeInterval?
     /// A short-lived estimate, never used for lifecycle notifications or completion counts.
-    var modelState: TerminalSessionStatus? = nil
     /// Confirmed Pi child activity; absent for integrations without this signal.
     var hasRunningSubagents: Bool? = nil
 }
@@ -872,7 +871,7 @@ final class ItermStore: ObservableObject {
             let tty = activeSession?.tty,
             let tty = TerminalStatusRegistry.normalizedTTY(tty)
         {
-            terminalStatusRegistry.activate(tty: tty)
+            terminalStatusRegistry.activate(tty: tty, acknowledgeAgent: false)
         }
         lastActiveGhosttyTerminalID = activeSession?.id
 
