@@ -9,7 +9,7 @@ import { createContext, SourceTextModule, SyntheticModule } from "node:vm";
 
 const source = stripTypeScriptTypes(fs.readFileSync(new URL("./iTermate-integration.ts", import.meta.url), "utf8"));
 
-async function harness({ complete, disconnectAfterResponse = false, writeError = false, fleetCount = 0, fleetAvailable = true, hasSubagentTool = false } = {}) {
+async function harness({ complete, disconnectAfterResponse = false, writeError = false, fleetCount = 0, fleetAvailable = true, hasSubagentTool = false, mode = "tui", termProgram = "iTerm.app" } = {}) {
   const home = fs.mkdtempSync("/tmp/itermate-archive-");
   const handlers = new Map();
   const events = new EventEmitter();
@@ -23,6 +23,7 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
   const snapshots = [];
   const reports = [];
   let sessionId = "native-session";
+  let messages = [{ role: "user", content: "修改分页逻辑", timestamp: 1 }];
   const setTimeout = (fn, delay) => {
     const timer = globalThis.setTimeout(() => { timers.delete(timer); fn(); }, delay);
     timers.add(timer);
@@ -31,7 +32,7 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
   const clearTimeout = (timer) => { timers.delete(timer); globalThis.clearTimeout(timer); };
   const context = createContext({
     Buffer, URL, AbortController, AbortSignal,
-    process: { pid: 12345, ppid: 12344, env: { TERM_PROGRAM: "iTerm.app", ITERM_SESSION_ID: "w0:target-pane" } },
+    process: { pid: 12345, ppid: 12344, env: { TERM_PROGRAM: termProgram, ITERM_SESSION_ID: "w0:target-pane" } },
     performance: { now: () => 10000 }, setTimeout, clearTimeout,
     setInterval: () => interval, clearInterval: () => {},
   });
@@ -80,7 +81,7 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
   });
   await module.evaluate();
   const ctx = {
-    mode: "tui", model: { id: "mock-model" }, isIdle: () => !busy,
+    mode, model: { id: "mock-model" }, isIdle: () => !busy,
     hasPendingMessages: () => false, ui: { getEditorText: () => "" },
     shutdown: () => { shutdowns += 1; },
     modelRegistry: { complete: complete ?? (async () => ({ stopReason: "stop", content: [{ type: "text", text: "修改分页逻辑，待运行验证。" }] })) },
@@ -89,7 +90,7 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
       getCwd: () => "/original/project", getSessionName: () => "Archive fixture", getLeafId: () => leaf,
       getHeader: () => ({ type: "session", version: 3, id: "native-session", cwd: "/original/project", timestamp: "2026-01-01T00:00:00Z" }),
       getEntries: () => [{ type: "message", id: "leaf", parentId: null, timestamp: "2026-01-01T00:00:01Z", message: { role: "user", content: "修改分页逻辑", timestamp: 1 } }],
-      buildSessionProjection: () => ({ messages: [{ role: "user", content: "修改分页逻辑", timestamp: 1 }] }),
+      buildSessionProjection: () => ({ messages }),
     },
   };
   module.namespace.default({
@@ -105,33 +106,43 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
   });
   await handlers.get("session_start")({}, ctx);
   const livePath = join(home, ".iTermate/pi-live");
-  const descriptor = JSON.parse(fs.readFileSync(join(livePath, fs.readdirSync(livePath).find(path => path.endsWith(".json"))), "utf8"));
-  assert.equal(descriptor.supportsSummary, true);
-  const socket = new EventEmitter();
-  socket.destroyed = false;
-  socket.setTimeout = () => socket;
-  socket.destroy = () => { if (!socket.destroyed) { socket.destroyed = true; socket.emit("close"); } };
-  socket.end = (data) => { if (data) responses.push(JSON.parse(data)); };
-  socket.write = (data, callback) => {
-    const response = JSON.parse(data);
-    responses.push(response);
-    if (response.ok) {
-      const directory = join(home, "Library/Application Support/iTermate/ArchivedPiSessions", response.archiveId);
-      const manifest = JSON.parse(fs.readFileSync(join(directory, "manifest.json"), "utf8"));
-      const transcript = fs.readFileSync(join(directory, manifest.filename), "utf8");
-      snapshots.push({ manifest, transcript });
-      assert.equal(shutdowns, 0, "Durable archive must precede shutdown");
-      assert.equal(crypto.createHash("sha256").update(transcript).digest("hex"), manifest.sha256);
-    }
-    queueMicrotask(() => {
-      if (disconnectAfterResponse) socket.destroy();
-      callback(writeError ? new Error("mock write failure") : undefined);
-    });
-    return true;
+  const readDescriptor = () => {
+    const file = fs.existsSync(livePath) && fs.readdirSync(livePath).find(path => path.endsWith(".json"));
+    return file ? JSON.parse(fs.readFileSync(join(livePath, file), "utf8")) : undefined;
   };
-  accept(socket);
+  const descriptor = readDescriptor();
+  if (mode === "tui") assert.equal(descriptor.supportsSummary, true);
+  const makeClient = () => {
+    const socket = new EventEmitter();
+    socket.destroyed = false;
+    socket.setTimeout = () => socket;
+    socket.destroy = () => { if (!socket.destroyed) { socket.destroyed = true; socket.emit("close"); } };
+    socket.end = (data) => { if (data) responses.push(JSON.parse(data)); };
+    socket.write = (data, callback) => {
+      const response = JSON.parse(data);
+      responses.push(response);
+      if (response.ok) {
+        const directory = join(home, "Library/Application Support/iTermate/ArchivedPiSessions", response.archiveId);
+        const manifest = JSON.parse(fs.readFileSync(join(directory, "manifest.json"), "utf8"));
+        const transcript = fs.readFileSync(join(directory, manifest.filename), "utf8");
+        snapshots.push({ manifest, transcript });
+        assert.equal(shutdowns, 0, "Durable archive must precede shutdown");
+        assert.equal(crypto.createHash("sha256").update(transcript).digest("hex"), manifest.sha256);
+      }
+      queueMicrotask(() => {
+        if (disconnectAfterResponse) socket.destroy();
+        callback(writeError ? new Error("mock write failure") : undefined);
+      });
+      return true;
+    };
+    accept?.(socket);
+    return socket;
+  };
+  const socket = makeClient();
   return {
-    responses, snapshots, socket, reports, descriptor,
+    responses, snapshots, socket, reports, descriptor, readDescriptor, makeClient,
+    refreshTitle: (overrides = {}, client = socket) => client.listeners("data")[0](Buffer.from(JSON.stringify({ action: "refreshTitle", sessionId: descriptor.sessionId, token: descriptor.token, ...overrides }) + "\n")),
+    setMessages: (value) => { messages = value; },
     emit: (name, event = {}) => handlers.get(name)?.(event, ctx),
     setSessionId: (value) => { sessionId = value; },
     queryStatus: (overrides = {}) => socket.listeners("data")[0](Buffer.from(JSON.stringify({ action: "status", sessionId: descriptor.sessionId, token: descriptor.token, ...overrides }) + "\n")),
@@ -146,6 +157,246 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
     },
   };
 }
+
+const assistantReply = { role: "assistant", stopReason: "stop", content: [{ type: "text", text: "已检查分页边界。" }] };
+const taskReply = text => ({ stopReason: "stop", content: [{ type: "text", text }] });
+const flushSummary = () => new Promise(resolve => setImmediate(resolve));
+async function settleTask(h) {
+  await h.emit("agent_start");
+  await h.emit("agent_end", { messages: [assistantReply] });
+  await h.emit("agent_settled");
+  await flushSummary();
+}
+
+test("manual title refresh works immediately after reload without another reply", async () => {
+  let calls = 0;
+  const h = await harness({ complete: async () => { calls += 1; return taskReply("修复分页逻辑"); } });
+  try {
+    assert.equal(h.readDescriptor().supportsTitleRefresh, true);
+    assert.equal(h.readDescriptor().canRefreshTitle, true);
+    const reportCount = h.reports.length;
+    await h.refreshTitle();
+    assert.equal(calls, 1);
+    assert.equal(h.responses[0].ok, true);
+    assert.equal(h.responses[0].instanceId, h.descriptor.id);
+    assert.equal(h.responses[0].taskSummary, "修复分页逻辑");
+    assert.equal(h.readDescriptor().taskSummary, "修复分页逻辑");
+    assert.equal(h.readDescriptor().canRefreshTitle, true);
+    assert.equal(h.reports.length, reportCount);
+    assert.equal(h.shutdowns, 0);
+    assert.equal(h.snapshots.length, 0);
+    assert.equal(h.inputBlocked, false);
+  } finally { await h.dispose(); }
+});
+
+test("manual refresh bypasses automatic deduplication and keeps old labels on failure", async () => {
+  let calls = 0;
+  const h = await harness({ complete: async () => {
+    calls += 1;
+    if (calls === 3) throw new Error("Provider failed");
+    return taskReply(calls === 1 ? "旧标题" : "新标题");
+  } });
+  try {
+    await settleTask(h);
+    await h.refreshTitle();
+    assert.equal(calls, 2);
+    assert.equal(h.readDescriptor().taskSummary, "新标题");
+    await h.refreshTitle({}, h.makeClient());
+    assert.equal(calls, 3);
+    assert.equal(h.responses.at(-1).ok, false);
+    assert.equal(h.readDescriptor().taskSummary, "新标题");
+    assert.equal(h.readDescriptor().canRefreshTitle, true);
+  } finally { await h.dispose(); }
+});
+
+test("manual refresh authenticates before invoking a model and rejects busy or empty sessions", async () => {
+  for (const scenario of ["token", "identity", "busy", "empty"]) {
+    let calls = 0;
+    const h = await harness({ complete: async () => { calls += 1; return taskReply("不应调用"); } });
+    try {
+      if (scenario === "busy") h.setBusy(true);
+      if (scenario === "empty") h.setMessages([]);
+      await h.refreshTitle(scenario === "token" ? { token: "wrong" }
+        : scenario === "identity" ? { sessionId: "wrong" } : {});
+      assert.equal(h.responses[0].ok, false, scenario);
+      assert.equal(calls, 0, scenario);
+      assert.equal(h.readDescriptor().taskSummary, undefined);
+      assert.equal(h.inputBlocked, false);
+    } finally { await h.dispose(); }
+  }
+});
+
+test("concurrent refreshes do not duplicate model calls or lock conversation input", async () => {
+  let finish;
+  let calls = 0;
+  const h = await harness({ complete: async () => { calls += 1; return new Promise(resolve => { finish = resolve; }); } });
+  try {
+    const pending = h.refreshTitle();
+    assert.equal(h.readDescriptor().canRefreshTitle, false);
+    assert.equal(h.readDescriptor().canArchive, false);
+    assert.equal(h.inputBlocked, false);
+    await h.refreshTitle({}, h.makeClient());
+    assert.equal(h.responses[0].ok, false);
+    assert.equal(calls, 1);
+    finish(taskReply("刷新后的标题"));
+    await pending;
+    assert.equal(h.responses.at(-1).ok, true);
+    assert.equal(h.readDescriptor().taskSummary, "刷新后的标题");
+  } finally { await h.dispose(); }
+});
+
+test("manual refresh discards disconnected or obsolete results", async () => {
+  for (const change of ["disconnect", "turn", "branch", "session"]) {
+    let finish;
+    let signal;
+    const h = await harness({ complete: async (_model, _request, options) => {
+      signal = options.signal;
+      return new Promise(resolve => { finish = resolve; });
+    } });
+    try {
+      const pending = h.refreshTitle();
+      if (change === "disconnect") h.socket.destroy();
+      if (change === "turn") await h.emit("agent_start");
+      if (change === "branch") { h.setLeaf("new-leaf"); await h.emit("session_tree"); }
+      if (change === "session") h.setSessionId("different-session");
+      if (change !== "session") assert.equal(signal.aborted, true, change);
+      finish(taskReply("过期标题"));
+      await pending;
+      assert.equal(h.responses.at(-1).ok, false, change);
+      assert.equal(h.readDescriptor().taskSummary, undefined, change);
+    } finally { await h.dispose(); }
+  }
+});
+
+test("live labels publish without blocking settled status and deduplicate repeated notifications", async () => {
+  let finish;
+  let calls = 0;
+  const h = await harness({ complete: async () => { calls += 1; return new Promise(resolve => { finish = resolve; }); } });
+  try {
+    assert.equal(h.readDescriptor().taskSummary, undefined);
+    await settleTask(h);
+    assert.equal(calls, 1);
+    assert.equal(h.reports.at(-1).status, "finished", "Status must not wait for the model");
+    await h.emit("agent_settled");
+    assert.equal(calls, 1);
+    finish(taskReply("修复分页逻辑"));
+    await flushSummary();
+    assert.equal(h.readDescriptor().taskSummary, "修复分页逻辑");
+    assert.equal(h.shutdowns, 0);
+    assert.equal(h.snapshots.length, 0, "Generating a task label must not archive the session");
+  } finally { await h.dispose(); }
+});
+
+test("Ghostty publishes the label with TTY identity, ignoring inherited iTerm IDs", async () => {
+  const h = await harness({ termProgram: "ghostty", complete: async () => taskReply("修复分页逻辑") });
+  try {
+    await settleTask(h);
+    const live = h.readDescriptor();
+    assert.equal(live.taskSummary, "修复分页逻辑");
+    assert.equal(live.terminal, "Ghostty");
+    assert.equal(live.terminalSessionId, null);
+    assert.equal(live.tty, "/dev/ttys-isolated");
+  } finally { await h.dispose(); }
+});
+
+test("next generation preserves the previous label while pending and on failure", async () => {
+  let reject;
+  let calls = 0;
+  const h = await harness({ complete: async () => ++calls === 1 ? taskReply("修复分页逻辑")
+    : new Promise((_resolve, fail) => { reject = fail; }) });
+  try {
+    await settleTask(h);
+    assert.equal(h.readDescriptor().taskSummary, "修复分页逻辑");
+    h.setMessages([{ role: "user", content: "现在增加任务标题" }]);
+    await settleTask(h);
+    assert.equal(h.readDescriptor().taskSummary, "修复分页逻辑");
+    reject(new Error("Provider unavailable"));
+    await flushSummary();
+    assert.equal(h.readDescriptor().taskSummary, "修复分页逻辑");
+    assert.equal(h.reports.at(-1).status, "finished");
+  } finally { await h.dispose(); }
+});
+
+test("late model results cannot cross turns, branches, sessions, or shutdown", async () => {
+  for (const change of ["turn", "tree", "session", "shutdown", "leaf"]) {
+    let finish;
+    let signal;
+    const h = await harness({ complete: async (_model, _request, options) => {
+      signal = options.signal;
+      return new Promise(resolve => { finish = resolve; });
+    } });
+    try {
+      await settleTask(h);
+      if (change === "turn") await h.emit("agent_start");
+      if (change === "tree") { h.setLeaf("different-branch"); await h.emit("session_tree"); }
+      if (change === "session") { h.setSessionId("different-session"); await h.emit("session_start"); }
+      if (change === "shutdown") await h.emit("session_shutdown");
+      if (change === "leaf") h.setLeaf("different-leaf");
+      if (change !== "leaf") assert.equal(signal.aborted, true, change);
+      finish(taskReply("过期的任务标题"));
+      await flushSummary();
+      assert.equal(h.readDescriptor()?.taskSummary, undefined, change);
+    } finally { await h.dispose(); }
+  }
+});
+
+test("an older result cannot overwrite a newer successful task label", async () => {
+  const pending = [];
+  const h = await harness({ complete: async () => new Promise(resolve => pending.push(resolve)) });
+  try {
+    await settleTask(h);
+    h.setMessages([{ role: "user", content: "添加会话摘要" }]);
+    await settleTask(h);
+    assert.equal(pending.length, 2);
+    pending[1](taskReply("添加会话摘要"));
+    await flushSummary();
+    pending[0](taskReply("过期任务"));
+    await flushSummary();
+    assert.equal(h.readDescriptor().taskSummary, "添加会话摘要");
+  } finally { await h.dispose(); }
+});
+
+test("projection failures cannot suppress normal settled status", async () => {
+  let calls = 0;
+  const h = await harness({ complete: async () => { calls += 1; return taskReply("不应调用"); } });
+  try {
+    h.setMessages(undefined);
+    await settleTask(h);
+    assert.equal(h.reports.at(-1).status, "finished");
+    assert.equal(h.readDescriptor().taskSummary, undefined);
+    assert.equal(calls, 0);
+  } finally { await h.dispose(); }
+});
+
+test("navigation clears a previously published label, while a new turn keeps it", async () => {
+  const h = await harness({ complete: async () => taskReply("修复分页逻辑") });
+  try {
+    await settleTask(h);
+    await h.emit("agent_start");
+    assert.equal(h.readDescriptor().taskSummary, "修复分页逻辑");
+    h.setLeaf("different-branch");
+    await h.emit("session_tree");
+    assert.equal(h.readDescriptor().taskSummary, undefined);
+  } finally { await h.dispose(); }
+});
+
+test("background modes and failed or empty replies do not spend a summary call", async () => {
+  let calls = 0;
+  for (const mode of ["tui", "print", "rpc"]) {
+    const h = await harness({ mode, complete: async () => { calls += 1; return taskReply("不应调用"); } });
+    try {
+      await h.emit("agent_start");
+      await h.emit("agent_end", { messages: [{ ...assistantReply, stopReason: "error" }] });
+      await h.emit("agent_settled");
+      await h.emit("agent_start");
+      await h.emit("agent_end", { messages: [] });
+      await h.emit("agent_settled");
+      if (mode !== "tui") await settleTask(h);
+      await flushSummary();
+      assert.equal(calls, 0);
+    } finally { await h.dispose(); }
+  }
+});
 
 test("verified summary and archive precede exit, even if the client disconnects after receiving success", async () => {
   const h = await harness({ disconnectAfterResponse: true });
@@ -238,6 +489,7 @@ for (const state of ["idle", "running", "awaitingInput", "finished"]) {
         await h.emit("agent_settled");
       }
       const sent = h.reports.length;
+      const callsBeforeQuery = modelCalls;
       await h.queryStatus();
       const response = h.responses[0];
       assert.equal(response.ok, true);
@@ -247,7 +499,7 @@ for (const state of ["idle", "running", "awaitingInput", "finished"]) {
       assert.equal(response.reporterId, h.reports.at(-1).reporterId);
       assert.ok(response.sequence > h.reports.at(-1).sequence);
       assert.equal(h.reports.length, sent);
-      assert.equal(modelCalls, 0);
+      assert.equal(modelCalls, callsBeforeQuery);
       assert.equal(h.shutdowns, 0);
       assert.equal(h.inputBlocked, false);
       assert.equal(h.snapshots.length, 0);

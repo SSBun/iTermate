@@ -1,0 +1,286 @@
+TAP version 13
+# (node:69319) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:69319) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+# Subtest: live labels publish without blocking settled status and deduplicate repeated notifications
+ok 1 - live labels publish without blocking settled status and deduplicate repeated notifications
+  ---
+  duration_ms: 11.021875
+  type: 'test'
+  ...
+# Subtest: Ghostty publishes the label with TTY identity, ignoring inherited iTerm IDs
+ok 2 - Ghostty publishes the label with TTY identity, ignoring inherited iTerm IDs
+  ---
+  duration_ms: 8.0615
+  type: 'test'
+  ...
+# Subtest: next generation preserves the previous label while pending and on failure
+ok 3 - next generation preserves the previous label while pending and on failure
+  ---
+  duration_ms: 4.89525
+  type: 'test'
+  ...
+# Subtest: late model results cannot cross turns, branches, sessions, or shutdown
+ok 4 - late model results cannot cross turns, branches, sessions, or shutdown
+  ---
+  duration_ms: 21.085
+  type: 'test'
+  ...
+# Subtest: an older result cannot overwrite a newer successful task label
+ok 5 - an older result cannot overwrite a newer successful task label
+  ---
+  duration_ms: 4.647834
+  type: 'test'
+  ...
+# Subtest: projection failures cannot suppress normal settled status
+ok 6 - projection failures cannot suppress normal settled status
+  ---
+  duration_ms: 4.02775
+  type: 'test'
+  ...
+# Subtest: navigation clears a previously published label, while a new turn keeps it
+ok 7 - navigation clears a previously published label, while a new turn keeps it
+  ---
+  duration_ms: 3.418334
+  type: 'test'
+  ...
+# Subtest: background modes and failed or empty replies do not spend a summary call
+ok 8 - background modes and failed or empty replies do not spend a summary call
+  ---
+  duration_ms: 5.686208
+  type: 'test'
+  ...
+# Subtest: verified summary and archive precede exit, even if the client disconnects after receiving success
+ok 9 - verified summary and archive precede exit, even if the client disconnects after receiving success
+  ---
+  duration_ms: 29.433708
+  type: 'test'
+  ...
+# Subtest: invalid credentials or session identity never start summary generation
+ok 10 - invalid credentials or session identity never start summary generation
+  ---
+  duration_ms: 5.537625
+  type: 'test'
+  ...
+# Subtest: summary failure leaves input unlocked without an archive or exit
+ok 11 - summary failure leaves input unlocked without an archive or exit
+  ---
+  duration_ms: 2.946583
+  type: 'test'
+  ...
+# Subtest: disconnect during summary cancels even a provider that never settles
+ok 12 - disconnect during summary cancels even a provider that never settles
+  ---
+  duration_ms: 2.571083
+  type: 'test'
+  ...
+# Subtest: branch or activity changes during summary prevent archival and exit
+ok 13 - branch or activity changes during summary prevent archival and exit
+  ---
+  duration_ms: 5.246083
+  type: 'test'
+  ...
+# Subtest: readonly status returns idle without publishing, invoking a model, or closing Pi
+ok 14 - readonly status returns idle without publishing, invoking a model, or closing Pi
+  ---
+  duration_ms: 2.351375
+  type: 'test'
+  ...
+# Subtest: readonly status returns running without publishing, invoking a model, or closing Pi
+ok 15 - readonly status returns running without publishing, invoking a model, or closing Pi
+  ---
+  duration_ms: 2.654875
+  type: 'test'
+  ...
+# Subtest: readonly status returns awaitingInput without publishing, invoking a model, or closing Pi
+ok 16 - readonly status returns awaitingInput without publishing, invoking a model, or closing Pi
+  ---
+  duration_ms: 2.7515
+  type: 'test'
+  ...
+# Subtest: readonly status returns finished without publishing, invoking a model, or closing Pi
+ok 17 - readonly status returns finished without publishing, invoking a model, or closing Pi
+  ---
+  duration_ms: 3.508583
+  type: 'test'
+  ...
+# Subtest: readonly status rejects invalid token and stale session identity
+ok 18 - readonly status rejects invalid token and stale session identity
+  ---
+  duration_ms: 4.600667
+  type: 'test'
+  ...
+# Subtest: readonly status refuses an identity change during the asynchronous observation
+ok 19 - readonly status refuses an identity change during the asynchronous observation
+  ---
+  duration_ms: 3.082875
+  type: 'test'
+  ...
+# Subtest: readonly status keeps unknown fleet unknown rather than reporting idle
+ok 20 - readonly status keeps unknown fleet unknown rather than reporting idle
+  ---
+  duration_ms: 1008.55225
+  type: 'test'
+  ...
+# Subtest: readonly status includes confirmed child activity after the parent settles
+ok 21 - readonly status includes confirmed child activity after the parent settles
+  ---
+  duration_ms: 4.498375
+  type: 'test'
+  ...
+# Subtest: a failed response write retains the archive but does not exit
+ok 22 - a failed response write retains the archive but does not exit
+  ---
+  duration_ms: 26.447625
+  type: 'test'
+  ...
+# (node:69320) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:69320) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+# Subtest: active children keep a settled parent running; only zero completes
+ok 23 - active children keep a settled parent running; only zero completes
+  ---
+  duration_ms: 6.033667
+  type: 'test'
+  ...
+# Subtest: TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged positive count
+ok 24 - TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged positive count
+  ---
+  duration_ms: 6.895542
+  type: 'test'
+  ...
+# Subtest: unavailable fleet expires child-only reporting without false completion, then recovers
+ok 25 - unavailable fleet expires child-only reporting without false completion, then recovers
+  ---
+  duration_ms: 5.503291
+  type: 'test'
+  ...
+# Subtest: explicit questions retain awaitingInput alongside child activity
+ok 26 - explicit questions retain awaitingInput alongside child activity
+  ---
+  duration_ms: 3.380167
+  type: 'test'
+  ...
+# Subtest: iTerm.app: a positive participation decision retains implicit confirmation
+ok 27 - iTerm.app: a positive participation decision retains implicit confirmation
+  ---
+  duration_ms: 3.139666
+  type: 'test'
+  ...
+# Subtest: iTerm.app: model-only question remains pending when analysis is disabled
+ok 28 - iTerm.app: model-only question remains pending when analysis is disabled
+  ---
+  duration_ms: 3.067625
+  type: 'test'
+  ...
+# Subtest: ghostty: a positive participation decision retains implicit confirmation
+ok 29 - ghostty: a positive participation decision retains implicit confirmation
+  ---
+  duration_ms: 2.858667
+  type: 'test'
+  ...
+# Subtest: ghostty: model-only question remains pending when analysis is disabled
+ok 30 - ghostty: model-only question remains pending when analysis is disabled
+  ---
+  duration_ms: 2.842
+  type: 'test'
+  ...
+# Subtest: negated requests and completed confirmation narratives do not retain a question
+ok 31 - negated requests and completed confirmation narratives do not retain a question
+  ---
+  duration_ms: 6.595375
+  type: 'test'
+  ...
+# Subtest: unavailable selected model keeps lifecycle completion without heuristic fallback
+ok 32 - unavailable selected model keeps lifecycle completion without heuristic fallback
+  ---
+  duration_ms: 3.176917
+  type: 'test'
+  ...
+# Subtest: a negated old request cannot cancel the new closing question
+ok 33 - a negated old request cannot cancel the new closing question
+  ---
+  duration_ms: 9.373917
+  type: 'test'
+  ...
+# Subtest: a future confirmation remains leased with model analysis disabled
+ok 34 - a future confirmation remains leased with model analysis disabled
+  ---
+  duration_ms: 2.168334
+  type: 'test'
+  ...
+# Subtest: Ghostty uses TTY and ignores inherited iTerm session identity
+ok 35 - Ghostty uses TTY and ignores inherited iTerm session identity
+  ---
+  duration_ms: 1.81025
+  type: 'test'
+  ...
+# Subtest: shutdown cancels in-flight observation and prevents stale replies from publishing
+ok 36 - shutdown cancels in-flight observation and prevents stale replies from publishing
+  ---
+  duration_ms: 2.072208
+  type: 'test'
+  ...
+# Subtest: session startup restores active child work without replaying conversation history
+ok 37 - session startup restores active child work without replaying conversation history
+  ---
+  duration_ms: 1.916125
+  type: 'test'
+  ...
+# Subtest: malformed or failed observations cannot clear active children or fabricate success
+ok 38 - malformed or failed observations cannot clear active children or fabricate success
+  ---
+  duration_ms: 1.905958
+  type: 'test'
+  ...
+# Subtest: known parent activity remains leased when only the child observation becomes unavailable
+ok 39 - known parent activity remains leased when only the child observation becomes unavailable
+  ---
+  duration_ms: 3.089541
+  type: 'test'
+  ...
+# Subtest: laya: selected question model is used and full text is preserved
+ok 40 - laya: selected question model is used and full text is preserved
+  ---
+  duration_ms: 4.079208
+  type: 'test'
+  ...
+# Subtest: vela: selected question model is used and full text is preserved
+ok 41 - vela: selected question model is used and full text is preserved
+  ---
+  duration_ms: 2.242125
+  type: 'test'
+  ...
+# Subtest: laya: confirmation, choice and missing information keep user participation pending
+ok 42 - laya: confirmation, choice and missing information keep user participation pending
+  ---
+  duration_ms: 2.103542
+  type: 'test'
+  ...
+# Subtest: vela: confirmation, choice and missing information keep user participation pending
+ok 43 - vela: confirmation, choice and missing information keep user participation pending
+  ---
+  duration_ms: 2.121333
+  type: 'test'
+  ...
+# Subtest: provider changes reject the old worker's late positive response
+ok 44 - provider changes reject the old worker's late positive response
+  ---
+  duration_ms: 2.230708
+  type: 'test'
+  ...
+# Subtest: non-TUI child runtimes do not query or report parent terminal activity
+ok 45 - non-TUI child runtimes do not query or report parent terminal activity
+  ---
+  duration_ms: 0.894625
+  type: 'test'
+  ...
+1..45
+# tests 45
+# suites 0
+# pass 45
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1246.711209

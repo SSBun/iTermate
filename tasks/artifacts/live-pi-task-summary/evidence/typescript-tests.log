@@ -1,0 +1,164 @@
+TAP version 13
+# (node:69260) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: summary uses the active projection's visible text and the current Pi model without tools
+ok 1 - summary uses the active projection's visible text and the current Pi model without tools
+  ---
+  duration_ms: 0.886458
+  type: 'test'
+  ...
+# Subtest: summary input preserves the beginning and ending of a bounded excerpt
+ok 2 - summary input preserves the beginning and ending of a bounded excerpt
+  ---
+  duration_ms: 0.157833
+  type: 'test'
+  ...
+# Subtest: empty, incomplete, failed, and oversized summaries fail instead of authorizing closure
+ok 3 - empty, incomplete, failed, and oversized summaries fail instead of authorizing closure
+  ---
+  duration_ms: 0.417
+  type: 'test'
+  ...
+# Subtest: cancellation rejects even when the provider does not settle
+ok 4 - cancellation rejects even when the provider does not settle
+  ---
+  duration_ms: 0.110959
+  type: 'test'
+  ...
+# Subtest: the summary deadline bounds a provider that never settles
+ok 5 - the summary deadline bounds a provider that never settles
+  ---
+  duration_ms: 0.5575
+  type: 'test'
+  ...
+# Subtest: a cancelled request never starts a model call
+ok 6 - a cancelled request never starts a model call
+  ---
+  duration_ms: 0.115167
+  type: 'test'
+  ...
+# Subtest: direct question decisions use the binary protocol without a terminal-state threshold
+ok 7 - direct question decisions use the binary protocol without a terminal-state threshold
+  ---
+  duration_ms: 0.605
+  type: 'test'
+  ...
+# Subtest: legacy terminal-state parser and disabled-model heuristic remain callable
+ok 8 - legacy terminal-state parser and disabled-model heuristic remain callable
+  ---
+  duration_ms: 2.294875
+  type: 'test'
+  ...
+# Subtest: uncertain or malformed model output falls back instead of becoming false
+ok 9 - uncertain or malformed model output falls back instead of becoming false
+  ---
+  duration_ms: 0.583541
+  type: 'test'
+  ...
+# Subtest: recognizes explicit confirmation gates
+ok 10 - recognizes explicit confirmation gates
+  ---
+  duration_ms: 1.183041
+  type: 'test'
+  ...
+# Subtest: recognizes short action-scoped approval questions without a separate waiting clause
+ok 11 - recognizes short action-scoped approval questions without a separate waiting clause
+  ---
+  duration_ms: 0.714375
+  type: 'test'
+  ...
+# Subtest: recognizes approval, selection, and clarification gates
+ok 12 - recognizes approval, selection, and clarification gates
+  ---
+  duration_ms: 0.147667
+  type: 'test'
+  ...
+# Subtest: recognizes direct closing questions and implicit confirmation requests
+ok 13 - recognizes direct closing questions and implicit confirmation requests
+  ---
+  duration_ms: 0.1895
+  type: 'test'
+  ...
+# Subtest: does not ask for a reply when the request is negated or already fulfilled
+ok 14 - does not ask for a reply when the request is negated or already fulfilled
+  ---
+  duration_ms: 0.254958
+  type: 'test'
+  ...
+# Subtest: all confirmation actions share the same completed-action exclusion
+ok 15 - all confirmation actions share the same completed-action exclusion
+  ---
+  duration_ms: 0.656375
+  type: 'test'
+  ...
+# Subtest: completed results are not confused with future conditions or noun modifiers
+ok 16 - completed results are not confused with future conditions or noun modifiers
+  ---
+  duration_ms: 0.275292
+  type: 'test'
+  ...
+# Subtest: future modals and terminal conditions preserve confirmation requests
+ok 17 - future modals and terminal conditions preserve confirmation requests
+  ---
+  duration_ms: 0.199958
+  type: 'test'
+  ...
+# Subtest: rejects negated waiting in both languages
+ok 18 - rejects negated waiting in both languages
+  ---
+  duration_ms: 0.073792
+  type: 'test'
+  ...
+# Subtest: does not treat examples, code, or optional offers as blocking questions
+ok 19 - does not treat examples, code, or optional offers as blocking questions
+  ---
+  duration_ms: 0.131625
+  type: 'test'
+  ...
+# (node:69262) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: task labels use current model and visible user/assistant text only
+ok 20 - task labels use current model and visible user/assistant text only
+  ---
+  duration_ms: 0.899334
+  type: 'test'
+  ...
+# Subtest: excerpt bounds each message and keeps the latest eight visible messages
+ok 21 - excerpt bounds each message and keeps the latest eight visible messages
+  ---
+  duration_ms: 0.153417
+  type: 'test'
+  ...
+# Subtest: many assistant progress messages cannot evict the latest user goal
+ok 22 - many assistant progress messages cannot evict the latest user goal
+  ---
+  duration_ms: 0.075542
+  type: 'test'
+  ...
+# Subtest: invalid responses fail, and text is normalized to a single line
+ok 23 - invalid responses fail, and text is normalized to a single line
+  ---
+  duration_ms: 0.7825
+  type: 'test'
+  ...
+# Subtest: empty input, missing model and cancellation never call the provider
+ok 24 - empty input, missing model and cancellation never call the provider
+  ---
+  duration_ms: 0.190459
+  type: 'test'
+  ...
+# Subtest: task generation has a deadline even if the provider ignores cancellation
+ok 25 - task generation has a deadline even if the provider ignores cancellation
+  ---
+  duration_ms: 0.547333
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 216.156459

@@ -81,9 +81,11 @@ final class AgentIntegrationManagerTests: XCTestCase {
         var root = try jsonObject(at: hooksURL)
         XCTAssertEqual(root["custom"] as? String, "keep")
         var hooks = try XCTUnwrap(root["hooks"] as? [String: Any])
-        for event in ["SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"] {
+        for event in ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Interrupt", "Stop", "SessionEnd"] {
             let entries = try XCTUnwrap(hooks[event] as? [[String: Any]])
-            XCTAssertTrue(entries.contains { $0["_iTermate"] as? Bool == true })
+            XCTAssertTrue(entries.contains {
+                $0["_iTermate"] as? Bool == true
+            })
         }
         let stopEntries = try XCTUnwrap(hooks["Stop"] as? [[String: Any]])
         XCTAssertTrue(stopEntries.contains { entry in
@@ -96,11 +98,47 @@ final class AgentIntegrationManagerTests: XCTestCase {
         XCTAssertFalse(manager.isInstalled(.codex))
         root = try jsonObject(at: hooksURL)
         hooks = try XCTUnwrap(root["hooks"] as? [String: Any])
-        for event in ["SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"] {
+        for event in ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Interrupt", "Stop", "SessionEnd"] {
             let entries = try XCTUnwrap(hooks[event] as? [[String: Any]])
-            XCTAssertFalse(entries.contains { $0["_iTermate"] as? Bool == true })
+            XCTAssertFalse(entries.contains {
+                $0["_iTermate"] as? Bool == true
+            })
         }
         XCTAssertFalse(FileManager.default.fileExists(atPath: installedHookURL.path))
+    }
+
+    @MainActor
+    func testCodexUpgradePreservesHookPositionsAndAddsEvents() throws {
+        let fixture = try Fixture(testCase: self)
+        let hooksURL = fixture.homeDirectory.appendingPathComponent(".codex/hooks.json")
+        try FileManager.default.createDirectory(
+            at: hooksURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        var original: [String: Any] = [:]
+        for event in ["SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"] {
+            original[event] = [
+                ["_iTermate": true, "hooks": [["type": "command", "command": "old-reporter"]]],
+                ["hooks": [["type": "command", "command": "keep-position"]]],
+            ]
+        }
+        try JSONSerialization.data(withJSONObject: ["hooks": original]).write(to: hooksURL)
+        let manager = fixture.makeManager()
+
+        manager.updateInstalledIntegrations()
+
+        let root = try jsonObject(at: hooksURL)
+        let hooks = try XCTUnwrap(root["hooks"] as? [String: Any])
+        for event in ["SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"] {
+            let entries = try XCTUnwrap(hooks[event] as? [[String: Any]])
+            XCTAssertEqual(entries.count, 2)
+            XCTAssertEqual(entries[0]["_iTermate"] as? Bool, true)
+            let handlers = try XCTUnwrap(entries[1]["hooks"] as? [[String: Any]])
+            XCTAssertEqual(handlers[0]["command"] as? String, "keep-position")
+        }
+        XCTAssertNotNil(hooks["PreToolUse"])
+        XCTAssertNotNil(hooks["PostToolUse"])
+        XCTAssertNotNil(hooks["Interrupt"])
     }
 
     @MainActor

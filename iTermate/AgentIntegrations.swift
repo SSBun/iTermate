@@ -283,7 +283,8 @@ final class AgentIntegrationManager: ObservableObject {
         else {
             return false
         }
-        return Self.codexEvents.allSatisfy { event, _ in
+        // Recognize the original installation so existing users receive added events.
+        return ["SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"].allSatisfy { event in
             let entries = hooks[event] as? [[String: Any]] ?? []
             return entries.contains(where: Self.isManagedEntry)
         }
@@ -312,15 +313,20 @@ final class AgentIntegrationManager: ObservableObject {
 
         for (event, status) in Self.codexEvents {
             var entries = hooks[event] as? [[String: Any]] ?? []
-            entries.removeAll(where: Self.isManagedEntry)
-            entries.append([
+            let managedEntry: [String: Any] = [
                 "_iTermate": true,
                 "hooks": [[
                     "type": "command",
                     "command": "\(quotedReporterPath) agent \(status)",
                     "timeout": 3,
                 ]],
-            ])
+            ]
+            // Hook trust keys include the group index. Do not move existing entries.
+            if let index = entries.firstIndex(where: Self.isManagedEntry) {
+                entries[index] = managedEntry
+            } else {
+                entries.append(managedEntry)
+            }
             hooks[event] = entries
         }
 
@@ -700,6 +706,9 @@ final class AgentIntegrationManager: ObservableObject {
     private static let codexEvents = [
         "SessionStart": "idle",
         "UserPromptSubmit": "running",
+        "PreToolUse": "running",
+        "PostToolUse": "running",
+        "Interrupt": "idle",
         "Stop": "finished",
         "SessionEnd": "detached",
     ]

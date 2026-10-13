@@ -21,6 +21,143 @@ final class PiSessionArchiveTests: XCTestCase {
         return (folder, record)
     }
 
+    private func terminalSession(id: String = "pane", tty: String? = "/dev/ttys001", name: String = "π - project (zsh)") -> TerminalSessionSnapshot {
+        TerminalSessionSnapshot(id: id, name: name, path: "/same/project", tty: tty,
+            windowId: "window", tabId: "tab", isActive: false, isMinimized: false,
+            status: .idle, activityKind: .agent, exitStatus: nil, statusChangedAt: nil)
+    }
+
+    private func liveFixture() throws -> URL {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        return root
+    }
+
+    @discardableResult
+    private func writeLiveDescriptor(at root: URL, summary: Any? = "修复分页逻辑", terminal: String = "iTerm2",
+                                     pane: String = "pane", tty: String = "/dev/ttys001",
+                                     updatedAt: TimeInterval = Date().timeIntervalSince1970,
+                                     supportsTitleRefresh: Bool? = nil, canRefreshTitle: Bool? = nil) throws -> URL {
+        let id = UUID().uuidString
+        var descriptor: [String: Any] = [
+            "version": 1, "id": id, "pid": ProcessInfo.processInfo.processIdentifier, "parentPid": 2,
+            "token": String(repeating: "a", count: 64),
+            "socketPath": root.appendingPathComponent(String(id.prefix(16)) + ".sock").path,
+            "terminal": terminal, "terminalSessionId": pane, "tty": tty,
+            "sessionId": "native-session", "sessionFile": "/unused/session.jsonl", "cwd": "/same/project",
+            "name": "Pi session", "canArchive": true, "supportsSummary": true, "updatedAt": updatedAt,
+        ]
+        descriptor["taskSummary"] = summary
+        descriptor["supportsTitleRefresh"] = supportsTitleRefresh
+        descriptor["canRefreshTitle"] = canRefreshTitle
+        let file = root.appendingPathComponent(id + ".json")
+        try JSONSerialization.data(withJSONObject: descriptor).write(to: file)
+        return file
+    }
+
+    func testManualTitleRefreshRequiresCapabilityAndIdleIdentity() throws {
+        let root = try liveFixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let archives = PiSessionArchives(liveRoot: root)
+        for supported: Bool? in [nil, false, true] {
+            for ready: Bool? in [nil, false, true] {
+                let file = try writeLiveDescriptor(at: root, supportsTitleRefresh: supported, canRefreshTitle: ready)
+                archives.refresh()
+                XCTAssertEqual(archives.canRefreshTitle(terminalSession(), terminal: .iTerm2), supported == true && ready == true)
+                XCTAssertFalse(archives.canRefreshTitle(terminalSession(id: "other-pane"), terminal: .iTerm2))
+                XCTAssertFalse(archives.canRefreshTitle(terminalSession(), terminal: .ghostty))
+                XCTAssertFalse(archives.isRefreshingTitle(terminalSession(), terminal: .iTerm2))
+                try FileManager.default.removeItem(at: file)
+            }
+        }
+        try writeLiveDescriptor(at: root, updatedAt: Date().timeIntervalSince1970 - 30,
+                                supportsTitleRefresh: true, canRefreshTitle: true)
+        archives.refresh()
+        XCTAssertFalse(archives.canRefreshTitle(terminalSession(), terminal: .iTerm2))
+    }
+
+    func testGhosttyManualTitleRefreshUsesUniqueTTY() throws {
+        let root = try liveFixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try writeLiveDescriptor(at: root, terminal: "Ghostty", supportsTitleRefresh: true, canRefreshTitle: true)
+        let archives = PiSessionArchives(liveRoot: root)
+        archives.refresh()
+        XCTAssertTrue(archives.canRefreshTitle(terminalSession(), terminal: .ghostty))
+        XCTAssertFalse(archives.canRefreshTitle(terminalSession(tty: nil), terminal: .ghostty))
+        try writeLiveDescriptor(at: root, terminal: "Ghostty", supportsTitleRefresh: true, canRefreshTitle: true)
+        archives.refresh()
+        XCTAssertFalse(archives.canRefreshTitle(terminalSession(), terminal: .ghostty))
+    }
+
+    func testLiveTaskTitleUsesExactTerminalIdentityNotPathOrName() throws {
+        let root = try liveFixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try writeLiveDescriptor(at: root)
+        let archives = PiSessionArchives(liveRoot: root)
+        archives.refresh()
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "修复分页逻辑")
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(id: "other-pane"), terminal: .iTerm2), "π - project (zsh)")
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .ghostty), "π - project (zsh)")
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: nil), "π - project (zsh)")
+    }
+
+    func testGhosttyTaskTitleRequiresUniquePiTTY() throws {
+        let root = try liveFixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try writeLiveDescriptor(at: root, terminal: "Ghostty", pane: "inherited-iterm-pane")
+        let archives = PiSessionArchives(liveRoot: root)
+        archives.refresh()
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .ghostty), "修复分页逻辑")
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(tty: nil), terminal: .ghostty), "π - project (zsh)")
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(tty: "/dev/other"), terminal: .ghostty), "π - project (zsh)")
+        try writeLiveDescriptor(at: root, terminal: "Ghostty")
+        archives.refresh()
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .ghostty), "π - project (zsh)")
+    }
+
+    func testDuplicatePiDescriptorsDoNotChooseAnArbitraryTitle() throws {
+        let root = try liveFixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try writeLiveDescriptor(at: root)
+        try writeLiveDescriptor(at: root, summary: "另一个任务")
+        let archives = PiSessionArchives(liveRoot: root)
+        archives.refresh()
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "π - project (zsh)")
+    }
+
+    func testMissingMalformedAndExpiredTaskTitlesFallBack() throws {
+        let root = try liveFixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let archives = PiSessionArchives(liveRoot: root)
+        for summary: Any? in [nil, " ", String(repeating: "x", count: 81), "bad\nlabel", "bad\u{001B}label", 42] {
+            let file = try writeLiveDescriptor(at: root, summary: summary)
+            archives.refresh()
+            XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "π - project (zsh)")
+            try FileManager.default.removeItem(at: file)
+        }
+        try writeLiveDescriptor(at: root, updatedAt: Date().timeIntervalSince1970 - 30)
+        archives.refresh()
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "π - project (zsh)")
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(name: " \n "), terminal: .iTerm2), "Session")
+    }
+
+    func testTaskTitleRefreshReplacesAndClearsWithoutStatusChanges() throws {
+        let root = try liveFixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        var file = try writeLiveDescriptor(at: root)
+        let archives = PiSessionArchives(liveRoot: root)
+        let session = terminalSession()
+        archives.refresh()
+        XCTAssertEqual(archives.sessionTitle(for: session, terminal: .iTerm2), "修复分页逻辑")
+        try FileManager.default.removeItem(at: file)
+        file = try writeLiveDescriptor(at: root, summary: "添加会话摘要")
+        archives.refresh()
+        XCTAssertEqual(archives.sessionTitle(for: session, terminal: .iTerm2), "添加会话摘要")
+        try FileManager.default.removeItem(at: file)
+        archives.refresh()
+        XCTAssertEqual(archives.sessionTitle(for: session, terminal: .iTerm2), session.name)
+    }
+
     func testNativeHeaderAndChecksumAreRequired() throws {
         let (folder, record) = try fixture()
         defer { try? FileManager.default.removeItem(at: folder) }

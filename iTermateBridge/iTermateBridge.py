@@ -61,6 +61,7 @@ class Bridge:
         self.agent_managed_session_ids = set()
         self.agent_heartbeat_times = {}
         self.agent_report_sequences = {}
+        self.codex_reports = {}
         self.session_statuses = {}
         self.session_names = {}
         self.ignore_prompt_events_until = 0
@@ -209,6 +210,43 @@ class Bridge:
             if has_sequence and sequence <= self.agent_report_sequences.get(key, 0):
                 await self.send_action_result(writer, request_id, False, "Stale report")
                 return
+            codex_id = request.get("codexSessionId")
+            codex_event = request.get("codexEventId")
+            codex_claim = request.get("codexClaim", False)
+            codex_previous_owner = request.get("codexPreviousOwner")
+            codex_owner = (reporter_id, codex_id)
+            previous_codex = self.codex_reports.get(session_id)
+            if codex_id is not None:
+                if (not has_sequence or not isinstance(codex_id, str)
+                        or not 1 <= len(codex_id) <= 128
+                        or not isinstance(codex_event, str) or not 1 <= len(codex_event) <= 128
+                        or not isinstance(codex_claim, bool)
+                        or (codex_previous_owner is not None and (
+                            not isinstance(codex_previous_owner, list) or len(codex_previous_owner) != 2
+                            or any(not isinstance(value, str) or not 1 <= len(value) <= 128
+                                   for value in codex_previous_owner)))
+                        or (codex_claim and (heartbeat or status not in {"idle", "running"}))):
+                    await self.send_action_result(writer, request_id, False, "Invalid Codex report")
+                    return
+                if self.app.get_session_by_id(session_id) is None:
+                    await self.send_action_result(writer, request_id, False, "Session no longer exists")
+                    return
+                owns_session = previous_codex is not None and previous_codex[0] == codex_owner
+                retries_previous_owner = (previous_codex is not None
+                                          and list(previous_codex[0]) == codex_previous_owner)
+                if not codex_claim and not owns_session and not retries_previous_owner and (
+                    session_id in self.codex_reports or session_id in self.agent_managed_session_ids
+                ):
+                    await self.send_action_result(writer, request_id, False, "Codex owner changed")
+                    return
+                # Lost ACK retries must not restore a finished badge after the user read it.
+                if owns_session and previous_codex[1] == codex_event and status != "running":
+                    self.agent_report_sequences[key] = sequence
+                    await self.send_action_result(writer, request_id, True, None)
+                    return
+                if not owns_session:
+                    # A restarted Bridge may only know a shell fallback with another status.
+                    heartbeat = False
             if recovery:
                 current = self.session_statuses.get(session_id, {})
                 if self.app.get_session_by_id(session_id) is None:
@@ -217,11 +255,26 @@ class Bridge:
                 if current.get("activityKind") == "agent" and current.get("status"):
                     await self.send_action_result(writer, request_id, False, "Agent status is already known")
                     return
-            accepted = self.set_agent_status(
-                session_id, status, exit_status, heartbeat, has_running_subagents
-            )
+            if (codex_id is not None and status == "detached"
+                    and self.session_statuses.get(session_id, {}).get("activityKind") == "command"):
+                # A delayed SessionEnd releases its owner, not a subsequent shell command.
+                self.agent_managed_session_ids.discard(session_id)
+                self.agent_heartbeat_times.pop(session_id, None)
+                accepted = True
+            else:
+                accepted = self.set_agent_status(
+                    session_id, status, exit_status, heartbeat, has_running_subagents
+                )
             if accepted and has_sequence:
                 self.agent_report_sequences[key] = sequence
+            if accepted:
+                if codex_id is not None:
+                    self.codex_reports[session_id] = (codex_owner, codex_event)
+                    if status == "running":
+                        self.agent_heartbeat_times[session_id] = heartbeat_time()
+                else:
+                    # Keep a tombstone: an old Codex retry must not reclaim after another Agent exits.
+                    self.codex_reports[session_id] = None
             if accepted and recovery and status in {"running", "awaitingInput"}:
                 self.agent_heartbeat_times[session_id] = heartbeat_time()
             await self.send_action_result(
@@ -446,6 +499,7 @@ class Bridge:
                 self.agent_managed_session_ids.discard(session_id)
                 self.agent_heartbeat_times.pop(session_id, None)
                 self.session_statuses.pop(session_id, None)
+                self.codex_reports.pop(session_id, None)
                 self.agent_report_sequences = {
                     key: value for key, value in self.agent_report_sequences.items()
                     if key[0] != session_id

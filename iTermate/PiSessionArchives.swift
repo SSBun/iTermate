@@ -38,6 +38,9 @@ private struct LivePiSession: Decodable {
     let canArchive: Bool
     let supportsSummary: Bool?
     let supportsStatus: Bool?
+    let supportsTitleRefresh: Bool?
+    let canRefreshTitle: Bool?
+    let taskSummary: String?
     let updatedAt: TimeInterval
 }
 
@@ -60,6 +63,13 @@ struct PiStatusSnapshot: Decodable {
     }
 }
 
+private struct PiTitleSnapshot: Decodable {
+    let version: Int
+    let instanceId: String
+    let sessionId: String
+    let taskSummary: String
+}
+
 struct PiResumeLocation: Sendable {
     let directory: URL
     let sessionID: String
@@ -79,7 +89,13 @@ final class PiSessionArchives: ObservableObject {
     @Published private(set) var isBusy = false
     @Published var error: String?
     @Published private var liveSessions: [LivePiSession] = []
+    @Published private var refreshingTitleIDs: Set<String> = []
     private var timer: Timer?
+    private let discoveryRoot: URL
+
+    init(liveRoot: URL = PiSessionArchives.liveRoot) {
+        discoveryRoot = liveRoot
+    }
 
     func start() {
         guard timer == nil else { return }
@@ -105,7 +121,7 @@ final class PiSessionArchives: ObservableObject {
     }
 
     private func refreshLiveSessions() {
-        let files = (try? FileManager.default.contentsOfDirectory(at: Self.liveRoot,
+        let files = (try? FileManager.default.contentsOfDirectory(at: discoveryRoot,
             includingPropertiesForKeys: nil, options: .skipsHiddenFiles)) ?? []
         liveSessions = files.filter { $0.pathExtension == "json" }.compactMap { file in
             guard let data = try? Self.boundedData(at: file, maximum: 16384),
@@ -113,7 +129,7 @@ final class PiSessionArchives: ObservableObject {
                   session.version == 1, UUID(uuidString: session.id) != nil,
                   session.pid > 1, session.parentPid > 1, kill(session.pid, 0) == 0,
                   Self.validSessionID(session.sessionId),
-                  session.socketPath == Self.liveRoot.appendingPathComponent(String(session.id.prefix(16)) + ".sock").path,
+                  session.socketPath == discoveryRoot.appendingPathComponent(String(session.id.prefix(16)) + ".sock").path,
                   session.token.count == 64, session.token.allSatisfy({ $0.isHexDigit }),
                   (0...8).contains(Date().timeIntervalSince1970 - session.updatedAt)
             else { return nil }
@@ -128,6 +144,63 @@ final class PiSessionArchives: ObservableObject {
                 : (session.tty != nil && live.tty == session.tty)
         }
         return matches.count == 1 ? matches.first : nil
+    }
+
+    /// Returns a live Pi task label, falling back to the terminal's original title.
+    func sessionTitle(for session: TerminalSessionSnapshot, terminal: TerminalApp?) -> String {
+        if let terminal, let live = descriptor(for: session, terminal: terminal),
+           (0...8).contains(Date().timeIntervalSince1970 - live.updatedAt),
+           kill(live.pid, 0) == 0, let summary = live.taskSummary?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !summary.isEmpty, summary.utf16.count <= 80,
+           summary.rangeOfCharacter(from: .controlCharacters) == nil {
+            return summary
+        }
+        let name = session.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? "Session" : name
+    }
+
+    /// Whether this Pi instance has a title request in flight from the panel.
+    func isRefreshingTitle(_ session: TerminalSessionSnapshot, terminal: TerminalApp) -> Bool {
+        guard let live = descriptor(for: session, terminal: terminal) else { return false }
+        return refreshingTitleIDs.contains(live.id)
+    }
+
+    /// Whether the identified Pi instance supports an idle, manual title refresh.
+    func canRefreshTitle(_ session: TerminalSessionSnapshot, terminal: TerminalApp) -> Bool {
+        guard !isBusy, let live = descriptor(for: session, terminal: terminal),
+              (0...8).contains(Date().timeIntervalSince1970 - live.updatedAt), kill(live.pid, 0) == 0 else { return false }
+        return live.supportsTitleRefresh == true && live.canRefreshTitle == true && !refreshingTitleIDs.contains(live.id)
+    }
+
+    /// Regenerates a title without advancing the conversation or closing the terminal.
+    @MainActor
+    func refreshTitle(_ session: TerminalSessionSnapshot, terminal: TerminalApp) async {
+        refreshLiveSessions()
+        guard canRefreshTitle(session, terminal: terminal), let live = descriptor(for: session, terminal: terminal) else {
+            error = "Title refresh unavailable. Wait for Pi to become idle, or install/reload the Pi integration."
+            return
+        }
+        refreshingTitleIDs.insert(live.id)
+        error = nil
+        defer { refreshingTitleIDs.remove(live.id); refreshLiveSessions() }
+        do {
+            let data = try await PiArchiveRPC.response(socketPath: live.socketPath, payload: [
+                "action": "refreshTitle", "token": live.token, "sessionId": live.sessionId,
+            ], timeout: 70)
+            let response = try JSONDecoder().decode(PiTitleSnapshot.self, from: data)
+            refreshLiveSessions()
+            guard let current = descriptor(for: session, terminal: terminal),
+                  current.id == live.id, current.pid == live.pid, current.sessionId == live.sessionId,
+                  response.version == 1, response.instanceId == live.id, response.sessionId == live.sessionId,
+                  !response.taskSummary.isEmpty, response.taskSummary.utf16.count <= 80,
+                  response.taskSummary.rangeOfCharacter(from: .controlCharacters) == nil,
+                  current.taskSummary == response.taskSummary,
+                  sessionTitle(for: session, terminal: terminal) == response.taskSummary else {
+                throw PiArchiveError("Pi session changed or its new title could not be confirmed. Retry when idle.")
+            }
+        } catch {
+            self.error = "Could not refresh session title: \(error.localizedDescription)"
+        }
     }
 
     func canQueryStatus(_ session: TerminalSessionSnapshot, terminal: TerminalApp) -> Bool {
@@ -151,7 +224,8 @@ final class PiSessionArchives: ObservableObject {
     }
 
     func canArchive(_ session: TerminalSessionSnapshot, terminal: TerminalApp) -> Bool {
-        guard !isBusy, session.activityKind == .agent, session.status != .running,
+        guard !isBusy, !isRefreshingTitle(session, terminal: terminal),
+              session.activityKind == .agent, session.status != .running,
               session.hasRunningSubagents != true, let live = descriptor(for: session, terminal: terminal)
         else { return false }
         return live.canArchive && live.supportsSummary == true && !live.sessionFile.isEmpty
@@ -366,7 +440,7 @@ private final class PiArchiveRPC: @unchecked Sendable {
                 switch state {
                 case .ready:
                     rpc.connection.send(content: payloadData, completion: .contentProcessed { error in
-                        if error != nil { rpc.finish(.failure(PiArchiveError("Could not request Pi archive."))) }
+                        if error != nil { rpc.finish(.failure(PiArchiveError("Could not send the Pi request."))) }
                         else { rpc.receive() }
                     })
                 case .failed, .waiting:
@@ -375,7 +449,7 @@ private final class PiArchiveRPC: @unchecked Sendable {
                 }
             }
             rpc.queue.asyncAfter(deadline: .now() + timeout) {
-                rpc.finish(.failure(PiArchiveError("Pi archive request timed out. Check Archives before retrying; the terminal was not closed.")))
+                rpc.finish(.failure(PiArchiveError("Pi request timed out. Check the result before retrying.")))
             }
             rpc.connection.start(queue: rpc.queue)
         }
@@ -385,17 +459,17 @@ private final class PiArchiveRPC: @unchecked Sendable {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 8192) { data, _, ended, error in
             if let data { self.buffer.append(data) }
             guard self.buffer.count <= 8192 else {
-                self.finish(.failure(PiArchiveError("Pi archive response was too large."))); return
+                self.finish(.failure(PiArchiveError("Pi response was too large."))); return
             }
             if let newline = self.buffer.firstIndex(of: 0x0a),
                let value = try? JSONSerialization.jsonObject(with: Data(self.buffer[..<newline])) as? [String: Any] {
                 if value["ok"] as? Bool == true {
                     self.finish(.success(Data(self.buffer[..<newline])))
                 } else {
-                    self.finish(.failure(PiArchiveError(value["error"] as? String ?? "Pi refused the archive request.")))
+                    self.finish(.failure(PiArchiveError(value["error"] as? String ?? "Pi refused the request.")))
                 }
             } else if ended || error != nil {
-                self.finish(.failure(PiArchiveError("Pi disconnected before confirming the archive.")))
+                self.finish(.failure(PiArchiveError("Pi disconnected before confirming the request.")))
             } else { self.receive() }
         }
     }

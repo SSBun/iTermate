@@ -1,0 +1,25 @@
+{
+  "snapshot": "sha256:a271eadf8183b67fac3a27158b65b7884d57029fa7bd2bd57d2cf9fc2d216cfd",
+  "head": "5b928b430368851ec2e2cbb4727e44864f202e97",
+  "files": {
+    "integrations/status/iTermate-status.py": "db3703bfd39eca7fbe4a3d92c95c6b20228944538eacaa5e65821b9b52b16d4b",
+    "integrations/status/test_codex_status.py": "48ba6938a387eb9574611c45eee46c2707fa733a0b814c91f1e009e683ea1380",
+    "iTermateBridge/iTermateBridge.py": "9d2a04d6eb72cea27423f97acfae299dd0e6d8ce8a1ec3da833d78c646b2fdc2",
+    "iTermateBridge/test_codex_status.py": "19532dd0b109581b5bdf24b93e2c4d3a49a68f66cb13dd3adbcdeaa21dc018b1",
+    "iTermate/AgentIntegrations.swift": "b05e0a16266d42f00d03dcfdd6cbf33247fef0e80a3d7fe8cecbc30482e522c7",
+    "iTermateTests/AgentIntegrationManagerTests.swift": "d6e9aceccbb97c7284677877da35b1f8934404cd1a2463a03fa154d0dad578d1",
+    "tasks/context.md": "32bb53be88458d1da4219b8800a39ec387c5b0a13ebe122f09c6a80ddcb464a2"
+  },
+  "checks": [
+    "python ast.parse: 4 files passed",
+    "swiftc -parse: 2 files passed",
+    "xcodebuild Debug isolated /tmp/itermate-codex-status-build: BUILD SUCCEEDED (5.259s)",
+    "git diff --check: passed",
+    "context validate: valid"
+  ],
+  "limitations": [
+    "未运行任何测试",
+    "未安装、启动或重启应用",
+    "真实 Codex UI 行为尚未验证"
+  ]
+}

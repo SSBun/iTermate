@@ -641,7 +641,7 @@ private struct PanelContent: View {
                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
                                     sessionButton(item)
                                         .id(
-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session)):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
                                         )
                                         .padding(.leading, hasTabHeader ? 12 : 0)
                                 }
@@ -930,6 +930,7 @@ private struct PanelContent: View {
                         )
 
                     Text(sessionName(item.session))
+                        .help(item.session.name)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -1055,10 +1056,17 @@ private struct PanelContent: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 7))
         .contextMenu {
-            Button("Archive Pi Session") {
-                store.archivePiSession(item.session, in: store.terminalApp ?? .iTerm2)
+            let terminal = store.terminalApp ?? .iTerm2
+            Button(archives.isRefreshingTitle(item.session, terminal: terminal)
+                ? "Refreshing Session Title…" : "Refresh Session Title") {
+                Task { await archives.refreshTitle(item.session, terminal: terminal) }
             }
-            .disabled(!archives.canArchive(item.session, terminal: store.terminalApp ?? .iTerm2))
+            .disabled(!archives.canRefreshTitle(item.session, terminal: terminal))
+
+            Button("Archive Pi Session") {
+                store.archivePiSession(item.session, in: terminal)
+            }
+            .disabled(!archives.canArchive(item.session, terminal: terminal))
         }
         .overlay {
             ActiveHoverRegion { isHovered in
@@ -1073,8 +1081,7 @@ private struct PanelContent: View {
     }
 
     private func sessionName(_ session: TerminalSessionSnapshot) -> String {
-        let name = session.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return name.isEmpty ? "Session" : name
+        archives.sessionTitle(for: session, terminal: store.terminalApp)
     }
 
     @ViewBuilder

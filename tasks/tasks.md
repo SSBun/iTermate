@@ -1,8 +1,18 @@
 # 任务索引
 
+- [实现 Codex 经 Agent Hooks 上报并执行单元测试](tasks/implement-codex-agent-hooks.md) — Pending (2026-10-13 10:41)
+
+- [提交 Agent Hooks 迁移前的全部本地基线](tasks/commit-agent-hooks-baseline.md) — In Progress (2026-10-13 10:41)
+
+- [提交当前改动并将 Codex 状态接入 Agent Hooks](tasks/migrate-codex-to-agent-hooks.md) — In Progress (2026-10-13 10:39)
+
+- [通过 Session 右键菜单手动刷新任务标题](tasks/refresh-pi-session-title-menu.md) — Blocked (2026-10-12 20:05)
+
+- [为实时 Pi Session 显示当前任务摘要并测试](tasks/live-pi-task-summary.md) — Blocked (2026-10-12 18:31)
+
 - [调查 Session 仅显示目录而非当前任务摘要的原因](tasks/investigate-session-task-summary.md) — Pending (2026-10-12 17:22)
 
-- [调查 Codex 会话误显示命令运行图标的原因](tasks/investigate-codex-command-icon.md) — Pending (2026-10-12 17:21)
+- [调查 Codex 会话误显示命令运行图标的原因](tasks/investigate-codex-command-icon.md) — Completed (2026-10-12 18:37)
 
 - [按关注点拆分提交当前状态、模型和归档等本地改动](tasks/commit-session-model-and-archive-changes.md) — Completed (2026-10-12 17:31)
 
