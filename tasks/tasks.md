@@ -1,5 +1,9 @@
 # 任务索引
 
+- [用连接线标识同一 Tab 的会话组](tasks/connect-same-tab-session-cells.md) — Completed (2026-10-20 11:46)
+
+- [将侧边栏中同一 Tab 的会话排列在一起](tasks/group-sidebar-sessions-by-tab.md) — Completed (2026-10-20 11:40)
+
 - [实现 Codex 经 Agent Hooks 上报并执行单元测试](tasks/implement-codex-agent-hooks.md) — Pending (2026-10-13 10:41)
 
 - [提交 Agent Hooks 迁移前的全部本地基线](tasks/commit-agent-hooks-baseline.md) — In Progress (2026-10-13 10:41)

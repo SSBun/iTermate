@@ -629,21 +629,33 @@ private struct PanelContent: View {
                         groupHeader(group)
 
                         if !collapsedSectionIDs.contains(group.id) {
-                            ForEach(Array(group.sessions.enumerated()), id: \.element.id) { index, item in
-                                let hasTabHeader = tabHeaderSessions(group, tabID: item.tabID) != nil
-                                if hasTabHeader, group.startsTab(at: index) {
-                                    tabHeader(
-                                        item,
-                                        sessions: group.sessions(inTab: item.tabID)
-                                    )
-                                }
+                            ForEach(group.tabIDs, id: \.self) { tabID in
+                                let sessions = group.sessions(inTab: tabID)
+                                let hasTabHeader = tabHeaderSessions(group, tabID: tabID) != nil
+                                VStack(alignment: .leading, spacing: 2) {
+                                    if hasTabHeader, let item = sessions.first {
+                                        tabHeader(item, sessions: sessions)
+                                    }
 
-                                if !hasTabHeader || !isTabCollapsed(item.tabID) {
-                                    sessionButton(item)
-                                        .id(
-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session)):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                    if !hasTabHeader || !isTabCollapsed(tabID) {
+                                        ForEach(sessions) { item in
+                                            sessionButton(item)
+                                                .id(
+                                                    "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session)):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                                )
+                                                .padding(.leading, hasTabHeader ? 12 : 0)
+                                        }
+                                    }
+                                }
+                                .overlayPreferenceValue(SessionIconAnchors.self) { anchors in
+                                    if sessions.count > 1 {
+                                        SessionGroupConnectors(
+                                            sessionIDs: sessions.map(\.id),
+                                            anchors: anchors
                                         )
-                                        .padding(.leading, hasTabHeader ? 12 : 0)
+                                        .allowsHitTesting(false)
+                                        .accessibilityHidden(true)
+                                    }
                                 }
                             }
                         }
@@ -928,6 +940,9 @@ private struct PanelContent: View {
                         .foregroundStyle(
                             item.isFocused ? settings.accentColor : .secondary
                         )
+                        .anchorPreference(key: SessionIconAnchors.self, value: .bounds) {
+                            [item.id: $0]
+                        }
 
                     Text(sessionName(item.session))
                         .help(item.session.name)
@@ -1585,6 +1600,43 @@ private struct VenomDebugStatusView: View {
                         Path(roundedRect: rect, cornerRadius: 0.35),
                         with: .color(.teal.opacity(opacity))
                     )
+                }
+            }
+        }
+    }
+}
+
+private struct SessionIconAnchors: PreferenceKey {
+    static var defaultValue: [String: Anchor<CGRect>] { [:] }
+
+    static func reduce(
+        value: inout [String: Anchor<CGRect>],
+        nextValue: () -> [String: Anchor<CGRect>]
+    ) {
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
+    }
+}
+
+private struct SessionGroupConnectors: View {
+    let sessionIDs: [String]
+    let anchors: [String: Anchor<CGRect>]
+
+    var body: some View {
+        GeometryReader { geometry in
+            Canvas { context, _ in
+                for (upperID, lowerID) in zip(sessionIDs, sessionIDs.dropFirst()) {
+                    guard let upperAnchor = anchors[upperID],
+                          let lowerAnchor = anchors[lowerID] else { continue }
+                    let upper = geometry[upperAnchor]
+                    let lower = geometry[lowerAnchor]
+                    guard lower.minY > upper.maxY else { continue }
+                    let segment = CGRect(
+                        x: upper.midX - 0.5,
+                        y: upper.maxY,
+                        width: 1,
+                        height: lower.minY - upper.maxY
+                    )
+                    context.fill(Path(segment), with: .color(.secondary.opacity(0.45)))
                 }
             }
         }

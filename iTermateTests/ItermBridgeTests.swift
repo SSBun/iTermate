@@ -414,9 +414,8 @@ final class ItermBridgeTests: XCTestCase {
             windowGroups[0].sessions.map(\.session.name),
             ["zsh", "build"]
         )
-        XCTAssertTrue(windowGroups[0].startsTab(at: 0))
-        XCTAssertTrue(windowGroups[0].startsTab(at: 1))
-        XCTAssertFalse(windowGroups[1].startsTab(at: 1))
+        XCTAssertEqual(windowGroups[0].tabIDs, ["tab-1", "tab-2"])
+        XCTAssertEqual(windowGroups[1].tabIDs, ["tab-3"])
         XCTAssertEqual(windowGroups[0].sessions.map(\.tabTitle), ["One", "Two"])
         XCTAssertEqual(
             windowGroups[0].sessions(inTab: "tab-2").map(\.session.id),
@@ -496,9 +495,30 @@ final class ItermBridgeTests: XCTestCase {
             pathGroups[1].sessions.map(\.session.id),
             ["session-a", "session-c"]
         )
-        XCTAssertTrue(pathGroups[1].startsTab(at: 0))
-        XCTAssertFalse(pathGroups[1].startsTab(at: 1))
+        XCTAssertEqual(pathGroups[1].tabIDs, ["tab-1"])
         XCTAssertEqual(pathGroups[1].sessions(inTab: "tab-1").count, 2)
+    }
+
+    func testTabBlocksKeepSplitSessionsTogetherForInterleavedInput() throws {
+        let sessions = try hierarchySnapshot().flatMap { $0.tabs.flatMap(\.sessions) }
+        let group = SessionListGroup(
+            id: "path:/repo",
+            title: "/repo",
+            sessions: sessions.enumerated().map { index, session in
+                SessionListItem(
+                    session: session,
+                    tabID: index == 1 ? "other-tab" : "split-tab",
+                    tabTitle: "Tab",
+                    isFocused: false
+                )
+            }
+        )
+
+        XCTAssertEqual(group.tabIDs, ["split-tab", "other-tab"])
+        XCTAssertEqual(
+            group.tabIDs.flatMap { group.sessions(inTab: $0) }.map(\.id),
+            ["session-1", "session-3", "session-4", "session-2"]
+        )
     }
 
     func testStoreIgnoresOlderSnapshots() throws {

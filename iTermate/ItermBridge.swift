@@ -213,8 +213,9 @@ struct SessionListGroup: Equatable, Identifiable {
     let title: String
     let sessions: [SessionListItem]
 
-    func startsTab(at index: Int) -> Bool {
-        index == 0 || sessions[index - 1].tabID != sessions[index].tabID
+    var tabIDs: [String] {
+        var seen: Set<String> = []
+        return sessions.map(\.tabID).filter { seen.insert($0).inserted }
     }
 
     func sessions(inTab tabID: String) -> [SessionListItem] {
