@@ -177,29 +177,6 @@ final class PanelLayoutTests: XCTestCase {
         )
     }
 
-    func testFocusedSectionBackgroundOpacityDefaultsClampsAndPersists() {
-        let configURL = makeConfigURL()
-        let settings = AppSettings(configURL: configURL)
-
-        XCTAssertEqual(settings.focusedSectionBackgroundOpacity, 0.05)
-        settings.setFocusedSectionBackgroundOpacity(0.24)
-
-        XCTAssertEqual(
-            AppSettings(configURL: configURL).focusedSectionBackgroundOpacity,
-            0.24
-        )
-
-        try! "focused_section_background_opacity = 2".write(
-            to: configURL,
-            atomically: true,
-            encoding: .utf8
-        )
-        XCTAssertEqual(
-            AppSettings(configURL: configURL).focusedSectionBackgroundOpacity,
-            1
-        )
-    }
-
     func testPanelDockingSideDefaultsAndPersists() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)
@@ -238,6 +215,16 @@ final class PanelLayoutTests: XCTestCase {
             SectionTitleStyle.fullPath.title(for: "/repo/subdirectory"),
             "/repo/subdirectory"
         )
+    }
+
+    func testSeparateCommandSessionsDefaultsOffAndPersists() {
+        let configURL = makeConfigURL()
+        let settings = AppSettings(configURL: configURL)
+        XCTAssertFalse(settings.separatesCommandSessions)
+
+        settings.setSeparatesCommandSessions(true)
+
+        XCTAssertTrue(AppSettings(configURL: configURL).separatesCommandSessions)
     }
 
     func testUnrelatedChangesDoNotOverwriteNewerConfigValues() {
@@ -351,6 +338,7 @@ final class PanelLayoutTests: XCTestCase {
         settings.setPanelDockingSide(.left)
         settings.setSessionListStyle(.projectPath)
         settings.setSectionTitleStyle(.folderName)
+        settings.setSeparatesCommandSessions(true)
         settings.setShowsTabHeaders(false)
         settings.setShowsSessionTime(false)
         settings.setSessionTimeFormat(.detailed)
@@ -364,6 +352,7 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertTrue(contents.contains("panel_docking_side = \"left\""))
         XCTAssertTrue(contents.contains("session_list_style = \"projectPath\""))
         XCTAssertTrue(contents.contains("section_title_style = \"folderName\""))
+        XCTAssertTrue(contents.contains("separate_command_sessions = true"))
         XCTAssertTrue(contents.contains("shows_tab_headers = false"))
         XCTAssertTrue(contents.contains("shows_session_time = false"))
         XCTAssertTrue(contents.contains("session_time_format = \"detailed\""))
@@ -376,6 +365,7 @@ final class PanelLayoutTests: XCTestCase {
         panel_width = 420.0
         panel_docking_side = "left"
         session_list_style = "projectPath"
+        separate_command_sessions = true
         shows_tab_headers = false
         shows_session_time = false
         session_time_format = "detailed"
@@ -387,6 +377,7 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(settings.panelWidth, 420)
         XCTAssertEqual(settings.panelDockingSide, .left)
         XCTAssertEqual(settings.sessionListStyle, .projectPath)
+        XCTAssertTrue(settings.separatesCommandSessions)
         XCTAssertFalse(settings.showsTabHeaders)
         XCTAssertFalse(settings.showsSessionTime)
         XCTAssertEqual(settings.sessionTimeFormat, .detailed)

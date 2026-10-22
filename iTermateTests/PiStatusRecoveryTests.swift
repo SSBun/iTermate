@@ -21,6 +21,93 @@ final class PiStatusRecoveryTests: XCTestCase {
         XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .running)
     }
 
+    func testViewedCompletionSurvivesRegistryRecreationWithoutHidingNewWork() throws {
+        let suite = "PiStatusRecoveryTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let completionID = UUID().uuidString
+        func finished(_ identity: String?, sequence: Int = 1) -> TerminalStatusReport {
+            TerminalStatusReport(tty: tty, source: .agent, reporterID: "pi", sequence: sequence,
+                state: .finished, exitStatus: 0, heartbeat: false, agentKind: .pi, completionID: identity)
+        }
+        var registry = TerminalStatusRegistry(defaults: defaults)
+        registry.reconcile(terminals: [tty: "pane"])
+        XCTAssertTrue(registry.apply(finished(completionID)))
+        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .finished)
+
+        var unseen = TerminalStatusRegistry(defaults: defaults)
+        unseen.reconcile(terminals: [tty: "pane"])
+        XCTAssertTrue(unseen.apply(finished(completionID), recovering: true))
+        XCTAssertEqual(unseen.visibleStatus(for: tty)?.status, .finished)
+        XCTAssertTrue(registry.activate(tty: tty))
+
+        var reopened = TerminalStatusRegistry(defaults: try XCTUnwrap(UserDefaults(suiteName: suite)))
+        reopened.reconcile(terminals: [tty: "pane"])
+        XCTAssertTrue(reopened.apply(finished(completionID, sequence: 10), recovering: true))
+        XCTAssertEqual(reopened.visibleStatus(for: tty)?.status, .idle)
+        XCTAssertNil(reopened.visibleStatus(for: tty)?.exitStatus)
+        XCTAssertTrue(reopened.apply(report(.running, sequence: 11)))
+        XCTAssertEqual(reopened.visibleStatus(for: tty)?.status, .running)
+        XCTAssertTrue(reopened.apply(finished(UUID().uuidString, sequence: 12)))
+        XCTAssertEqual(reopened.visibleStatus(for: tty)?.status, .finished)
+
+        var reusedTTY = TerminalStatusRegistry(defaults: defaults)
+        reusedTTY.reconcile(terminals: [tty: "different-pane"])
+        XCTAssertTrue(reusedTTY.apply(finished(completionID), recovering: true))
+        XCTAssertEqual(reusedTTY.visibleStatus(for: tty)?.status, .finished)
+        reusedTTY.reconcile(terminals: [tty: "legacy-pane"])
+        XCTAssertTrue(reusedTTY.apply(finished(nil), recovering: true))
+        XCTAssertEqual(reusedTTY.visibleStatus(for: tty)?.status, .finished)
+        XCTAssertFalse(reusedTTY.apply(finished("invalid", sequence: 2)))
+    }
+
+    func testDelayedActivationCannotAcknowledgeANewerCompletion() throws {
+        let suite = "PiActivationTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        func finished(_ id: String, sequence: Int) -> TerminalStatusReport {
+            TerminalStatusReport(tty: tty, source: .agent, reporterID: "pi", sequence: sequence,
+                state: .finished, exitStatus: 0, heartbeat: false, agentKind: .pi, completionID: id)
+        }
+        var registry = TerminalStatusRegistry(defaults: defaults)
+        registry.reconcile(terminals: [tty: "pane"])
+        XCTAssertTrue(registry.apply(finished(UUID().uuidString, sequence: 1)))
+        let activationA = try XCTUnwrap(registry.activationIdentity(for: tty))
+        XCTAssertTrue(registry.apply(report(.running, sequence: 2)))
+        let completionB = UUID().uuidString
+        XCTAssertTrue(registry.apply(finished(completionB, sequence: 3)))
+        XCTAssertFalse(registry.activate(tty: tty, matching: activationA))
+        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .finished)
+
+        var reopened = TerminalStatusRegistry(defaults: defaults)
+        reopened.reconcile(terminals: [tty: "pane"])
+        XCTAssertTrue(reopened.apply(finished(completionB, sequence: 4), recovering: true))
+        XCTAssertEqual(reopened.visibleStatus(for: tty)?.status, .finished)
+        let activationB = try XCTUnwrap(reopened.activationIdentity(for: tty))
+        // Retransmission of the same completion is not a new event.
+        XCTAssertTrue(reopened.apply(finished(completionB, sequence: 5)))
+        XCTAssertTrue(reopened.activate(tty: tty, matching: activationB))
+        XCTAssertEqual(reopened.visibleStatus(for: tty)?.status, .idle)
+
+        let previousPane = try XCTUnwrap(reopened.activationIdentity(for: tty))
+        reopened.reconcile(terminals: [tty: "different-pane"])
+        XCTAssertTrue(reopened.apply(finished(UUID().uuidString, sequence: 6)))
+        XCTAssertFalse(reopened.activate(tty: tty, matching: previousPane))
+        XCTAssertEqual(reopened.visibleStatus(for: tty)?.status, .finished)
+    }
+
+    func testActivationOfAnInitiallyUnknownOrRunningAgentDoesNotAcknowledgeLaterWork() throws {
+        var registry = TerminalStatusRegistry()
+        registry.reconcile(terminals: [tty: "pane"])
+        let unknown = try XCTUnwrap(registry.activationIdentity(for: tty))
+        XCTAssertTrue(registry.apply(report(.running, sequence: 1)))
+        let running = try XCTUnwrap(registry.activationIdentity(for: tty))
+        XCTAssertTrue(registry.apply(report(.finished, sequence: 2)))
+        XCTAssertFalse(registry.activate(tty: tty, matching: unknown))
+        XCTAssertFalse(registry.activate(tty: tty, matching: running))
+        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .finished)
+    }
+
     func testRecoveryFillsAgentGapOverShellFallback() {
         var registry = TerminalStatusRegistry()
         registry.reconcile(terminals: [tty: "pane"])

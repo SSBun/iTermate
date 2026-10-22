@@ -1,0 +1,60 @@
+--- reviewed-round02
++++ current
+@@ -21,6 +21,8 @@
+ const previousDiagnosticLogPath = join(diagnosticDirectory, `${diagnosticLogStem}.previous.log`);
+ const maximumDiagnosticLogBytes = 1024 * 1024;
+ let reportSequence = 0;
++// Unlike transport sequences, this identity survives retries and readonly status queries.
++let completionId = randomUUID();
+ 
+ // Retain the old Decision implementation for restoration; no runtime path may enable it.
+ const legacyDecisionsEnabled = false;
+@@ -172,6 +174,7 @@
+           sessionId: sessionID,
+           reporterId,
+           sequence,
++          completionId: status === "finished" ? completionId : undefined,
+           status,
+           exitStatus,
+           heartbeat,
+@@ -186,6 +189,7 @@
+           agentKind: "pi",
+           reporterId,
+           sequence,
++          completionId: status === "finished" ? completionId : undefined,
+           status,
+           exitStatus,
+           heartbeat,
+@@ -718,7 +722,7 @@
+   ctx: ExtensionContext,
+   canArchive: () => boolean,
+   refresh: () => Promise<void>,
+-  readStatus: () => Promise<{ status: Status | null; exitStatus?: number; hasRunningSubagents: boolean }>,
++  readStatus: () => Promise<{ status: Status | null; exitStatus?: number; hasRunningSubagents: boolean; completionId?: string }>,
+   readTaskSummary: () => string | undefined,
+   refreshTaskSummary: (signal: AbortSignal, onlyIfMissing: boolean) => Promise<string | undefined>,
+ ) {
+@@ -1207,6 +1211,7 @@
+     cancelSummary(true);
+     active = ctx.mode === "tui";
+     baseStatus = "idle";
++    completionId = randomUUID();
+     lastAssistantText = "";
+     agentRunning = false;
+     replyPending = false;
+@@ -1232,6 +1237,7 @@
+               : hasRunningSubagents ? "running" : baseStatus;
+             return {
+               status,
++              completionId: status === "finished" ? completionId : undefined,
+               exitStatus: status === "finished" ? (agentFailed ? 1 : 0) : undefined,
+               hasRunningSubagents: fleetIsFresh && hasRunningSubagents
+                 && (status === "running" || status === "awaitingInput"),
+@@ -1253,6 +1259,7 @@
+   });
+   pi.on("agent_start", () => {
+     cancelSummary();
++    completionId = randomUUID();
+     agentFailed = false;
+     agentRunning = true;
+     lastAssistantText = "";

@@ -1,0 +1,72 @@
+--- reviewed-round02
++++ current
+@@ -871,9 +871,66 @@
+         XCTAssertEqual(groups[0].sessions.map(\.session.id), ["session-1"])
+         XCTAssertEqual(
+             groups[1].sessions.map(\.session.id),
+-            ["session-2", "session-3", "session-4"]
+-        )
+-        XCTAssertEqual(groups[1].tabIDs, ["tab-2", "tab-3"])
++            ["session-3", "session-2", "session-4"]
++        )
++        XCTAssertEqual(groups[1].tabIDs, ["tab-3", "tab-2"])
++    }
++
++    func testCommandSessionsSortByDirectoryAndKeepMatchingPathsTogether() throws {
++        let message = try JSONDecoder().decode(
++            BridgeMessage.self,
++            from: Data(
++                """
++                {
++                  "type": "snapshot",
++                  "sequence": 1,
++                  "windows": [{
++                    "id": "window-1",
++                    "number": 1,
++                    "isActive": true,
++                    "tabs": [{
++                      "id": "tab-1",
++                      "title": "One",
++                      "isSelected": true,
++                      "sessions": [
++                        {"id":"zeta","name":"zsh","path":"/work/Zeta","isActive":true},
++                        {"id":"work-alpha-1","name":"zsh","path":"/work/alpha","isActive":false}
++                      ]
++                    }, {
++                      "id": "tab-2",
++                      "title": "Two",
++                      "isSelected": false,
++                      "sessions": [
++                        {"id":"work-alpha-2","name":"zsh","path":"/work/alpha","isActive":true}
++                      ]
++                    }, {
++                      "id": "tab-3",
++                      "title": "Three",
++                      "isSelected": false,
++                      "sessions": [
++                        {"id":"other-alpha","name":"zsh","path":"/other/Alpha","isActive":true}
++                      ]
++                    }]
++                  }]
++                }
++                """.utf8
++            )
++        )
++
++        let commands = try XCTUnwrap(SessionGrouping.groups(
++            from: message.windows ?? [],
++            style: .window,
++            separatesCommandSessions: true
++        ).last)
++
++        XCTAssertEqual(
++            commands.sessions.map(\.session.id),
++            ["other-alpha", "work-alpha-1", "work-alpha-2", "zeta"]
++        )
++        XCTAssertEqual(
++            commands.blocks(groupedByPath: true).flatMap(\.sessions).map(\.session.id),
++            ["other-alpha", "work-alpha-1", "work-alpha-2", "zeta"]
++        )
+     }
+ 
+     func testWorkingDirectoryNameUsesFinalPathComponentAndPreservesRoot() throws {

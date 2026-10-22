@@ -129,12 +129,12 @@ final class PiSessionArchiveTests: XCTestCase {
         XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "π - project (zsh)")
     }
 
-    func testLiveTitlesPreserveModelOutputWithoutStyleFiltering() throws {
+    func testLiveTitlesPreserveValidSingleLineModelOutput() throws {
         let root = try liveFixture()
         defer { try? FileManager.default.removeItem(at: root) }
         let archives = PiSessionArchives(liveRoot: root)
-        for title in ["控制 Tab 切换会话跳过 Codex 故障", " 修复 HTTP429 重试。\n",
-                      String(repeating: "字", count: 81), "Fix pagination", "已完成", "修复🔔"] {
+        for title in ["控制 Tab 切换会话跳过 Codex 故障", " 修复 HTTP429 重试。",
+                      String(repeating: "字", count: 80), "Fix pagination", "已完成", "修复🔔"] {
             let file = try writeLiveDescriptor(at: root, summary: title)
             archives.refresh()
             XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), title)
@@ -146,7 +146,8 @@ final class PiSessionArchiveTests: XCTestCase {
         let root = try liveFixture()
         defer { try? FileManager.default.removeItem(at: root) }
         let archives = PiSessionArchives(liveRoot: root)
-        for summary: Any? in [nil, "", " \n\t", String(repeating: "x", count: 16385), 42] {
+        for summary: Any? in [nil, "", " \n\t", "修复\n分页", "修复分页\n", "修复\u{2028}分页",
+                              String(repeating: "字", count: 81), String(repeating: "x", count: 16385), 42] {
             let file = try writeLiveDescriptor(at: root, summary: summary)
             archives.refresh()
             XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "π - project (zsh)")

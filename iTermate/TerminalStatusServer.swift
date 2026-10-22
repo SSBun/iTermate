@@ -28,6 +28,8 @@ struct TerminalStatusReport {
     var hasRunningSubagents: Bool = false
     /// Supplied only by an Agent integration, not ordinary command hooks.
     var agentKind: SessionAgentKind? = nil
+    /// Stable identity of one Pi completion, independent of transport sequence.
+    var completionID: String? = nil
 }
 
 struct VisibleTerminalStatus {
@@ -39,6 +41,16 @@ struct VisibleTerminalStatus {
 }
 
 struct TerminalStatusRegistry {
+    /// Captures the terminal and channel events that an asynchronous activation may acknowledge.
+    struct ActivationIdentity: Equatable {
+        fileprivate let terminalID: String
+        fileprivate let agentReporterID: String?
+        fileprivate let agentSequence: Int?
+        fileprivate let agentCompletionID: String?
+        fileprivate let shellReporterID: String?
+        fileprivate let shellSequence: Int?
+    }
+
     private struct Channel {
         let reporterID: String
         let sequence: Int
@@ -48,6 +60,7 @@ struct TerminalStatusRegistry {
         let heartbeatAt: TimeInterval?
         var hasRunningSubagents: Bool = false
         var agentKind: SessionAgentKind? = nil
+        var completionID: String? = nil
     }
 
     private struct TTYState {
@@ -59,6 +72,13 @@ struct TerminalStatusRegistry {
 
     private var states: [String: TTYState] = [:]
     private var terminalIDsByTTY: [String: String] = [:]
+    private let defaults: UserDefaults
+    private static let viewedCompletionsKey = "viewedPiCompletions"
+
+    /// Uses the app's defaults in production and isolated defaults in regression coverage.
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
 
     static func normalizedTTY(_ value: String) -> String? {
         guard
@@ -81,6 +101,8 @@ struct TerminalStatusRegistry {
     ) -> Bool {
         guard terminalIDsByTTY[report.tty] != nil else { return false }
         guard report.agentKind == nil || report.source == .agent else { return false }
+        guard report.completionID == nil || (report.agentKind == .pi && report.state == .finished
+            && report.completionID.flatMap(UUID.init(uuidString:)) != nil) else { return false }
         guard report.state != .awaitingInput || report.source == .agent else {
             return false
         }
@@ -109,7 +131,12 @@ struct TerminalStatusRegistry {
             }
         }
 
-        let status = TerminalSessionStatus(rawValue: report.state.rawValue)
+        var status = TerminalSessionStatus(rawValue: report.state.rawValue)
+        if status == .finished, let completionID = report.completionID,
+           let terminalID = terminalIDsByTTY[report.tty],
+           (defaults.dictionary(forKey: Self.viewedCompletionsKey) as? [String: String])?["\(report.tty):\(terminalID)"] == completionID {
+            status = .idle
+        }
         let changedAt = current?.reporterID == report.reporterID
             && current?.status == status
             ? current?.changedAt ?? now
@@ -126,7 +153,8 @@ struct TerminalStatusRegistry {
                 : nil,
             hasRunningSubagents: report.hasRunningSubagents,
             agentKind: report.source == .agent && report.state != .detached
-                ? report.agentKind ?? .unknown : nil
+                ? report.agentKind ?? .unknown : nil,
+            completionID: report.completionID
         )
 
         if report.source == .agent {
@@ -187,16 +215,39 @@ struct TerminalStatusRegistry {
         terminalIDsByTTY = terminals
     }
 
+    /// Uses the stable completion ID when available; legacy reports retain sequence protection.
+    func activationIdentity(for tty: String) -> ActivationIdentity? {
+        guard let terminalID = terminalIDsByTTY[tty] else { return nil }
+        let state = states[tty]
+        return ActivationIdentity(
+            terminalID: terminalID,
+            agentReporterID: state?.agent?.reporterID,
+            agentSequence: state?.agent?.completionID == nil ? state?.agent?.sequence : nil,
+            agentCompletionID: state?.agent?.completionID,
+            shellReporterID: state?.shell?.reporterID,
+            shellSequence: state?.shell?.sequence
+        )
+    }
+
     @discardableResult
     mutating func activate(
         tty: String,
+        matching identity: ActivationIdentity? = nil,
         acknowledgeAgent: Bool = true,
         now: TimeInterval = Date().timeIntervalSince1970
     ) -> Bool {
-        guard var ttyState = states[tty] else { return false }
+        guard identity == nil || activationIdentity(for: tty) == identity,
+              var ttyState = states[tty] else { return false }
         var changed = false
 
         if acknowledgeAgent, let agent = ttyState.agent, agent.status == .finished {
+            if let completionID = agent.completionID, let terminalID = terminalIDsByTTY[tty] {
+                let liveKeys = Set(terminalIDsByTTY.map { "\($0.key):\($0.value)" })
+                var saved = (defaults.dictionary(forKey: Self.viewedCompletionsKey) as? [String: String] ?? [:])
+                    .filter { liveKeys.contains($0.key) }
+                saved["\(tty):\(terminalID)"] = completionID
+                defaults.set(saved, forKey: Self.viewedCompletionsKey)
+            }
             ttyState.agent = Channel(
                 reporterID: agent.reporterID,
                 sequence: agent.sequence,
@@ -518,6 +569,7 @@ private struct TerminalStatusRequest: Decodable {
     let heartbeat: Bool?
     let hasRunningSubagents: Bool?
     let agentKind: SessionAgentKind?
+    let completionId: String?
 
     func validatedReport() throws -> TerminalStatusReport {
         guard
@@ -528,7 +580,9 @@ private struct TerminalStatusRequest: Decodable {
             !reporterId.isEmpty,
             reporterId.count <= 128,
             sequence > 0,
-            agentKind == nil || source == .agent
+            agentKind == nil || source == .agent,
+            completionId == nil || (agentKind == .pi && status == .finished
+                && completionId.flatMap(UUID.init(uuidString:)) != nil)
         else {
             throw TerminalStatusServerError.invalidRequest
         }
@@ -563,7 +617,8 @@ private struct TerminalStatusRequest: Decodable {
             exitStatus: exitStatus,
             heartbeat: heartbeat,
             hasRunningSubagents: hasRunningSubagents,
-            agentKind: agentKind
+            agentKind: agentKind,
+            completionID: completionId
         )
     }
 }

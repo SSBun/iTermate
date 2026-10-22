@@ -1,7 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
-import { isValidTaskTitle, localQuestionDecision, summarizeTask, taskSummaryExcerpt } from "./iTermate-integration";
+import { fillsMissingTitles, isValidTaskTitle, localQuestionDecision, summarizeTask, taskSummaryExcerpt } from "./iTermate-integration";
+
+test("missing title preference defaults on, honors false, and rejects invalid configuration", () => {
+  const configuration = { model: "qwen3.5:2b", revision: "11111111-1111-1111-1111-111111111111" };
+  assert.equal(fillsMissingTitles(null), true);
+  assert.equal(fillsMissingTitles(JSON.stringify(configuration)), true);
+  assert.equal(fillsMissingTitles(JSON.stringify({ ...configuration, autoFillMissingTitles: false })), false);
+  assert.equal(fillsMissingTitles(JSON.stringify({ ...configuration, autoFillMissingTitles: true })), true);
+  assert.equal(fillsMissingTitles(JSON.stringify({ ...configuration, autoFillMissingTitles: "false" })), false);
+  assert.equal(fillsMissingTitles("not JSON"), false);
+});
 
 function context(messages: unknown[]) {
   return {
@@ -36,20 +46,67 @@ test("local task titles use only visible text and need no selected Pi model", as
   assert.equal(title, "修复分页");
 });
 
-test("title style is prompt guidance while only blank or nonstring results are rejected", () => {
-  for (const title of ["修复分页", "字".repeat(17), "HTTP", "修复HTTP429重试", "修复，分页",
-    "修复分页。", " 修复分页 ", "控制 Tab 切换会话跳过 Codex 故障", "修复分页\n", "修复🔔", "已完成", '"修复分页"']) {
+test("titles must be nonblank single lines within eighty Unicode scalars", () => {
+  for (const title of ["修复分页", "字".repeat(80), "🔔".repeat(80), "修复HTTP429重试",
+    "修复分页。", " 修复分页 ", "控制 Tab 切换会话跳过 Codex 故障"]) {
     assert.equal(isValidTaskTitle(title), true, title);
   }
-  for (const title of ["", " \n\t", undefined, null, 42, {}]) {
+  for (const title of ["", " \t", "字".repeat(81), "🔔".repeat(81),
+    ...["\n", "\r", "\r\n", "\v", "\f", "\u0085", "\u2028", "\u2029"].map(line => `修复${line}分页`),
+    "修复分页\n", undefined, null, 42, {}]) {
     assert.equal(isValidTaskTitle(title), false);
   }
 });
 
-test("generated titles retain whitespace punctuation digits and length without rewriting", async () => {
-  for (const title of ["控制 Tab 切换会话跳过 Codex 故障", " 修复 HTTP429 重试。\n", "字".repeat(81)]) {
-    assert.equal(await summarizeTask(context([]), "Goal", new AbortController().signal, async () => title), title);
+test("valid single-line titles retain their original text without a second call", async () => {
+  let calls = 0;
+  const title = " 修复 HTTP429 重试。";
+  assert.equal(await summarizeTask(context([]), "Goal", new AbortController().signal, async () => {
+    calls += 1;
+    return title;
+  }), title);
+  assert.equal(calls, 1);
+});
+
+test("invalid drafts are summarized once more with the original conversation", async () => {
+  for (const draft of ["", " \t", "字".repeat(81), "1. 终端界面重构\n2. 调整项目布局", "修复分页\n"]) {
+    let calls = 0;
+    const title = await summarizeTask(context([]), "修复标题截断", new AbortController().signal,
+      async (prompt, text, _signal, maxTokens) => {
+        calls += 1;
+        assert.equal(maxTokens, 64);
+        if (calls === 1) return draft;
+        assert.match(prompt, /单行/);
+        assert.match(text, /修复标题截断/);
+        assert.ok(text.includes(draft));
+        return "修复标题截断";
+      });
+    assert.equal(title, "修复标题截断");
+    assert.equal(calls, 2);
   }
+});
+
+test("a second invalid title fails without a third call or mechanical truncation", async () => {
+  for (const draft of ["", "字".repeat(81), "修复\n标题"]) {
+    let calls = 0;
+    await assert.rejects(summarizeTask(context([]), "Goal", new AbortController().signal, async () => {
+      calls += 1;
+      return draft;
+    }));
+    assert.equal(calls, 2);
+  }
+});
+
+test("cancellation during refinement cannot publish the second result", async () => {
+  const controller = new AbortController();
+  let calls = 0;
+  await assert.rejects(summarizeTask(context([]), "Goal", controller.signal, async () => {
+    calls += 1;
+    if (calls === 1) return "多行\n草稿";
+    controller.abort();
+    return "修复标题";
+  }));
+  assert.equal(calls, 2);
 });
 
 test("question labels accept only the exact local binary JSON protocol", () => {

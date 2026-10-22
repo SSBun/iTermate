@@ -39,6 +39,7 @@ private struct LivePiSession: Decodable {
     let supportsSummary: Bool?
     let supportsStatus: Bool?
     let supportsTitleRefresh: Bool?
+    let supportsTitleBackfill: Bool?
     let canRefreshTitle: Bool?
     let taskSummary: String?
     let updatedAt: TimeInterval
@@ -54,12 +55,15 @@ struct PiStatusSnapshot: Decodable {
     let status: TerminalSessionStatus?
     let exitStatus: Int?
     let hasRunningSubagents: Bool
+    var completionId: String? = nil
 
     var isValid: Bool {
         version == 1 && UUID(uuidString: reporterId) != nil && sequence > 0
             && sequence <= 9_007_199_254_740_991
             && (status == .finished ? exitStatus.map { (0...255).contains($0) } == true : exitStatus == nil)
             && (!hasRunningSubagents || status == .running || status == .awaitingInput)
+            && (completionId == nil || (status == .finished
+                && completionId.flatMap(UUID.init(uuidString:)) != nil))
     }
 }
 
@@ -92,15 +96,26 @@ final class PiSessionArchives: ObservableObject {
     @Published private var refreshingTitleIDs: Set<String> = []
     private var timer: Timer?
     private let discoveryRoot: URL
+    private let fillsMissingTitles: () -> Bool
+    private var automaticTitleTasks: [String: Task<Void, Never>] = [:]
+    private var automaticTitleAttempts: [String: (count: Int, lastAttempt: Date)] = [:]
+    private var titleGeneration = 0
 
-    init(liveRoot: URL = PiSessionArchives.liveRoot) {
+    init(
+        liveRoot: URL = PiSessionArchives.liveRoot,
+        fillsMissingTitles: @escaping () -> Bool = { LocalLLMService.fillsMissingTitles() }
+    ) {
         discoveryRoot = liveRoot
+        self.fillsMissingTitles = fillsMissingTitles
     }
 
     func start() {
         guard timer == nil else { return }
         refresh()
-        let timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in self?.refreshLiveSessions() }
+        let timer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+            self?.refreshLiveSessions()
+            Task { @MainActor [weak self] in self?.fillMissingTitles() }
+        }
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
@@ -108,6 +123,10 @@ final class PiSessionArchives: ObservableObject {
     func stop() {
         timer?.invalidate()
         timer = nil
+        titleGeneration += 1
+        automaticTitleTasks.values.forEach { $0.cancel() }
+        automaticTitleTasks = [:]
+        automaticTitleAttempts = [:]
     }
 
     func refresh() {
@@ -137,6 +156,38 @@ final class PiSessionArchives: ObservableObject {
         }
     }
 
+    /// Requests bounded, missing-only work; the Pi endpoint rechecks its title and idle state.
+    @MainActor
+    private func fillMissingTitles() {
+        guard fillsMissingTitles(), !isBusy else { return }
+        for live in liveSessions {
+            guard automaticTitleTasks.count < 2,
+                  live.supportsTitleBackfill == true, live.canRefreshTitle == true,
+                  live.taskSummary.map(Self.isValidTaskTitle) != true,
+                  !refreshingTitleIDs.contains(live.id), automaticTitleTasks[live.id] == nil else { continue }
+            let matches = liveSessions.filter { candidate in
+                candidate.terminal == live.terminal && (live.terminal == "iTerm2"
+                    ? live.terminalSessionId != nil && candidate.terminalSessionId == live.terminalSessionId
+                    : live.tty != nil && candidate.tty == live.tty)
+            }
+            guard matches.count == 1 else { continue }
+            let key = live.id + ":" + live.sessionId
+            let attempt = automaticTitleAttempts[key]
+            guard (attempt?.count ?? 0) < 2,
+                  attempt.map({ Date().timeIntervalSince($0.lastAttempt) >= 10 }) ?? true else { continue }
+            automaticTitleAttempts[key] = ((attempt?.count ?? 0) + 1, Date())
+            let generation = titleGeneration
+            automaticTitleTasks[live.id] = Task { @MainActor [weak self] in
+                _ = try? await PiArchiveRPC.response(socketPath: live.socketPath, payload: [
+                    "action": "ensureTitle", "token": live.token, "sessionId": live.sessionId,
+                ], timeout: 70)
+                guard let self, titleGeneration == generation else { return }
+                automaticTitleTasks[live.id] = nil
+                refreshLiveSessions()
+            }
+        }
+    }
+
     private func descriptor(for session: TerminalSessionSnapshot, terminal: TerminalApp) -> LivePiSession? {
         let matches = liveSessions.filter { live in
             guard live.terminal == terminal.displayName else { return false }
@@ -158,9 +209,9 @@ final class PiSessionArchives: ObservableObject {
         return name.isEmpty ? "Session" : name
     }
 
-    /// Checks only for nonblank text within the discovery transport bound, not title style.
+    /// Rejects invalid generated labels while keeping archive summaries independent.
     private static func isValidTaskTitle(_ title: String) -> Bool {
-        title.utf16.count <= 16384 && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        LocalLLMService.isValidSessionTitle(title)
     }
 
     /// Whether this Pi instance has a title request in flight from the panel.

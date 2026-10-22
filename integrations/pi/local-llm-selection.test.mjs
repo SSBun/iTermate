@@ -16,8 +16,9 @@ const replyCases = JSON.parse(fs.readFileSync(new URL("./reply-classification-ca
 
 // All HTTP and filesystem operations are isolated mocks; no model or preference is changed.
 async function harness({ configuration = selection("qwen3.5:4b"), inventory = [twoB, fourB],
-  questionReply = '{"label":"question"}', onChat } = {}) {
+  questionReply = '{"label":"question"}', titleReplies = [], onChat } = {}) {
   const requests = [];
+  let titleReplyIndex = 0;
   const unavailable = () => { throw new Error("Unexpected side effect"); };
   const context = createContext({
     Buffer, URL, AbortController, setTimeout, clearTimeout,
@@ -61,8 +62,10 @@ async function harness({ configuration = selection("qwen3.5:4b"), inventory = [t
             payload = { models: inventory };
           } else {
             assert.equal(options.path, "/api/chat");
-            payload = { model: body.model, done: true, done_reason: "stop", message: {
-              content: body.messages[0].content.startsWith("Classify") ? questionReply : "修复分页",
+            const isQuestion = body.messages[0].content.startsWith("Classify");
+            const titleReply = isQuestion ? undefined : titleReplies[titleReplyIndex++];
+            payload = { model: body.model, done: true, done_reason: titleReply?.reason ?? "stop", message: {
+              content: isQuestion ? questionReply : titleReply?.content ?? "修复分页",
             } };
             onChat?.();
           }
@@ -88,6 +91,24 @@ async function harness({ configuration = selection("qwen3.5:4b"), inventory = [t
 }
 
 const title = h => h.api.summarizeTask({}, "[user]\n修复分页", new AbortController().signal);
+
+test("a length-limited first title is only a refinement draft", async () => {
+  const h = await harness({ titleReplies: [
+    { content: "修复分页", reason: "length" }, { content: "重新概括分页", reason: "stop" },
+  ] });
+  assert.equal(await title(h), "重新概括分页");
+  const chats = h.requests.filter(row => row.options.path === "/api/chat");
+  assert.equal(chats.length, 2);
+  assert.match(chats[1].body.messages[1].content, /修复分页/);
+});
+
+test("a length-limited second title fails without another inference", async () => {
+  const h = await harness({ titleReplies: [
+    { content: "多行\n草稿", reason: "stop" }, { content: "截断结果", reason: "length" },
+  ] });
+  await assert.rejects(title(h));
+  assert.equal(h.requests.filter(row => row.options.path === "/api/chat").length, 2);
+});
 
 test("saved 4B choice drives both question and title requests with ten-minute residency", async () => {
   const h = await harness();

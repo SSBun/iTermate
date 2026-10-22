@@ -155,7 +155,7 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
     setMessages: (value) => { messages = value; },
     emit: (name, event = {}) => handlers.get(name)?.(event, ctx),
     setSessionId: (value) => { sessionId = value; },
-    queryStatus: (overrides = {}) => socket.listeners("data")[0](Buffer.from(JSON.stringify({ action: "status", sessionId: descriptor.sessionId, token: descriptor.token, ...overrides }) + "\n")),
+    queryStatus: (overrides = {}, client = socket) => client.listeners("data")[0](Buffer.from(JSON.stringify({ action: "status", sessionId: descriptor.sessionId, token: descriptor.token, ...overrides }) + "\n")),
     get shutdowns() { return shutdowns; },
     get inputBlocked() { return handlers.get("input")({}, ctx)?.action === "handled"; },
     setLeaf: (value) => { leaf = value; }, setBusy: (value) => { busy = value; },
@@ -533,6 +533,26 @@ for (const state of ["idle", "running", "awaitingInput", "finished"]) {
     } finally { await h.dispose(); }
   });
 }
+
+test("completion identity survives readonly queries but changes on the next turn", async () => {
+  const h = await harness();
+  try {
+    await settleTask(h);
+    const first = h.reports.at(-1);
+    assert.equal(first.status, "finished");
+    assert.match(first.completionId, /^[0-9a-f-]{36}$/);
+    await h.queryStatus();
+    await h.queryStatus({}, h.makeClient());
+    assert.equal(h.responses[0].completionId, first.completionId);
+    assert.equal(h.responses[1].completionId, first.completionId);
+    assert.ok(h.responses[1].sequence > h.responses[0].sequence);
+    await h.emit("agent_start");
+    assert.equal(h.reports.at(-1).completionId, undefined);
+    await h.emit("agent_end", { messages: [assistantReply] });
+    await h.emit("agent_settled");
+    assert.notEqual(h.reports.at(-1).completionId, first.completionId);
+  } finally { await h.dispose(); }
+});
 
 test("readonly status rejects invalid token and stale session identity", async () => {
   for (const overrides of [{ token: "wrong" }, { sessionId: "old-session" }]) {

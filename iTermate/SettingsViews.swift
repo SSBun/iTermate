@@ -95,7 +95,6 @@ private struct AppConfig {
     var iTerm2PanelEnabled = true
     var ghosttyPanelEnabled = true
     var accentColorHex: String?
-    var focusedSectionBackgroundOpacity = 0.05
     var statusAnimationPreferences = Dictionary(
         uniqueKeysWithValues: SessionStatusAnimation.allCases.map {
             ($0, SessionStatusAnimationPreferences(style: $0.defaultStyle))
@@ -103,6 +102,7 @@ private struct AppConfig {
     )
     var sessionListStyle: SessionListStyle = .window
     var sectionTitleStyle: SectionTitleStyle = .fullPath
+    var separatesCommandSessions = false
     var showsTabHeaders = true
     var showsSessionTime = true
     var sessionTimeFormat: SessionTimeFormat = .compact
@@ -197,10 +197,6 @@ private struct AppConfig {
                         accentColorHex = color.uppercased()
                     }
                 }
-            case "focused_section_background_opacity":
-                if let opacity = Double(value), opacity.isFinite {
-                    focusedSectionBackgroundOpacity = min(max(opacity, 0), 1)
-                }
             case "session_list_style":
                 if let style = Self.stringValue(String(value)),
                    let parsedStyle = SessionListStyle(rawValue: style) {
@@ -210,6 +206,12 @@ private struct AppConfig {
                 if let style = Self.stringValue(String(value)),
                    let parsedStyle = SectionTitleStyle(rawValue: style) {
                     sectionTitleStyle = parsedStyle
+                }
+            case "separate_command_sessions":
+                if value == "true" {
+                    separatesCommandSessions = true
+                } else if value == "false" {
+                    separatesCommandSessions = false
                 }
             case "shows_tab_headers":
                 if value == "true" {
@@ -278,10 +280,10 @@ private struct AppConfig {
         iterm2_panel_enabled = \(iTerm2PanelEnabled)
         ghostty_panel_enabled = \(ghosttyPanelEnabled)
         accent_color = "\(accentColorHex ?? "system")"
-        focused_section_background_opacity = \(focusedSectionBackgroundOpacity)
         \(statusAnimations)
         session_list_style = \"\(sessionListStyle.rawValue)\"
         section_title_style = \"\(sectionTitleStyle.rawValue)\"
+        separate_command_sessions = \(separatesCommandSessions)
         shows_tab_headers = \(showsTabHeaders)
         shows_session_time = \(showsSessionTime)
         session_time_format = "\(sessionTimeFormat.rawValue)"
@@ -323,12 +325,12 @@ final class AppSettings: ObservableObject {
     @Published private var iTerm2PanelEnabled: Bool
     @Published private var ghosttyPanelEnabled: Bool
     @Published private(set) var accentColorHex: String?
-    @Published private(set) var focusedSectionBackgroundOpacity: Double
     @Published private(set) var statusAnimationPreferences: [
         SessionStatusAnimation: SessionStatusAnimationPreferences
     ]
     @Published private(set) var sessionListStyle: SessionListStyle
     @Published private(set) var sectionTitleStyle: SectionTitleStyle
+    @Published private(set) var separatesCommandSessions: Bool
     @Published private(set) var showsTabHeaders: Bool
     @Published private(set) var showsSessionTime: Bool
     @Published private(set) var sessionTimeFormat: SessionTimeFormat
@@ -351,10 +353,10 @@ final class AppSettings: ObservableObject {
         iTerm2PanelEnabled = config.iTerm2PanelEnabled
         ghosttyPanelEnabled = config.ghosttyPanelEnabled
         accentColorHex = config.accentColorHex
-        focusedSectionBackgroundOpacity = config.focusedSectionBackgroundOpacity
         statusAnimationPreferences = config.statusAnimationPreferences
         sessionListStyle = config.sessionListStyle
         sectionTitleStyle = config.sectionTitleStyle
+        separatesCommandSessions = config.separatesCommandSessions
         showsTabHeaders = config.showsTabHeaders
         showsSessionTime = config.showsSessionTime
         sessionTimeFormat = config.sessionTimeFormat
@@ -465,13 +467,6 @@ final class AppSettings: ObservableObject {
         updateConfig { $0.accentColorHex = accentColorHex }
     }
 
-    func setFocusedSectionBackgroundOpacity(_ opacity: Double) {
-        guard opacity.isFinite else { return }
-        let opacity = min(max(opacity, 0), 1)
-        focusedSectionBackgroundOpacity = opacity
-        updateConfig { $0.focusedSectionBackgroundOpacity = opacity }
-    }
-
     func setStatusAnimationStyle(
         _ style: SessionStatusAnimationStyle,
         for animation: SessionStatusAnimation
@@ -500,6 +495,11 @@ final class AppSettings: ObservableObject {
     func setSectionTitleStyle(_ style: SectionTitleStyle) {
         sectionTitleStyle = style
         updateConfig { $0.sectionTitleStyle = style }
+    }
+
+    func setSeparatesCommandSessions(_ separatesCommandSessions: Bool) {
+        self.separatesCommandSessions = separatesCommandSessions
+        updateConfig { $0.separatesCommandSessions = separatesCommandSessions }
     }
 
     func setShowsTabHeaders(_ showsTabHeaders: Bool) {
@@ -707,7 +707,7 @@ struct SettingsView: View {
 
             LocalLLMSettingsView(service: localModel)
                 .tabItem {
-                    Label("Local Model", systemImage: "brain")
+                    Label("AI", systemImage: "brain")
                 }
 
             StatusAnimationSettingsView(settings: settings)
@@ -938,28 +938,6 @@ private struct GeneralSettingsView: View {
                     }
                 }
 
-                LabeledContent("Focused Section Opacity") {
-                    HStack(spacing: 8) {
-                        Slider(
-                            value: Binding(
-                                get: { settings.focusedSectionBackgroundOpacity },
-                                set: settings.setFocusedSectionBackgroundOpacity
-                            ),
-                            in: 0...1,
-                            step: 0.01
-                        )
-                        .frame(width: 140)
-                        .accessibilityLabel("Focused Section Opacity")
-
-                        Text(
-                            settings.focusedSectionBackgroundOpacity,
-                            format: .percent.precision(.fractionLength(0))
-                        )
-                        .monospacedDigit()
-                        .frame(width: 36, alignment: .trailing)
-                    }
-                }
-
                 Picker(
                     "Panel Font",
                     selection: Binding(
@@ -992,6 +970,14 @@ private struct GeneralSettingsView: View {
             }
 
             Section("Sessions") {
+                Toggle(
+                    "Group Command Sessions Separately",
+                    isOn: Binding(
+                        get: { settings.separatesCommandSessions },
+                        set: settings.setSeparatesCommandSessions
+                    )
+                )
+
                 Toggle(
                     "Show Tab Headers",
                     isOn: Binding(

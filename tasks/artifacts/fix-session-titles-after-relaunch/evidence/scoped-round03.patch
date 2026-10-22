@@ -1,0 +1,174 @@
+--- round02/iTermate/ItermBridge.swift
++++ round03/iTermate/ItermBridge.swift
+@@ -809,26 +809,25 @@
+     func activate(sessionID: String) {
+         let session = windows.flatMap(\.tabs).flatMap(\.sessions).first { $0.id == sessionID }
+         let completion = session.flatMap(codexCompletionAcknowledgement)
++        let terminal = terminalApp ?? .iTerm2
++        let activationIdentity = session?.tty.flatMap { terminalStatusRegistry.activationIdentity(for: $0) }
+         let didActivate: (String?) -> Void = { [weak self] error in
+-            guard error == nil, let self,
+-                  acknowledgeCodexCompletion(completion, tty: session?.tty) else { return }
++            guard error == nil, let self else { return }
++            let acknowledgedCodex = acknowledgeCodexCompletion(completion, tty: session?.tty)
++            var acknowledgedTerminal = false
++            if terminal == .ghostty, let tty = session?.tty, let activationIdentity,
++               ghosttySourceWindows.flatMap(\.tabs).flatMap(\.sessions)
++                .contains(where: { $0.id == sessionID && $0.tty == tty }) {
++                acknowledgedTerminal = terminalStatusRegistry.activate(tty: tty, matching: activationIdentity)
++            }
++            guard acknowledgedCodex || acknowledgedTerminal else { return }
+             publishItermWindows()
+             publishGhosttyWindows()
+         }
+-        switch terminalApp ?? .iTerm2 {
++        switch terminal {
+         case .iTerm2:
+             iTermClient.activate(sessionID: sessionID, completion: didActivate)
+         case .ghostty:
+-            if
+-                let tty = ghosttySourceWindows
+-                    .flatMap(\.tabs)
+-                    .flatMap(\.sessions)
+-                    .first(where: { $0.id == sessionID })?.tty,
+-                let tty = TerminalStatusRegistry.normalizedTTY(tty),
+-                terminalStatusRegistry.activate(tty: tty)
+-            {
+-                publishGhosttyWindows()
+-            }
+             ghosttyClient.activate(terminalID: sessionID, completion: didActivate)
+         }
+     }
+@@ -1303,7 +1302,7 @@
+                         tty: tty, source: .agent, reporterID: observation.reporterId,
+                         sequence: observation.sequence, state: state, exitStatus: observation.exitStatus,
+                         heartbeat: false, hasRunningSubagents: observation.hasRunningSubagents,
+-                        agentKind: .pi
++                        agentKind: .pi, completionID: observation.completionId
+                     )
+                     if terminalStatusRegistry.apply(report, recovering: true) { publishGhosttyWindows() }
+                 }
+@@ -1641,10 +1640,10 @@
+             )
+             // Restoration is independent of the backfill preference and current activity.
+             codexTitleStates[tty] = state
++            // Missing-only backfill needs identity and visible content, not lifecycle certainty.
++            // Long rollouts may omit lifecycle events from the bounded tail after App relaunch.
+             guard generateCodexTitle != nil, let excerpt,
+-                  observation.status == .finished || (state.title == nil && fillsMissingTitles()
+-                    && (observation.status == .idle || observation.status == .interrupted
+-                        || observation.status == .awaitingInput)),
++                  observation.status == .finished || (state.title == nil && fillsMissingTitles()),
+                   state.title != nil || fillsMissingTitles() else { continue }
+             if state.attemptedExcerpt != excerpt {
+                 codexTitleTasks.removeValue(forKey: tty)?.task.cancel()
+@@ -1668,7 +1667,7 @@
+                 processIdentity: processIdentity,
+                 excerpt: excerpt,
+                 requestID: requestID,
+-                requiresFinishedStatus: observation.status == .finished,
++                requiresFinishedStatus: state.title != nil,
+                 reportsFailure: false,
+                 attempt: state.attempts
+             )
+@@ -1752,7 +1751,7 @@
+               state.processIdentity == processIdentity,
+               state.attemptedExcerpt == excerpt,
+               state.requestID == requestID,
+-              manual || (observation.status != .running && (state.title != nil || fillsMissingTitles())) else {
++              manual || state.title != nil || fillsMissingTitles() else {
+             if title != nil {
+                 CodexTitleDiagnostics.shared.recordDiscard(
+                     manual: manual, requestID: requestID, codexPID: processIdentity.pid
+@@ -2001,10 +2000,12 @@
+             let sequence: Int
+             let exitStatus: Int?
+             let hasRunningSubagents: Bool
++            let completionId: String?
+         }
+         let request = Request(sessionId: sessionID, status: observation.status,
+                               reporterId: observation.reporterId, sequence: observation.sequence,
+-                              exitStatus: observation.exitStatus, hasRunningSubagents: observation.hasRunningSubagents)
++                              exitStatus: observation.exitStatus, hasRunningSubagents: observation.hasRunningSubagents,
++                              completionId: observation.completionId)
+         // Recovery observations must not be queued across a disconnect.
+         queue.async { [weak self] in _ = self?.send(request) }
+     }
+--- round02/iTermate/PiSessionArchives.swift
++++ round03/iTermate/PiSessionArchives.swift
+@@ -55,12 +55,15 @@
+     let status: TerminalSessionStatus?
+     let exitStatus: Int?
+     let hasRunningSubagents: Bool
++    var completionId: String? = nil
+ 
+     var isValid: Bool {
+         version == 1 && UUID(uuidString: reporterId) != nil && sequence > 0
+             && sequence <= 9_007_199_254_740_991
+             && (status == .finished ? exitStatus.map { (0...255).contains($0) } == true : exitStatus == nil)
+             && (!hasRunningSubagents || status == .running || status == .awaitingInput)
++            && (completionId == nil || (status == .finished
++                && completionId.flatMap(UUID.init(uuidString:)) != nil))
+     }
+ }
+ 
+--- round02/integrations/pi/iTermate-integration.ts
++++ round03/integrations/pi/iTermate-integration.ts
+@@ -21,6 +21,8 @@
+ const previousDiagnosticLogPath = join(diagnosticDirectory, `${diagnosticLogStem}.previous.log`);
+ const maximumDiagnosticLogBytes = 1024 * 1024;
+ let reportSequence = 0;
++// Unlike transport sequences, this identity survives retries and readonly status queries.
++let completionId = randomUUID();
+ 
+ // Retain the old Decision implementation for restoration; no runtime path may enable it.
+ const legacyDecisionsEnabled = false;
+@@ -172,6 +174,7 @@
+           sessionId: sessionID,
+           reporterId,
+           sequence,
++          completionId: status === "finished" ? completionId : undefined,
+           status,
+           exitStatus,
+           heartbeat,
+@@ -186,6 +189,7 @@
+           agentKind: "pi",
+           reporterId,
+           sequence,
++          completionId: status === "finished" ? completionId : undefined,
+           status,
+           exitStatus,
+           heartbeat,
+@@ -718,7 +722,7 @@
+   ctx: ExtensionContext,
+   canArchive: () => boolean,
+   refresh: () => Promise<void>,
+-  readStatus: () => Promise<{ status: Status | null; exitStatus?: number; hasRunningSubagents: boolean }>,
++  readStatus: () => Promise<{ status: Status | null; exitStatus?: number; hasRunningSubagents: boolean; completionId?: string }>,
+   readTaskSummary: () => string | undefined,
+   refreshTaskSummary: (signal: AbortSignal, onlyIfMissing: boolean) => Promise<string | undefined>,
+ ) {
+@@ -1207,6 +1211,7 @@
+     cancelSummary(true);
+     active = ctx.mode === "tui";
+     baseStatus = "idle";
++    completionId = randomUUID();
+     lastAssistantText = "";
+     agentRunning = false;
+     replyPending = false;
+@@ -1232,6 +1237,7 @@
+               : hasRunningSubagents ? "running" : baseStatus;
+             return {
+               status,
++              completionId: status === "finished" ? completionId : undefined,
+               exitStatus: status === "finished" ? (agentFailed ? 1 : 0) : undefined,
+               hasRunningSubagents: fleetIsFresh && hasRunningSubagents
+                 && (status === "running" || status === "awaitingInput"),
+@@ -1253,6 +1259,7 @@
+   });
+   pi.on("agent_start", () => {
+     cancelSummary();
++    completionId = randomUUID();
+     agentFailed = false;
+     agentRunning = true;
+     lastAssistantText = "";

@@ -188,13 +188,16 @@ final class ItermBridgeTests: XCTestCase {
     }
 
     @MainActor
-    func testRunningCodexManualTitleRefreshKeepsReplacementRequestOwnership() async {
+    func testRunningCodexManualTitleRefreshKeepsReplacementRequestOwnership() async throws {
+        let suite = "iTermate-title-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
         var continuations: [CheckedContinuation<String, Error>] = []
-        let store = ItermStore { _ in
+        let store = ItermStore(titleDefaults: defaults, generateCodexTitle: { _ in
             try await withCheckedThrowingContinuation { continuation in
                 continuations.append(continuation)
             }
-        }
+        })
         defer { store.stop() }
         let identity = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 42)
         let session = TerminalSessionSnapshot(
@@ -238,6 +241,148 @@ final class ItermBridgeTests: XCTestCase {
         continuations[1].resume(returning: "新标题")
         for _ in 0..<100 where store.codexTitleForTesting(session) == nil { await Task.yield() }
         XCTAssertEqual(store.codexTitleForTesting(session), "新标题")
+    }
+
+    @MainActor
+    func testCodexTitleSurvivesAppRelaunchWithBackfillDisabled() async throws {
+        let suite = "iTermate-title-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let session = titleFixtureSession()
+        let identity = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 100)
+        let observation = CodexSessionObservation(status: .finished, changedAt: 1,
+            processIdentity: identity, titleExcerpt: "[user]\n修复分页")
+        let first = ItermStore(titleDefaults: defaults, generateCodexTitle: { _ in "修复分页" })
+        first.prepareCodexTitleRefreshForTesting(session, observation: observation)
+        first.refreshCodexTitle(session)
+        for _ in 0..<100 where first.isRefreshingCodexTitle(session) { await Task.yield() }
+        XCTAssertEqual(first.codexTitleForTesting(session), "修复分页")
+        first.stop()
+
+        var calls = 0
+        let reopened = ItermStore(titleDefaults: defaults, fillsMissingTitles: { false }, generateCodexTitle: { _ in
+            calls += 1
+            return "不应生成"
+        })
+        defer { reopened.stop() }
+        reopened.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
+            status: .running, changedAt: 2, processIdentity: identity
+        ))
+        reopened.scheduleCodexTitlesForTesting()
+        XCTAssertEqual(reopened.codexTitleForTesting(session), "修复分页")
+        XCTAssertEqual(calls, 0)
+
+        let reused = ItermStore(titleDefaults: defaults, fillsMissingTitles: { false })
+        defer { reused.stop() }
+        reused.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
+            status: .finished, changedAt: 2,
+            processIdentity: .init(pid: 42, startedAt: 101), titleExcerpt: observation.titleExcerpt
+        ))
+        reused.scheduleCodexTitlesForTesting()
+        XCTAssertNil(reused.codexTitleForTesting(session))
+    }
+
+    @MainActor
+    func testMissingCodexTitleBackfillHonorsPreferenceAndPreservesExistingTitle() async throws {
+        let suite = "iTermate-title-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var enabled = false
+        var calls = 0
+        let store = ItermStore(titleDefaults: defaults, fillsMissingTitles: { enabled }, generateCodexTitle: { _ in
+            calls += 1
+            return "补全标题"
+        })
+        defer { store.stop() }
+        let session = titleFixtureSession()
+        let identity = CodexSessionMonitor.ProcessIdentity(pid: 43, startedAt: 100)
+        store.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
+            status: .idle, changedAt: 1, processIdentity: identity, titleExcerpt: "[user]\n修复分页"
+        ))
+        store.scheduleCodexTitlesForTesting()
+        XCTAssertFalse(store.isRefreshingCodexTitle(session))
+        enabled = true
+        store.scheduleCodexTitlesForTesting()
+        store.scheduleCodexTitlesForTesting()
+        for _ in 0..<100 where store.isRefreshingCodexTitle(session) { await Task.yield() }
+        XCTAssertEqual(store.codexTitleForTesting(session), "补全标题")
+        XCTAssertEqual(calls, 1)
+        store.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
+            status: .idle, changedAt: 1, processIdentity: identity, titleExcerpt: "[user]\n新的对话"
+        ))
+        store.scheduleCodexTitlesForTesting()
+        XCTAssertFalse(store.isRefreshingCodexTitle(session))
+        XCTAssertEqual(store.codexTitleForTesting(session), "补全标题")
+    }
+
+    @MainActor
+    func testMissingCodexTitleBackfillWorksWithUnknownOrRunningStatus() async throws {
+        for status: TerminalSessionStatus? in [nil, .running] {
+            let suite = "iTermate-title-\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            var enabled = false
+            var calls = 0
+            let store = ItermStore(titleDefaults: defaults, fillsMissingTitles: { enabled }, generateCodexTitle: { _ in
+                calls += 1
+                return "恢复任务标题"
+            })
+            defer { store.stop() }
+            let session = titleFixtureSession()
+            store.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
+                status: status, changedAt: nil, processIdentity: .init(pid: 44, startedAt: 100),
+                titleExcerpt: "[user]\n修复分页"
+            ))
+            store.scheduleCodexTitlesForTesting()
+            XCTAssertFalse(store.isRefreshingCodexTitle(session))
+            enabled = true
+            store.scheduleCodexTitlesForTesting()
+            for _ in 0..<100 where store.isRefreshingCodexTitle(session) { await Task.yield() }
+            XCTAssertEqual(store.codexTitleForTesting(session), "恢复任务标题")
+            XCTAssertEqual(calls, 1)
+            store.scheduleCodexTitlesForTesting()
+            XCTAssertFalse(store.isRefreshingCodexTitle(session))
+        }
+    }
+
+    @MainActor
+    func testTitlePreferencePersistsAndDoesNotOverwriteStaleModelSelection() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let first = LocalLLMService(directory: directory)
+        let stale = LocalLLMService(directory: directory)
+        XCTAssertTrue(first.autoFillMissingTitles)
+        first.setAutoFillMissingTitles(false)
+        stale.selectModel(.fourB)
+        let reopened = LocalLLMService(directory: directory)
+        XCTAssertFalse(reopened.autoFillMissingTitles)
+        XCTAssertEqual(reopened.selectedModel, .fourB)
+        first.setAutoFillMissingTitles(true)
+        XCTAssertEqual(LocalLLMService(directory: directory).selectedModel, .fourB)
+        XCTAssertTrue(LocalLLMService.fillsMissingTitles(directory: directory))
+
+        let file = directory.appendingPathComponent("configuration.json")
+        let invalid = Data("invalid configuration".utf8)
+        try invalid.write(to: file)
+        first.setAutoFillMissingTitles(false)
+        stale.selectModel(.twoB)
+        XCTAssertEqual(try Data(contentsOf: file), invalid)
+        XCTAssertFalse(LocalLLMService.fillsMissingTitles(directory: directory))
+        XCTAssertTrue(first.configurationNeedsRepair)
+        first.repairConfiguration()
+        XCTAssertFalse(first.configurationNeedsRepair)
+        XCTAssertEqual(first.selectedModel, .twoB)
+        XCTAssertFalse(first.autoFillMissingTitles)
+        let backups = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+            .filter { $0.lastPathComponent.hasPrefix("configuration-invalid-") }
+        XCTAssertEqual(backups.count, 1)
+        XCTAssertEqual(try Data(contentsOf: XCTUnwrap(backups.first)), invalid)
+    }
+
+    private func titleFixtureSession() -> TerminalSessionSnapshot {
+        TerminalSessionSnapshot(id: "title-pane", name: "zsh", path: "/tmp/project", tty: "/dev/title-test",
+            windowId: "window", tabId: "tab", isActive: false, isMinimized: false,
+            status: .idle, activityKind: .agent, exitStatus: nil, statusChangedAt: nil, agentKind: .codex)
     }
 
     func testDecodesEnvironmentIdentityWithoutInferringFromTitle() throws {
@@ -743,6 +888,93 @@ final class ItermBridgeTests: XCTestCase {
             pinnedPathGroups.map(\.title),
             ["/repo/subdirectory", "/repo", "Unknown Path"]
         )
+    }
+
+    func testSeparatesCommandSessionsAfterAgentGroups() throws {
+        let groups = SessionGrouping.groups(
+            from: try hierarchySnapshot(),
+            style: .projectPath,
+            separatesCommandSessions: true
+        )
+
+        XCTAssertEqual(groups.map(\.title), ["/repo", "Commands"])
+        XCTAssertEqual(groups[0].sessions.map(\.session.id), ["session-1"])
+        XCTAssertEqual(
+            groups[1].sessions.map(\.session.id),
+            ["session-3", "session-2", "session-4"]
+        )
+        XCTAssertEqual(groups[1].tabIDs, ["tab-3", "tab-2"])
+    }
+
+    func testCommandSessionsSortByDirectoryAndKeepMatchingPathsTogether() throws {
+        let message = try JSONDecoder().decode(
+            BridgeMessage.self,
+            from: Data(
+                """
+                {
+                  "type": "snapshot",
+                  "sequence": 1,
+                  "windows": [{
+                    "id": "window-1",
+                    "number": 1,
+                    "isActive": true,
+                    "tabs": [{
+                      "id": "tab-1",
+                      "title": "One",
+                      "isSelected": true,
+                      "sessions": [
+                        {"id":"zeta","name":"zsh","path":"/work/Zeta","isActive":true},
+                        {"id":"work-alpha-1","name":"zsh","path":"/work/alpha","isActive":false}
+                      ]
+                    }, {
+                      "id": "tab-2",
+                      "title": "Two",
+                      "isSelected": false,
+                      "sessions": [
+                        {"id":"work-alpha-2","name":"zsh","path":"/work/alpha","isActive":true}
+                      ]
+                    }, {
+                      "id": "tab-3",
+                      "title": "Three",
+                      "isSelected": false,
+                      "sessions": [
+                        {"id":"other-alpha","name":"zsh","path":"/other/Alpha","isActive":true}
+                      ]
+                    }]
+                  }]
+                }
+                """.utf8
+            )
+        )
+
+        let commands = try XCTUnwrap(SessionGrouping.groups(
+            from: message.windows ?? [],
+            style: .window,
+            separatesCommandSessions: true
+        ).last)
+
+        XCTAssertEqual(
+            commands.sessions.map(\.session.id),
+            ["other-alpha", "work-alpha-1", "work-alpha-2", "zeta"]
+        )
+        XCTAssertEqual(
+            commands.blocks(groupedByPath: true).flatMap(\.sessions).map(\.session.id),
+            ["other-alpha", "work-alpha-1", "work-alpha-2", "zeta"]
+        )
+    }
+
+    func testWorkingDirectoryNameUsesFinalPathComponentAndPreservesRoot() throws {
+        let directory = try JSONDecoder().decode(
+            TerminalSessionSnapshot.self,
+            from: Data(#"{"id":"directory","name":"zsh","path":"/Users/test/project","isActive":true}"#.utf8)
+        )
+        let root = try JSONDecoder().decode(
+            TerminalSessionSnapshot.self,
+            from: Data(#"{"id":"root","name":"zsh","path":"/","isActive":true}"#.utf8)
+        )
+
+        XCTAssertEqual(directory.workingDirectoryName, "project")
+        XCTAssertEqual(root.workingDirectoryName, "/")
     }
 
     func testProjectPathClustersSplitPaneSessionsOfSameTab() throws {

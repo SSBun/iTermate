@@ -1,6 +1,16 @@
 # 任务索引
 
-- [保存全部本地改动并实现紧凑项目面板布局](tasks/implement-compact-project-panel.md) — In Progress (2026-10-22 14:18)
+- [提交当前全部本地改动](tasks/commit-current-local-changes.md) — In Progress (2026-10-22 16:54)
+
+- [通过本地模型重新摘要不合格的实时会话标题](tasks/resummarize-invalid-session-titles.md) — Completed (2026-10-22 16:44)
+
+- [将普通命令会话归入独立分区](tasks/separate-command-sessions-section.md) — Completed (2026-10-22 16:13)
+
+- [修复重启后摘要标题缺失并自动补全无标题会话](tasks/fix-session-titles-after-relaunch.md) — Completed (2026-10-22 16:32)
+
+- [定位面板标题在有剩余空间时提前截断的原因](tasks/investigate-premature-session-title-truncation.md) — Pending (2026-10-22 15:39)
+
+- [保存全部本地改动并实现紧凑项目面板布局](tasks/implement-compact-project-panel.md) — Completed (2026-10-22 14:45)
 
 - [将本地提交完成报告加入问题分类回归并修正提示词](tasks/classify-local-commit-report-as-normal.md) — Completed (2026-10-22 11:54)
 

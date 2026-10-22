@@ -5718,3 +5718,580 @@ time=2026-10-22T14:18:58.471+08:00 level=INFO source=pipeline.go:228 msg="Prompt
 time=2026-10-22T14:18:58.893+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.12 GiB" held="3.32 GiB"
 time=2026-10-22T14:18:58.894+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.831830375s status="200 OK"
 time=2026-10-22T14:28:58.869+08:00 level=INFO source=client.go:151 msg="stopping mlx runner subprocess" pid=47656
+[GIN] 2026/10/22 - 14:39:39 | 200 |   23.011833ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:39:39.683+08:00 level=INFO source=sched.go:664 msg="system memory" total="32.0 GiB" free="6.5 GiB" free_swap="0 B"
+time=2026-10-22T14:39:39.683+08:00 level=INFO source=sched.go:671 msg="gpu memory" id=0 library=Metal available="24.5 GiB" free="25.0 GiB" minimum="512.0 MiB" overhead="0 B"
+time=2026-10-22T14:39:39.685+08:00 level=INFO source=client.go:517 msg="starting mlx runner subprocess" model=qwen3.5:2b port=49434
+time=2026-10-22T14:39:39.687+08:00 level=INFO source=images.go:422 msg="template selection" model=registry.ollama.ai/library/qwen3.5:2b selected=renderer_parser renderer=qwen3.5 parser=qwen3.5 go_template=null chat_template=null harmony=null renderer_parser="[completion vision thinking tools]"
+time=2026-10-22T14:39:39.689+08:00 level=INFO source=sched.go:788 msg="loaded runners" count=1
+time=2026-10-22T14:39:39.762+08:00 level=INFO source=server.go:46 msg="MLX engine initialized" "MLX version"=0.32.4 device=gpu
+time=2026-10-22T14:39:39.865+08:00 level=INFO source=model.go:137 msg="Model architecture" arch=Qwen3_5ForConditionalGeneration
+time=2026-10-22T14:39:40.166+08:00 level=INFO source=runner.go:285 msg="Loaded tensors from manifest" count=767
+time=2026-10-22T14:39:41.781+08:00 level=WARN source=grammar.go:74 msg="Structured output is unavailable" error="xgrammar library not found at /opt/homebrew/Cellar/ollama/0.40.6/libexec/lib/ollama/mlx_metal_v3/libollama_xgrammar.dylib: stat /opt/homebrew/Cellar/ollama/0.40.6/libexec/lib/ollama/mlx_metal_v3/libollama_xgrammar.dylib: no such file or directory"
+time=2026-10-22T14:39:42.199+08:00 level=INFO source=runner.go:331 msg="Starting HTTP server" host=127.0.0.1 port=49434
+time=2026-10-22T14:39:42.292+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=231.25µs status="200 OK"
+time=2026-10-22T14:39:42.292+08:00 level=INFO source=client.go:112 msg="mlx runner is ready" port=49434
+time=2026-10-22T14:39:42.298+08:00 level=INFO source=prefix_cache.go:151 msg="cache miss" total=677 matched=0 cached=0 left=677
+time=2026-10-22T14:39:43.070+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=676 total=677
+[GIN] 2026/10/22 - 14:39:43 | 200 |  3.632026042s |       127.0.0.1 | POST     "/api/chat"
+time=2026-10-22T14:39:43.349+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.67 GiB" held="2.93 GiB"
+time=2026-10-22T14:39:43.349+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.055787958s status="200 OK"
+[GIN] 2026/10/22 - 14:39:43 | 200 |     25.4815ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 14:42:10 | 200 |    9.422042ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:42:10.063+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=1.928791ms status="200 OK"
+time=2026-10-22T14:42:10.070+08:00 level=INFO source=prefix_cache.go:151 msg="cache miss" total=147 matched=3 cached=0 left=147
+time=2026-10-22T14:42:10.252+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=146 total=147
+[GIN] 2026/10/22 - 14:42:10 | 200 |  389.885042ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 14:42:10 | 200 |    4.211084ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:42:10.475+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.18 GiB" held="2.99 GiB"
+time=2026-10-22T14:42:10.475+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=410.62375ms status="200 OK"
+[GIN] 2026/10/22 - 14:42:11 | 200 |   12.814292ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:42:11.970+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=89.167µs status="200 OK"
+time=2026-10-22T14:42:11.972+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=543 matched=12 cached=3 left=540
+time=2026-10-22T14:42:12.583+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=539 total=540
+[GIN] 2026/10/22 - 14:42:12 | 200 |  842.083375ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 14:42:12 | 200 |      6.1125ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:42:12.843+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.68 GiB" held="3.05 GiB"
+time=2026-10-22T14:42:12.843+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=872.497292ms status="200 OK"
+[GIN] 2026/10/22 - 14:45:22 | 200 |    44.70975ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:45:22.625+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=5.364833ms status="200 OK"
+time=2026-10-22T14:45:22.638+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=214 matched=95 cached=3 left=211
+time=2026-10-22T14:45:22.991+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=210 total=211
+[GIN] 2026/10/22 - 14:45:23 | 200 |  696.190833ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 14:45:23 | 200 |    7.852417ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:45:23.339+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.33 GiB" held="3.11 GiB"
+time=2026-10-22T14:45:23.339+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=710.491875ms status="200 OK"
+[GIN] 2026/10/22 - 14:45:24 | 200 |     4.52725ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:45:24.817+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=42.458µs status="200 OK"
+time=2026-10-22T14:45:24.828+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=668 matched=282 cached=12 left=656
+time=2026-10-22T14:45:25.720+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=655 total=656
+[GIN] 2026/10/22 - 14:45:28 | 200 |  3.880975666s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 14:45:28 | 200 |   33.657125ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:45:28.739+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.72 GiB" held="3.17 GiB"
+time=2026-10-22T14:45:28.741+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=3.921005667s status="200 OK"
+time=2026-10-22T14:55:28.924+08:00 level=INFO source=client.go:151 msg="stopping mlx runner subprocess" pid=62899
+[GIN] 2026/10/22 - 14:56:38 | 200 |   22.146083ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:56:38.232+08:00 level=INFO source=sched.go:664 msg="system memory" total="32.0 GiB" free="6.3 GiB" free_swap="0 B"
+time=2026-10-22T14:56:38.233+08:00 level=INFO source=sched.go:671 msg="gpu memory" id=0 library=Metal available="24.5 GiB" free="25.0 GiB" minimum="512.0 MiB" overhead="0 B"
+time=2026-10-22T14:56:38.235+08:00 level=INFO source=client.go:517 msg="starting mlx runner subprocess" model=qwen3.5:2b port=60255
+time=2026-10-22T14:56:38.237+08:00 level=INFO source=images.go:422 msg="template selection" model=registry.ollama.ai/library/qwen3.5:2b selected=renderer_parser renderer=qwen3.5 parser=qwen3.5 go_template=null chat_template=null harmony=null renderer_parser="[completion vision thinking tools]"
+time=2026-10-22T14:56:38.238+08:00 level=INFO source=sched.go:788 msg="loaded runners" count=1
+time=2026-10-22T14:56:38.312+08:00 level=INFO source=server.go:46 msg="MLX engine initialized" "MLX version"=0.32.4 device=gpu
+time=2026-10-22T14:56:38.430+08:00 level=INFO source=model.go:137 msg="Model architecture" arch=Qwen3_5ForConditionalGeneration
+time=2026-10-22T14:56:38.613+08:00 level=INFO source=runner.go:285 msg="Loaded tensors from manifest" count=767
+time=2026-10-22T14:56:40.054+08:00 level=WARN source=grammar.go:74 msg="Structured output is unavailable" error="xgrammar library not found at /opt/homebrew/Cellar/ollama/0.40.6/libexec/lib/ollama/mlx_metal_v3/libollama_xgrammar.dylib: stat /opt/homebrew/Cellar/ollama/0.40.6/libexec/lib/ollama/mlx_metal_v3/libollama_xgrammar.dylib: no such file or directory"
+time=2026-10-22T14:56:40.558+08:00 level=INFO source=runner.go:331 msg="Starting HTTP server" host=127.0.0.1 port=60255
+time=2026-10-22T14:56:40.641+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=370.667µs status="200 OK"
+time=2026-10-22T14:56:40.642+08:00 level=INFO source=client.go:112 msg="mlx runner is ready" port=60255
+[GIN] 2026/10/22 - 14:56:40 | 200 |  2.416203375s |       127.0.0.1 | POST     "/api/generate"
+[GIN] 2026/10/22 - 14:56:40 | 200 |    6.634416ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 14:56:42 | 200 |    7.528959ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 14:56:42 | 200 |    8.486625ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:56:42.547+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=77.459µs status="200 OK"
+time=2026-10-22T14:56:42.548+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=41.375µs status="200 OK"
+time=2026-10-22T14:56:42.550+08:00 level=INFO source=prefix_cache.go:151 msg="cache miss" total=832 matched=0 cached=0 left=832
+time=2026-10-22T14:56:43.490+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=831 total=832
+[GIN] 2026/10/22 - 14:56:43 | 200 |  1.135127458s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 14:56:43 | 200 |    5.035917ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:56:43.714+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.70 GiB" held="2.93 GiB"
+time=2026-10-22T14:56:43.714+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.166054791s status="200 OK"
+time=2026-10-22T14:56:43.714+08:00 level=INFO source=prefix_cache.go:151 msg="cache miss" total=838 matched=310 cached=0 left=838
+time=2026-10-22T14:56:44.673+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=837 total=838
+[GIN] 2026/10/22 - 14:56:45 | 200 |  2.594760459s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 14:56:45 | 200 |    6.894417ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T14:56:45.182+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.67 GiB" held="3.00 GiB"
+time=2026-10-22T14:56:45.182+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=2.633473916s status="200 OK"
+time=2026-10-22T15:06:45.168+08:00 level=INFO source=client.go:151 msg="stopping mlx runner subprocess" pid=21047
+[GIN] 2026/10/22 - 15:38:09 | 200 |     21.6925ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:38:09.137+08:00 level=INFO source=sched.go:664 msg="system memory" total="32.0 GiB" free="7.1 GiB" free_swap="0 B"
+time=2026-10-22T15:38:09.137+08:00 level=INFO source=sched.go:671 msg="gpu memory" id=0 library=Metal available="24.5 GiB" free="25.0 GiB" minimum="512.0 MiB" overhead="0 B"
+time=2026-10-22T15:38:09.139+08:00 level=INFO source=client.go:517 msg="starting mlx runner subprocess" model=qwen3.5:2b port=53754
+time=2026-10-22T15:38:09.142+08:00 level=INFO source=images.go:422 msg="template selection" model=registry.ollama.ai/library/qwen3.5:2b selected=renderer_parser renderer=qwen3.5 parser=qwen3.5 go_template=null chat_template=null harmony=null renderer_parser="[completion vision thinking tools]"
+time=2026-10-22T15:38:09.143+08:00 level=INFO source=sched.go:788 msg="loaded runners" count=1
+time=2026-10-22T15:38:09.278+08:00 level=INFO source=server.go:46 msg="MLX engine initialized" "MLX version"=0.32.4 device=gpu
+time=2026-10-22T15:38:09.379+08:00 level=INFO source=model.go:137 msg="Model architecture" arch=Qwen3_5ForConditionalGeneration
+time=2026-10-22T15:38:09.529+08:00 level=INFO source=runner.go:285 msg="Loaded tensors from manifest" count=767
+time=2026-10-22T15:38:10.753+08:00 level=WARN source=grammar.go:74 msg="Structured output is unavailable" error="xgrammar library not found at /opt/homebrew/Cellar/ollama/0.40.6/libexec/lib/ollama/mlx_metal_v3/libollama_xgrammar.dylib: stat /opt/homebrew/Cellar/ollama/0.40.6/libexec/lib/ollama/mlx_metal_v3/libollama_xgrammar.dylib: no such file or directory"
+time=2026-10-22T15:38:11.212+08:00 level=INFO source=runner.go:331 msg="Starting HTTP server" host=127.0.0.1 port=53754
+time=2026-10-22T15:38:11.245+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=124.708µs status="200 OK"
+time=2026-10-22T15:38:11.245+08:00 level=INFO source=client.go:112 msg="mlx runner is ready" port=53754
+time=2026-10-22T15:38:11.248+08:00 level=INFO source=prefix_cache.go:151 msg="cache miss" total=668 matched=0 cached=0 left=668
+time=2026-10-22T15:38:11.999+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=667 total=668
+[GIN] 2026/10/22 - 15:38:14 | 200 |  5.151248208s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:38:14 | 200 |     5.58125ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:38:14.310+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.66 GiB" held="2.93 GiB"
+time=2026-10-22T15:38:14.310+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=3.06327s status="200 OK"
+[GIN] 2026/10/22 - 15:38:26 | 200 |   11.073417ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:38:26.752+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=77.708µs status="200 OK"
+time=2026-10-22T15:38:26.753+08:00 level=INFO source=prefix_cache.go:151 msg="cache miss" total=1004 matched=12 cached=0 left=1004
+time=2026-10-22T15:38:27.921+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=1003 total=1004
+[GIN] 2026/10/22 - 15:38:28 | 200 |   1.46198025s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:38:28 | 200 |    4.824333ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:38:28.240+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.73 GiB" held="3.01 GiB"
+time=2026-10-22T15:38:28.240+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.487695541s status="200 OK"
+[GIN] 2026/10/22 - 15:39:54 | 200 |   10.187333ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:39:54.693+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=352.083µs status="200 OK"
+time=2026-10-22T15:39:54.697+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=424 matched=310 cached=12 left=412
+time=2026-10-22T15:39:55.184+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=411 total=412
+[GIN] 2026/10/22 - 15:39:55 | 200 |  667.523833ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:39:55 | 200 |      5.8165ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:39:55.394+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.49 GiB" held="3.07 GiB"
+time=2026-10-22T15:39:55.394+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=700.99925ms status="200 OK"
+[GIN] 2026/10/22 - 15:40:14 | 200 |    5.299834ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:40:14.292+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=702.709µs status="200 OK"
+time=2026-10-22T15:40:14.294+08:00 level=INFO source=prefix_cache.go:151 msg="cache miss" total=208 matched=3 cached=0 left=208
+time=2026-10-22T15:40:14.591+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=207 total=208
+[GIN] 2026/10/22 - 15:40:14 | 200 |  562.806542ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:40:14 | 200 |    3.670958ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:40:14.888+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.40 GiB" held="3.13 GiB"
+time=2026-10-22T15:40:14.888+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=595.779791ms status="200 OK"
+[GIN] 2026/10/22 - 15:40:16 | 200 |    7.766459ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:40:16.370+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=47.25µs status="200 OK"
+time=2026-10-22T15:40:16.374+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=712 matched=136 cached=12 left=700
+time=2026-10-22T15:40:17.180+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=699 total=700
+[GIN] 2026/10/22 - 15:40:17 | 200 |  1.456341834s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:40:17 | 200 |   11.047166ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:40:17.858+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.78 GiB" held="3.19 GiB"
+time=2026-10-22T15:40:17.858+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.487082417s status="200 OK"
+[GIN] 2026/10/22 - 15:44:34 | 200 |   30.759042ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:44:34.899+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=4.985334ms status="200 OK"
+time=2026-10-22T15:44:34.916+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1297 matched=314 cached=310 left=987
+time=2026-10-22T15:44:36.123+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=986 total=987
+[GIN] 2026/10/22 - 15:44:36 | 200 |  1.411068542s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:44:36 | 200 |    8.643125ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:44:36.338+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.04 GiB" held="3.25 GiB"
+time=2026-10-22T15:44:36.339+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.436291375s status="200 OK"
+[GIN] 2026/10/22 - 15:45:16 | 200 |   11.208667ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:45:16.746+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=576.584µs status="200 OK"
+time=2026-10-22T15:45:16.753+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=314 matched=95 cached=3 left=311
+time=2026-10-22T15:45:17.122+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=310 total=311
+[GIN] 2026/10/22 - 15:45:17 | 200 |  626.370041ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:45:17 | 200 |    3.734542ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:45:17.405+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.62 GiB" held="3.32 GiB"
+time=2026-10-22T15:45:17.405+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=656.606084ms status="200 OK"
+[GIN] 2026/10/22 - 15:45:18 | 200 |    8.657084ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:45:18.897+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=41.625µs status="200 OK"
+time=2026-10-22T15:45:18.901+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=829 matched=136 cached=136 left=693
+time=2026-10-22T15:45:19.786+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=692 total=693
+[GIN] 2026/10/22 - 15:45:20 | 200 |  1.193954042s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:45:20 | 200 |    4.311583ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:45:20.125+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.05 GiB" held="3.36 GiB"
+time=2026-10-22T15:45:20.125+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.226880209s status="200 OK"
+[GIN] 2026/10/22 - 15:45:44 | 200 |    6.020583ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:45:44.855+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=58.084µs status="200 OK"
+time=2026-10-22T15:45:44.858+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=809 matched=314 cached=314 left=495
+time=2026-10-22T15:45:45.459+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=494 total=495
+[GIN] 2026/10/22 - 15:45:45 | 200 |  966.451834ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:45:45 | 200 |   10.779875ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:45:45.858+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.02 GiB" held="3.40 GiB"
+time=2026-10-22T15:45:45.858+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.00243025s status="200 OK"
+[GIN] 2026/10/22 - 15:48:44 | 200 |     46.5065ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:48:44.558+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=4.376084ms status="200 OK"
+time=2026-10-22T15:48:44.677+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=241 matched=95 cached=95 left=146
+time=2026-10-22T15:48:44.908+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=145 total=146
+[GIN] 2026/10/22 - 15:48:45 | 200 |  625.770792ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:48:45 | 200 |    7.251875ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:48:45.203+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.63 GiB" held="3.44 GiB"
+time=2026-10-22T15:48:45.203+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=612.905125ms status="200 OK"
+[GIN] 2026/10/22 - 15:48:46 | 200 |   12.078167ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:48:46.698+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=83.5µs status="200 OK"
+time=2026-10-22T15:48:46.714+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=883 matched=136 cached=136 left=747
+time=2026-10-22T15:48:47.630+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=746 total=747
+[GIN] 2026/10/22 - 15:48:47 | 200 |  1.276545083s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:48:47 | 200 |   14.243083ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:48:48.017+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.19 GiB" held="3.48 GiB"
+time=2026-10-22T15:48:48.017+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.318330791s status="200 OK"
+[GIN] 2026/10/22 - 15:50:22 | 200 |   21.442916ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:50:22.874+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=2.714709ms status="200 OK"
+time=2026-10-22T15:50:22.887+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=775 matched=313 cached=310 left=465
+time=2026-10-22T15:50:23.469+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=464 total=465
+[GIN] 2026/10/22 - 15:50:23 | 200 |     776.375ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:50:23 | 200 |    7.012708ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:50:23.674+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.10 GiB" held="3.55 GiB"
+time=2026-10-22T15:50:23.674+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=797.923208ms status="200 OK"
+[GIN] 2026/10/22 - 15:50:44 | 200 |    4.713125ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:50:44.899+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=228.709µs status="200 OK"
+time=2026-10-22T15:50:44.908+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1015 matched=314 cached=314 left=701
+time=2026-10-22T15:50:45.773+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=700 total=701
+[GIN] 2026/10/22 - 15:50:45 | 200 |  1.042387583s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:50:45 | 200 |    3.820709ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:50:45.972+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.29 GiB" held="3.59 GiB"
+time=2026-10-22T15:50:45.972+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.071921083s status="200 OK"
+[GIN] 2026/10/22 - 15:51:12 | 200 |   44.787792ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:51:12.701+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=247.291µs status="200 OK"
+[GIN] 2026/10/22 - 15:51:12 | 200 |       2.142ms |       127.0.0.1 | POST     "/api/generate"
+[GIN] 2026/10/22 - 15:51:12 | 200 |   10.988291ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 15:51:17 | 200 |   16.170875ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 15:51:17 | 200 |   20.758375ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 15:51:17 | 200 |   21.157917ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:51:17.627+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=5.247875ms status="200 OK"
+time=2026-10-22T15:51:17.631+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=1.298584ms status="200 OK"
+time=2026-10-22T15:51:17.633+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=1.652209ms status="200 OK"
+time=2026-10-22T15:51:17.646+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1004 matched=1004 cached=1000 left=4
+time=2026-10-22T15:51:17.712+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=3 total=4
+[GIN] 2026/10/22 - 15:51:18 | 200 |  484.778667ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:51:18 | 200 |   12.275708ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:51:18.152+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.66 GiB" held="3.61 GiB"
+time=2026-10-22T15:51:18.153+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=522.029417ms status="200 OK"
+time=2026-10-22T15:51:18.154+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1015 matched=1015 cached=1011 left=4
+time=2026-10-22T15:51:18.189+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=3 total=4
+[GIN] 2026/10/22 - 15:51:18 | 200 |  754.689375ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:51:18 | 200 |    6.516292ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:51:18.422+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.65 GiB" held="3.61 GiB"
+time=2026-10-22T15:51:18.422+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=786.58125ms status="200 OK"
+time=2026-10-22T15:51:18.423+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=775 matched=775 cached=771 left=4
+time=2026-10-22T15:51:18.453+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=3 total=4
+[GIN] 2026/10/22 - 15:51:18 | 200 |  1.017906334s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:51:18 | 200 |    6.295458ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:51:18.684+08:00 level=INFO source=pipeline.go:110 msg=memory peak="3.65 GiB" held="3.61 GiB"
+time=2026-10-22T15:51:18.684+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.042538334s status="200 OK"
+[GIN] 2026/10/22 - 15:53:30 | 200 |   24.727083ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:53:30.798+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=3.487125ms status="200 OK"
+time=2026-10-22T15:53:30.810+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=659 matched=313 cached=313 left=346
+time=2026-10-22T15:53:31.265+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=345 total=346
+[GIN] 2026/10/22 - 15:53:31 | 200 |  864.028041ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 15:53:31 | 200 |      5.3705ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T15:53:31.694+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.09 GiB" held="3.63 GiB"
+time=2026-10-22T15:53:31.695+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=893.738083ms status="200 OK"
+[GIN] 2026/10/22 - 16:00:09 | 200 |    33.19625ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:00:09.065+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=4.255084ms status="200 OK"
+time=2026-10-22T16:00:09.085+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=860 matched=314 cached=314 left=546
+time=2026-10-22T16:00:09.836+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=545 total=546
+[GIN] 2026/10/22 - 16:00:10 | 200 |  1.039155041s |       127.0.0.1 | POST     "/api/chat"
+time=2026-10-22T16:00:10.241+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.172727833s status="200 OK"
+time=2026-10-22T16:00:10.243+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.32 GiB" held="3.67 GiB"
+[GIN] 2026/10/22 - 16:00:10 | 200 |  259.529834ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 16:01:10 | 200 |    10.85075ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:01:10.539+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=272.042µs status="200 OK"
+time=2026-10-22T16:01:10.545+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=775 matched=93 cached=12 left=763
+time=2026-10-22T16:01:11.512+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=762 total=763
+[GIN] 2026/10/22 - 16:01:11 | 200 |    1.1763635s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:01:11 | 200 |    4.669083ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:01:11.742+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.38 GiB" held="3.74 GiB"
+time=2026-10-22T16:01:11.742+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.201003959s status="200 OK"
+[GIN] 2026/10/22 - 16:02:18 | 200 |    16.00775ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:02:18.830+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=516.875µs status="200 OK"
+time=2026-10-22T16:02:18.843+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=936 matched=319 cached=313 left=623
+time=2026-10-22T16:02:20.044+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=622 total=623
+[GIN] 2026/10/22 - 16:02:20 | 200 |  1.511710667s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:02:20 | 200 |    5.458542ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:02:20.375+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.48 GiB" held="3.80 GiB"
+time=2026-10-22T16:02:20.375+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.544067375s status="200 OK"
+[GIN] 2026/10/22 - 16:03:34 | 200 |    8.601667ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:03:34.817+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=96.25µs status="200 OK"
+time=2026-10-22T16:03:34.819+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=827 matched=315 cached=313 left=514
+time=2026-10-22T16:03:35.569+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=513 total=514
+[GIN] 2026/10/22 - 16:03:35 | 200 |  1.054860375s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:03:35 | 200 |    9.247833ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:03:35.908+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.47 GiB" held="3.86 GiB"
+time=2026-10-22T16:03:35.908+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.090300417s status="200 OK"
+[GIN] 2026/10/22 - 16:05:18 | 200 |    9.351666ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:05:18.787+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=176.708µs status="200 OK"
+time=2026-10-22T16:05:18.793+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=973 matched=314 cached=314 left=659
+time=2026-10-22T16:05:19.688+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=658 total=659
+[GIN] 2026/10/22 - 16:05:19 | 200 |  1.123624375s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:05:19 | 200 |    9.027125ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:05:19.946+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.63 GiB" held="3.90 GiB"
+time=2026-10-22T16:05:19.946+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.158722959s status="200 OK"
+[GIN] 2026/10/22 - 16:06:27 | 200 |     9.61675ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:06:27.732+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=99.333µs status="200 OK"
+time=2026-10-22T16:06:27.734+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=156 matched=95 cached=95 left=61
+time=2026-10-22T16:06:27.828+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=60 total=61
+[GIN] 2026/10/22 - 16:06:28 | 200 |  339.649084ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:06:28 | 200 |    4.719584ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:06:28.107+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.06 GiB" held="3.94 GiB"
+time=2026-10-22T16:06:28.107+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=373.902625ms status="200 OK"
+[GIN] 2026/10/22 - 16:06:29 | 200 |    6.196334ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:06:29.586+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=47.209µs status="200 OK"
+time=2026-10-22T16:06:29.589+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=672 matched=170 cached=136 left=536
+time=2026-10-22T16:06:30.245+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=535 total=536
+[GIN] 2026/10/22 - 16:06:30 | 200 |  965.724875ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:06:30 | 200 |    4.557041ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:06:30.585+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.52 GiB" held="4.00 GiB"
+time=2026-10-22T16:06:30.585+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=997.88275ms status="200 OK"
+[GIN] 2026/10/22 - 16:06:46 | 200 |    5.995375ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:06:46.816+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=82.041µs status="200 OK"
+time=2026-10-22T16:06:46.819+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=684 matched=314 cached=314 left=370
+time=2026-10-22T16:06:47.331+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=369 total=370
+[GIN] 2026/10/22 - 16:06:47 | 200 |  914.771959ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:06:47 | 200 |    8.526083ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:06:47.786+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=968.2845ms status="200 OK"
+time=2026-10-22T16:06:47.798+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.53 GiB" held="4.05 GiB"
+[GIN] 2026/10/22 - 16:07:47 | 200 |   11.274875ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:07:47.670+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=1.1345ms status="200 OK"
+[GIN] 2026/10/22 - 16:07:47 | 200 |    4.161583ms |       127.0.0.1 | POST     "/api/generate"
+[GIN] 2026/10/22 - 16:07:47 | 200 |      4.8105ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 16:09:29 | 200 |   25.743417ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:09:29.794+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=3.040375ms status="200 OK"
+time=2026-10-22T16:09:29.805+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=754 matched=93 cached=93 left=661
+time=2026-10-22T16:09:30.555+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=660 total=661
+[GIN] 2026/10/22 - 16:09:30 | 200 |  1.038197833s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:09:30 | 200 |   10.271708ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:09:30.865+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.81 GiB" held="4.09 GiB"
+time=2026-10-22T16:09:30.865+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.068293667s status="200 OK"
+[GIN] 2026/10/22 - 16:10:46 | 200 |   10.002084ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:10:46.010+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=255.875µs status="200 OK"
+time=2026-10-22T16:10:46.015+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1184 matched=14 cached=3 left=1181
+time=2026-10-22T16:10:47.420+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=1180 total=1181
+[GIN] 2026/10/22 - 16:10:47 | 200 |  1.779937792s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:10:47 | 200 |   11.221292ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:10:47.839+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.828252875s status="200 OK"
+time=2026-10-22T16:10:47.840+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.07 GiB" held="4.15 GiB"
+[GIN] 2026/10/22 - 16:10:49 | 200 |     4.54775ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:10:49.312+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=58.416µs status="200 OK"
+time=2026-10-22T16:10:49.314+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=577 matched=118 cached=93 left=484
+time=2026-10-22T16:10:49.936+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=483 total=484
+[GIN] 2026/10/22 - 16:10:50 | 200 |  1.141295375s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:10:50 | 200 |    6.198125ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:10:50.486+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.69 GiB" held="4.22 GiB"
+time=2026-10-22T16:10:50.486+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.173273209s status="200 OK"
+[GIN] 2026/10/22 - 16:10:57 | 200 |    4.348292ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:10:57.913+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=50.209µs status="200 OK"
+time=2026-10-22T16:10:57.914+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=622 matched=325 cached=93 left=529
+time=2026-10-22T16:10:58.536+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=528 total=529
+[GIN] 2026/10/22 - 16:10:58 | 200 |  834.703167ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:10:58 | 200 |     6.26475ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:10:58.787+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.79 GiB" held="4.28 GiB"
+time=2026-10-22T16:10:58.789+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=875.643667ms status="200 OK"
+[GIN] 2026/10/22 - 16:11:40 | 200 |   13.868625ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:11:40.169+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=1.544417ms status="200 OK"
+time=2026-10-22T16:11:40.179+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1131 matched=1077 cached=14 left=1117
+time=2026-10-22T16:11:41.471+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=1116 total=1117
+[GIN] 2026/10/22 - 16:11:41 | 200 |  1.594117375s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:11:41 | 200 |   16.144167ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:11:41.799+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.12 GiB" held="4.34 GiB"
+time=2026-10-22T16:11:41.802+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.630774125s status="200 OK"
+[GIN] 2026/10/22 - 16:11:43 | 200 |    7.723833ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:11:43.295+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=62.583µs status="200 OK"
+time=2026-10-22T16:11:43.298+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=649 matched=568 cached=118 left=531
+time=2026-10-22T16:11:44.018+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=530 total=531
+[GIN] 2026/10/22 - 16:11:44 | 200 |   1.23538725s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:11:44 | 200 |   15.038458ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:11:44.569+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.85 GiB" held="4.39 GiB"
+time=2026-10-22T16:11:44.569+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.272773s status="200 OK"
+[GIN] 2026/10/22 - 16:12:07 | 200 |    7.095417ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:12:07.627+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=936.541µs status="200 OK"
+time=2026-10-22T16:12:07.636+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=649 matched=649 cached=645 left=4
+time=2026-10-22T16:12:07.673+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=3 total=4
+[GIN] 2026/10/22 - 16:12:08 | 200 |  414.093375ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:12:08 | 200 |      5.2995ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:12:08.070+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.45 GiB" held="4.41 GiB"
+time=2026-10-22T16:12:08.070+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=442.771083ms status="200 OK"
+[GIN] 2026/10/22 - 16:13:23 | 200 |   34.519167ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:13:23.976+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=2.841333ms status="200 OK"
+time=2026-10-22T16:13:23.984+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=789 matched=321 cached=93 left=696
+time=2026-10-22T16:13:24.865+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=695 total=696
+[GIN] 2026/10/22 - 16:13:25 | 200 |  1.161303292s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:13:25 | 200 |   13.217209ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:13:25.168+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.04 GiB" held="4.45 GiB"
+time=2026-10-22T16:13:25.168+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.188023083s status="200 OK"
+time=2026-10-22T16:15:14.919+08:00 level=INFO source=model_recommendations.go:177 msg="model recommendations cache sleep scheduled" wait=4h46m19.459863333s consecutive_failures=0
+[GIN] 2026/10/22 - 16:15:45 | 200 |   12.312833ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:15:45.199+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=1.710416ms status="200 OK"
+time=2026-10-22T16:15:45.212+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=129 matched=96 cached=95 left=34
+time=2026-10-22T16:15:45.304+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=33 total=34
+[GIN] 2026/10/22 - 16:15:45 | 200 |    335.0795ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:15:45 | 200 |      4.8145ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:15:45.560+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.57 GiB" held="4.51 GiB"
+time=2026-10-22T16:15:45.561+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=359.959541ms status="200 OK"
+[GIN] 2026/10/22 - 16:15:47 | 200 |    4.116958ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:15:47.041+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=34.334µs status="200 OK"
+time=2026-10-22T16:15:47.044+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=463 matched=141 cached=136 left=327
+time=2026-10-22T16:15:47.435+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=326 total=327
+[GIN] 2026/10/22 - 16:15:47 | 200 |   808.40925ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:15:47 | 200 |    7.254958ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:15:47.882+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.00 GiB" held="4.57 GiB"
+time=2026-10-22T16:15:47.882+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=840.069458ms status="200 OK"
+[GIN] 2026/10/22 - 16:18:50 | 200 |   27.177875ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:18:50.942+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=3.384375ms status="200 OK"
+[GIN] 2026/10/22 - 16:18:50 | 200 |    10.75725ms |       127.0.0.1 | POST     "/api/generate"
+[GIN] 2026/10/22 - 16:18:50 | 200 |     4.28875ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 16:21:52 | 200 |   30.030833ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:21:52.643+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=2.887792ms status="200 OK"
+time=2026-10-22T16:21:52.670+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=179 matched=95 cached=95 left=84
+time=2026-10-22T16:21:52.826+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=83 total=84
+[GIN] 2026/10/22 - 16:21:53 | 200 |  468.738208ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:21:53 | 200 |    5.192875ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:21:53.136+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.75 GiB" held="4.61 GiB"
+time=2026-10-22T16:21:53.136+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=490.087875ms status="200 OK"
+[GIN] 2026/10/22 - 16:21:54 | 200 |    8.655833ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:21:54.621+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=148.792µs status="200 OK"
+time=2026-10-22T16:21:54.626+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=528 matched=136 cached=136 left=392
+time=2026-10-22T16:21:55.145+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=391 total=392
+[GIN] 2026/10/22 - 16:21:55 | 200 |  855.768125ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:21:55 | 200 |    6.933042ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:21:55.493+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.16 GiB" held="4.65 GiB"
+time=2026-10-22T16:21:55.493+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=871.473541ms status="200 OK"
+[GIN] 2026/10/22 - 16:23:06 | 200 |  208.175541ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:23:06.880+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=19.109334ms status="200 OK"
+time=2026-10-22T16:23:06.956+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1112 matched=1077 cached=1077 left=35
+time=2026-10-22T16:23:07.070+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=34 total=35
+[GIN] 2026/10/22 - 16:23:07 | 200 |  498.530666ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:23:07 | 200 |   15.211792ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:23:07.375+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=488.235167ms status="200 OK"
+time=2026-10-22T16:23:07.402+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.76 GiB" held="4.69 GiB"
+[GIN] 2026/10/22 - 16:23:08 | 200 |   15.498625ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:23:08.885+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=4.508042ms status="200 OK"
+time=2026-10-22T16:23:08.919+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=747 matched=466 cached=118 left=629
+time=2026-10-22T16:23:10.101+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=628 total=629
+[GIN] 2026/10/22 - 16:23:10 | 200 |  2.048048459s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:23:10 | 200 |    5.263208ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:23:10.956+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.28 GiB" held="4.74 GiB"
+time=2026-10-22T16:23:10.956+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=2.061846208s status="200 OK"
+[GIN] 2026/10/22 - 16:30:01 | 200 |   20.000125ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:30:01.034+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=3.413208ms status="200 OK"
+time=2026-10-22T16:30:01.048+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1112 matched=1077 cached=1077 left=35
+time=2026-10-22T16:30:01.146+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=34 total=35
+[GIN] 2026/10/22 - 16:30:01 | 200 |  327.509167ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:30:01 | 200 |    3.745208ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:30:01.382+08:00 level=INFO source=pipeline.go:110 msg=memory peak="4.86 GiB" held="4.78 GiB"
+time=2026-10-22T16:30:01.382+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=344.405ms status="200 OK"
+[GIN] 2026/10/22 - 16:30:02 | 200 |    3.875541ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:30:02.864+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=40.583µs status="200 OK"
+time=2026-10-22T16:30:02.865+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=781 matched=499 cached=466 left=315
+time=2026-10-22T16:30:03.214+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=314 total=315
+[GIN] 2026/10/22 - 16:30:03 | 200 |   611.49675ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:30:03 | 200 |     7.30525ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:30:03.506+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.16 GiB" held="4.84 GiB"
+time=2026-10-22T16:30:03.507+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=642.756084ms status="200 OK"
+[GIN] 2026/10/22 - 16:34:48 | 200 |   22.473791ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:34:49.003+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=2.864917ms status="200 OK"
+time=2026-10-22T16:34:49.016+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1048 matched=325 cached=325 left=723
+time=2026-10-22T16:34:49.806+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=722 total=723
+[GIN] 2026/10/22 - 16:34:49 | 200 |  983.245459ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:34:49 | 200 |    5.452958ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:34:50.006+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.56 GiB" held="4.88 GiB"
+time=2026-10-22T16:34:50.006+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.000018542s status="200 OK"
+[GIN] 2026/10/22 - 16:35:11 | 200 |    8.380042ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:35:11.154+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=66.042µs status="200 OK"
+[GIN] 2026/10/22 - 16:35:11 | 200 |    1.137917ms |       127.0.0.1 | POST     "/api/generate"
+[GIN] 2026/10/22 - 16:35:11 | 200 |    4.290875ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 16:35:13 | 200 |    7.433708ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:35:13.527+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=77.5µs status="200 OK"
+time=2026-10-22T16:35:13.530+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=562 matched=325 cached=325 left=237
+time=2026-10-22T16:35:13.819+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=236 total=237
+[GIN] 2026/10/22 - 16:35:13 | 200 |   431.26225ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:35:13 | 200 |   12.536417ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:35:13.987+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.24 GiB" held="4.92 GiB"
+time=2026-10-22T16:35:13.987+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=460.186167ms status="200 OK"
+[GIN] 2026/10/22 - 16:36:20 | 200 |       23.54ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:36:20.394+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=2.3965ms status="200 OK"
+time=2026-10-22T16:36:20.409+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1129 matched=1077 cached=1077 left=52
+time=2026-10-22T16:36:20.511+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=51 total=52
+[GIN] 2026/10/22 - 16:36:20 | 200 |  339.217417ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:36:20 | 200 |     4.05025ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:36:20.750+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.07 GiB" held="4.97 GiB"
+time=2026-10-22T16:36:20.750+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=354.50625ms status="200 OK"
+[GIN] 2026/10/22 - 16:36:22 | 200 |    4.280583ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:36:22.235+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=92.75µs status="200 OK"
+time=2026-10-22T16:36:22.237+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=702 matched=339 cached=118 left=584
+time=2026-10-22T16:36:22.903+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=583 total=584
+[GIN] 2026/10/22 - 16:36:23 | 200 |  1.011399791s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:36:23 | 200 |    4.548166ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:36:23.278+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.52 GiB" held="5.02 GiB"
+time=2026-10-22T16:36:23.278+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.0427655s status="200 OK"
+[GIN] 2026/10/22 - 16:39:35 | 200 |   25.381583ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:39:35.116+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=2.301875ms status="200 OK"
+time=2026-10-22T16:39:35.132+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1156 matched=1077 cached=1077 left=79
+time=2026-10-22T16:39:35.254+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=78 total=79
+[GIN] 2026/10/22 - 16:39:35 | 200 |  356.673958ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:39:35 | 200 |    4.845625ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:39:35.492+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.19 GiB" held="5.06 GiB"
+time=2026-10-22T16:39:35.492+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=372.408833ms status="200 OK"
+[GIN] 2026/10/22 - 16:39:36 | 200 |   10.445666ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:39:36.986+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=60.333µs status="200 OK"
+time=2026-10-22T16:39:36.989+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=741 matched=339 cached=339 left=402
+time=2026-10-22T16:39:37.459+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=401 total=402
+[GIN] 2026/10/22 - 16:39:37 | 200 |    822.9425ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:39:37 | 200 |    4.189167ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:39:37.835+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.61 GiB" held="5.10 GiB"
+time=2026-10-22T16:39:37.836+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=848.206042ms status="200 OK"
+[GIN] 2026/10/22 - 16:39:39 | 200 |    4.029125ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:39:39.278+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=34.708µs status="200 OK"
+time=2026-10-22T16:39:39.280+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=1702 matched=324 cached=321 left=1381
+time=2026-10-22T16:39:40.831+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=1380 total=1381
+[GIN] 2026/10/22 - 16:39:41 | 200 |  1.751863041s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:39:41 | 200 |    4.155875ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:39:41.062+08:00 level=INFO source=pipeline.go:110 msg=memory peak="6.16 GiB" held="5.16 GiB"
+time=2026-10-22T16:39:41.062+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.783624833s status="200 OK"
+[GIN] 2026/10/22 - 16:39:51 | 200 |    3.393375ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:39:51.603+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=28.166µs status="200 OK"
+time=2026-10-22T16:39:51.604+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=135 matched=95 cached=95 left=40
+time=2026-10-22T16:39:51.694+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=39 total=40
+[GIN] 2026/10/22 - 16:39:51 | 200 |  291.763625ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:39:51 | 200 |    4.123375ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:39:51.925+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.28 GiB" held="5.20 GiB"
+time=2026-10-22T16:39:51.925+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=320.88425ms status="200 OK"
+[GIN] 2026/10/22 - 16:39:53 | 200 |    5.000042ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:39:53.408+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=49.75µs status="200 OK"
+time=2026-10-22T16:39:53.411+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=461 matched=205 cached=141 left=320
+time=2026-10-22T16:39:53.782+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=319 total=320
+[GIN] 2026/10/22 - 16:39:54 | 200 |  754.452375ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:39:54 | 200 |    3.563667ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:39:54.194+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.59 GiB" held="5.27 GiB"
+time=2026-10-22T16:39:54.194+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=784.700833ms status="200 OK"
+[GIN] 2026/10/22 - 16:44:29 | 200 |    9.165042ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:44:29.758+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=324.958µs status="200 OK"
+time=2026-10-22T16:44:29.761+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=208 matched=95 cached=95 left=113
+time=2026-10-22T16:44:29.918+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=112 total=113
+[GIN] 2026/10/22 - 16:44:30 | 200 |    384.4095ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:44:30 | 200 |    4.948708ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:44:30.172+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.49 GiB" held="5.31 GiB"
+time=2026-10-22T16:44:30.172+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=412.464167ms status="200 OK"
+[GIN] 2026/10/22 - 16:44:31 | 200 |   11.028958ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:44:31.665+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=73.709µs status="200 OK"
+time=2026-10-22T16:44:31.669+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=598 matched=199 cached=136 left=462
+time=2026-10-22T16:44:32.156+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=461 total=462
+[GIN] 2026/10/22 - 16:44:32 | 200 |  1.167346125s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:44:32 | 200 |   12.588458ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:44:32.860+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.83 GiB" held="5.37 GiB"
+time=2026-10-22T16:44:32.860+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.195083875s status="200 OK"
+[GIN] 2026/10/22 - 16:50:41 | 200 |   34.234958ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:50:41.469+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=3.138ms status="200 OK"
+time=2026-10-22T16:50:41.492+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=741 matched=741 cached=737 left=4
+time=2026-10-22T16:50:41.664+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=3 total=4
+[GIN] 2026/10/22 - 16:50:42 | 200 |  834.699333ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:50:42 | 200 |     5.08075ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:50:42.340+08:00 level=INFO source=pipeline.go:110 msg=memory peak="5.43 GiB" held="5.39 GiB"
+time=2026-10-22T16:50:42.340+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=866.331708ms status="200 OK"
+[GIN] 2026/10/22 - 16:51:01 | 200 |     30.2085ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 16:51:01 | 200 |    8.367958ms |       127.0.0.1 | POST     "/api/generate"
+time=2026-10-22T16:51:01.798+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=658.917µs status="200 OK"
+[GIN] 2026/10/22 - 16:51:01 | 200 |    8.439291ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 16:51:17 | 200 |   10.305625ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:51:17.763+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=323.791µs status="200 OK"
+time=2026-10-22T16:51:17.774+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=838 matched=339 cached=339 left=499
+time=2026-10-22T16:51:18.927+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=498 total=499
+[GIN] 2026/10/22 - 16:51:19 | 200 |    1.6394315s |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:51:19 | 200 |    6.930083ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:51:19.451+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=1.686342042s status="200 OK"
+time=2026-10-22T16:51:19.477+08:00 level=INFO source=pipeline.go:110 msg=memory peak="6.03 GiB" held="5.41 GiB"
+[GIN] 2026/10/22 - 16:51:21 | 200 |      11.018ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:51:21.772+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=136.083µs status="200 OK"
+time=2026-10-22T16:51:21.774+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=764 matched=339 cached=339 left=425
+time=2026-10-22T16:51:22.290+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=424 total=425
+[GIN] 2026/10/22 - 16:51:22 | 200 |  833.133042ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:51:22 | 200 |      7.9365ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:51:22.633+08:00 level=INFO source=pipeline.go:110 msg=memory peak="6.01 GiB" held="5.45 GiB"
+time=2026-10-22T16:51:22.633+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=861.153334ms status="200 OK"
+[GIN] 2026/10/22 - 16:52:01 | 200 |    9.813833ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:52:02.065+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=438.083µs status="200 OK"
+time=2026-10-22T16:52:02.078+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=829 matched=339 cached=339 left=490
+time=2026-10-22T16:52:02.663+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=489 total=490
+[GIN] 2026/10/22 - 16:52:02 | 200 |  853.338709ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:52:02 | 200 |    3.939542ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:52:02.948+08:00 level=INFO source=pipeline.go:110 msg=memory peak="6.11 GiB" held="5.49 GiB"
+time=2026-10-22T16:52:02.948+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=882.405708ms status="200 OK"
+[GIN] 2026/10/22 - 16:52:11 | 200 |   12.103208ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:52:11.751+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=GET path=/v1/status took=200.709µs status="200 OK"
+time=2026-10-22T16:52:11.760+08:00 level=INFO source=prefix_cache.go:151 msg="cache hit" total=801 matched=462 cached=339 left=462
+time=2026-10-22T16:52:12.349+08:00 level=INFO source=pipeline.go:228 msg="Prompt processing progress" processed=461 total=462
+[GIN] 2026/10/22 - 16:52:12 | 200 |  785.883125ms |       127.0.0.1 | POST     "/api/chat"
+[GIN] 2026/10/22 - 16:52:12 | 200 |      6.5155ms |       127.0.0.1 | GET      "/api/tags"
+time=2026-10-22T16:52:12.576+08:00 level=INFO source=pipeline.go:110 msg=memory peak="6.02 GiB" held="5.55 GiB"
+time=2026-10-22T16:52:12.576+08:00 level=INFO source=server.go:252 msg=ServeHTTP method=POST path=/v1/completions took=824.107792ms status="200 OK"
+[GIN] 2026/10/22 - 16:53:35 | 200 |   21.912125ms |       127.0.0.1 | GET      "/api/tags"
+[GIN] 2026/10/22 - 16:53:35 | 204 |      28.958µs |       127.0.0.1 | OPTIONS  "/api/show"
+[GIN] 2026/10/22 - 16:53:35 | 204 |         791µs |       127.0.0.1 | OPTIONS  "/api/show"
+[GIN] 2026/10/22 - 16:53:35 | 200 |    6.221333ms |       127.0.0.1 | POST     "/api/show"
+[GIN] 2026/10/22 - 16:53:35 | 200 |    6.723125ms |       127.0.0.1 | POST     "/api/show"

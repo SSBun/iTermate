@@ -75,6 +75,20 @@ final class LocalModelExitBarrierTests: XCTestCase {
 }
 
 final class LocalLLMSelectionTests: XCTestCase {
+    func testGeneratedTitlesMustBeShortNonblankSingleLines() {
+        for title in ["修复标题", " 修复 HTTP429 重试。", String(repeating: "字", count: 80),
+                      String(repeating: "🔔", count: 80)] {
+            XCTAssertTrue(LocalLLMService.isValidSessionTitle(title), title)
+        }
+        for title in ["", " \t", String(repeating: "字", count: 81),
+                      String(repeating: "🔔", count: 81), "修复标题\n"] {
+            XCTAssertFalse(LocalLLMService.isValidSessionTitle(title), title)
+        }
+        for separator in ["\n", "\r", "\r\n", "\u{000B}", "\u{000C}", "\u{0085}", "\u{2028}", "\u{2029}"] {
+            XCTAssertFalse(LocalLLMService.isValidSessionTitle("修复\(separator)标题"))
+        }
+    }
+
     @MainActor
     func testSelectionDefaultsToTwoBAndPersistsFourBWithoutInference() throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

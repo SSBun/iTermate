@@ -1,0 +1,405 @@
+Command line invocation:
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/xcodebuild -project iTermate.xcodeproj -scheme iTermate -configuration Debug -destination platform=macOS -derivedDataPath .build/compact-project-panel -clonedSourcePackagesDirPath .build/compact-panel-packages build
+
+Resolve Package Graph
+
+Fetching from https://github.com/sparkle-project/Sparkle (cached)
+
+Creating working copy of package ‘Sparkle’
+
+Checking out 2.9.4 of package ‘Sparkle’
+
+
+Resolved source packages:
+  Sparkle: https://github.com/sparkle-project/Sparkle @ 2.9.4
+
+2026-10-22 14:32:26.830 xcodebuild[36161:212727090] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:macOS, arch:arm64, id:00008132-0016511C0CD9801C, name:My Mac }
+{ platform:macOS, arch:x86_64, id:00008132-0016511C0CD9801C, name:My Mac }
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (2 targets)
+    Target 'iTermate' in project 'iTermate'
+        ➜ Explicit dependency on target 'Sparkle' in project 'Sparkle'
+    Target 'Sparkle' in project 'Sparkle' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: a8e14680d71ef5e16242e1e2fec78a15
+Build description path: /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/XCBuildData/a8e14680d71ef5e16242e1e2fec78a15.xcbuilddata
+ClangStatCache /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -o /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+
+ProcessXCFramework /Users/caishilin/Desktop/personal/iTermate/.build/compact-panel-packages/artifacts/sparkle/Sparkle/Sparkle.xcframework /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/Sparkle.framework macos
+    cd /Users/caishilin/Desktop/personal/iTermate/iTermate.xcodeproj
+    builtin-process-xcframework --xcframework /Users/caishilin/Desktop/personal/iTermate/.build/compact-panel-packages/artifacts/sparkle/Sparkle/Sparkle.xcframework --platform macos --target-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug
+
+MkDir /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Frameworks (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /bin/mkdir -p /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework /Users/caishilin/Desktop/personal/iTermate/.build/compact-panel-packages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable /Users/caishilin/Desktop/personal/iTermate/.build/compact-panel-packages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+CodeSign /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework/Versions/B (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework/Versions/B
+/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework/Versions/B: replacing existing signature
+
+ProcessInfoPlistFile /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Info.plist /Users/caishilin/Desktop/personal/iTermate/iTermate/Info.plist (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-infoPlistUtility /Users/caishilin/Desktop/personal/iTermate/iTermate/Info.plist -producttype com.apple.product-type.application -genpkginfo /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/PkgInfo -expandbuildsettings -platform macosx -additionalcontentfile /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist -scanforprivacyfile /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework -o /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Info.plist
+
+SwiftDriver iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-SwiftDriver -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug -F /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex -sdk-module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/include -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_Builtin_stdbool-ASOPQC6IX2IHLPQGSG4HX26U3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_AvailabilityInternal-EWO2JGYBB0JHLUJXU7KVUTJGY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_Builtin_float-C2KFZ186323D7SZRN3ZY8CN0F.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_SwiftConcurrencyShims-22HXBK07HZWTUXLNJRF37PE8A.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/DeveloperToolsSupport-XAY6DXQAVC3U3W0YGLRZGZN3.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/SwiftShims-EEV2KUJLIGZ2L0O1I9BD1AIVH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/ptrauth-SBH9BJ14J47L1NKLHYKK0K5S.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_Builtin_stddef-CF6RZQSMW9RT19TYZAUZXUBQJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_Builtin_stdarg-4RZO5JTDHLSD6Q8ZDMVBHAYOP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/ptrcheck-2IKCET18OBSHXMMN1J7FI9IWD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_DarwinFoundation1-6GJ8GA1T0ZU11WMN2EMNMVRPC.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_DarwinFoundation2-AGEF79Q6WE5CVVL1FTFBZX4V7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_Builtin_limits-45C3Q6P63CF94RWWO5LQNZV5W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_Builtin_stdint-KBT8C92NGQJDLQHOF2WTW4ZR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/sys_types-2G7AFAIIHOBPZNI27KNONOS6D.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_Builtin_tgmath-6XT783BFD21Q1VNGRIRK9D2RD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_Builtin_stdatomic-EU6Y6E8O0V7Z4VY9BOPWHFR66.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_Builtin_intrinsics-4XNMM8Z588VXHNU5K501Q7F1P.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/OpenGL-3Y5XQXXG883FBHA69R2VY8961.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_DarwinFoundation3-2R4S52247B4IVH6LPFOX9OIZ0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/libDER-A6BLWIA2OAPXBIPNLGSTGZ5U6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/_Builtin_inttypes-DQLCYGZYHGGTDRZHZBGIXOJGM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Darwin-DQSR1NCOHCG1Q05ZWU3DJFJB2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/simd-E0HBLANAPJUJ7FLVHXW0GAXLT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Spatial-J75WOQFKZRH32AK734YS426K.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/MachO-8O6XQXL6OOVRMB02CQLIKIZK0.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/libkern-7HB64I0ZU03FAGQLE8JGVX1LA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/launch-C5AX9Q9I9A9W7771Z69IWVUP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/CUPS-7WWUAL0N9ATM5EDU165XMS6UF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/ObjectiveC-71TDA210XOMEV9F4DYQOWCASL.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/os_object-DT5VVZE3XJXTYQEZQ9RGQLTIJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/os_workgroup-OZRFTD6OLMAXSCWL7UUVGFUD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Dispatch-3NS5KRP1U7GZ4QJZKBBIGGT56.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/dnssd-9OCLOSS845IBF3Z38E8EL9EQA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/CoreFoundation-7S4EEC4B95Y05NDZVDU18QJJM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/XPC-A8LTCCBNU0SXI3BWG27DQC0QH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/os-E7V276AJOO9O29QZZ1NNMVJFY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/ColorSync-D8NXGCRPV3V3S73NO9ODGWNKY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/CFNetwork-1NSMYBI7HIV0JPKHX4OXZX87D.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/IOKit-EVZED9ZSP2J1NXF7S7L40R8ZT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Security-2JDCZMO4VMM02CQP7USGQJX1M.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/CoreGraphics-BN496N2JIK9IW5U82X9PXP3X6.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/DiskArbitration-Y4QKLS74T2NG1PLFQQ0TLB4S.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/CoreServices-594U7JIBYA96OOJRL0XKN440M.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/CoreText-HNG7Q3U9PTUA05J5QTV42C9C.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/ImageIO-3EA7WQ630RVN32G5805BZ8WDM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Foundation-9D1N51TD5QP54ESE8YS8YCNHB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/LocalAuthentication-ABHPTI942UV6S12NFSDNJFG13.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/OSLog-B01SZI6CZ2051FMGGVSUT0T9Z.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/ApplicationServices-BNXU1YM1VWHNM7D0Q7H4LQIDA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/ServiceManagement-3MDG2NOWQJYJI8B1C8NG04IPG.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/UniformTypeIdentifiers-5XCCY27PT5K4LJGXVTJ1NWAXX.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/CoreData-8G20CNG6XGLBZH0BD6AAOKA4V.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Accessibility-BW8OK7DEOR2PDDN0WLDPWUZQA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/Sparkle-DLUR9HYJTKT3X5GGGLTBGF9Q8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/IOSurface-1VSLTMJ17L59YAEKM8UF2BUHV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/DataDetection-4MPJ1VYOJ7PEV8MCIA6EDEA52.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/CoreTransferable-7TGD9N1ISSTSK9KFUNO9U0USY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/UserNotifications-6E4SJHGAHZVQ7NH7LKVKLXAON.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Symbols-C58OAN95VPI6XECFUB7A8WOLX.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Network-IUD2IOWHYFY8GOH8SD3IAA44.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Metal-3YH73XIRVW1Q5G0X7ZKZVP80F.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Carbon-8HLF2XVK330P4P9DXM49J234T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/CoreVideo-A6S3GV0CCMN5AKBPEM2ZNX9LF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/QuartzCore-2O83SG17F6A2WZBXUSRNNAC1O.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/CoreImage-2Z0JQ3XIGSEV69HSIHWR9IIYH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/SwiftUICore-655S0OOYXSVGSPQJZ67A99Y3H.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/AppKit-7RZN30LD7BDGYLX2NHXFQXO0M.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/SwiftUI-CLP95MT1EVRR4X008WY52PT1Z.pcm
+
+SwiftCompile normal arm64 Compiling\ ItermBridge.swift,\ LocalModelService.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/ItermBridge.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/LocalModelService.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/ItermBridge.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/LocalModelService.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ SettingsViews.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ iTermate (in target 'iTermate' from project 'iTermate')
+
+EmitSwiftModule normal arm64 (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ SessionNotifications.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ iTermateApp.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ AgentIntegrations.swift,\ CodexSessionMonitor.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/AgentIntegrations.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/CodexSessionMonitor.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/AgentIntegrations.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/CodexSessionMonitor.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ PanelLayout.swift,\ PiSessionArchives.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/PanelLayout.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/PanelLayout.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ CodexTitleDiagnostics.swift,\ FinishedSessionShortcut.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/CodexTitleDiagnostics.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/FinishedSessionShortcut.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/CodexTitleDiagnostics.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/FinishedSessionShortcut.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ TerminalStatusServer.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/TerminalStatusServer.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/TerminalStatusServer.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ GeneratedAssetSymbols.swift /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftCompile normal arm64 Compiling\ VenomDebugMonitor.swift /Users/caishilin/Desktop/personal/iTermate/iTermate/VenomDebugMonitor.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /Users/caishilin/Desktop/personal/iTermate/iTermate/VenomDebugMonitor.swift (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for iTermate (in target 'iTermate' from project 'iTermate')
+
+SwiftDriver\ Compilation\ Requirements iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug -F /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex -sdk-module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/include -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling VenomDebugMonitor.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftMergeGeneratedHeaders /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/iTermate-Swift.h /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-swiftHeaderTool -arch arm64 /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -o /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/iTermate-Swift.h
+
+Copy /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftmodule /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftmodule
+
+Copy /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftdoc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftdoc (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftdoc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftdoc
+
+Copy /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.abi.json /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.abi.json (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.abi.json /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.abi.json
+
+Copy /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftsourceinfo (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftsourceinfo /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo
+
+SwiftDriverJobDiscovery normal arm64 Compiling SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling TerminalStatusServer.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling CodexTitleDiagnostics.swift, FinishedSessionShortcut.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AgentIntegrations.swift, CodexSessionMonitor.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling PanelLayout.swift, PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling ItermBridge.swift, LocalModelService.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriver\ Compilation iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-Swift-Compilation -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug -F /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex -sdk-module-cache-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/include -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /Users/caishilin/Desktop/personal/iTermate -experimental-emit-module-separately -disable-cmo
+
+Ld /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib normal (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -dynamiclib -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -L/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug -F/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -F/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug -filelist /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.LinkFileList -install_name @rpath/iTermate.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/../Frameworks -Xlinker -object_path_lto -Xlinker /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat -fobjc-link-runtime -fprofile-instr-generate -L/Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule @/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-linker-args.resp -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -framework Sparkle -Xlinker -no_adhoc_codesign -o /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib
+
+ConstructStubExecutorLinkFileList /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    construct-stub-executor-link-file-list /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'iTermate' from project 'iTermate')
+
+Ld /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate normal (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug -F/Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/../Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib -Xlinker -no_adhoc_codesign -o /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate
+
+CopySwiftLibs /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib --scan-folder /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Frameworks --scan-folder /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/PlugIns --scan-folder /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Library/SystemExtensions --scan-folder /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Extensions --platform macosx --toolchain /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+
+ExtractAppIntentsMetadata (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name iTermate --sdk-root /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk --xcode-version 17C52 --platform-family macOS --deployment-target 13.0 --bundle-identifier com.caishilin.iTermate --output /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/Resources --target-triple arm64-apple-macos13.0 --binary-file /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate --dependency-file /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat --stringsdata-file /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList --metadata-file-list /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyMetadataFileList --static-metadata-file-list /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyStaticMetadataFileList --swift-const-vals-list /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-22 14:32:36.205 appintentsmetadataprocessor[36922:212728413] Starting appintentsmetadataprocessor export
+2026-10-22 14:32:36.206 appintentsmetadataprocessor[36922:212728413] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CodeSign /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib
+
+CodeSign /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib
+
+CodeSign /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent --timestamp\=none --generate-entitlement-der /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app
+
+Validate /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    builtin-validationUtility /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app -no-validate-extension -infoplist-subpath Contents/Info.plist
+
+RegisterWithLaunchServices /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /Users/caishilin/Desktop/personal/iTermate
+    /System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister -f -R -trusted /Users/caishilin/Desktop/personal/iTermate/.build/compact-project-panel/Build/Products/Debug/iTermate.app
+
+** BUILD SUCCEEDED ** [9.570 sec]
+

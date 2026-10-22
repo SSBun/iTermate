@@ -8,6 +8,7 @@ import re
 import shlex
 import sys
 import time
+import uuid
 
 SUPPORT_DIRECTORY = os.path.expanduser(
     "~/Library/Application Support/iTermate"
@@ -50,7 +51,7 @@ def encode_message(message):
 
 
 class Bridge:
-    def __init__(self, connection, app):
+    def __init__(self, connection, app, acknowledgements_path=None):
         self.connection = connection
         self.app = app
         self.clients = set()
@@ -69,6 +70,35 @@ class Bridge:
         self.session_names = {}
         self.ignore_prompt_events_until = 0
         self.layout_reconcile_task = None
+        self.acknowledgements_path = acknowledgements_path or os.path.join(
+            SUPPORT_DIRECTORY, "viewed-pi-completions.json"
+        )
+        try:
+            with open(self.acknowledgements_path, encoding="utf-8") as source:
+                saved = json.loads(source.read(1024 * 1024))
+            self.viewed_completions = {
+                key: value for key, value in saved.items()
+                if isinstance(key, str) and isinstance(value, str)
+                and len(value) == 36 and str(uuid.UUID(value)) == value.lower()
+            }
+        except (OSError, ValueError, AttributeError):
+            self.viewed_completions = {}
+
+    def save_viewed_completions(self):
+        session_ids = self.current_session_ids()
+        self.viewed_completions = {
+            key: value for key, value in self.viewed_completions.items()
+            if key in session_ids
+        }
+        temporary = self.acknowledgements_path + ".tmp"
+        try:
+            os.makedirs(os.path.dirname(self.acknowledgements_path), mode=0o700, exist_ok=True)
+            with open(temporary, "w", encoding="utf-8") as target:
+                os.chmod(temporary, 0o600)
+                json.dump(self.viewed_completions, target)
+            os.replace(temporary, self.acknowledgements_path)
+        except OSError:
+            print("iTermate: could not save viewed Pi completions", file=sys.stderr)
 
     async def run(self):
         if os.path.exists(SOCKET_PATH):
@@ -209,6 +239,19 @@ class Bridge:
             ):
                 await self.send_action_result(writer, request_id, False, "Invalid report sequence")
                 return
+            completion_id = request.get("completionId")
+            if completion_id is not None:
+                try:
+                    valid_completion = (
+                        status == "finished" and request.get("agentKind") == "pi"
+                        and isinstance(completion_id, str) and len(completion_id) == 36
+                        and str(uuid.UUID(completion_id)) == completion_id.lower()
+                    )
+                except ValueError:
+                    valid_completion = False
+                if not valid_completion:
+                    await self.send_action_result(writer, request_id, False, "Invalid completion ID")
+                    return
             key = (session_id, reporter_id)
             if has_sequence and sequence <= self.agent_report_sequences.get(key, 0):
                 await self.send_action_result(writer, request_id, False, "Stale report")
@@ -229,7 +272,7 @@ class Bridge:
                     return
             accepted = self.set_agent_status(
                 session_id, status, exit_status, heartbeat, has_running_subagents,
-                agent_kind=agent_kind or "unknown",
+                agent_kind=agent_kind or "unknown", completion_id=completion_id,
             )
             if accepted and has_sequence:
                 self.agent_report_sequences[key] = sequence
@@ -284,6 +327,7 @@ class Bridge:
             elif action == "closeSession":
                 await session.async_close()
             else:
+                status_before_activation = dict(self.session_statuses.get(session_id, {}))
                 await session.async_activate()
                 await self.app.async_activate(raise_all_windows=False)
         except Exception as error:
@@ -291,7 +335,7 @@ class Bridge:
             return
 
         if action == "activateSession":
-            self.clear_finished_status(session_id)
+            self.clear_finished_status(session_id, expected_status=status_before_activation)
         await self.send_action_result(writer, request_id, True, None)
         await self.publish_snapshot()
 
@@ -357,11 +401,12 @@ class Bridge:
                     self.finished_navigation_visited.add(current_id)
                 target = eligible[0]
             session, status, is_codex = target
+            status_before_activation = dict(self.session_statuses.get(session.session_id, {}))
             await session.async_activate()
             await self.app.async_activate(raise_all_windows=False)
             self.finished_navigation_visited.add(session.session_id)
             if status.get("status") == "finished" and not is_codex:
-                self.clear_finished_status(session.session_id)
+                self.clear_finished_status(session.session_id, expected_status=status_before_activation)
 
     async def send_action_result(self, writer, request_id, succeeded, error):
         message = {
@@ -374,6 +419,10 @@ class Bridge:
         await self.send(writer, message)
 
     async def open_project(self, path):
+        # Capture before path lookup too: a result arriving during lookup was not the requested event.
+        statuses_before_activation = {
+            key: dict(value) for key, value in self.session_statuses.items()
+        }
         for window in self.app.windows:
             for tab in window.tabs:
                 for session in tab.all_sessions:
@@ -386,7 +435,10 @@ class Bridge:
                     if session_path == path:
                         await session.async_activate()
                         await self.app.async_activate(raise_all_windows=False)
-                        self.clear_finished_status(session.session_id)
+                        self.clear_finished_status(
+                            session.session_id,
+                            expected_status=statuses_before_activation.get(session.session_id, {}),
+                        )
                         return
 
         if not os.path.isdir(path):
@@ -763,15 +815,19 @@ class Bridge:
 
     def set_agent_status(
         self, session_id, status, exit_status=0, heartbeat=False,
-        has_running_subagents=False, agent_kind="unknown",
+        has_running_subagents=False, agent_kind="unknown", completion_id=None,
     ):
         if status == "detached":
+            if self.viewed_completions.pop(session_id, None) is not None:
+                self.save_viewed_completions()
             self.session_agent_kinds.pop(session_id, None)
             self.agent_managed_session_ids.discard(session_id)
             self.agent_heartbeat_times.pop(session_id, None)
             self.session_statuses.pop(session_id, None)
             return True
 
+        if status == "finished" and completion_id is not None and self.viewed_completions.get(session_id) == completion_id:
+            status = "idle"
         current = self.session_statuses.get(session_id)
         if heartbeat and current is not None and current.get("status") != status:
             return False
@@ -787,6 +843,8 @@ class Bridge:
             exit_status if status == "finished" else None,
             activity_kind="agent",
         )
+        if status == "finished" and completion_id is not None:
+            self.session_statuses[session_id]["completionId"] = completion_id
         if has_running_subagents:
             self.session_statuses[session_id]["hasRunningSubagents"] = True
         return True
@@ -836,8 +894,10 @@ class Bridge:
         session = window.current_tab.current_session
         return session.session_id if session is not None else None
 
-    def clear_finished_status(self, session_id, acknowledge_agent=True):
+    def clear_finished_status(self, session_id, acknowledge_agent=True, expected_status=None):
         status = self.session_statuses.get(session_id)
+        if expected_status is not None and status != expected_status:
+            return
         if status is not None and status.get("activityKind") == "agent" and not acknowledge_agent:
             return
         if status is None or status.get("status") != "finished":
@@ -846,6 +906,9 @@ class Bridge:
             status.get("activityKind") == "agent"
             and session_id in self.agent_managed_session_ids
         ):
+            if status.get("completionId") is not None:
+                self.viewed_completions[session_id] = status["completionId"]
+                self.save_viewed_completions()
             self.set_session_status(session_id, "idle", activity_kind="agent")
         else:
             self.session_statuses.pop(session_id, None)
@@ -1142,6 +1205,95 @@ def self_test():
     tab = FakeTab(session)
     window = FakeWindow(tab)
     app = FakeApp(window, session)
+    # Completion identity, not query sequence, survives receiver recreation.
+    import tempfile
+    with tempfile.TemporaryDirectory() as directory:
+        acknowledgements = os.path.join(directory, "viewed.json")
+        completion = str(uuid.uuid4())
+        original = Bridge(None, app, acknowledgements)
+        original.set_agent_status("session-1", "finished", agent_kind="pi", completion_id=completion)
+        unseen = Bridge(None, app, acknowledgements)
+        unseen.set_agent_status("session-1", "finished", agent_kind="pi", completion_id=completion)
+        assert unseen.session_statuses["session-1"]["status"] == "finished"
+        original.clear_finished_status("session-1")
+        reopened = Bridge(None, app, acknowledgements)
+        reopened.set_agent_status("session-1", "finished", agent_kind="pi", completion_id=completion)
+        assert reopened.session_statuses["session-1"]["status"] == "idle"
+        assert reopened.session_statuses["session-1"]["exitStatus"] is None
+        reopened.set_agent_status("session-1", "running", agent_kind="pi")
+        assert reopened.session_statuses["session-1"]["status"] == "running"
+        reopened.set_agent_status("session-1", "awaitingInput", agent_kind="pi")
+        assert reopened.session_statuses["session-1"]["status"] == "awaitingInput"
+        reopened.set_agent_status("session-1", "finished", agent_kind="pi", completion_id=str(uuid.uuid4()))
+        assert reopened.session_statuses["session-1"]["status"] == "finished"
+        reopened.set_agent_status("session-2", "finished", agent_kind="pi", completion_id=completion)
+        assert reopened.session_statuses["session-2"]["status"] == "finished"
+        reopened.set_agent_status("session-1", "finished", agent_kind="pi")
+        assert reopened.session_statuses["session-1"]["status"] == "finished"
+        with open(acknowledgements, "w", encoding="utf-8") as target:
+            target.write("invalid JSON")
+        assert Bridge(None, app, acknowledgements).viewed_completions == {}
+
+        async def check_delayed_activation(entry, behavior):
+            original_id = str(uuid.uuid4())
+            next_id = str(uuid.uuid4()) if behavior == "new" else original_id
+            replaced = False
+
+            def replace_completion():
+                nonlocal replaced
+                if replaced or behavior == "failed":
+                    return
+                replaced = True
+                if behavior == "new":
+                    receiver.set_agent_status("session-1", "running", agent_kind="pi")
+                receiver.set_agent_status("session-1", "finished", agent_kind="pi", completion_id=next_id)
+
+            class DelayedSession(FakeSession):
+                async def async_get_variable(self, name):
+                    if entry == "project" and name == "path":
+                        await asyncio.sleep(0)
+                        replace_completion()
+                    return await super().async_get_variable(name)
+
+                async def async_activate(self):
+                    await asyncio.sleep(0)
+                    if behavior == "failed":
+                        raise RuntimeError("Activation failed")
+                    replace_completion()
+
+            class DelayedApp(FakeApp):
+                async def async_activate(self, raise_all_windows=False):
+                    await asyncio.sleep(0)
+
+            target = DelayedSession()
+            target_app = DelayedApp(FakeWindow(FakeTab(target)), target)
+            target_app.current_window = None
+            path = os.path.join(directory, entry + "-" + behavior + ".json")
+            receiver = Bridge(None, target_app, path)
+            receiver.set_agent_status("session-1", "finished", agent_kind="pi", completion_id=original_id)
+            writer = FakeWriter()
+            try:
+                if entry == "session":
+                    await receiver.handle_command(writer, encode_message({
+                        "type": "activateSession", "requestId": "delayed", "sessionId": "session-1",
+                    }))
+                    assert writer.messages[-1]["ok"] == (behavior != "failed")
+                elif entry == "navigation":
+                    await receiver.activate_next_finished_session()
+                else:
+                    await receiver.open_project("/tmp")
+            except RuntimeError:
+                assert behavior == "failed"
+            expected = "idle" if behavior == "same" else "finished"
+            assert receiver.session_statuses["session-1"]["status"] == expected
+            restored = Bridge(None, target_app, path)
+            restored.set_agent_status("session-1", "finished", agent_kind="pi", completion_id=next_id)
+            assert restored.session_statuses["session-1"]["status"] == expected
+
+        for entry in ("session", "navigation", "project"):
+            for behavior in ("new", "same", "failed"):
+                asyncio.run(check_delayed_activation(entry, behavior))
+
     bridge = Bridge(None, app)
     try:
         asyncio.run(Bridge(FakeConnection(), app).monitor_iterm_connection())

@@ -56,10 +56,10 @@ private func statusBarIcon() -> Image {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings = AppSettings()
     let localModel = LocalLLMService()
-    lazy var store = ItermStore { [weak self] excerpt in
+    lazy var store = ItermStore(generateCodexTitle: { [weak self] excerpt in
         guard let self else { throw CancellationError() }
         return try await self.localModel.generateSessionTitle(from: excerpt)
-    }
+    })
     lazy var finishedSessionShortcut = FinishedSessionShortcut(settings: settings) { [weak self] in
         self?.store.activateNextFinishedSession()
     }
@@ -447,7 +447,8 @@ private struct PanelContent: View {
                     statusBarIcon()
                         .renderingMode(.template)
                 }
-                .font(panelFont(1.2))
+                .font(.system(size: settings.panelFontSize * 1.05, weight: .semibold))
+                .lineLimit(1)
                 Spacer()
                 Button {
                     store.refreshSessions()
@@ -598,7 +599,8 @@ private struct PanelContent: View {
         SessionGrouping.groups(
             from: store.windows,
             style: settings.sessionListStyle,
-            pinnedProjectPaths: settings.pinnedProjectFolderPaths
+            pinnedProjectPaths: settings.pinnedProjectFolderPaths,
+            separatesCommandSessions: settings.separatesCommandSessions
         )
     }
 
@@ -612,8 +614,8 @@ private struct PanelContent: View {
         if showsTabHeaders {
             ids.formUnion(
                 sessionGroups.flatMap { group in
-                    group.sessions
-                        .filter { tabHeaderSessions(group, tabID: $0.tabID) != nil }
+                    group.blocks(groupedByPath: group.id == SessionGrouping.commandGroupID)
+                        .filter { tabHeaderSessions($0.sessions) != nil }
                         .map { tabSectionID($0.tabID) }
                 }
             )
@@ -622,59 +624,57 @@ private struct PanelContent: View {
     }
 
     private var sessionList: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 2) {
-                ForEach(store.connectionState == .connected ? sessionGroups : []) { group in
-                    let containsFocusedSession = settings.sessionListStyle == .projectPath
-                        && group.sessions.contains(where: \.isFocused)
-                    VStack(alignment: .leading, spacing: 2) {
-                        groupHeader(group)
+        GeometryReader { geometry in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    ForEach(store.connectionState == .connected ? sessionGroups : []) { group in
+                        VStack(alignment: .leading, spacing: 2) {
+                            groupHeader(group, showsCount: geometry.size.width >= 240)
 
-                        if !collapsedSectionIDs.contains(group.id) {
-                            ForEach(group.tabIDs, id: \.self) { tabID in
-                                let sessions = group.sessions(inTab: tabID)
-                                let hasTabHeader = tabHeaderSessions(group, tabID: tabID) != nil
-                                VStack(alignment: .leading, spacing: 2) {
-                                    if hasTabHeader, let item = sessions.first {
-                                        tabHeader(item, sessions: sessions)
-                                    }
+                            if !collapsedSectionIDs.contains(group.id) {
+                                ForEach(group.blocks(
+                                    groupedByPath: group.id == SessionGrouping.commandGroupID
+                                )) { block in
+                                    let sessions = block.sessions
+                                    let hasTabHeader = tabHeaderSessions(sessions) != nil
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        if hasTabHeader, let item = sessions.first {
+                                            tabHeader(item, sessions: sessions)
+                                        }
 
-                                    if !hasTabHeader || !isTabCollapsed(tabID) {
-                                        ForEach(sessions) { item in
-                                            sessionButton(item)
-                                                .id(
-                                                    "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session)):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.agentKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                        if !hasTabHeader || !isTabCollapsed(block.tabID) {
+                                            ForEach(sessions) { item in
+                                                let showsWorkingDirectory = group.id
+                                                    == SessionGrouping.commandGroupID
+                                                sessionButton(
+                                                    item,
+                                                    showsTime: geometry.size.width >= 300,
+                                                    showsWorkingDirectory: showsWorkingDirectory
                                                 )
-                                                .padding(.leading, hasTabHeader ? 12 : 0)
+                                                    .id(
+                                                        "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session, showsWorkingDirectory: showsWorkingDirectory)):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.agentKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                                    )
+                                                    .padding(.leading, hasTabHeader ? 12 : 0)
+                                            }
                                         }
                                     }
-                                }
-                                .overlayPreferenceValue(SessionIconAnchors.self) { anchors in
-                                    if sessions.count > 1 {
-                                        SessionGroupConnectors(
-                                            sessionIDs: sessions.map(\.id),
-                                            anchors: anchors
-                                        )
-                                        .allowsHitTesting(false)
-                                        .accessibilityHidden(true)
+                                    .overlayPreferenceValue(SessionIconAnchors.self) { anchors in
+                                        if sessions.count > 1 {
+                                            SessionGroupConnectors(
+                                                sessionIDs: sessions.map(\.id),
+                                                anchors: anchors
+                                            )
+                                            .allowsHitTesting(false)
+                                            .accessibilityHidden(true)
+                                        }
                                     }
                                 }
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background {
-                        if containsFocusedSession {
-                            RoundedRectangle(cornerRadius: 9)
-                                .fill(
-                                    settings.accentColor.opacity(
-                                        settings.focusedSectionBackgroundOpacity
-                                    )
-                                )
-                        }
-                    }
+                    archiveSection
                 }
-                archiveSection
             }
         }
     }
@@ -743,22 +743,23 @@ private struct PanelContent: View {
     }
 
     /// Sessions of one tab when its header should render.
-    private func tabHeaderSessions(
-        _ group: SessionListGroup,
-        tabID: String
-    ) -> [SessionListItem]? {
+    private func tabHeaderSessions(_ sessions: [SessionListItem]) -> [SessionListItem]? {
         guard showsTabHeaders else { return nil }
-        return group.sessions(inTab: tabID)
+        return sessions
     }
 
     private func sectionTitle(for group: SessionListGroup) -> String {
-        guard settings.sessionListStyle == .projectPath else { return group.title }
+        guard group.id != SessionGrouping.commandGroupID,
+              settings.sessionListStyle == .projectPath else { return group.title }
         return settings.sectionTitleStyle.title(for: group.title)
     }
 
-    private func groupHeader(_ group: SessionListGroup) -> some View {
+    private func groupHeader(_ group: SessionListGroup, showsCount: Bool) -> some View {
         let title = sectionTitle(for: group)
-        let isProjectFolder = settings.sessionListStyle == .projectPath
+        let countLabel = "\(group.sessions.count) \(group.sessions.count == 1 ? "session" : "sessions")"
+        let isCommandGroup = group.id == SessionGrouping.commandGroupID
+        let isProjectFolder = !isCommandGroup
+            && settings.sessionListStyle == .projectPath
             && group.id != "path:"
         let customization = isProjectFolder
             ? settings.projectFolderCustomization(at: group.title)
@@ -772,7 +773,9 @@ private struct PanelContent: View {
         } label: {
             HStack(spacing: 6) {
                 disclosureIcon(isCollapsed: collapsedSectionIDs.contains(group.id))
-                Image(systemName: isProjectFolder ? "folder" : "macwindow")
+                Image(systemName:
+                    isCommandGroup ? "terminal" : isProjectFolder ? "folder" : "macwindow"
+                )
                     .foregroundStyle(headerColor)
                 Text(title)
                     .lineLimit(1)
@@ -787,7 +790,14 @@ private struct PanelContent: View {
                         .foregroundStyle(.yellow)
                         .accessibilityHidden(true)
                 }
-                Spacer()
+                Spacer(minLength: 4)
+                if showsCount {
+                    Text(countLabel)
+                        .font(.system(size: settings.panelFontSize * 0.75))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .fixedSize()
+                }
             }
             .contentShape(Rectangle())
             .padding(.horizontal, 8)
@@ -796,9 +806,10 @@ private struct PanelContent: View {
         .buttonStyle(.plain)
         .font(headerFont())
         .foregroundStyle(.secondary)
-        .padding(.top, 5)
+        .padding(.top, 8)
+        .help(group.title)
         .accessibilityLabel(
-            "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(title)"
+            "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(title), \(countLabel)"
                 + (customization.isPinned ? ", pinned" : "")
                 + (customization.isFavorite ? ", favorite" : "")
         )
@@ -926,7 +937,11 @@ private struct PanelContent: View {
         }
     }
 
-    private func sessionButton(_ item: SessionListItem) -> some View {
+    private func sessionButton(
+        _ item: SessionListItem,
+        showsTime: Bool,
+        showsWorkingDirectory: Bool
+    ) -> some View {
         HStack(spacing: 0) {
             Button {
                 store.activate(sessionID: item.session.id)
@@ -941,10 +956,18 @@ private struct PanelContent: View {
                         [item.id: $0]
                     }
 
-                    Text(sessionName(item.session))
-                        .help(item.session.name)
+                    Text(sessionName(
+                        item.session,
+                        showsWorkingDirectory: showsWorkingDirectory
+                    ))
+                        .font(
+                            item.session.environmentAgentKind == nil
+                                ? panelFont()
+                                : .system(size: settings.panelFontSize)
+                        )
                         .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
 
                     if item.session.hasRunningSubagents == true,
                        item.session.activityKind == .agent,
@@ -991,9 +1014,9 @@ private struct PanelContent: View {
                             .frame(width: 36, height: 16)
                             .help(isMonitoring ? "venom-cli debug monitoring" : animation.accessibilityLabel)
                             .accessibilityLabel(isMonitoring ? "venom-cli debug monitoring" : animation.accessibilityLabel)
-                            .accessibilityHidden(settings.showsSessionTime && !isMonitoring)
+                            .accessibilityHidden(settings.showsSessionTime && showsTime && !isMonitoring)
 
-                            if settings.showsSessionTime {
+                            if settings.showsSessionTime && showsTime {
                                 TimelineView(
                                     .periodic(
                                         from: .now,
@@ -1020,14 +1043,22 @@ private struct PanelContent: View {
                         Image(systemName: "rectangle.compress.vertical")
                             .foregroundStyle(.secondary)
                     }
+
+                    Spacer(minLength: 0)
                 }
                 .contentShape(Rectangle())
                 .padding(.leading, 8)
-                .padding(.vertical, item.session.activityKind == .agent ? 9 : 5)
+                .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityLabel("Activate \(item.session.environmentAgentKind?.displayName ?? "Shell") session \(sessionName(item.session))")
+            .help(sessionHelp(
+                item.session,
+                showsWorkingDirectory: showsWorkingDirectory
+            ))
+            .accessibilityLabel(
+                "Activate \(item.session.environmentAgentKind?.displayName ?? "Shell") session \(sessionName(item.session, showsWorkingDirectory: showsWorkingDirectory))"
+            )
             .accessibilityValue(item.isFocused ? "Focused" : "")
 
             Button {
@@ -1036,7 +1067,7 @@ private struct PanelContent: View {
                 Image(systemName: "xmark")
                     .font(panelFont(0.85))
                     .foregroundStyle(.secondary)
-                    .frame(width: 24, height: item.session.activityKind == .agent ? 38 : 30)
+                    .frame(width: 24, height: item.session.activityKind == .agent ? 32 : 28)
                     .background {
                         if hoveredCloseButtonSessionID == item.id {
                             Circle()
@@ -1050,7 +1081,9 @@ private struct PanelContent: View {
             .opacity(hoveredSessionID == item.id ? 1 : 0)
             .allowsHitTesting(hoveredSessionID == item.id)
             .help("Close session")
-            .accessibilityLabel("Close session \(sessionName(item.session))")
+            .accessibilityLabel(
+                "Close session \(sessionName(item.session, showsWorkingDirectory: showsWorkingDirectory))"
+            )
             .overlay {
                 ActiveHoverRegion { isHovered in
                     if isHovered {
@@ -1065,7 +1098,7 @@ private struct PanelContent: View {
         .background(
             item.isFocused
                 ? settings.accentColor.opacity(0.14)
-                : Color.clear
+                : Color.secondary.opacity(hoveredSessionID == item.id ? 0.05 : 0)
         )
         .clipShape(RoundedRectangle(cornerRadius: 7))
         .contextMenu {
@@ -1101,8 +1134,37 @@ private struct PanelContent: View {
         }
     }
 
-    private func sessionName(_ session: TerminalSessionSnapshot) -> String {
-        archives.sessionTitle(for: session, terminal: store.terminalApp)
+    private func sessionName(
+        _ session: TerminalSessionSnapshot,
+        showsWorkingDirectory: Bool = false
+    ) -> String {
+        if showsWorkingDirectory, let workingDirectoryName = session.workingDirectoryName {
+            return workingDirectoryName
+        }
+        let name = archives.sessionTitle(for: session, terminal: store.terminalApp)
+        guard session.environmentAgentKind == nil else { return name }
+
+        // Only shorten the terminal's shell metadata, never Agent or custom task titles.
+        let shellSuffix = #" \(['‘’]?(?:zsh|bash|fish|sh|ksh|tcsh|csh)(?: \([^()\n]*\))?['‘’]?\)$"#
+        guard let suffix = name.range(of: shellSuffix, options: .regularExpression) else {
+            return name
+        }
+        let title = String(name[..<suffix.lowerBound])
+        guard !title.isEmpty,
+              let path = session.path,
+              title == URL(fileURLWithPath: path).lastPathComponent else { return name }
+        return settings.sessionListStyle == .projectPath ? "Terminal" : title
+    }
+
+    private func sessionHelp(
+        _ session: TerminalSessionSnapshot,
+        showsWorkingDirectory: Bool
+    ) -> String {
+        if showsWorkingDirectory, let path = session.path, !path.isEmpty {
+            return path
+        }
+        return archives.sessionTitle(for: session, terminal: store.terminalApp)
+            + "\n" + session.name
     }
 
     @ViewBuilder
@@ -1123,13 +1185,8 @@ private struct PanelContent: View {
         return Font(font.withSize(font.pointSize * scale))
     }
 
-    /// Header variant of the panel font with a bold trait so section titles
-    /// stand out from session rows regardless of the selected typeface.
     private func headerFont(_ scale: CGFloat = 0.85) -> Font {
-        let font = settings.panelFont
-        let sized = font.withSize(font.pointSize * scale)
-        let bold = NSFontManager.shared.convert(sized, toHaveTrait: .boldFontMask)
-        return Font(bold)
+        .system(size: settings.panelFontSize * scale, weight: .semibold)
     }
 
     private func statusView(_ text: String, showsProgress: Bool) -> some View {
@@ -1646,7 +1703,7 @@ private struct SessionGroupConnectors: View {
                         width: 1,
                         height: lower.minY - upper.maxY
                     )
-                    context.fill(Path(segment), with: .color(.secondary.opacity(0.45)))
+                    context.fill(Path(segment), with: .color(.secondary.opacity(0.22)))
                 }
             }
         }

@@ -1,4 +1,5 @@
 import AppKit
+import CryptoKit
 import Darwin
 import Foundation
 import Network
@@ -165,6 +166,15 @@ struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
     var environmentAgentKind: SessionAgentKind? {
         agentKind ?? (activityKind == .agent ? .unknown : nil)
     }
+
+    /// The final component of the current working directory.
+    ///
+    /// - Complexity: O(n), where n is the path length.
+    var workingDirectoryName: String? {
+        guard let path, !path.isEmpty else { return nil }
+        let name = URL(fileURLWithPath: path).lastPathComponent
+        return name.isEmpty ? path : name
+    }
 }
 
 struct TerminalTabSnapshot: Codable, Equatable, Identifiable {
@@ -239,6 +249,12 @@ struct SessionListItem: Equatable, Identifiable {
     var id: String { session.id }
 }
 
+struct SessionListBlock: Identifiable {
+    let id: String
+    let tabID: String
+    var sessions: [SessionListItem]
+}
+
 struct SessionListGroup: Equatable, Identifiable {
     let id: String
     let title: String
@@ -252,18 +268,41 @@ struct SessionListGroup: Equatable, Identifiable {
     func sessions(inTab tabID: String) -> [SessionListItem] {
         sessions.filter { $0.tabID == tabID }
     }
+
+    func blocks(groupedByPath: Bool = false) -> [SessionListBlock] {
+        var blocks: [SessionListBlock] = []
+        var indexByID: [String: Int] = [:]
+        for item in sessions {
+            let id = groupedByPath
+                ? "\(item.session.path ?? "")\u{0}\(item.tabID)"
+                : item.tabID
+            if let index = indexByID[id] {
+                blocks[index].sessions.append(item)
+            } else {
+                indexByID[id] = blocks.count
+                blocks.append(SessionListBlock(id: id, tabID: item.tabID, sessions: [item]))
+            }
+        }
+        return blocks
+    }
 }
 
 enum SessionGrouping {
+    static let commandGroupID = "commands"
+
     static func groups(
         from windows: [TerminalWindowSnapshot],
         style: SessionListStyle,
-        pinnedProjectPaths: Set<String> = []
+        pinnedProjectPaths: Set<String> = [],
+        separatesCommandSessions: Bool = false
     ) -> [SessionListGroup] {
+        var groups: [SessionListGroup]
         switch style {
         case .window:
-            return windows.compactMap { window in
-                let sessions = items(in: window)
+            groups = windows.compactMap { window in
+                let sessions = items(in: window).filter {
+                    !separatesCommandSessions || $0.session.environmentAgentKind != nil
+                }
                 guard !sessions.isEmpty else { return nil }
                 let title = window.number > 0 ? "Window \(window.number)" : "Window"
                 return SessionListGroup(
@@ -273,11 +312,14 @@ enum SessionGrouping {
                 )
             }
         case .projectPath:
+            let items = windows.flatMap(items(in:)).filter {
+                !separatesCommandSessions || $0.session.environmentAgentKind != nil
+            }
             let grouped = Dictionary(
-                grouping: windows.flatMap(items(in:)),
+                grouping: items,
                 by: { $0.session.path ?? "" }
             )
-            return grouped.keys.sorted { first, second in
+            groups = grouped.keys.sorted { first, second in
                 let firstIsPinned = pinnedProjectPaths.contains(first)
                 let secondIsPinned = pinnedProjectPaths.contains(second)
                 if firstIsPinned != secondIsPinned {
@@ -292,6 +334,35 @@ enum SessionGrouping {
                 )
             }
         }
+
+        guard separatesCommandSessions else { return groups }
+        let commandSessions = windows.flatMap(items(in:)).filter {
+            $0.session.environmentAgentKind == nil
+        }
+        guard !commandSessions.isEmpty else { return groups }
+        groups.append(SessionListGroup(
+            id: commandGroupID,
+            title: "Commands",
+            sessions: sortedCommandSessions(commandSessions)
+        ))
+        return groups
+    }
+
+    private static func sortedCommandSessions(_ items: [SessionListItem]) -> [SessionListItem] {
+        items.enumerated().sorted { first, second in
+            let firstPath = first.element.session.path ?? ""
+            let secondPath = second.element.session.path ?? ""
+            if firstPath.isEmpty != secondPath.isEmpty { return !firstPath.isEmpty }
+
+            let firstName = first.element.session.workingDirectoryName ?? ""
+            let secondName = second.element.session.workingDirectoryName ?? ""
+            let nameOrder = firstName.localizedCaseInsensitiveCompare(secondName)
+            if nameOrder != .orderedSame { return nameOrder == .orderedAscending }
+
+            let pathOrder = firstPath.localizedCaseInsensitiveCompare(secondPath)
+            if pathOrder != .orderedSame { return pathOrder == .orderedAscending }
+            return first.offset < second.offset
+        }.map(\.element)
     }
 
     /// Keeps same-tab sessions contiguous in first-appearance order so tab
@@ -400,6 +471,18 @@ final class ItermStore: ObservableObject {
         var requestID: UUID?
     }
 
+    private struct CachedCodexTitle: Codable {
+        let terminalSessionID: String
+        let pid: Int32
+        let startedAt: TimeInterval
+        let excerptDigest: String
+        let title: String
+    }
+
+    private static let codexTitleCacheKey = "codexSessionTitles"
+    private let titleDefaults: UserDefaults
+    private let fillsMissingTitles: () -> Bool
+
     let piArchives = PiSessionArchives()
     @Published private(set) var terminalApp: TerminalApp?
     @Published private(set) var connectionState: BridgeConnectionState = .connecting
@@ -464,10 +547,16 @@ final class ItermStore: ObservableObject {
     private let completionDefaults: UserDefaults
     private var completionCountsByDay: [String: Int]
 
-    init(generateCodexTitle: (@MainActor (String) async throws -> String)? = nil) {
+    init(
+        titleDefaults: UserDefaults = .standard,
+        fillsMissingTitles: @escaping () -> Bool = { LocalLLMService.fillsMissingTitles() },
+        generateCodexTitle: (@MainActor (String) async throws -> String)? = nil
+    ) {
         let defaults = UserDefaults.standard
         let counts = Self.loadCompletionCounts(from: defaults)
         self.generateCodexTitle = generateCodexTitle
+        self.titleDefaults = titleDefaults
+        self.fillsMissingTitles = fillsMissingTitles
         completionDefaults = defaults
         completionCountsByDay = counts
         agentCompletionStatistics = Self.statistics(from: counts)
@@ -643,6 +732,11 @@ final class ItermStore: ObservableObject {
         codexObservationSessionIdentityByTTY[tty] = session.id
     }
 
+    func scheduleCodexTitlesForTesting() {
+        scheduleCodexTitles(observations: codexObservations,
+                            terminalSessionIDs: codexObservationSessionIdentityByTTY)
+    }
+
     func codexTitleForTesting(_ session: TerminalSessionSnapshot) -> String? {
         guard let tty = session.tty else { return nil }
         return codexTitleStates[tty]?.title
@@ -715,26 +809,25 @@ final class ItermStore: ObservableObject {
     func activate(sessionID: String) {
         let session = windows.flatMap(\.tabs).flatMap(\.sessions).first { $0.id == sessionID }
         let completion = session.flatMap(codexCompletionAcknowledgement)
+        let terminal = terminalApp ?? .iTerm2
+        let activationIdentity = session?.tty.flatMap { terminalStatusRegistry.activationIdentity(for: $0) }
         let didActivate: (String?) -> Void = { [weak self] error in
-            guard error == nil, let self,
-                  acknowledgeCodexCompletion(completion, tty: session?.tty) else { return }
+            guard error == nil, let self else { return }
+            let acknowledgedCodex = acknowledgeCodexCompletion(completion, tty: session?.tty)
+            var acknowledgedTerminal = false
+            if terminal == .ghostty, let tty = session?.tty, let activationIdentity,
+               ghosttySourceWindows.flatMap(\.tabs).flatMap(\.sessions)
+                .contains(where: { $0.id == sessionID && $0.tty == tty }) {
+                acknowledgedTerminal = terminalStatusRegistry.activate(tty: tty, matching: activationIdentity)
+            }
+            guard acknowledgedCodex || acknowledgedTerminal else { return }
             publishItermWindows()
             publishGhosttyWindows()
         }
-        switch terminalApp ?? .iTerm2 {
+        switch terminal {
         case .iTerm2:
             iTermClient.activate(sessionID: sessionID, completion: didActivate)
         case .ghostty:
-            if
-                let tty = ghosttySourceWindows
-                    .flatMap(\.tabs)
-                    .flatMap(\.sessions)
-                    .first(where: { $0.id == sessionID })?.tty,
-                let tty = TerminalStatusRegistry.normalizedTTY(tty),
-                terminalStatusRegistry.activate(tty: tty)
-            {
-                publishGhosttyWindows()
-            }
             ghosttyClient.activate(terminalID: sessionID, completion: didActivate)
         }
     }
@@ -1209,7 +1302,7 @@ final class ItermStore: ObservableObject {
                         tty: tty, source: .agent, reporterID: observation.reporterId,
                         sequence: observation.sequence, state: state, exitStatus: observation.exitStatus,
                         heartbeat: false, hasRunningSubagents: observation.hasRunningSubagents,
-                        agentKind: .pi
+                        agentKind: .pi, completionID: observation.completionId
                     )
                     if terminalStatusRegistry.apply(report, recovering: true) { publishGhosttyWindows() }
                 }
@@ -1521,20 +1614,37 @@ final class ItermStore: ObservableObject {
         observations: [String: CodexSessionObservation],
         terminalSessionIDs: [String: String]
     ) {
-        guard generateCodexTitle != nil else { return }
-        for (tty, observation) in observations where observation.status == .finished {
+        let cachedTitles = titleDefaults.data(forKey: Self.codexTitleCacheKey).flatMap {
+            try? JSONDecoder().decode([String: CachedCodexTitle].self, from: $0)
+        } ?? [:]
+        for (tty, observation) in observations {
             guard let terminalSessionID = terminalSessionIDs[tty],
-                  let processIdentity = observation.processIdentity,
-                  let excerpt = observation.titleExcerpt else { continue }
+                  let processIdentity = observation.processIdentity else { continue }
+            let excerpt = observation.titleExcerpt
+            let cached = cachedTitles[tty].flatMap { cached in
+                cached.terminalSessionID == terminalSessionID && cached.pid == processIdentity.pid
+                    && cached.startedAt == processIdentity.startedAt
+                    && LocalLLMService.isValidSessionTitle(cached.title)
+                    ? cached : nil
+            }
             var state = codexTitleStates[tty] ?? CodexTitleState(
                 terminalSessionID: terminalSessionID,
                 processIdentity: processIdentity,
                 attemptedExcerpt: "",
                 attempts: 0,
-                completedExcerpt: nil,
-                title: nil,
+                completedExcerpt: excerpt.flatMap {
+                    cached?.excerptDigest == Self.titleExcerptDigest($0) ? $0 : nil
+                },
+                title: cached?.title,
                 requestID: nil
             )
+            // Restoration is independent of the backfill preference and current activity.
+            codexTitleStates[tty] = state
+            // Missing-only backfill needs identity and visible content, not lifecycle certainty.
+            // Long rollouts may omit lifecycle events from the bounded tail after App relaunch.
+            guard generateCodexTitle != nil, let excerpt,
+                  observation.status == .finished || (state.title == nil && fillsMissingTitles()),
+                  state.title != nil || fillsMissingTitles() else { continue }
             if state.attemptedExcerpt != excerpt {
                 codexTitleTasks.removeValue(forKey: tty)?.task.cancel()
                 state.attemptedExcerpt = excerpt
@@ -1557,7 +1667,7 @@ final class ItermStore: ObservableObject {
                 processIdentity: processIdentity,
                 excerpt: excerpt,
                 requestID: requestID,
-                requiresFinishedStatus: true,
+                requiresFinishedStatus: state.title != nil,
                 reportsFailure: false,
                 attempt: state.attempts
             )
@@ -1626,6 +1736,9 @@ final class ItermStore: ObservableObject {
             if codexTitleTasks[tty]?.requestID == requestID {
                 codexTitleTasks[tty] = nil
             }
+            if codexTitleStates[tty]?.requestID == requestID {
+                codexTitleStates[tty]?.requestID = nil
+            }
         }
         guard isStarted,
               codexObservationSessionIdentityByTTY[tty] == terminalSessionID,
@@ -1637,7 +1750,8 @@ final class ItermStore: ObservableObject {
               state.terminalSessionID == terminalSessionID,
               state.processIdentity == processIdentity,
               state.attemptedExcerpt == excerpt,
-              state.requestID == requestID else {
+              state.requestID == requestID,
+              manual || state.title != nil || fillsMissingTitles() else {
             if title != nil {
                 CodexTitleDiagnostics.shared.recordDiscard(
                     manual: manual, requestID: requestID, codexPID: processIdentity.pid
@@ -1649,6 +1763,16 @@ final class ItermStore: ObservableObject {
         if let title {
             state.title = title
             state.completedExcerpt = excerpt
+            var cached = titleDefaults.data(forKey: Self.codexTitleCacheKey).flatMap {
+                try? JSONDecoder().decode([String: CachedCodexTitle].self, from: $0)
+            } ?? [:]
+            cached[tty] = CachedCodexTitle(
+                terminalSessionID: terminalSessionID, pid: processIdentity.pid,
+                startedAt: processIdentity.startedAt, excerptDigest: Self.titleExcerptDigest(excerpt), title: title
+            )
+            if let data = try? JSONEncoder().encode(cached) {
+                titleDefaults.set(data, forKey: Self.codexTitleCacheKey)
+            }
         }
         codexTitleStates[tty] = state
         if let failure {
@@ -1657,6 +1781,10 @@ final class ItermStore: ObservableObject {
         guard title != nil else { return }
         publishItermWindows()
         publishGhosttyWindows()
+    }
+
+    private static func titleExcerptDigest(_ excerpt: String) -> String {
+        SHA256.hash(data: Data(excerpt.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
     static func codexSessionIdentityByTTY(
@@ -1872,10 +2000,12 @@ final class ItermBridgeClient {
             let sequence: Int
             let exitStatus: Int?
             let hasRunningSubagents: Bool
+            let completionId: String?
         }
         let request = Request(sessionId: sessionID, status: observation.status,
                               reporterId: observation.reporterId, sequence: observation.sequence,
-                              exitStatus: observation.exitStatus, hasRunningSubagents: observation.hasRunningSubagents)
+                              exitStatus: observation.exitStatus, hasRunningSubagents: observation.hasRunningSubagents,
+                              completionId: observation.completionId)
         // Recovery observations must not be queued across a disconnect.
         queue.async { [weak self] in _ = self?.send(request) }
     }
