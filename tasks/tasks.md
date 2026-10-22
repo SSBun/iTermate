@@ -1,6 +1,6 @@
 # 任务索引
 
-- [提交当前全部本地改动](tasks/commit-current-local-changes.md) — In Progress (2026-10-22 16:54)
+- [提交当前全部本地改动](tasks/commit-current-local-changes.md) — Completed (2026-10-22 16:56)
 
 - [通过本地模型重新摘要不合格的实时会话标题](tasks/resummarize-invalid-session-titles.md) — Completed (2026-10-22 16:44)
 
