@@ -1,0 +1,106 @@
+--- original-baseline/integrations/pi/iTermate-integration.ts
++++ observed-unrelated/integrations/pi/iTermate-integration.ts
+@@ -1,7 +1,7 @@
+ import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+ import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+ import { readFile } from "node:fs/promises";
+-import { chmodSync, closeSync, existsSync, fsyncSync, mkdirSync, mkdtempSync, openSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
++import { appendFileSync, chmodSync, closeSync, existsSync, fsyncSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
+ import { request as httpRequest } from "node:http";
+ import { execFileSync } from "node:child_process";
+ import { connect, createServer, type Socket } from "node:net";
+@@ -15,6 +15,11 @@
+ const bridgeSocketPath = join(supportDirectory, "bridge.sock");
+ const statusSocketPath = join(supportDirectory, "status.sock");
+ const reporterId = randomUUID();
++const diagnosticDirectory = join(homedir(), "Library/Logs/iTermate");
++const diagnosticLogStem = `pi-${process.pid}-${reporterId}`;
++const diagnosticLogPath = join(diagnosticDirectory, `${diagnosticLogStem}.log`);
++const previousDiagnosticLogPath = join(diagnosticDirectory, `${diagnosticLogStem}.previous.log`);
++const maximumDiagnosticLogBytes = 1024 * 1024;
+ let reportSequence = 0;
+ 
+ // Retain the old Decision implementation for restoration; no runtime path may enable it.
+@@ -46,6 +51,40 @@
+ const tty = terminalTTY();
+ 
+ type Status = "idle" | "running" | "awaitingInput" | "finished" | "detached";
++
++function pruneInactiveDiagnosticLogs(): void {
++  for (const name of readdirSync(diagnosticDirectory)) {
++    const match = /^pi-(\d+)-[0-9a-f-]{36}(?:\.previous)?\.log$/.exec(name);
++    if (!match) continue;
++    const ownerPID = Number(match[1]);
++    if (ownerPID === process.pid) continue;
++    try {
++      process.kill(ownerPID, 0);
++      continue;
++    } catch (error) {
++      if ((error as NodeJS.ErrnoException).code !== "ESRCH") continue;
++    }
++    rmSync(join(diagnosticDirectory, name), { force: true });
++  }
++}
++
++function recordTitleGenerationFailure(reason: string, manual: boolean, attempt: number): void {
++  try {
++    mkdirSync(diagnosticDirectory, { recursive: true, mode: 0o700 });
++    chmodSync(diagnosticDirectory, 0o700);
++    pruneInactiveDiagnosticLogs();
++    if (existsSync(diagnosticLogPath) && statSync(diagnosticLogPath).size >= maximumDiagnosticLogBytes) {
++      rmSync(previousDiagnosticLogPath, { force: true });
++      renameSync(diagnosticLogPath, previousDiagnosticLogPath);
++      chmodSync(previousDiagnosticLogPath, 0o600);
++    }
++    appendFileSync(diagnosticLogPath, JSON.stringify({
++      timestamp: new Date().toISOString(), level: "error", component: "pi",
++      event: "session_title_generation_failed", reason, manual, attempt,
++    }) + "\n", { encoding: "utf8", mode: 0o600 });
++    chmodSync(diagnosticLogPath, 0o600);
++  } catch { /* Diagnostics must never affect the Agent or title fallback. */ }
++}
+ 
+ // Deliberately prefer missed questions over interpreting examples as requests.
+ export function needsReply(text: string): boolean {
+@@ -839,7 +878,17 @@
+       archiveEndpoint?.publish();
+       return summary;
+     } catch (error) {
+-      if (force) throw error;
++      if (force) {
++        if (!request.signal.aborted && summaryRequest === request && active
++          && ctx.sessionManager.getSessionId() === sessionID) {
++          recordTitleGenerationFailure(
++            error instanceof SummaryGenerationError ? error.reason : "session_changed",
++            true,
++            summaryAttempts,
++          );
++        }
++        throw error;
++      }
+       // Cancellation/supersession belongs to the next lifecycle event, not a failed model call.
+       if (request.signal.aborted || summaryRequest !== request || !active
+         || ctx.sessionManager.getSessionId() !== sessionID) return;
+@@ -847,6 +896,11 @@
+       const reason = error instanceof SummaryGenerationError
+         ? { timeout: "本地模型调用超时", provider: "本地模型调用失败", response: "本地模型未返回有效短标题" }[error.reason]
+         : "会话内容已变化";
++      recordTitleGenerationFailure(
++        error instanceof SummaryGenerationError ? error.reason : "session_changed",
++        false,
++        summaryAttempts,
++      );
+       ctx.ui.notify(`iTermate：${reason}，保留原有标题。${retry
+         ? "将在空闲时重试一次。" : "已停止自动重试，可右键 Refresh Session Title。"}`, "warning");
+       if (retry) scheduleTaskSummary(ctx, 10000);
+--- original-baseline/tasks/context.md
++++ observed-unrelated/tasks/context.md
+@@ -71,7 +71,7 @@
+ - Pi 与 Codex 只有在 `TERM_PROGRAM=iTerm.app` 时才信任 iTerm Session ID 并使用 Bridge 协议；Ghostty 从 iTerm2 启动时可能继承陈旧的 `ITERM_SESSION_ID`/`TERM_SESSION_ID`，必须忽略它们并按控制 TTY 改走本机状态 listener。zsh、Bash、fish 普通命令状态必须由用户在设置中显式安装可逆 shell hook 后才报告。
+ - Codex 状态由 App 被动观察可见终端 TTY 的原生 Codex CLI 和 `~/.codex/sessions` 根 rollout 驱动；用户直接运行 `codex`，不使用 `codexm`、wrapper、hooks 或专属 app-server。进程启动时间与工作目录用于匹配新 Session，显式 resume ID 可匹配历史 Session；非显式恢复会读取首行 `cwd/source` 元数据完成映射，状态轮询读取有界本地尾部并只使用 `task_started`、`task_complete`、`turn_aborted` 的类型和时间戳。无法唯一映射时只保留 Codex 身份，不猜测状态或等待输入；不展示或上传 prompt、回复、思考或工具内容，也不读取终端屏幕。升级清理只删除 hooks 配置中带 `_iTermate` 的旧条目并保留第三方 hooks。权威为 `iTermate/CodexSessionMonitor.swift`、`iTermate/ItermBridge.swift`、`iTermate/AgentIntegrations.swift` 和 `docs/codex-monitoring.md`；Codex rollout 事件格式变化时复查。
+ - 标题栏刷新按钮对 iTerm2 重启 Bridge 并重建状态，对 Ghostty 立即重新读取 AppleScript 快照；两条路径都不重启 App 或用户的终端 Session。
+-- General 中的全局快捷键由 `FinishedSessionShortcut` 使用系统热键 API 注册，配置由 `AppSettings` 持久化；动作固定路由 iTerm2 Bridge，不依赖当前前台终端或面板分组顺序。Bridge 按实际 Window/Tab/Session 顺序从当前项之后循环，只选 `activityKind=agent`，依次优先其他 awaitingInput（问号）、finished、running、idle Agent；普通命令、当前项、未知及独立模型推测均不参与，待回复、运行中及空闲目标不执行完成状态清理，聚焦不会清除问号。
++- General 中的全局快捷键由 `FinishedSessionShortcut` 使用系统热键 API 注册，配置由 `AppSettings` 持久化；动作固定路由 iTerm2 Bridge，不依赖当前前台终端或面板分组顺序。App 将与面板同源、已通过 TTY/Session 身份校验的 Codex 状态作为 `codexStatuses` 随单次导航请求传入，包括表示未知状态的 null；Bridge 仅在当前真实 Session 中使用该覆盖，不将其写入生命周期或清理底层 Shell 状态。Bridge 按实际 Window/Tab/Session 顺序从当前项之后循环，只选 `activityKind=agent`，依次优先其他 awaitingInput（问号）、finished、running、idle Agent；普通命令、当前项、未知及独立模型推测均不参与，待回复、运行中及空闲目标不执行完成状态清理，聚焦不会清除问号。
+ - 状态菜单打开时刷新正在运行的终端数据源；`ItermStore` 分别保留两端快照与完成转换基线，只把可确认的 Agent Running 相加，并只累计退出状态为 0 的 Agent 完成。收藏项目操作固定路由到 iTerm2 Bridge；Bridge 在同一动作内用动态 `path` 判断首个精确匹配 Session，只有确认不存在时才通过 `LocalWriteOnlyProfile` 的自定义初始目录创建 Tab 或 Window，并以 `actionResult` 驱动菜单成功关闭或失败提示。
+ 
+ ## CTX-local-decision-models — 本地小模型与旧决策关闭门

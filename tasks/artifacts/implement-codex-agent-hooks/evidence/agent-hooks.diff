@@ -1,0 +1,515 @@
+diff --git a/.codex-plugin/plugin.json b/.codex-plugin/plugin.json
+index ce4f4c2..d6735d9 100644
+--- a/.codex-plugin/plugin.json
++++ b/.codex-plugin/plugin.json
+@@ -35,6 +35,7 @@
+     "beautiful-mermaid"
+   ],
+   "skills": "./skills/",
++  "hooks": ["./hooks/hooks.json", "./hooks/codex-lifecycle.json"],
+   "interface": {
+     "displayName": "CSL Agent Kit",
+     "shortDescription": "Multi-client agent toolkit",
+diff --git a/Users/caishilin/Desktop/personal/skills/hooks/codex-lifecycle.json b/Users/caishilin/Desktop/personal/skills/hooks/codex-lifecycle.json
+new file mode 100644
+index 0000000..7ee358c
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/skills/hooks/codex-lifecycle.json
+@@ -0,0 +1,18 @@
++{
++  "hooks": {
++    "Interrupt": [{
++      "hooks": [{
++        "type": "command",
++        "command": "sh -c 'exec node \"$PLUGIN_ROOT/skills/meta/agent-hooks/scripts/agent-hooks.js\" dispatch'",
++        "timeout": 3
++      }]
++    }],
++    "SessionEnd": [{
++      "hooks": [{
++        "type": "command",
++        "command": "sh -c 'exec node \"$PLUGIN_ROOT/skills/meta/agent-hooks/scripts/agent-hooks.js\" dispatch'",
++        "timeout": 3
++      }]
++    }]
++  }
++}
+diff --git a/skills/meta/agent-hooks/SKILL.md b/skills/meta/agent-hooks/SKILL.md
+index ea9ae71..c8fa359 100644
+--- a/skills/meta/agent-hooks/SKILL.md
++++ b/skills/meta/agent-hooks/SKILL.md
+@@ -15,7 +15,7 @@ Validate proposed rule files with `node scripts/validate-rules.js [--scope globa
+ 
+ - Use global hook rules for runtime execution; project hook rules remain metadata-only. Global rules and scripts live under `$CSL_AGENT_KIT_HOME/hooks/` (default `~/.csl-agent-kit/hooks/`); project rules and scripts live under `<workspace>/.agents/hooks/`.
+ - Inner scope (`inner:*`) ships hooks with the agent-hooks skill (e.g. `inner:agent-rules` and `inner:csl-agent-kit-contract`). Hook source is read-only: do not create, update, or delete it through the CLI. All inner hooks default enabled; `enable`/`disable` persists user choices in `$CSL_AGENT_KIT_HOME/hooks/config.json` (default `~/.csl-agent-kit/hooks/config.json`). Optional `hookSettings` are keyed by qualified inner ID; runtime passes only the matching object to that script as JSON in `AGENT_HOOKS_HOOK_CONFIG`. `inner:csl-agent-kit-contract` injects the stable behavioral contract from `references/csl-agent-kit-contract.md`; `inner:agent-rules` merges the built-in, user, and project `agent-rules.md` files in that order, and disabling that hook suppresses all three rule sources.
+-- Codex is the reference host: all events support inject/script (and block where the protocol allows). Claude Code shares Codex's hook protocol and is now supported at parity.
++- Codex is the reference host; each event supports only the actions in its capability table. Claude Code retains the shared event surface. `interrupt` and `session-end` are Codex-only, nonblocking script events, registered through the Codex manifest's supplemental lifecycle file with a three-second native timeout. Pi/Claude Code adapters are unchanged.
+ - Pi runs triggers inside the `csl-context-hooks` extension via `pi.on(...)`. Inject works where a handler can rewrite model-facing content (session-start systemPrompt, prompt-submit, after-tool tool_result); script runs as a best-effort side effect on all supported events. A `run-script` rule with `inject-output: true` additionally surfaces the script stdout as an injected prompt on inject-capable events. Block and permission/subagent events are not physically realizable on Pi and remain unsupported.
+ - Use Agent Hooks for persistent automation, direct commands for one-time work, and native Git hooks for Git enforcement.
+ 
+@@ -27,6 +27,12 @@ Validate proposed rule files with `node scripts/validate-rules.js [--scope globa
+ 4. Run the CLI mutation, then `show <qualified-id>` and inspect configured, validation, trust, support, effective, and reasons.
+ 5. Report the ID, diagnostics, script readiness, host limits, and effective state.
+ 
++## Bundled iTermate Integration
++
++`inner:itermate-codex-*` rules reuse the existing dispatcher for session start, prompt submission, tool observations, stop, interrupt, and session end. They run only for Codex and require iTermate's explicit `codex-agent-hooks.json` opt-in marker beside its installed `iTermate-status.py` reporter. The adapter forwards the native payload unchanged; it does not infer status, inject model context, install scripts, or edit user rules. Disabling the integration in iTermate removes the marker. These inner rules may also be disabled with the normal CLI.
++
++Update the CSL Agent Kit Codex plugin and review its hooks before enabling this provider in iTermate. The app migrates only its own legacy native entries on explicit enable; unrelated hooks remain, although removal can change their group indices and require review. A CLI `effective: active` result proves rule eligibility, not plugin trust, app opt-in, socket availability, or observed delivery. Do not mark the integration operational without checking those separately.
++
+ ## Persistent Directives
+ 
+ For explicit future-session persistence, use one global `session-start` / `inject-prompt` rule per atomic directive.
+diff --git a/skills/meta/agent-hooks/references/codex-protocol.json b/skills/meta/agent-hooks/references/codex-protocol.json
+index 0d072e4..1c9a45c 100644
+--- a/skills/meta/agent-hooks/references/codex-protocol.json
++++ b/skills/meta/agent-hooks/references/codex-protocol.json
+@@ -56,6 +56,18 @@
+       "native": { "agent_id": "a1", "agent_type": "reviewer", "stop_hook_active": false, "last_assistant_message": "done" },
+       "expected": { "prompt": null, "tool": null, "permission": null, "compact": null, "subagent": { "id": "a1", "type": "reviewer" }, "stop": { "hook_active": false, "last_message": "done" } }
+     },
++    "Interrupt": {
++      "event": "interrupt",
++      "capability": { "inject": false, "script": true, "block": false },
++      "native": { "turn_id": "turn-1" },
++      "expected": { "prompt": null, "tool": null, "permission": null, "compact": null, "subagent": null, "stop": null }
++    },
++    "SessionEnd": {
++      "event": "session-end",
++      "capability": { "inject": false, "script": true, "block": false },
++      "native": { "reason": "other" },
++      "expected": { "prompt": null, "tool": null, "permission": null, "compact": null, "subagent": null, "stop": null }
++    },
+     "Stop": {
+       "event": "stop",
+       "capability": { "inject": false, "script": true, "block": true },
+diff --git a/skills/meta/agent-hooks/scripts/lib/rule.js b/skills/meta/agent-hooks/scripts/lib/rule.js
+index b2f38c8..2b65c14 100644
+--- a/skills/meta/agent-hooks/scripts/lib/rule.js
++++ b/skills/meta/agent-hooks/scripts/lib/rule.js
+@@ -15,6 +15,8 @@ const EVENTS = new Set([
+   "subagent-start",
+   "subagent-stop",
+   "stop",
++  "interrupt",
++  "session-end",
+ ]);
+ const ACTIONS = new Set(["inject-prompt", "run-script"]);
+ const FIELDS = new Set(["schema", "event", "action", "description", "enabled", "when", "script", "timeout", "inject-output"]);
+diff --git a/skills/meta/agent-hooks/scripts/lib/runtime.js b/skills/meta/agent-hooks/scripts/lib/runtime.js
+index dd6e7bc..266d91f 100644
+--- a/skills/meta/agent-hooks/scripts/lib/runtime.js
++++ b/skills/meta/agent-hooks/scripts/lib/runtime.js
+@@ -27,11 +27,14 @@ const CODEX_CAPABILITIES = {
+   "subagent-start": { inject: true, script: true, block: false },
+   "subagent-stop": { inject: false, script: true, block: true },
+   stop: { inject: false, script: true, block: true },
++  interrupt: { inject: false, script: true, block: false },
++  "session-end": { inject: false, script: true, block: false },
+ };
+-// Claude Code shares Codex's stdin/stdout hook protocol (hookSpecificOutput,
+-// exit 2 block, PermissionRequest deny, PreCompact continue:false), so every
+-// Codex event/action is also physically realizable on Claude Code.
+-const CLAUDE_CODE_CAPABILITIES = CODEX_CAPABILITIES;
++// Preserve the existing shared protocol surface. These additional terminal
++// lifecycle events are registered only by the Codex plugin manifest.
++const CLAUDE_CODE_CAPABILITIES = { ...CODEX_CAPABILITIES };
++delete CLAUDE_CODE_CAPABILITIES.interrupt;
++delete CLAUDE_CODE_CAPABILITIES["session-end"];
+ 
+ // Pi has no native hook protocol; triggers run inside the csl-context-hooks
+ // extension via pi.on(event, handler). Inject only works where the handler can
+diff --git a/skills/meta/agent-hooks/scripts/lib/native-hook.js b/skills/meta/agent-hooks/scripts/lib/native-hook.js
+index 7cc2c51..f734b37 100644
+--- a/skills/meta/agent-hooks/scripts/lib/native-hook.js
++++ b/skills/meta/agent-hooks/scripts/lib/native-hook.js
+@@ -18,6 +18,8 @@ const NATIVE_EVENTS = {
+   SubagentStart: "subagent-start",
+   SubagentStop: "subagent-stop",
+   Stop: "stop",
++  Interrupt: "interrupt",
++  SessionEnd: "session-end",
+ };
+ 
+ function normalizePayload(native, host, event, workspace) {
+@@ -63,9 +65,15 @@ function dispatch(input = fs.readFileSync(0, "utf8"), env = process.env, io = pr
+     const event = NATIVE_EVENTS[native.hook_event_name];
+     if (!event) return 0;
+     const host = env.PLUGIN_ROOT ? "codex" : "claude-code";
++    const terminalEvent = event === "interrupt" || event === "session-end";
++    if (terminalEvent && host !== "codex") return 0;
+     const workspace = canonicalWorkspace(native.cwd || process.cwd());
+     const payload = normalizePayload(native, host, event, workspace);
+-    const result = runEvent(payload, { host, workspace });
++    const result = runEvent(payload, {
++      host, workspace,
++      // Codex caps these native hooks at three seconds, including dispatch overhead.
++      eventBudgetMs: terminalEvent ? 2500 : undefined,
++    });
+     const diagnostics = dedupeDiagnostics(payload, result.diagnostics);
+     if (diagnostics.length > 0) io.stderr.write(`Agent Hooks: ${diagnostics.join(", ")}\n`);
+     if (result.blocked) {
+diff --git a/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/scripts/itermate-codex-status.js b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/scripts/itermate-codex-status.js
+new file mode 100755
+index 0000000..c147da8
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/scripts/itermate-codex-status.js
+@@ -0,0 +1,59 @@
++#!/usr/bin/env node
++"use strict";
++
++const fs = require("node:fs");
++const os = require("node:os");
++const path = require("node:path");
++const { spawnSync } = require("node:child_process");
++
++const EVENTS = {
++  "session-start": ["SessionStart", "idle"],
++  "prompt-submit": ["UserPromptSubmit", "running"],
++  "before-tool": ["PreToolUse", "running"],
++  "after-tool": ["PostToolUse", "running"],
++  interrupt: ["Interrupt", "idle"],
++  stop: ["Stop", "finished"],
++  "session-end": ["SessionEnd", "detached"],
++};
++
++function report(payload, options = {}) {
++  const event = EVENTS[payload?.event];
++  const native = payload?.native?.payload;
++  if (payload?.schema !== "agent-hooks.event/v1" || payload?.host?.name !== "codex"
++      || !event || native?.hook_event_name !== event[0]
++      || typeof native.session_id !== "string" || payload.session?.id !== native.session_id) return 0;
++  const directory = path.join(options.home || os.homedir(), "Library/Application Support/iTermate/integrations");
++  const marker = path.join(directory, "codex-agent-hooks.json");
++  let config;
++  try {
++    config = JSON.parse(fs.readFileSync(marker, "utf8"));
++  } catch (error) {
++    if (error.code === "ENOENT") return 0; // iTermate has not opted in.
++    return 1;
++  }
++  if (config.schema !== "itermate.codex-agent-hooks/v1" || config.enabled !== true) return 0;
++  const executable = path.join(directory, "iTermate-status.py");
++  const result = (options.spawn || spawnSync)(executable, ["agent", event[1]], {
++    input: JSON.stringify(native),
++    encoding: "utf8",
++    timeout: 2400,
++    maxBuffer: 64 * 1024,
++    env: process.env,
++    shell: false,
++  });
++  // This observer cannot block a Codex prompt or tool, and emits no model context.
++  return result.error || result.signal || result.status !== 0 || result.stderr?.trim() ? 1 : 0;
++}
++
++if (require.main === module) {
++  try {
++    const input = fs.readFileSync(0, "utf8");
++    if (Buffer.byteLength(input) > 1024 * 1024) throw new Error("oversized hook payload");
++    process.exitCode = report(JSON.parse(input));
++  } catch {
++    process.stderr.write("iTermate Agent Hooks: invalid input or unavailable reporter\n");
++    process.exitCode = 1;
++  }
++}
++
++module.exports = { report, EVENTS };
+diff --git a/tests/agent-hooks.test.js b/tests/agent-hooks.test.js
+index 40633b6..e70f367 100644
+--- a/tests/agent-hooks.test.js
++++ b/tests/agent-hooks.test.js
+@@ -339,6 +339,11 @@ test("maps script success, failure, timeout, signal, post-event exit two, and sy
+   const hooks = path.join(data, "hooks");
+   fs.mkdirSync(scripts, { recursive: true });
+   fs.mkdirSync(hooks, { recursive: true });
++  // This fixture asserts global-script exit mapping, not optional bundled observers.
++  fs.writeFileSync(path.join(hooks, "config.json"), JSON.stringify({
++    schema: "agent-hooks.config/v1",
++    disabledHooks: ["inner:itermate-codex-before-tool", "inner:itermate-codex-after-tool"],
++  }));
+   const payload = (event) => agentHooks.normalizePayload({ hook_event_name: event === "before-tool" ? "PreToolUse" : "PostToolUse", session_id: "s", tool_name: "Bash" }, "codex", event, data);
+   const writeRule = (name, event, script) => fs.writeFileSync(path.join(hooks, `${name}.md`), `---\nschema: agent-hooks/v1\nevent: ${event}\naction: run-script\nenabled: true\nscript: ${script}\n---\n`);
+ 
+diff --git a/Users/caishilin/Desktop/personal/skills/tests/itermate-codex-hooks.test.js b/Users/caishilin/Desktop/personal/skills/tests/itermate-codex-hooks.test.js
+new file mode 100644
+index 0000000..32515bc
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/skills/tests/itermate-codex-hooks.test.js
+@@ -0,0 +1,134 @@
++"use strict";
++
++const assert = require("node:assert/strict");
++const fs = require("node:fs");
++const os = require("node:os");
++const path = require("node:path");
++const { spawnSync } = require("node:child_process");
++const test = require("node:test");
++const hooks = require("../skills/meta/agent-hooks/scripts/agent-hooks.js");
++const { report, EVENTS } = require("../skills/meta/agent-hooks/scripts/itermate-codex-status.js");
++const root = path.resolve(__dirname, "..");
++const cli = path.join(root, "skills/meta/agent-hooks/scripts/agent-hooks.js");
++
++function fixture(t) {
++  const home = fs.mkdtempSync(path.join(os.tmpdir(), "itermate-hooks-"));
++  t.after(() => fs.rmSync(home, { recursive: true, force: true }));
++  const directory = path.join(home, "Library/Application Support/iTermate/integrations");
++  fs.mkdirSync(directory, { recursive: true });
++  return { home, directory };
++}
++
++function enable(directory) {
++  fs.writeFileSync(path.join(directory, "codex-agent-hooks.json"), JSON.stringify({
++    schema: "itermate.codex-agent-hooks/v1", enabled: true,
++  }));
++}
++
++function payload(event, host = "codex", extra = {}) {
++  return hooks.normalizePayload({
++    hook_event_name: EVENTS[event][0], session_id: "codex-session", turn_id: "turn-1",
++    cwd: root, ...extra,
++  }, host, event, root);
++}
++
++test("Codex-only terminal events are nonblocking script capabilities", () => {
++  for (const event of ["interrupt", "session-end"]) {
++    assert.deepEqual(hooks.CODEX_CAPABILITIES[event], { inject: false, script: true, block: false });
++    assert.equal(hooks.HOST_CAPABILITIES.pi[event], undefined);
++    assert.equal(hooks.HOST_CAPABILITIES["claude-code"][event], undefined);
++    const rule = fs.readFileSync(path.join(root, `skills/meta/agent-hooks/hooks/itermate-codex-${event}.md`), "utf8");
++    assert.equal(hooks.parseMarkdown(rule, "fixture", "inner").valid, true);
++  }
++});
++
++test("Codex manifest adds terminal dispatcher without changing shared registration", () => {
++  const manifest = JSON.parse(fs.readFileSync(path.join(root, ".codex-plugin/plugin.json")));
++  assert.deepEqual(manifest.hooks, ["./hooks/hooks.json", "./hooks/codex-lifecycle.json"]);
++  const shared = JSON.parse(fs.readFileSync(path.join(root, "hooks/hooks.json"))).hooks;
++  const terminal = JSON.parse(fs.readFileSync(path.join(root, "hooks/codex-lifecycle.json"))).hooks;
++  assert.deepEqual(Object.keys(terminal).sort(), ["Interrupt", "SessionEnd"]);
++  assert.equal(shared.Interrupt, undefined);
++  assert.equal(shared.SessionEnd, undefined);
++  for (const groups of Object.values(terminal)) {
++    assert.equal(groups.length, 1);
++    assert.equal(groups[0].hooks.length, 1);
++    assert.equal(groups[0].hooks[0].timeout, 3);
++    assert.match(groups[0].hooks[0].command, /agent-hooks\.js.*dispatch/);
++  }
++});
++
++test("all status timings use host-filtered bundled rules", () => {
++  for (const event of Object.keys(EVENTS)) {
++    const rule = hooks.parseMarkdown(fs.readFileSync(path.join(root,
++      `skills/meta/agent-hooks/hooks/itermate-codex-${event}.md`), "utf8"), "fixture", "inner");
++    assert.equal(rule.valid, true);
++    assert.equal(rule.rule.event, event);
++    assert.equal(rule.rule.script, "itermate-codex-status.js");
++    assert.equal(hooks.evaluateCondition(rule.rule.when, payload(event)).value, "true");
++    assert.equal(hooks.evaluateCondition(rule.rule.when, payload(event, "pi")).value, "false");
++  }
++});
++
++test("reporting requires iTermate opt-in and is a no-op on other hosts", (t) => {
++  const { home, directory } = fixture(t);
++  const spawn = () => { throw new Error("must not spawn"); };
++  assert.equal(report(payload("prompt-submit"), { home, spawn }), 0);
++  enable(directory);
++  assert.equal(report(payload("prompt-submit", "pi"), { home, spawn }), 0);
++  assert.equal(report(payload("prompt-submit", "claude-code"), { home, spawn }), 0);
++  const mismatched = payload("prompt-submit");
++  mismatched.native.payload.session_id = "other";
++  assert.equal(report(mismatched, { home, spawn }), 0);
++});
++
++test("forward native event unchanged, including turn and compact source", (t) => {
++  const { home, directory } = fixture(t);
++  enable(directory);
++  for (const event of Object.keys(EVENTS)) {
++    let called = 0;
++    const input = payload(event, "codex", { source: "compact" });
++    assert.equal(report(input, { home, spawn(executable, args, options) {
++      called++;
++      assert.equal(executable, path.join(directory, "iTermate-status.py"));
++      assert.deepEqual(args, ["agent", EVENTS[event][1]]);
++      assert.deepEqual(JSON.parse(options.input), input.native.payload);
++      assert.equal(options.shell, false);
++      return { status: 0 };
++    } }), 0);
++    assert.equal(called, 1);
++  }
++});
++
++test("reporter failure is diagnostic, never a blocking exit code", (t) => {
++  const { home, directory } = fixture(t);
++  enable(directory);
++  for (const result of [{ status: 2 }, { status: null, signal: "SIGTERM" }, { error: new Error("missing") }]) {
++    assert.equal(report(payload("stop"), { home, spawn: () => result }), 1);
++  }
++});
++
++test("native dispatcher reaches opted-in reporter for Interrupt and SessionEnd", (t) => {
++  const { home, directory } = fixture(t);
++  enable(directory);
++  const data = path.join(home, "kit");
++  fs.mkdirSync(path.join(data, "hooks"), { recursive: true });
++  fs.writeFileSync(path.join(data, "hooks/config.json"), JSON.stringify({
++    schema: "agent-hooks.config/v1", disabledHooks: ["inner:agent-rules", "inner:csl-agent-kit-contract", "inner:refresh-tab-title"],
++  }));
++  const capture = path.join(home, "captured.json");
++  fs.writeFileSync(path.join(directory, "iTermate-status.py"),
++    `#!/usr/bin/env node\nrequire('fs').writeFileSync(${JSON.stringify(capture)}, JSON.stringify({args:process.argv.slice(2),native:JSON.parse(require('fs').readFileSync(0,'utf8'))}));\n`, { mode: 0o700 });
++  for (const event of ["interrupt", "session-end"]) {
++    const native = payload(event).native.payload;
++    const result = spawnSync(process.execPath, [cli, "dispatch"], {
++      input: JSON.stringify(native), encoding: "utf8",
++      env: { ...process.env, HOME: home, CSL_AGENT_KIT_HOME: data, PLUGIN_ROOT: root },
++    });
++    assert.equal(result.status, 0, result.stderr);
++    const observed = JSON.parse(fs.readFileSync(capture, "utf8"));
++    assert.deepEqual(observed.native, native);
++    assert.deepEqual(observed.args, ["agent", EVENTS[event][1]]);
++    assert.equal(result.stdout, "");
++  }
++});
+--- /tmp/skills-agent-hooks-context-before.md	2026-10-13 11:11:38
++++ /Users/caishilin/Desktop/personal/skills/tasks/context.md	2026-10-13 11:12:12
+@@ -211,6 +211,7 @@
+ 
+ ### Relationships
+ - `hooks/hooks.json` 的 SessionStart dispatcher 处理 startup、resume 与 compact 来源，Pi adapter 在每次 `before_agent_start` 重建 session prompts；同一 Contract prompt 不再由 manifest 直接 `cat`，避免重复注入。
++- Codex manifest 显式组合共享 hooks 与 `hooks/codex-lifecycle.json`；后者只补 Interrupt/SessionEnd，均为非阻塞脚本事件，不能把这些入口加入 Claude/Pi 共享声明。`inner:itermate-codex-*` 按宿主筛选并调用 bundled adapter，只有 iTermate 的显式启用标记存在时才转发原生 payload 给用户已安装的 reporter；该规则不自行安装、改写原生 hooks 或注入模型上下文。规则 eligible、App opt-in、Codex plugin 版本/信任和实际 Socket 投递是不同验证边界。权威为 `.codex-plugin/plugin.json`、`hooks/codex-lifecycle.json`、`scripts/lib/runtime.js`、`scripts/itermate-codex-status.js`（后两者位于 Agent Hooks skill 内）。
+ 
+ ### Decision and Verification Boundaries
+ - Codex、Claude Code 与 Pi 支持该 session prompt；Cursor 在宿主传递 injected context 前保持 unsupported。`tests/agent-hooks.test.js` 与 `tests/pi-context-hooks.test.mjs` 验证迁移、默认启用、Built-in → User → Project Agent Rules 合并、来源不变、用户禁用、最终 task 名称和压缩后重建边界。
+diff --git a/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-after-tool.md b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-after-tool.md
+new file mode 100644
+index 0000000..2ef8c02
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-after-tool.md
+@@ -0,0 +1,13 @@
++---
++schema: agent-hooks/v1
++event: after-tool
++action: run-script
++description: Report opted-in Codex lifecycle status to the local iTermate integration.
++enabled: true
++script: itermate-codex-status.js
++timeout: 3
++when:
++  path: /host/name
++  op: eq
++  value: codex
++---
+diff --git a/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-before-tool.md b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-before-tool.md
+new file mode 100644
+index 0000000..761ed58
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-before-tool.md
+@@ -0,0 +1,13 @@
++---
++schema: agent-hooks/v1
++event: before-tool
++action: run-script
++description: Report opted-in Codex lifecycle status to the local iTermate integration.
++enabled: true
++script: itermate-codex-status.js
++timeout: 3
++when:
++  path: /host/name
++  op: eq
++  value: codex
++---
+diff --git a/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-interrupt.md b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-interrupt.md
+new file mode 100644
+index 0000000..869c729
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-interrupt.md
+@@ -0,0 +1,13 @@
++---
++schema: agent-hooks/v1
++event: interrupt
++action: run-script
++description: Report opted-in Codex lifecycle status to the local iTermate integration.
++enabled: true
++script: itermate-codex-status.js
++timeout: 3
++when:
++  path: /host/name
++  op: eq
++  value: codex
++---
+diff --git a/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-prompt-submit.md b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-prompt-submit.md
+new file mode 100644
+index 0000000..4c4bb0c
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-prompt-submit.md
+@@ -0,0 +1,13 @@
++---
++schema: agent-hooks/v1
++event: prompt-submit
++action: run-script
++description: Report opted-in Codex lifecycle status to the local iTermate integration.
++enabled: true
++script: itermate-codex-status.js
++timeout: 3
++when:
++  path: /host/name
++  op: eq
++  value: codex
++---
+diff --git a/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-session-end.md b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-session-end.md
+new file mode 100644
+index 0000000..9b12904
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-session-end.md
+@@ -0,0 +1,13 @@
++---
++schema: agent-hooks/v1
++event: session-end
++action: run-script
++description: Report opted-in Codex lifecycle status to the local iTermate integration.
++enabled: true
++script: itermate-codex-status.js
++timeout: 3
++when:
++  path: /host/name
++  op: eq
++  value: codex
++---
+diff --git a/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-session-start.md b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-session-start.md
+new file mode 100644
+index 0000000..684c427
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-session-start.md
+@@ -0,0 +1,13 @@
++---
++schema: agent-hooks/v1
++event: session-start
++action: run-script
++description: Report opted-in Codex lifecycle status to the local iTermate integration.
++enabled: true
++script: itermate-codex-status.js
++timeout: 3
++when:
++  path: /host/name
++  op: eq
++  value: codex
++---
+diff --git a/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-stop.md b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-stop.md
+new file mode 100644
+index 0000000..a216825
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/skills/skills/meta/agent-hooks/hooks/itermate-codex-stop.md
+@@ -0,0 +1,13 @@
++---
++schema: agent-hooks/v1
++event: stop
++action: run-script
++description: Report opted-in Codex lifecycle status to the local iTermate integration.
++enabled: true
++script: itermate-codex-status.js
++timeout: 3
++when:
++  path: /host/name
++  op: eq
++  value: codex
++---

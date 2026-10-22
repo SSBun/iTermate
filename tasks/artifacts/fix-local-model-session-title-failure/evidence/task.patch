@@ -1,0 +1,223 @@
+--- before/integrations/pi/iTermate-integration.ts
++++ after/integrations/pi/iTermate-integration.ts
+@@ -502,14 +502,9 @@
+   return parts.reverse().join("\n\n");
+ }
+ 
+-export function taskTitleElements(title: string): string[] {
+-  return title.match(/\p{Unified_Ideograph}|[A-Za-z]+/gu) ?? [];
+-}
+-
++// Title style is prompt guidance only; keep any nonblank response unchanged.
+ export function isValidTaskTitle(title: unknown): title is string {
+-  return typeof title === "string" && !/[^\p{Unified_Ideograph}A-Za-z]/u.test(title)
+-    && /\p{Unified_Ideograph}/u.test(title) && taskTitleElements(title).length <= 16
+-    && !/^(?:已完成|等待确认|等待输入|进行中)$/u.test(title);
++  return typeof title === "string" && title.trim().length > 0;
+ }
+ 
+ type LocalTextGenerator = (prompt: string, text: string, signal: AbortSignal, maxTokens: number) => Promise<string>;
+--- before/iTermate/PiSessionArchives.swift
++++ after/iTermate/PiSessionArchives.swift
+@@ -158,14 +158,9 @@
+         return name.isEmpty ? "Session" : name
+     }
+ 
+-    /// Validates the raw local title, counting each Han character or English word once.
++    /// Checks only for nonblank text within the discovery transport bound, not title style.
+     private static func isValidTaskTitle(_ title: String) -> Bool {
+-        guard !title.isEmpty, title.utf16.count <= 16384,
+-              title.range(of: "[^\\p{Unified_Ideograph}A-Za-z]", options: .regularExpression) == nil,
+-              title.range(of: "\\p{Unified_Ideograph}", options: .regularExpression) != nil,
+-              !["已完成", "等待确认", "等待输入", "进行中"].contains(title),
+-              let tokens = try? NSRegularExpression(pattern: "\\p{Unified_Ideograph}|[A-Za-z]+") else { return false }
+-        return tokens.numberOfMatches(in: title, range: NSRange(title.startIndex..., in: title)) <= 16
++        title.utf16.count <= 16384 && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+     }
+ 
+     /// Whether this Pi instance has a title request in flight from the panel.
+--- before/integrations/pi/task-summary.test.ts
++++ after/integrations/pi/task-summary.test.ts
+@@ -1,7 +1,7 @@
+ import assert from "node:assert/strict";
+ import { test } from "node:test";
+ import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+-import { isValidTaskTitle, localQuestionDecision, summarizeTask, taskSummaryExcerpt, taskTitleElements } from "./iTermate-integration";
++import { isValidTaskTitle, localQuestionDecision, summarizeTask, taskSummaryExcerpt } from "./iTermate-integration";
+ 
+ function context(messages: unknown[]) {
+   return {
+@@ -31,15 +31,19 @@
+   assert.equal(title, "修复分页");
+ });
+ 
+-test("title validation counts technical words once and never repairs invalid output", () => {
+-  assert.equal(taskTitleElements("修复HTTP重试").length, 5);
+-  for (const title of ["修复分页", "排查macOS侧边栏", "字".repeat(16), "𠮷".repeat(15) + "AVCaptureSession"]) {
++test("title style is prompt guidance while only blank or nonstring results are rejected", () => {
++  for (const title of ["修复分页", "字".repeat(17), "HTTP", "修复HTTP429重试", "修复，分页",
++    "修复分页。", " 修复分页 ", "控制 Tab 切换会话跳过 Codex 故障", "修复分页\n", "修复🔔", "已完成", '"修复分页"']) {
+     assert.equal(isValidTaskTitle(title), true, title);
+   }
+-  for (const title of ["", "字".repeat(17), "字".repeat(16) + "HTTP", "HTTP",
+-    "修复HTTP429重试", "修复，分页", "修复分页。", " 修复分页", "修复 分页", "修复分页\n",
+-    "修复分页\u0000", "修复🔔", "已完成", '"修复分页"']) {
+-    assert.equal(isValidTaskTitle(title), false, title);
++  for (const title of ["", " \n\t", undefined, null, 42, {}]) {
++    assert.equal(isValidTaskTitle(title), false);
++  }
++});
++
++test("generated titles retain whitespace punctuation digits and length without rewriting", async () => {
++  for (const title of ["控制 Tab 切换会话跳过 Codex 故障", " 修复 HTTP429 重试。\n", "字".repeat(81)]) {
++    assert.equal(await summarizeTask(context([]), "Goal", new AbortController().signal, async () => title), title);
+   }
+ });
+ 
+@@ -76,8 +80,8 @@
+   assert.equal(calls, 0);
+ });
+ 
+-test("invalid output, late cancellation and provider errors cannot publish a title", async () => {
+-  for (const title of ["修复\n分页", "修复HTTP429重试", "字".repeat(17)]) {
++test("empty output, late cancellation and provider errors cannot publish a title", async () => {
++  for (const title of ["", " \n\t"]) {
+     await assert.rejects(summarizeTask(context([]), "Goal", new AbortController().signal, async () => title));
+   }
+   const controller = new AbortController();
+--- before/integrations/pi/archive-lifecycle.test.mjs
++++ after/integrations/pi/archive-lifecycle.test.mjs
+@@ -199,6 +199,21 @@
+   } finally { await h.dispose(); }
+ });
+ 
++test("automatic publishing and manual refresh retain titles outside prompt style guidance", async () => {
++  const title = " 控制 Tab 切换跳过 Codex 2。\n";
++  const h = await harness({ complete: async () => taskReply(title) });
++  try {
++    await settleTask(h);
++    assert.equal(h.readDescriptor().taskSummary, title);
++    await h.refreshTitle();
++    assert.equal(h.responses.at(-1).ok, true);
++    assert.equal(h.responses.at(-1).taskSummary, title);
++    assert.equal(h.readDescriptor().taskSummary, title);
++    assert.equal(h.shutdowns, 0);
++    assert.equal(h.inputBlocked, false);
++  } finally { await h.dispose(); }
++});
++
+ test("manual refresh bypasses automatic deduplication and keeps old labels on failure", async () => {
+   let calls = 0;
+   const h = await harness({ complete: async () => {
+--- before/integrations/pi/session-title-model-comparison.test.ts
++++ after/integrations/pi/session-title-model-comparison.test.ts
+@@ -205,12 +205,19 @@
+   let calls = 0;
+   const result = await compareTitles(fixtures[0], isolatedRemote, async (url) => {
+     calls += 1;
+-    return url === localURL ? modelResponse("local", "修".repeat(81))
+-      : new Response(`upstream error containing ${isolatedRemote.key}`, { status: 401 });
++    return new Response(`upstream error containing ${isolatedRemote.key}`, { status: url === localURL ? 503 : 401 });
+   });
+   assert.equal(calls, 2);
+   assert.ok(result.rows.every(r => r.issues.includes("generation_failed")));
+   assert.doesNotMatch(JSON.stringify(result), /SYNTHETIC_API_KEY|remote\.example|upstream error/);
++});
++
++test("title style issues remain diagnostics rather than generation failures", async () => {
++  const result = await compareTitles(fixtures[0], isolatedRemote, async (url) =>
++    modelResponse(url === localURL ? "local" : "remote", "修".repeat(81)));
++  assert.ok(result.rows.every(row => row.title === "修".repeat(81)));
++  assert.ok(result.rows.every(row => row.issues.includes("over_80_utf16_units")));
++  assert.ok(result.rows.every(row => !row.issues.includes("generation_failed")));
+ });
+ 
+ test("a credential echoed in a successful response is never saved in diagnostics", async () => {
+--- before/iTermateTests/PiSessionArchiveTests.swift
++++ after/iTermateTests/PiSessionArchiveTests.swift
+@@ -125,11 +125,24 @@
+         XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "π - project (zsh)")
+     }
+ 
++    func testLiveTitlesPreserveModelOutputWithoutStyleFiltering() throws {
++        let root = try liveFixture()
++        defer { try? FileManager.default.removeItem(at: root) }
++        let archives = PiSessionArchives(liveRoot: root)
++        for title in ["控制 Tab 切换会话跳过 Codex 故障", " 修复 HTTP429 重试。\n",
++                      String(repeating: "字", count: 81), "Fix pagination", "已完成", "修复🔔"] {
++            let file = try writeLiveDescriptor(at: root, summary: title)
++            archives.refresh()
++            XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), title)
++            try FileManager.default.removeItem(at: file)
++        }
++    }
++
+     func testMissingMalformedAndExpiredTaskTitlesFallBack() throws {
+         let root = try liveFixture()
+         defer { try? FileManager.default.removeItem(at: root) }
+         let archives = PiSessionArchives(liveRoot: root)
+-        for summary: Any? in [nil, " ", String(repeating: "x", count: 81), "bad\nlabel", "bad\u{001B}label", 42] {
++        for summary: Any? in [nil, "", " \n\t", String(repeating: "x", count: 16385), 42] {
+             let file = try writeLiveDescriptor(at: root, summary: summary)
+             archives.refresh()
+             XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "π - project (zsh)")
+--- before/docs/local-model-api.md
++++ after/docs/local-model-api.md
+@@ -12,7 +12,7 @@
+ 
+ 问题判断只在 Pi 回答结束后分析最后一条助手可见文本，识别当前是否需要用户回答、确认、选择、授权或提供信息；严格接受 `question` 或 `normal` 的 JSON 标签，不构造概率。失败、超时或超过输入边界时保留生命周期状态，不扫描终端屏幕或改用其他模型。
+ 
+-实时标题只使用有界用户与助手可见文本，最多十六个元素：每个汉字计一元素，每个连续英文技术词或缩写计一元素。禁止标点、空白、数字或解释文字，直接校验原始输出，失败保留旧标题。普通归档操作生成的多句摘要与实时标题独立，仍采用原有归档流程。
++实时标题只使用有界用户与助手可见文本。提示词建议最多十六个元素（汉字逐字计数、连续英文技术词整体计一元素），不含标点、空白、数字或解释文字；这些仅是生成指导，不对返回标题做格式强过滤。非空标题原样发布和显示，不因字符或建议长度被拒绝，也不清洗或截断。空结果、通信失败或会话身份变化仍保留旧标题；通信大小边界不变。普通归档操作生成的多句摘要与实时标题独立，仍采用原有归档流程。
+ 
+ 本地 HTTP 请求不使用代理、不跟随重定向；每个请求十秒截止，标题生成另有六十秒总截止和取消保护。库存必须匹配所选标签与该次请求绑定的digest，模型不可用或版本在请求中变化时明确失败。没有新增 iTermate 对外 HTTP 服务。
+ 
+--- before/docs/pi-session-archives.md
++++ after/docs/pi-session-archives.md
+@@ -4,7 +4,7 @@
+ 
+ 安装新版 Pi 集成并执行 `/reload` 后，交互式 Pi 会在启动、重载或切换分支后的安全空闲时，根据已有对话补生成简短中文任务标题；没有对话时不调用模型。每轮成功回复结束后也会在后台使用Local LLM设置中选择的本机Qwen3.5 2B或4B更新标题，不再使用当前Pi模型。面板的实时 Session 行优先显示这个标题，悬停文字可查看原始终端标题；iTerm2 与 Ghostty 都通过明确的会话身份匹配，不按目录或名称猜测。
+ 
+-输入只取当前分支最近四条用户消息和四条助手可见文本，每条最多保留开头与末尾各约1000字符，不发送隐藏思考、图片、系统指令或原始工具输出。标题调用无工具、不写入对话，不使用云端或旧Decision API；每次推理读取App保存的同一模型选择，分类与标题保持一致，所选模型不可用或请求中选择改变时不回退其他模型。每次推理后请求十分钟本地热驻留。原始标题最多十六个元素，汉字逐字计数、连续英文技术词或缩写整体计一元素，禁止标点、空白和数字；不合规输出直接拒绝，不通过清洗或截断修补。模型不能保证语义准确，也不能保证自动去除用户消息中的所有敏感内容。
++输入只取当前分支最近四条用户消息和四条助手可见文本，每条最多保留开头与末尾各约1000字符，不发送隐藏思考、图片、系统指令或原始工具输出。标题调用无工具、不写入对话，不使用云端或旧Decision API；每次推理读取App保存的同一模型选择，分类与标题保持一致，所选模型不可用或请求中选择改变时不回退其他模型。每次推理后请求十分钟本地热驻留。标题提示词建议最多十六个元素，汉字逐字计数、连续英文技术词或缩写整体计一元素，并要求不含标点、空白和数字；这些仅是提示词指导，不作为返回结果的强过滤条件。非空标题原样生成、发布、显示及手动刷新，不因字符格式或建议长度被拒绝，不清洗或截断；空结果、通信大小、响应有效性及会话身份保护仍保留。模型不能保证语义准确，也不能保证自动去除用户消息中的所有敏感内容。
+ 
+ 生成期间或生成失败时保留上一条标题；没有可用摘要、集成未更新或活跃身份失效时，回退原始终端标题。新一轮工作会取消上一轮尚未完成的请求；切换 Session、分支、重载或退出会清除旧摘要和待执行请求，迟到结果不能覆盖新会话标题。摘要仅在当前 Pi 运行期间缓存。启动补生成与回复结束后的生成先等待约1.5秒，忙碌、有待处理消息或交互提示时继续等待空闲，不阻塞对话。列表轮询和状态查询仍不调用模型。
+ 
+@@ -16,7 +16,7 @@
+ 
+ ## 标题生成对比测试
+ 
+-`integrations/pi/session-title-model-comparison.test.ts` 调用生产的 `taskSummaryExcerpt` 和 `summarizeTask`，但显式注入诊断适配器用于比较，不改变应用固定使用本地小模型的默认路径。`task-summary.test.ts` 覆盖原始标题格式、元素计数、取消及本地二分类标签。默认单元测试使用模拟网络，不调用真实模型；真实模型比较是单独的显式启用测试。
++`integrations/pi/session-title-model-comparison.test.ts` 调用生产的 `taskSummaryExcerpt` 和 `summarizeTask`，但显式注入诊断适配器用于比较，不改变应用固定使用本地小模型的默认路径。`task-summary.test.ts` 覆盖非空标题原样保留、格式仅作提示、空结果、取消及本地二分类标签。默认单元测试使用模拟网络，不调用真实模型；真实模型比较是单独的显式启用测试。
+ 
+ 仅运行该测试文件：
+ 
+@@ -24,7 +24,7 @@
+ tsx --test integrations/pi/session-title-model-comparison.test.ts
+ ```
+ 
+-默认离线检查使用模拟适配器；生产标题函数的十六元素和原始格式约束始终生效，不要求双方标题逐字相同。文件中保留的旧80字符与24字诊断是历史比较维度，不是当前生产约束。模型语义质量仍需人工核对。
++默认离线检查使用模拟适配器；生产标题函数只检查非空结果，不按十六元素或字符格式拒绝标题，不要求双方标题逐字相同。文件中的80字符、24字及其他格式诊断仅用于比较质量，不是生产强过滤条件。模型语义质量仍需人工核对。
+ 
+ 真实比较只发送文件内固定的三个合成会话，不读取当前 Pi 会话、历史文件或 Pi 认证配置。远程侧需显式指定一个支持 Bearer 认证、`messages`、`max_tokens` 和字符串 `message.content` 的 HTTPS OpenAI 兼容 Chat Completions 接口；这不会自动选用当前 Pi 模型或其 OAuth 凭据。
+ 
+--- before/tasks/context.md
++++ after/tasks/context.md
+@@ -45,7 +45,7 @@
+ - JSONL保留完整历史并追加不进入模型上下文的custom锚点，以固定当前分支；原始Pi文件不由App删除，恢复不直接写归档快照。归档不等于工作目录或外部资源备份。
+ 
+ ### Workflows
+-- 实时Pi任务标题由集成在启动/重载/分支切换后的安全空闲时补生成，并在交互会话成功回复settled后后台直接调用固定回环Ollama的小模型更新，不依赖当前Pi模型；标题最多十六元素，汉字逐字计数、连续英文技术词或缩写整体计一元素，原始标点空白数字输出拒绝，仅使用当前分支有界的用户/助手可见文本，不传隐藏思考或原始工具输出；复用私有发现元数据的可选taskSummary，Swift按明确终端身份唯一匹配后优先显示，缺失、过期或不合法时回退终端标题，悬停保留原始标题。摘要不进入状态协议、对话或归档；轮询与只读状态查询不调用模型，失败保留旧摘要；新一轮取消在途请求，Session/分支切换或退出清除，迟到结果须通过请求、会话与leaf核验。缓存仅覆盖当前集成运行期；自动生成对连续未变化的可见对话最多尝试两次，失败后延迟重试且显示脱敏原因，成功内容去重；生命周期取消清理定时器与在途请求，重载和分支切换重置缓存及预算；右键Refresh Session Title仍可手动生成。手动刷新使用声明supportsTitleRefresh/canRefreshTitle的私有认证refreshTitle动作，仅空闲会话可用；绕过自动去重，但保留请求取消与身份/leaf复核，同一会话刷新串行、不锁输入，失败保留标题并反馈；App按端点实例跟踪在途请求，响应后重读发现元数据核对结果。App与集成源码改变仍需用户自行运行新版App并安装/reload集成。
++- 实时Pi任务标题由集成在启动/重载/分支切换后的安全空闲时补生成，并在交互会话成功回复settled后后台直接调用固定回环Ollama的小模型更新，不依赖当前Pi模型；标题的十六元素和字符格式要求仅作提示词指导，不强过滤或清洗返回结果；非空标题原样保留，仅使用当前分支有界的用户/助手可见文本，不传隐藏思考或原始工具输出；复用私有发现元数据的可选taskSummary，Swift按明确终端身份唯一匹配后优先显示，缺失、过期或不合法时回退终端标题，悬停保留原始标题。摘要不进入状态协议、对话或归档；轮询与只读状态查询不调用模型，失败保留旧摘要；新一轮取消在途请求，Session/分支切换或退出清除，迟到结果须通过请求、会话与leaf核验。缓存仅覆盖当前集成运行期；自动生成对连续未变化的可见对话最多尝试两次，失败后延迟重试且显示脱敏原因，成功内容去重；生命周期取消清理定时器与在途请求，重载和分支切换重置缓存及预算；右键Refresh Session Title仍可手动生成。手动刷新使用声明supportsTitleRefresh/canRefreshTitle的私有认证refreshTitle动作，仅空闲会话可用；绕过自动去重，但保留请求取消与身份/leaf复核，同一会话刷新串行、不锁输入，失败保留标题并反馈；App按端点实例跟踪在途请求，响应后重读发现元数据核对结果。App与集成源码改变仍需用户自行运行新版App并安装/reload集成。
+ - 右键归档直接执行、不显示确认弹窗，仍要求Pi空闲、没有草稿/排队消息/交互弹窗，且子代理活动可确认安全；先经当前Pi的modelRegistry使用当前模型生成短摘要（无工具、无新CLI，60秒截止），输入是活动分支投影的可见对话与压缩摘要，不含隐藏思考或原始工具输出；生成失败不归档/退出。生成后重新核验身份、分支与空闲条件，写入、校验并发布含summary的归档后请求Pi正常退出。App要求活跃实例声明supportsSummary，旧集成需重载；旧归档summary可缺省并继续恢复。App复核记录、观察目标进程退出，再检查原Shell身份后仅关闭目标分屏，不关闭同Tab其他分屏；iTerm2对退出后的前台状态有短暂刷新等待，发现新存活进程仍拒绝关闭。无法确认安全时保留分屏和已保存的归档。
+ - 主面板Archive分区默认折叠，标题与恢复文案使用独立系统紫色，并配以适应明暗外观的浅紫背景；归档行间距不随实时Agent行留白变化，与实时Session共用滚动区域；展开时刷新归档列表，参与现有Expand All/Collapse All，折叠状态仅属于面板生命周期。即使实时数据源连接未就绪或没有当前Session，分区也可显示；展开不触发恢复或删除。
+ - 主面板 Archive 行提供右键删除菜单，点击直接执行、不显示确认弹窗，由 `PiSessionArchives` 校验 UUID、目录非符号链接及元数据一致性，并将所选归档目录移至系统废纸篓；与归档/恢复共用忙碌状态，结束后刷新列表，失败沿用面板错误提示，不操作原始 Pi 文件、工作目录或恢复副本。
+@@ -89,7 +89,7 @@
+ 
+ ### Decision and Verification Boundaries
+ - 问题判断只在Pi的agent_settled hook分析最后一条完整助手回复；请求回答、确认、选择、授权或信息均为需要用户参与，不要求问号；只接收严格二分类JSON，不伪造概率。失败保留明确生命周期，不回退旧模型、规则或云端；Bridge不扫描终端屏幕。心跳仅保持已确认状态，不再次推理。
+-- 实时标题不使用当前Pi模型；原始输出最多十六元素，汉字逐字计数、连续英文技术词整体计一元素，拒绝标点空白数字；Swift显示与手动刷新响应也校验原始格式，失败保留旧标题。仅归档时的多句摘要继续使用原有Pi模型路径。
++- 实时标题不使用当前Pi模型；十六元素、中文和字符格式要求仅作提示词指导，Pi与Swift显示/手动刷新仅检查非空文本及既有通信边界，不因空格、标点、数字或建议长度拒绝或改写结果；通信、响应有效性、身份或取消失败仍保留旧标题。仅归档时的多句摘要继续使用原有Pi模型路径。
+ - Pi实时标题生成失败会把脱敏的失败类别写入`~/Library/Logs/iTermate`中由进程唯一拥有、单文件1 MiB轮转的JSONL日志对；不写入对话、模型输出、路径或凭据，写入失败不改变标题回退。写入时清理已退出PID的旧日志对，About设置页提供打开该目录的入口。
+ - 源码和构建通过不代表新App或Pi集成已运行；需用户自行运行App并安装或reload集成，旧进程不会因源码改动自动停用。
+ 

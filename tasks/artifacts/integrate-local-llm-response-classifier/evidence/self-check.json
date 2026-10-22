@@ -1,0 +1,26 @@
+{
+  "schema": "local-llm-classifier-selfcheck/v1",
+  "targets": {
+    "T1": "Local LLM 设置区、部署与可用性控件已编译；隔离 Python3.12 桥接已实际复用2B并启动。未观察真实窗口或用户启用过程。",
+    "T2": "真实2B API输出 normal/question/normal，生产TS解析得到 false/true/false；保留现有生命周期状态映射。",
+    "T3": "预热后才发布Ready/分析许可；提供方独立截止、身份复核、不伪造概率。错误模型revision启动失败且无端点/许可；鉴权、Origin、通用接口和超长输入拒绝已核验。"
+  },
+  "build": "独立DerivedData中Debug App构建成功，未启动App。",
+  "bundled_resource_sha256": {
+    "iTermate-laya.py": "0e18cc6bf9baf15d39ec25c2bb7498fa44604afd7da3e4f36c96e1cbfabbe799",
+    "iTermate-integration.ts": "058f7b1a2eb8405c4ccd1a2c5f4997194baf07d9dc79b7e9722f8b9b47a96197",
+    "agent-connection-prompt.md": "5e69470253dc6a95b4377ad44f6bc18510b53575c315ff2361c041b6117daae3"
+  },
+  "installed_pi_unchanged": true,
+  "title_generation_source_unchanged": true,
+  "original_app_and_bridge_processes_unchanged": true,
+  "unit_tests_run": false,
+  "verification_commands": "swiftc -parse；node --check/--experimental-strip-types --check；tsc --noEmit --strict；Python与文档示例compile；xcodebuild build；隔离真实本机API和生产解析器诊断。",
+  "limits": [
+    "当前请求下未运行单元测试或项目套件。",
+    "未验收真实设置窗口外观或当前用户Session切换。",
+    "已验证复用现有权重；未重做缺失模型时的大文件下载。",
+    "推理超时、迟到结果及取消路径已静态检查，未人为阻塞真实服务。",
+    "三个操作性样本不能保证模型分类准确率。"
+  ]
+}

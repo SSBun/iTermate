@@ -1,0 +1,281 @@
+TAP version 13
+# Subtest: direct question decisions use the binary protocol without a terminal-state threshold
+ok 1 - direct question decisions use the binary protocol without a terminal-state threshold
+  ---
+  duration_ms: 1.247958
+  type: 'test'
+  ...
+# Subtest: local 2B accepts explicit generated labels without inventing probabilities
+ok 2 - local 2B accepts explicit generated labels without inventing probabilities
+  ---
+  duration_ms: 0.133334
+  type: 'test'
+  ...
+# Subtest: legacy terminal-state parser and disabled-model heuristic remain callable
+ok 3 - legacy terminal-state parser and disabled-model heuristic remain callable
+  ---
+  duration_ms: 3.478708
+  type: 'test'
+  ...
+# Subtest: uncertain or malformed model output falls back instead of becoming false
+ok 4 - uncertain or malformed model output falls back instead of becoming false
+  ---
+  duration_ms: 0.827625
+  type: 'test'
+  ...
+# Subtest: recognizes explicit confirmation gates
+ok 5 - recognizes explicit confirmation gates
+  ---
+  duration_ms: 2.330167
+  type: 'test'
+  ...
+# Subtest: recognizes short action-scoped approval questions without a separate waiting clause
+ok 6 - recognizes short action-scoped approval questions without a separate waiting clause
+  ---
+  duration_ms: 0.68425
+  type: 'test'
+  ...
+# Subtest: recognizes approval, selection, and clarification gates
+ok 7 - recognizes approval, selection, and clarification gates
+  ---
+  duration_ms: 0.419916
+  type: 'test'
+  ...
+# Subtest: recognizes direct closing questions and implicit confirmation requests
+ok 8 - recognizes direct closing questions and implicit confirmation requests
+  ---
+  duration_ms: 0.183041
+  type: 'test'
+  ...
+# Subtest: does not ask for a reply when the request is negated or already fulfilled
+ok 9 - does not ask for a reply when the request is negated or already fulfilled
+  ---
+  duration_ms: 0.311791
+  type: 'test'
+  ...
+# Subtest: all confirmation actions share the same completed-action exclusion
+ok 10 - all confirmation actions share the same completed-action exclusion
+  ---
+  duration_ms: 0.710875
+  type: 'test'
+  ...
+# Subtest: completed results are not confused with future conditions or noun modifiers
+ok 11 - completed results are not confused with future conditions or noun modifiers
+  ---
+  duration_ms: 0.361708
+  type: 'test'
+  ...
+# Subtest: future modals and terminal conditions preserve confirmation requests
+ok 12 - future modals and terminal conditions preserve confirmation requests
+  ---
+  duration_ms: 0.254417
+  type: 'test'
+  ...
+# Subtest: rejects negated waiting in both languages
+ok 13 - rejects negated waiting in both languages
+  ---
+  duration_ms: 0.072792
+  type: 'test'
+  ...
+# Subtest: does not treat examples, code, or optional offers as blocking questions
+ok 14 - does not treat examples, code, or optional offers as blocking questions
+  ---
+  duration_ms: 0.152458
+  type: 'test'
+  ...
+# Subtest: reply regression cases have unique identities and fit the production input boundary
+ok 15 - reply regression cases have unique identities and fit the production input boundary
+  ---
+  duration_ms: 0.671041
+  type: 'test'
+  ...
+# Subtest: production reply classifier matches every regression case on the selected local model
+    # Subtest: restart-report: normal
+    ok 1 - restart-report: normal
+      ---
+      duration_ms: 1810.448166
+      type: 'test'
+      ...
+    # Subtest: install-instructions: normal
+    ok 2 - install-instructions: normal
+      ---
+      duration_ms: 1469.267
+      type: 'test'
+      ...
+    # Subtest: verification-instructions: normal
+    ok 3 - verification-instructions: normal
+      ---
+      duration_ms: 374.818792
+      type: 'test'
+      ...
+    # Subtest: approval: question
+    ok 4 - approval: question
+      ---
+      duration_ms: 303.141542
+      type: 'test'
+      ...
+    # Subtest: choice: question
+    ok 5 - choice: question
+      ---
+      duration_ms: 306.970458
+      type: 'test'
+      ...
+    # Subtest: missing-information: question
+    ok 6 - missing-information: question
+      ---
+      duration_ms: 301.207167
+      type: 'test'
+      ...
+    # Subtest: implicit-gate: question
+    ok 7 - implicit-gate: question
+      ---
+      duration_ms: 305.33025
+      type: 'test'
+      ...
+    # Subtest: mixed-report-and-question: question
+    ok 8 - mixed-report-and-question: question
+      ---
+      duration_ms: 296.573875
+      type: 'test'
+      ...
+    # Subtest: autonomous-progress: normal
+    ok 9 - autonomous-progress: normal
+      ---
+      duration_ms: 305.514084
+      type: 'test'
+      ...
+    # Subtest: quoted-question: normal
+    ok 10 - quoted-question: normal
+      ---
+      duration_ms: 336.666833
+      type: 'test'
+      ...
+    # Subtest: english-instructions: normal
+    ok 11 - english-instructions: normal
+      ---
+      duration_ms: 315.687375
+      type: 'test'
+      ...
+    # Subtest: english-gate: question
+    ok 12 - english-gate: question
+      ---
+      duration_ms: 438.579041
+      type: 'test'
+      ...
+    # Subtest: task-target-confirmation: question
+    ok 13 - task-target-confirmation: question
+      ---
+      duration_ms: 446.441375
+      type: 'test'
+      ...
+    # Subtest: markdown-task-target: question
+    ok 14 - markdown-task-target: question
+      ---
+      duration_ms: 341.341625
+      type: 'test'
+      ...
+    # Subtest: completed-task-target: normal
+    ok 15 - completed-task-target: normal
+      ---
+      duration_ms: 338.790458
+      type: 'test'
+      ...
+    # Subtest: quoted-task-target: normal
+    ok 16 - quoted-task-target: normal
+      ---
+      duration_ms: 337.244583
+      type: 'test'
+      ...
+    # Subtest: english-approval: question
+    ok 17 - english-approval: question
+      ---
+      duration_ms: 313.396458
+      type: 'test'
+      ...
+    # Subtest: local-commit-report: normal
+    ok 18 - local-commit-report: normal
+      ---
+      duration_ms: 332.66
+      type: 'test'
+      ...
+    # Subtest: local-commit-report-checklist: normal
+    ok 19 - local-commit-report-checklist: normal
+      ---
+      duration_ms: 418.897459
+      type: 'test'
+      ...
+    # Subtest: commit-awaiting-push-approval: question
+    ok 20 - commit-awaiting-push-approval: question
+      ---
+      duration_ms: 331.53675
+      type: 'test'
+      ...
+    # Subtest: english-local-commit-report: normal
+    ok 21 - english-local-commit-report: normal
+      ---
+      duration_ms: 328.830916
+      type: 'test'
+      ...
+    # Subtest: commit-report-missing-information: question
+    ok 22 - commit-report-missing-information: question
+      ---
+      duration_ms: 311.746083
+      type: 'test'
+      ...
+    1..22
+ok 16 - production reply classifier matches every regression case on the selected local model
+  ---
+  duration_ms: 10068.167042
+  type: 'test'
+  ...
+# Subtest: local task titles use only visible text and need no selected Pi model
+ok 17 - local task titles use only visible text and need no selected Pi model
+  ---
+  duration_ms: 1.213083
+  type: 'test'
+  ...
+# Subtest: title style is prompt guidance while only blank or nonstring results are rejected
+ok 18 - title style is prompt guidance while only blank or nonstring results are rejected
+  ---
+  duration_ms: 0.166958
+  type: 'test'
+  ...
+# Subtest: generated titles retain whitespace punctuation digits and length without rewriting
+ok 19 - generated titles retain whitespace punctuation digits and length without rewriting
+  ---
+  duration_ms: 0.305916
+  type: 'test'
+  ...
+# Subtest: question labels accept only the exact local binary JSON protocol
+ok 20 - question labels accept only the exact local binary JSON protocol
+  ---
+  duration_ms: 0.179792
+  type: 'test'
+  ...
+# Subtest: excerpt bounds messages while retaining the latest user goal
+ok 21 - excerpt bounds messages while retaining the latest user goal
+  ---
+  duration_ms: 0.200166
+  type: 'test'
+  ...
+# Subtest: empty input and prior cancellation never invoke a model
+ok 22 - empty input and prior cancellation never invoke a model
+  ---
+  duration_ms: 0.398292
+  type: 'test'
+  ...
+# Subtest: empty output, late cancellation and provider errors cannot publish a title
+ok 23 - empty output, late cancellation and provider errors cannot publish a title
+  ---
+  duration_ms: 0.733709
+  type: 'test'
+  ...
+1..23
+# tests 45
+# suites 0
+# pass 45
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10292.510208

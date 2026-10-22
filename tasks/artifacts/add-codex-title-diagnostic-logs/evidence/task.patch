@@ -1,0 +1,427 @@
+--- /Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/add-codex-title-diagnostic-logs/evidence/before/ItermBridge.swift	2026-10-21 16:39:00
++++ iTermate/ItermBridge.swift	2026-10-21 16:41:39
+@@ -597,6 +597,9 @@
+               let processIdentity = observation.processIdentity,
+               let excerpt = observation.titleExcerpt,
+               generateCodexTitle != nil else {
++            CodexTitleDiagnostics.shared.recordFailure(
++                SessionTitleGenerationError(.sessionUnavailable), manual: true
++            )
+             actionError = "This Codex session has no conversation available for a title yet."
+             return
+         }
+@@ -622,7 +625,8 @@
+             excerpt: excerpt,
+             requestID: requestID,
+             requiresFinishedStatus: false,
+-            reportsFailure: true
++            reportsFailure: true,
++            attempt: 1
+         )
+     }
+ 
+@@ -1554,7 +1558,8 @@
+                 excerpt: excerpt,
+                 requestID: requestID,
+                 requiresFinishedStatus: true,
+-                reportsFailure: false
++                reportsFailure: false,
++                attempt: state.attempts
+             )
+         }
+     }
+@@ -1566,7 +1571,8 @@
+         excerpt: String,
+         requestID: UUID,
+         requiresFinishedStatus: Bool,
+-        reportsFailure: Bool
++        reportsFailure: Bool,
++        attempt: Int
+     ) {
+         guard let generateCodexTitle else { return }
+         let task = Task { @MainActor [weak self] in
+@@ -1579,10 +1585,15 @@
+                     excerpt: excerpt,
+                     requestID: requestID,
+                     requiresFinishedStatus: requiresFinishedStatus,
++                    manual: reportsFailure,
+                     title: title,
+                     failure: nil
+                 )
+             } catch {
++                CodexTitleDiagnostics.shared.recordFailure(
++                    error, manual: reportsFailure, requestID: requestID,
++                    codexPID: processIdentity.pid, attempt: attempt
++                )
+                 self?.finishCodexTitleRequest(
+                     tty: tty,
+                     terminalSessionID: terminalSessionID,
+@@ -1590,6 +1601,7 @@
+                     excerpt: excerpt,
+                     requestID: requestID,
+                     requiresFinishedStatus: requiresFinishedStatus,
++                    manual: reportsFailure,
+                     title: nil,
+                     failure: reportsFailure ? error.localizedDescription : nil
+                 )
+@@ -1606,6 +1618,7 @@
+         excerpt: String,
+         requestID: UUID,
+         requiresFinishedStatus: Bool,
++        manual: Bool,
+         title: String?,
+         failure: String?
+     ) {
+@@ -1624,7 +1637,14 @@
+               state.terminalSessionID == terminalSessionID,
+               state.processIdentity == processIdentity,
+               state.attemptedExcerpt == excerpt,
+-              state.requestID == requestID else { return }
++              state.requestID == requestID else {
++            if title != nil {
++                CodexTitleDiagnostics.shared.recordDiscard(
++                    manual: manual, requestID: requestID, codexPID: processIdentity.pid
++                )
++            }
++            return
++        }
+         state.requestID = nil
+         if let title {
+             state.title = title
+--- /Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/add-codex-title-diagnostic-logs/evidence/before/LocalModelService.swift	2026-10-21 16:39:00
++++ iTermate/LocalModelService.swift	2026-10-21 16:53:15
+@@ -793,7 +793,7 @@
+         let data: Data
+         do { data = try Data(contentsOf: configurationURL) }
+         catch let error as CocoaError where error.code == .fileReadNoSuchFile { return (.twoB, nil) }
+-        guard data.count <= 4096 else { throw ServiceError("Invalid model selection") }
++        guard data.count <= 4096 else { throw SessionTitleGenerationError(.invalidConfiguration) }
+         let selection = try JSONDecoder().decode(LocalLLMSelection.self, from: data)
+         return (selection.model, data)
+     }
+@@ -858,14 +858,14 @@
+     /// Generates a terminal task title with the saved local model selection.
+     func generateSessionTitle(from excerpt: String) async throws -> String {
+         guard !excerpt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+-            throw ServiceError("No conversation is available for a title")
++            throw SessionTitleGenerationError(.noConversation)
+         }
+         let selection = try readSelection()
+         let inventory = try await request(path: "tags")
+         guard let digest = selection.model.installedRevision(
+             in: inventory["models"] as? [[String: Any]] ?? []
+         ), try readSelection().identity == selection.identity else {
+-            throw ServiceError("Selected local model is unavailable")
++            throw SessionTitleGenerationError(.modelUnavailable)
+         }
+         let value = try await request(path: "chat", body: [
+             "model": selection.model.rawValue,
+@@ -886,24 +886,35 @@
+                 "num_predict": 64,
+             ],
+         ])
+-        guard value["model"] as? String == selection.model.rawValue,
+-              value["done"] as? Bool == true,
+-              value["done_reason"] as? String == "stop",
+-              let message = value["message"] as? [String: Any] else {
+-            throw ServiceError("Invalid local title response")
++        guard value["model"] as? String == selection.model.rawValue else {
++            throw SessionTitleGenerationError(.modelMismatch)
+         }
++        guard value["done"] as? Bool == true else {
++            throw SessionTitleGenerationError(.incompleteResponse)
++        }
++        guard value["done_reason"] as? String == "stop" else {
++            throw SessionTitleGenerationError(value["done_reason"] as? String == "length"
++                ? .tokenLimit : .unexpectedFinishReason)
++        }
++        guard let message = value["message"] as? [String: Any] else {
++            throw SessionTitleGenerationError(.missingMessage)
++        }
+         let thinking = message["thinking"]
+-        guard thinking == nil || (thinking as? String)?.isEmpty == true,
+-              let title = message["content"] as? String,
+-              !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+-            throw ServiceError("Invalid local title response")
++        guard thinking == nil || (thinking as? String)?.isEmpty == true else {
++            throw SessionTitleGenerationError(.unexpectedThinking)
+         }
++        guard let title = message["content"] as? String else {
++            throw SessionTitleGenerationError(.invalidContent)
++        }
++        guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
++            throw SessionTitleGenerationError(.emptyTitle)
++        }
+         let inventoryAfter = try await request(path: "tags")
+         guard try readSelection().identity == selection.identity,
+               selection.model.installedRevision(
+                 in: inventoryAfter["models"] as? [[String: Any]] ?? []
+               ) == digest else {
+-            throw ServiceError("Local model changed during title generation")
++            throw SessionTitleGenerationError(.modelChanged)
+         }
+         return title
+     }
+@@ -920,11 +931,21 @@
+             request.httpBody = try JSONSerialization.data(withJSONObject: body)
+         }
+         let (data, response) = try await session.data(for: request)
+-        guard let response = response as? HTTPURLResponse,
+-              response.statusCode == 200, response.url == url, data.count <= 2 * 1024 * 1024,
+-              let value = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+-            throw ServiceError("Invalid local model response")
++        guard let response = response as? HTTPURLResponse else {
++            throw SessionTitleGenerationError(.httpStatus)
+         }
++        guard response.statusCode == 200 else {
++            throw SessionTitleGenerationError(.httpStatus, statusCode: response.statusCode)
++        }
++        guard response.url == url else {
++            throw SessionTitleGenerationError(.redirectedResponse)
++        }
++        guard data.count <= 2 * 1024 * 1024 else {
++            throw SessionTitleGenerationError(.oversizedResponse)
++        }
++        guard let value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
++            throw SessionTitleGenerationError(.invalidJSON)
++        }
+         return value
+     }
+ }
+--- /Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/add-codex-title-diagnostic-logs/evidence/before/project.pbxproj	2026-10-21 16:39:00
++++ iTermate.xcodeproj/project.pbxproj	2026-10-21 16:42:03
+@@ -20,6 +20,7 @@
+ 		8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F8A8790CA418B304742A10E /* AgentIntegrations.swift */; };
+ 		94004F11D2C60280194E6D51 /* LocalModelExitBarrierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E61CC5AF458418C13003EB81 /* LocalModelExitBarrierTests.swift */; };
+ 		94B162FBE46FC4FD4E2DF794 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 877F89ED3A45C6F8DF3B44C1 /* Sparkle */; };
++		994DD77D0492FA8EAEC4AB2D /* CodexTitleDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA41029E6A8E419C4EF047FA /* CodexTitleDiagnostics.swift */; };
+ 		9EA014E904BFB2839F940EBA /* SessionNotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */; };
+ 		AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */; };
+ 		B3841525F058DCEF4B08CC48 /* TerminalStatusServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */; };
+@@ -76,6 +77,7 @@
+ 		8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNotificationTests.swift; sourceTree = "<group>"; };
+ 		98A663F51BCEE90A4D694DFD /* iTermateBridge.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = iTermateBridge.py; sourceTree = "<group>"; };
+ 		9BF8CFF4C87D1CF8C9E3F93E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
++		AA41029E6A8E419C4EF047FA /* CodexTitleDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexTitleDiagnostics.swift; sourceTree = "<group>"; };
+ 		AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelLayoutTests.swift; sourceTree = "<group>"; };
+ 		C392679BCA47875383F75E60 /* PiStatusRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiStatusRecoveryTests.swift; sourceTree = "<group>"; };
+ 		E19ED60DFB350BCCD35BB7D4 /* iTermateTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iTermateTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+@@ -147,6 +149,7 @@
+ 				8F8A8790CA418B304742A10E /* AgentIntegrations.swift */,
+ 				26707EC6497714316C11E6B6 /* Assets.xcassets */,
+ 				2D6FAEF1D6A3ED3BE73E0BED /* CodexSessionMonitor.swift */,
++				AA41029E6A8E419C4EF047FA /* CodexTitleDiagnostics.swift */,
+ 				1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */,
+ 				9BF8CFF4C87D1CF8C9E3F93E /* Info.plist */,
+ 				44F8719B6809A3EC4D52A306 /* iTermateApp.swift */,
+@@ -322,6 +325,7 @@
+ 			files = (
+ 				8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */,
+ 				0944AEEE0596242835BAD8FB /* CodexSessionMonitor.swift in Sources */,
++				994DD77D0492FA8EAEC4AB2D /* CodexTitleDiagnostics.swift in Sources */,
+ 				EB587179278E9117F362FB84 /* FinishedSessionShortcut.swift in Sources */,
+ 				FDEFD14A15E537D2E1EF00E6 /* ItermBridge.swift in Sources */,
+ 				F8FB3990DA0A51BF7DD6065B /* LocalModelService.swift in Sources */,
+--- /Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/add-codex-title-diagnostic-logs/evidence/before/codex-monitoring.md	2026-10-21 16:39:00
++++ docs/codex-monitoring.md	2026-10-21 16:42:42
+@@ -37,6 +37,14 @@
+ 
+ 查看确认绑定终端 Session ID、TTY、Codex 进程身份与本次完成时间。同一完成事件再次被轮询到不会恢复完成标记；下一轮完成仍会显示 `finished`。运行、等待回复、中断与未知状态不会因查看而清除。该变化只影响 iTermate 展示，不改写 Codex rollout。
+ 
++## 标题诊断日志
++
++Codex 标题自动生成、手动刷新失败以及手动刷新缺少可用会话时，App 将脱敏 JSONL 记录写入 `~/Library/Logs/iTermate/codex-titles.log`；可从 Settings → About → **Show Logs in Finder** 打开目录，无需依赖界面错误提示。当前文件达到 1 MiB 后轮转为 `codex-titles.previous.log`，只保留这一对文件，跨 App 启动保留；同时运行的 App 实例使用独立锁文件协调写入和轮转。日志访问失败或锁正忙时会放弃该条记录，不阻断标题或会话操作。
++
++记录包含时间、自动/手动来源、随机请求 ID、App/Codex PID、尝试次数及安全的失败类别；网络失败仅记录数值错误码，HTTP 失败记录状态码，不保存错误描述、URL、路径、对话、生成标题、思考或凭据。`token_limit` 表示模型因生成上限停止，`empty_title` 表示空标题，其他类别区分响应格式、完成状态、模型身份与配置变化。主动取消记为信息级 `session_title_generation_cancelled`；模型已返回但会话身份或状态改变导致不能应用时，记为 `session_title_result_discarded`，不冒充模型故障。
++
++没有记录不代表生成成功：尚未满足完成状态、对话摘录或唯一会话映射条件时，不会发起自动生成，也不会逐次轮询写日志。源码改动需用户自行构建并重新运行新版 App 才能作用于 Codex；不需要 reload Pi，也不会补写旧版运行期的错误。
++
+ ## 能力边界
+ 
+ - Codex 当前保存的 rollout 生命周期没有稳定的通用“等待用户输入”事件，因此 iTermate 不伪造 `awaitingInput`。
+--- /Users/caishilin/Desktop/personal/iTermate/tasks/artifacts/add-codex-title-diagnostic-logs/evidence/before/context.md	2026-10-21 16:47:07
++++ tasks/context.md	2026-10-21 16:47:31
+@@ -76,11 +76,11 @@
+ - 状态菜单打开时刷新正在运行的终端数据源；`ItermStore` 分别保留两端快照与完成转换基线，只把可确认的 Agent Running 相加，并只累计退出状态为 0 的 Agent 完成。收藏项目操作固定路由到 iTerm2 Bridge；Bridge 在同一动作内用动态 `path` 判断首个精确匹配 Session，只有确认不存在时才通过 `LocalWriteOnlyProfile` 的自定义初始目录创建 Tab 或 Window，并以 `actionResult` 驱动菜单成功关闭或失败提示。
+ 
+ ## CTX-local-decision-models — 本地小模型与旧决策关闭门
+-- Scope: Local LLM设置、旧Decision服务暂停、Pi问题类型判断与实时任务标题。
+-- Paths: `iTermate/LocalModelService.swift`, `iTermate/PiSessionArchives.swift`, `integrations/laya/`, `integrations/pi/iTermate-integration.ts`, `docs/local-model-api.md`
+-- Keywords: Laya, Vela, Ollama, Local LLM, decision model, question, task title, keep_alive, legacyDecisionsEnabled
+-- Authority: `iTermate/LocalModelService.swift`, `iTermate/PiSessionArchives.swift`, `integrations/laya/iTermate-laya.py`, `integrations/pi/iTermate-integration.ts`
+-- Recheck: 旧体系关闭门、模型身份、调用路径、标题格式、问句定义或热驻留策略变化时复查。
++- Scope: Local LLM设置、旧Decision服务暂停、Pi问题类型判断、Pi/Codex实时任务标题及诊断日志。
++- Paths: `iTermate/LocalModelService.swift`, `iTermate/CodexTitleDiagnostics.swift`, `iTermate/ItermBridge.swift`, `iTermate/PiSessionArchives.swift`, `integrations/laya/`, `integrations/pi/iTermate-integration.ts`, `docs/local-model-api.md`, `docs/codex-monitoring.md`
++- Keywords: Laya, Vela, Ollama, Local LLM, decision model, question, task title, Codex, diagnostics, keep_alive, legacyDecisionsEnabled
++- Authority: `iTermate/LocalModelService.swift`, `iTermate/CodexTitleDiagnostics.swift`, `iTermate/ItermBridge.swift`, `iTermate/PiSessionArchives.swift`, `integrations/laya/iTermate-laya.py`, `integrations/pi/iTermate-integration.ts`
++- Recheck: 旧体系关闭门、模型身份、调用路径、标题格式、问句定义、诊断日志边界或热驻留策略变化时复查。
+ 
+ ### Structure
+ - App使用`LocalLLMService`和`LocalLLMSettingsView`提供本地模型选择、固定回环Ollama库存检查和预热；支持模型标签及身份规则以Swift的`LocalLLMModel`与Pi集成为准，不缓存实际库存或选择值到Context。不启动Python模型worker、不展示公共API地址或令牌，也不自动下载或控制共享Ollama。
+@@ -92,6 +92,7 @@
+ - 问题判断只在Pi的agent_settled hook分析最后一条完整助手回复；等待用户回答、确认、选择、授权或提供必要信息属于question，不要求问号；交付结果附带的重启、安装、开启权限或验证操作说明本身属于normal，混合报告仍有回应请求时属于question。该边界由分类system prompt及中英文正反例表达，不新增文本启发式；只接收严格二分类JSON，不伪造概率。失败保留明确生命周期，不回退旧模型、规则或云端；Bridge不扫描终端屏幕。心跳仅保持已确认状态，不再次推理。
+ - 实时标题不使用当前Pi模型；十六元素、中文和字符格式要求仅作提示词指导，Pi与Swift显示/手动刷新仅检查非空文本及既有通信边界，不因空格、标点、数字或建议长度拒绝或改写结果；通信、响应有效性、身份或取消失败仍保留旧标题。仅归档时的多句摘要继续使用原有Pi模型路径。
+ - Pi实时标题生成失败会把脱敏的失败类别写入`~/Library/Logs/iTermate`中由进程唯一拥有、单文件1 MiB轮转的JSONL日志对；不写入对话、模型输出、路径或凭据，写入失败不改变标题回退。写入时清理已退出PID的旧日志对，About设置页提供打开该目录的入口。
++- 原生Codex标题由App的`LocalLLMService`直接生成，不经过Pi集成；自动/手动失败、主动取消和身份/状态变化后的成功结果丢弃，由`CodexTitleDiagnostics`写入同一日志目录的`codex-titles.log`/`codex-titles.previous.log`。文件达到1 MiB后轮转、跨App启动保留，独立非阻塞锁协调多实例；记录固定原因、HTTP/网络数值、请求UUID与PID，不记录对话、标题、原始错误描述或凭据。日志失败不阻断会话；未满足自动生成条件的轮询不产生日志，Pi日志不能解释Codex标题故障。
+ - 源码和构建通过不代表新App或Pi集成已运行；需用户自行运行App并安装或reload集成，旧进程不会因源码改动自动停用。
+ 
+ ## CTX-pi-status-recovery — Pi 状态主动恢复
+--- /dev/null	2026-10-21 16:55:08
++++ iTermate/CodexTitleDiagnostics.swift	2026-10-21 16:53:07
+@@ -0,0 +1,156 @@
++import Darwin
++import Foundation
++
++/// Identifies a local title failure without carrying prompts or model output.
++struct SessionTitleGenerationError: LocalizedError {
++    enum Reason: String {
++        case noConversation = "no_conversation"
++        case sessionUnavailable = "session_unavailable"
++        case invalidConfiguration = "invalid_configuration"
++        case modelUnavailable = "model_unavailable"
++        case modelMismatch = "response_model_mismatch"
++        case incompleteResponse = "incomplete_response"
++        case tokenLimit = "token_limit"
++        case unexpectedFinishReason = "unexpected_finish_reason"
++        case missingMessage = "missing_message"
++        case unexpectedThinking = "unexpected_thinking"
++        case invalidContent = "invalid_content"
++        case emptyTitle = "empty_title"
++        case modelChanged = "model_changed"
++        case httpStatus = "http_status"
++        case redirectedResponse = "redirected_response"
++        case oversizedResponse = "oversized_response"
++        case invalidJSON = "invalid_json"
++    }
++
++    let reason: Reason
++    let statusCode: Int?
++
++    init(_ reason: Reason, statusCode: Int? = nil) {
++        self.reason = reason
++        self.statusCode = statusCode
++    }
++
++    var errorDescription: String? {
++        switch reason {
++        case .noConversation: "No conversation is available for a title"
++        case .invalidConfiguration: "Invalid model selection"
++        case .modelUnavailable: "Selected local model is unavailable"
++        case .modelChanged: "Local model changed during title generation"
++        case .httpStatus, .redirectedResponse, .oversizedResponse, .invalidJSON:
++            "Invalid local model response"
++        default: "Invalid local title response"
++        }
++    }
++}
++
++/// Records Codex title failures in a private, bounded pair shared across App launches.
++@MainActor
++final class CodexTitleDiagnostics {
++    static let shared = CodexTitleDiagnostics()
++
++    private let directory: URL
++    private let maximumBytes = 1_048_576
++
++    init(directory: URL = FileManager.default.homeDirectoryForCurrentUser
++        .appendingPathComponent("Library/Logs/iTermate", isDirectory: true)) {
++        self.directory = directory
++    }
++
++    /// Writes only allowlisted failure metadata; arbitrary error descriptions are never persisted.
++    func recordFailure(
++        _ error: Error,
++        manual: Bool,
++        requestID: UUID? = nil,
++        codexPID: pid_t? = nil,
++        attempt: Int? = nil
++    ) {
++        var fields: [String: Any] = ["manual": manual]
++        let reason: String
++        if let failure = error as? SessionTitleGenerationError {
++            reason = failure.reason.rawValue
++            if let status = failure.statusCode { fields["http_status"] = status }
++        } else if error is CancellationError {
++            reason = "cancelled"
++        } else if (error as NSError).domain == NSURLErrorDomain {
++            let code = (error as NSError).code
++            reason = code == NSURLErrorTimedOut ? "timeout"
++                : code == NSURLErrorCancelled ? "cancelled" : "network"
++            fields["network_code"] = code
++        } else if error is DecodingError || (error as NSError).domain == NSCocoaErrorDomain {
++            reason = "configuration_or_decoding"
++            fields["error_code"] = (error as NSError).code
++        } else {
++            reason = "unknown"
++            fields["error_code"] = (error as NSError).code
++        }
++        if let requestID { fields["request_id"] = requestID.uuidString }
++        if let codexPID { fields["codex_pid"] = codexPID }
++        if let attempt { fields["attempt"] = attempt }
++        append(event: reason == "cancelled" ? "session_title_generation_cancelled" : "session_title_generation_failed",
++               reason: reason, fields: fields, level: reason == "cancelled" ? "info" : "error")
++    }
++
++    /// Explains a successful model response that was not safe to apply to the current Session.
++    func recordDiscard(manual: Bool, requestID: UUID, codexPID: pid_t) {
++        append(event: "session_title_result_discarded", reason: "session_identity_or_state_changed",
++               fields: ["manual": manual, "request_id": requestID.uuidString, "codex_pid": codexPID],
++               level: "info")
++    }
++
++    private func append(event: String, reason: String, fields: [String: Any], level: String) {
++        do {
++            let manager = FileManager.default
++            try manager.createDirectory(at: directory, withIntermediateDirectories: true,
++                                        attributes: [.posixPermissions: 0o700])
++            var directoryInfo = stat()
++            guard lstat(directory.path, &directoryInfo) == 0,
++                  directoryInfo.st_mode & S_IFMT == S_IFDIR,
++                  directoryInfo.st_uid == getuid() else { return }
++            try manager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
++
++            // A separate, stable lock protects rotation across simultaneous App instances.
++            let lock = open(directory.appendingPathComponent("codex-titles.lock").path,
++                            O_CREAT | O_WRONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK, 0o600)
++            guard lock >= 0 else { return }
++            defer { close(lock) }
++            guard isPrivateRegularFile(lock), flock(lock, LOCK_EX | LOCK_NB) == 0 else { return }
++            defer { flock(lock, LOCK_UN) }
++
++            let current = directory.appendingPathComponent("codex-titles.log")
++            let previous = directory.appendingPathComponent("codex-titles.previous.log")
++            var descriptor = open(current.path, O_CREAT | O_WRONLY | O_APPEND | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK, 0o600)
++            guard descriptor >= 0 else { return }
++            defer { close(descriptor) }
++            guard isPrivateRegularFile(descriptor) else { return }
++            var info = stat()
++            guard fstat(descriptor, &info) == 0 else { return }
++            if info.st_size >= maximumBytes {
++                guard unlink(previous.path) == 0 || errno == ENOENT else { return }
++                try manager.moveItem(at: current, to: previous)
++                close(descriptor)
++                descriptor = open(current.path, O_CREAT | O_WRONLY | O_APPEND | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK, 0o600)
++                guard descriptor >= 0, isPrivateRegularFile(descriptor) else { return }
++            }
++
++            var record = fields
++            record["timestamp"] = ISO8601DateFormatter().string(from: Date())
++            record["level"] = level
++            record["component"] = "codex"
++            record["event"] = event
++            record["reason"] = reason
++            record["app_pid"] = getpid()
++            var data = try JSONSerialization.data(withJSONObject: record, options: [.sortedKeys])
++            data.append(0x0A)
++            try FileHandle(fileDescriptor: descriptor, closeOnDealloc: false).write(contentsOf: data)
++        } catch {
++            // Diagnostics must never alter title generation, fallback, or Session state.
++        }
++    }
++
++    private func isPrivateRegularFile(_ descriptor: Int32) -> Bool {
++        var info = stat()
++        return fstat(descriptor, &info) == 0 && info.st_mode & S_IFMT == S_IFREG
++            && info.st_uid == getuid() && info.st_nlink == 1 && fchmod(descriptor, 0o600) == 0
++    }
++}

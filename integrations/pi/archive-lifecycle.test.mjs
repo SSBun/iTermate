@@ -32,6 +32,15 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
   const clearTimeout = (timer) => { timers.delete(timer); globalThis.clearTimeout(timer); };
   const context = createContext({
     Buffer, URL, AbortController, AbortSignal,
+    // Inject an isolated local-title transport; archive summaries keep their separate Pi adapter.
+    mockLocalTitle: async (systemPrompt, text, signal, maxTokens) => {
+      const result = await (complete ?? (async () => taskReply("修改分页逻辑")))(
+        { id: "isolated-local-llm" },
+        { systemPrompt, messages: [{ role: "user", content: text }] }, { signal, maxTokens },
+      );
+      if (result.stopReason !== "stop") throw new Error("Incomplete local title");
+      return result.content.filter(block => block.type === "text").map(block => block.text).join("\n");
+    },
     process: { pid: 12345, ppid: 12344, env: { TERM_PROGRAM: termProgram, ITERM_SESSION_ID: "w0:target-pane" } },
     performance: { now: () => 10000 }, setTimeout, clearTimeout,
     setInterval: () => interval, clearInterval: () => {},
@@ -71,7 +80,8 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
       },
     },
   };
-  const module = new SourceTextModule(source, { context });
+  const isolatedSource = source.replace(/generate\s*=\s*completeLocalLLM/, "generate = globalThis.mockLocalTitle");
+  const module = new SourceTextModule(isolatedSource, { context });
   await module.link((name) => {
     const values = mocks[name];
     assert.ok(values, name);
@@ -82,7 +92,7 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
   await module.evaluate();
   const ctx = {
     mode, model: { id: "mock-model" }, isIdle: () => !busy,
-    hasPendingMessages: () => false, ui: { getEditorText: () => "" },
+    hasPendingMessages: () => false, ui: { getEditorText: () => "", notify: () => {} },
     shutdown: () => { shutdowns += 1; },
     modelRegistry: { complete: complete ?? (async () => ({ stopReason: "stop", content: [{ type: "text", text: "修改分页逻辑，待运行验证。" }] })) },
     sessionManager: {
@@ -185,6 +195,21 @@ test("manual title refresh works immediately after reload without another reply"
     assert.equal(h.reports.length, reportCount);
     assert.equal(h.shutdowns, 0);
     assert.equal(h.snapshots.length, 0);
+    assert.equal(h.inputBlocked, false);
+  } finally { await h.dispose(); }
+});
+
+test("automatic publishing and manual refresh retain titles outside prompt style guidance", async () => {
+  const title = " 控制 Tab 切换跳过 Codex 2。\n";
+  const h = await harness({ complete: async () => taskReply(title) });
+  try {
+    await settleTask(h);
+    assert.equal(h.readDescriptor().taskSummary, title);
+    await h.refreshTitle();
+    assert.equal(h.responses.at(-1).ok, true);
+    assert.equal(h.responses.at(-1).taskSummary, title);
+    assert.equal(h.readDescriptor().taskSummary, title);
+    assert.equal(h.shutdowns, 0);
     assert.equal(h.inputBlocked, false);
   } finally { await h.dispose(); }
 });

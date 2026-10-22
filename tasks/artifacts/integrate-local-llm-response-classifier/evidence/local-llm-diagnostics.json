@@ -1,0 +1,128 @@
+{
+  "mode": "isolated deployment and real local API diagnostics; no unit test runner",
+  "cases": [
+    {
+      "status": 200,
+      "wall_ms": 463.495,
+      "identity_matches": true,
+      "response": {
+        "answers": {
+          "question": {
+            "type": "choice",
+            "choice": "normal",
+            "source": "local-llm"
+          }
+        },
+        "elapsed_ms": 462.659,
+        "model": "qwen3.5:2b",
+        "provider": "local-llm"
+      },
+      "name": "completed-calculation"
+    },
+    {
+      "status": 200,
+      "wall_ms": 243.466,
+      "identity_matches": true,
+      "response": {
+        "answers": {
+          "question": {
+            "type": "choice",
+            "choice": "question",
+            "source": "local-llm"
+          }
+        },
+        "elapsed_ms": 242.638,
+        "model": "qwen3.5:2b",
+        "provider": "local-llm"
+      },
+      "name": "requires-choice"
+    },
+    {
+      "status": 200,
+      "wall_ms": 243.529,
+      "identity_matches": true,
+      "response": {
+        "answers": {
+          "question": {
+            "type": "choice",
+            "choice": "normal",
+            "source": "local-llm"
+          }
+        },
+        "elapsed_ms": 242.834,
+        "model": "qwen3.5:2b",
+        "provider": "local-llm"
+      },
+      "name": "completed-work"
+    }
+  ],
+  "deployment_events": [
+    {
+      "stage": "downloaded",
+      "model": "qwen3.5:2b",
+      "provider": "local-llm"
+    }
+  ],
+  "deployed_model": "qwen3.5:2b",
+  "deployed_revision": "dfaf2605162e689c8cac330dc4a190c4c50ad30aa47814a8fe9b79fa5127e97e",
+  "startup_ms": 2367.914,
+  "health": {
+    "status": 200,
+    "wall_ms": 6.671,
+    "identity_matches": true,
+    "response": {
+      "ready": true,
+      "model": "qwen3.5:2b",
+      "provider": "local-llm"
+    }
+  },
+  "session_compatibility": {
+    "status": 200,
+    "wall_ms": 401.091,
+    "identity_matches": true,
+    "response": {
+      "answers": {
+        "state": {
+          "type": "choice",
+          "choice": "awaitingInput",
+          "source": "local-llm"
+        }
+      },
+      "elapsed_ms": 400.308,
+      "model": "qwen3.5:2b",
+      "provider": "local-llm"
+    }
+  },
+  "rejected_bad_token": {
+    "status": 401,
+    "wall_ms": 0.73,
+    "identity_matches": null,
+    "response": {
+      "error": "Bearer token required"
+    }
+  },
+  "rejected_browser_origin": {
+    "status": 403,
+    "wall_ms": 0.419,
+    "identity_matches": null,
+    "response": {
+      "error": "Loopback clients only"
+    }
+  },
+  "rejected_generic_decision": {
+    "status": 400,
+    "wall_ms": 0.412,
+    "identity_matches": null,
+    "response": {
+      "error": "Local LLM supports /v1/question and /v1/session only"
+    }
+  },
+  "rejected_oversized_reply": {
+    "status": 400,
+    "wall_ms": 0.369,
+    "identity_matches": null,
+    "response": {
+      "error": "Invalid request; see API documentation and size limits"
+    }
+  }
+}

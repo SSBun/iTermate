@@ -16,6 +16,7 @@ SOCKET_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.sock")
 LOCK_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.lock")
 SNAPSHOT_INTERVAL = 2
 AGENT_HEARTBEAT_TIMEOUT = 8
+SESSION_NAVIGATION_TIMEOUT = 5
 
 
 def heartbeat_time():
@@ -56,12 +57,14 @@ class Bridge:
         self.sequence = 0
         self.snapshot_lock = asyncio.Lock()
         self.finished_navigation_lock = asyncio.Lock()
+        self.finished_navigation_visited = set()
+        self.finished_navigation_last_press = None
         self.command_monitor_tasks = {}
         self.command_monitor_unavailable = set()
         self.agent_managed_session_ids = set()
+        self.session_agent_kinds = {}
         self.agent_heartbeat_times = {}
         self.agent_report_sequences = {}
-        self.codex_reports = {}
         self.session_statuses = {}
         self.session_names = {}
         self.ignore_prompt_events_until = 0
@@ -121,7 +124,7 @@ class Bridge:
 
         if action == "activateNextFinishedSession":
             try:
-                await self.activate_next_finished_session()
+                await self.activate_next_finished_session(request.get("codexStatuses"))
             except Exception as error:
                 await self.send_action_result(writer, request_id, False, str(error))
                 return
@@ -210,43 +213,12 @@ class Bridge:
             if has_sequence and sequence <= self.agent_report_sequences.get(key, 0):
                 await self.send_action_result(writer, request_id, False, "Stale report")
                 return
-            codex_id = request.get("codexSessionId")
-            codex_event = request.get("codexEventId")
-            codex_claim = request.get("codexClaim", False)
-            codex_previous_owner = request.get("codexPreviousOwner")
-            codex_owner = (reporter_id, codex_id)
-            previous_codex = self.codex_reports.get(session_id)
-            if codex_id is not None:
-                if (not has_sequence or not isinstance(codex_id, str)
-                        or not 1 <= len(codex_id) <= 128
-                        or not isinstance(codex_event, str) or not 1 <= len(codex_event) <= 128
-                        or not isinstance(codex_claim, bool)
-                        or (codex_previous_owner is not None and (
-                            not isinstance(codex_previous_owner, list) or len(codex_previous_owner) != 2
-                            or any(not isinstance(value, str) or not 1 <= len(value) <= 128
-                                   for value in codex_previous_owner)))
-                        or (codex_claim and (heartbeat or status not in {"idle", "running"}))):
-                    await self.send_action_result(writer, request_id, False, "Invalid Codex report")
-                    return
-                if self.app.get_session_by_id(session_id) is None:
-                    await self.send_action_result(writer, request_id, False, "Session no longer exists")
-                    return
-                owns_session = previous_codex is not None and previous_codex[0] == codex_owner
-                retries_previous_owner = (previous_codex is not None
-                                          and list(previous_codex[0]) == codex_previous_owner)
-                if not codex_claim and not owns_session and not retries_previous_owner and (
-                    session_id in self.codex_reports or session_id in self.agent_managed_session_ids
-                ):
-                    await self.send_action_result(writer, request_id, False, "Codex owner changed")
-                    return
-                # Lost ACK retries must not restore a finished badge after the user read it.
-                if owns_session and previous_codex[1] == codex_event and status != "running":
-                    self.agent_report_sequences[key] = sequence
-                    await self.send_action_result(writer, request_id, True, None)
-                    return
-                if not owns_session:
-                    # A restarted Bridge may only know a shell fallback with another status.
-                    heartbeat = False
+            agent_kind = request.get("agentKind")
+            if agent_kind is not None and (
+                not isinstance(agent_kind, str) or agent_kind != "pi"
+            ):
+                await self.send_action_result(writer, request_id, False, "Invalid Agent kind")
+                return
             if recovery:
                 current = self.session_statuses.get(session_id, {})
                 if self.app.get_session_by_id(session_id) is None:
@@ -255,26 +227,12 @@ class Bridge:
                 if current.get("activityKind") == "agent" and current.get("status"):
                     await self.send_action_result(writer, request_id, False, "Agent status is already known")
                     return
-            if (codex_id is not None and status == "detached"
-                    and self.session_statuses.get(session_id, {}).get("activityKind") == "command"):
-                # A delayed SessionEnd releases its owner, not a subsequent shell command.
-                self.agent_managed_session_ids.discard(session_id)
-                self.agent_heartbeat_times.pop(session_id, None)
-                accepted = True
-            else:
-                accepted = self.set_agent_status(
-                    session_id, status, exit_status, heartbeat, has_running_subagents
-                )
+            accepted = self.set_agent_status(
+                session_id, status, exit_status, heartbeat, has_running_subagents,
+                agent_kind=agent_kind or "unknown",
+            )
             if accepted and has_sequence:
                 self.agent_report_sequences[key] = sequence
-            if accepted:
-                if codex_id is not None:
-                    self.codex_reports[session_id] = (codex_owner, codex_event)
-                    if status == "running":
-                        self.agent_heartbeat_times[session_id] = heartbeat_time()
-                else:
-                    # Keep a tombstone: an old Codex retry must not reclaim after another Agent exits.
-                    self.codex_reports[session_id] = None
             if accepted and recovery and status in {"running", "awaitingInput"}:
                 self.agent_heartbeat_times[session_id] = heartbeat_time()
             await self.send_action_result(
@@ -337,9 +295,27 @@ class Bridge:
         await self.send_action_result(writer, request_id, True, None)
         await self.publish_snapshot()
 
-    async def activate_next_finished_session(self):
-        """仅在真实 Agent Session 间循环：等待回复、已结束、运行中、空闲依次优先。"""
+    async def activate_next_finished_session(self, codex_statuses=None):
+        """每轮按等待回复、完成、空闲、运行中排序；停顿超过五秒后重开一轮。"""
+        if codex_statuses is None:
+            codex_statuses = {}
+        if not isinstance(codex_statuses, dict) or any(
+            not isinstance(session_id, str) or not session_id or len(session_id) > 512
+            or (status is not None and (
+                not isinstance(status, str)
+                or status not in {"awaitingInput", "finished", "running", "idle", "interrupted"}
+            ))
+            for session_id, status in codex_statuses.items()
+        ):
+            raise ValueError("Invalid Codex navigation statuses")
         async with self.finished_navigation_lock:
+            now = time.monotonic()
+            if (
+                self.finished_navigation_last_press is None
+                or now - self.finished_navigation_last_press > SESSION_NAVIGATION_TIMEOUT
+            ):
+                self.finished_navigation_visited.clear()
+            self.finished_navigation_last_press = now
             sessions = [
                 session for window in self.app.windows for tab in window.tabs
                 for session in tab.all_sessions
@@ -352,16 +328,40 @@ class Bridge:
             candidates = sessions if current_index is None else (
                 sessions[current_index + 1:] + sessions[:current_index]
             )
-            for desired_status in ("awaitingInput", "finished", "running", "idle"):
+            self.finished_navigation_visited.intersection_update(
+                session.session_id for session in sessions
+            )
+            if current_id is not None:
+                self.finished_navigation_visited.add(current_id)
+            eligible = []
+            for desired_status in ("awaitingInput", "finished", "idle", "running"):
                 for session in candidates:
-                    status = self.session_statuses.get(session.session_id, {})
-                    if status.get("activityKind") != "agent" or status.get("status") != desired_status:
-                        continue
-                    await session.async_activate()
-                    await self.app.async_activate(raise_all_windows=False)
-                    if desired_status == "finished":
-                        self.clear_finished_status(session.session_id)
-                    return
+                    # App observations override Shell fallback, but never acquire lifecycle ownership.
+                    is_codex = session.session_id in codex_statuses
+                    status = (
+                        {"activityKind": "agent", "status": codex_statuses[session.session_id]}
+                        if is_codex else self.session_statuses.get(session.session_id, {})
+                    )
+                    if status.get("activityKind") == "agent" and status.get("status") == desired_status:
+                        eligible.append((session, status, is_codex))
+            if not eligible:
+                return
+            target = next(
+                (item for item in eligible if item[0].session_id not in self.finished_navigation_visited),
+                None,
+            )
+            if target is None:
+                # Priority only orders a round; visit all remaining eligible Agents before repeating.
+                self.finished_navigation_visited.clear()
+                if current_id is not None:
+                    self.finished_navigation_visited.add(current_id)
+                target = eligible[0]
+            session, status, is_codex = target
+            await session.async_activate()
+            await self.app.async_activate(raise_all_windows=False)
+            self.finished_navigation_visited.add(session.session_id)
+            if status.get("status") == "finished" and not is_codex:
+                self.clear_finished_status(session.session_id)
 
     async def send_action_result(self, writer, request_id, succeeded, error):
         message = {
@@ -496,10 +496,10 @@ class Bridge:
             for session_id in monitored_ids - session_ids:
                 self.command_monitor_tasks.pop(session_id).cancel()
                 self.command_monitor_unavailable.discard(session_id)
+                self.session_agent_kinds.pop(session_id, None)
                 self.agent_managed_session_ids.discard(session_id)
                 self.agent_heartbeat_times.pop(session_id, None)
                 self.session_statuses.pop(session_id, None)
-                self.codex_reports.pop(session_id, None)
                 self.agent_report_sequences = {
                     key: value for key, value in self.agent_report_sequences.items()
                     if key[0] != session_id
@@ -577,6 +577,7 @@ class Bridge:
                 include_agent_commands=status.get("activityKind") == "agent",
             ):
                 self.session_statuses.pop(session_id, None)
+                self.session_agent_kinds.pop(session_id, None)
                 self.agent_managed_session_ids.discard(session_id)
                 self.agent_heartbeat_times.pop(session_id, None)
 
@@ -680,6 +681,7 @@ class Bridge:
                         had_running_status = self.session_statuses.get(
                             session_id, {}
                         ).get("status") == "running"
+                        self.session_agent_kinds.pop(session_id, None)
                         self.agent_managed_session_ids.discard(session_id)
                         self.agent_heartbeat_times.pop(session_id, None)
                         if was_managed or had_running_status:
@@ -725,6 +727,7 @@ class Bridge:
                             had_running_status = self.session_statuses.get(
                                 session_id, {}
                             ).get("status") == "running"
+                            self.session_agent_kinds.pop(session_id, None)
                             self.agent_managed_session_ids.discard(session_id)
                             self.agent_heartbeat_times.pop(session_id, None)
                             if was_managed or had_running_status:
@@ -760,9 +763,10 @@ class Bridge:
 
     def set_agent_status(
         self, session_id, status, exit_status=0, heartbeat=False,
-        has_running_subagents=False,
+        has_running_subagents=False, agent_kind="unknown",
     ):
         if status == "detached":
+            self.session_agent_kinds.pop(session_id, None)
             self.agent_managed_session_ids.discard(session_id)
             self.agent_heartbeat_times.pop(session_id, None)
             self.session_statuses.pop(session_id, None)
@@ -772,6 +776,7 @@ class Bridge:
         if heartbeat and current is not None and current.get("status") != status:
             return False
         self.agent_managed_session_ids.add(session_id)
+        self.session_agent_kinds[session_id] = agent_kind
         if heartbeat or status == "awaitingInput" or has_running_subagents:
             self.agent_heartbeat_times[session_id] = heartbeat_time()
         else:
@@ -987,6 +992,8 @@ class Bridge:
                         "status": self.session_statuses.get(session.session_id, {}).get(
                             "status"
                         ),
+                        "agentKind": self.session_agent_kinds.get(session.session_id, "unknown")
+                        if session.session_id in self.agent_managed_session_ids else None,
                         "activityKind": self.session_statuses.get(
                             session.session_id, {}
                         ).get("activityKind"),
@@ -1675,22 +1682,23 @@ def self_test():
             "3": {"status": "finished", "activityKind": "agent"},
         }
         await navigation.activate_next_finished_session()
-        assert activated[-1] == "1"  # Waiting outranks both finished and running.
+        assert activated[-1] == "1"  # Waiting for a reply outranks finished and running Agents.
         assert navigation.session_statuses["1"] == {"status": "awaitingInput", "activityKind": "agent", "statusChangedAt": 456}
         navigation_app.current_window = window_one
         tab_one.current_session = split
         await navigation.activate_next_finished_session()
-        assert activated[-1] == "2"  # Skip the current waiting Agent, then choose finished.
+        assert activated[-1] == "2"  # Skip the current waiting Agent, then choose an unread result.
+        navigation.finished_navigation_visited.clear()
         navigation_app.current_window = window_two
         navigation.session_statuses["1"] = {"status": "idle", "activityKind": "agent", "statusChangedAt": 789}
         await navigation.activate_next_finished_session()
-        assert activated[-1] == "0"  # Current finished is excluded; wrap to running.
+        assert activated[-1] == "1"  # Idle outranks running when no noncurrent finished result remains.
         assert navigation.session_statuses["0"] == {"status": "running", "activityKind": "agent", "statusChangedAt": 123}
         navigation.session_statuses.pop("0")
         await navigation.activate_next_finished_session()
-        assert activated[-1] == "1"  # Idle is eligible only after higher-priority Agents are absent.
+        assert activated[-1] == "1"  # Idle remains eligible without changing its lifecycle.
         assert navigation.session_statuses["1"] == {"status": "idle", "activityKind": "agent", "statusChangedAt": 789}
-        navigation.session_statuses.pop("3")
+        navigation.session_statuses.pop("3", None)
         # Earlier finished fixtures had no lifecycle ownership and were cleared.
         # Explicitly register the second idle Agent required by this scenario.
         navigation.set_agent_status("2", "idle")
@@ -1707,8 +1715,10 @@ def self_test():
             "1": {"status": "running", "activityKind": "agent"},
             "2": {"status": "running", "activityKind": "command"},
         }
+        before = len(activated)
         await navigation.activate_next_finished_session()
-        assert activated[-1] == "1"  # Finished commands do not prevent the running-Agent fallback.
+        assert len(activated) == before + 1
+        assert activated[-1] == "1"  # Running Agents are eligible; ordinary commands are not.
         navigation.session_statuses["1"]["activityKind"] = "command"
         before = len(activated)
         await navigation.activate_next_finished_session()
@@ -1721,7 +1731,231 @@ def self_test():
         await navigation.activate_next_finished_session()
         assert len(activated) == before  # Current idle, ordinary shell and unknown kind are excluded.
 
+        # Each round covers all four tiers, even with multiple waiting Agents present.
+        navigation.finished_navigation_visited.clear()
+        navigation.agent_managed_session_ids.add("3")
+        navigation_app.current_window = window_one
+        tab_one.current_session = first
+        navigation.session_statuses = {
+            "0": {"status": "awaitingInput", "activityKind": "agent"},
+            "1": {"status": "awaitingInput", "activityKind": "agent"},
+            "2": {"status": "idle", "activityKind": "agent"},
+            "3": {"status": "finished", "activityKind": "agent"},
+            "4": {"status": "running", "activityKind": "agent"},
+            "5": {"status": "idle", "activityKind": "command"},
+        }
+        mixed_statuses = dict(navigation.session_statuses)
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "1"  # Waiting wins before the unread result in another window.
+        tab_one.current_session = split
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "3"  # Visit the remaining finished Agent before idle and running.
+        assert navigation.session_statuses["3"]["status"] == "idle"
+        navigation_app.current_window = window_two
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "2"  # Do not repeat an already-visited waiting or finished Agent.
+        navigation_app.current_window = window_one
+        window_one.current_tab = tab_two
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "4"  # Running joins only after the remaining higher tiers.
+        window_one.current_tab = tab_one
+        tab_one.current_session = command
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "0"  # Only after the round is exhausted may waiting repeat.
+        navigation_app.current_window = window_one
+        window_one.current_tab = tab_one
+        tab_one.current_session = first
+        for session_id in ("0", "1", "2", "4", "5"):
+            assert navigation.session_statuses[session_id] == mixed_statuses[session_id]
+
+        # Native Codex is observed in Swift while Bridge sees only its outer shell command.
+        navigation.finished_navigation_visited.clear()
+        navigation_app.current_window = window_one
+        tab_one.current_session = first
+        navigation.session_statuses = {
+            "1": {"status": "running", "activityKind": "command"},
+        }
+        shell_statuses = dict(navigation.session_statuses)
+        for codex_status in ("finished", "idle", "awaitingInput", "running"):
+            await navigation.activate_next_finished_session({"1": codex_status})
+            assert activated[-1] == "1"
+            assert navigation.session_statuses == shell_statuses  # No forged lifecycle or command clearing.
+        navigation.session_statuses["2"] = {"status": "idle", "activityKind": "agent"}
+        navigation.finished_navigation_visited.clear()
+        await navigation.activate_next_finished_session({"1": "finished"})
+        assert activated[-1] == "1"  # Unread Codex outranks idle Pi in a fresh round.
+        await navigation.activate_next_finished_session({"1": "awaitingInput"})
+        assert activated[-1] == "2"  # Visit remaining idle before repeating the waiting Codex.
+        navigation.session_statuses["2"] = {"status": "awaitingInput", "activityKind": "agent"}
+        await navigation.activate_next_finished_session({"1": "idle"})
+        assert activated[-1] == "2"  # Waiting Pi outranks idle Codex when the next round starts.
+        await navigation.activate_next_finished_session({"1": "finished"})
+        assert activated[-1] == "1"  # Visit the unvisited result instead of repeating waiting Pi.
+        navigation.finished_navigation_visited.clear()
+        navigation.session_statuses["2"] = {"status": "finished", "activityKind": "agent"}
+        await navigation.activate_next_finished_session({"1": "awaitingInput"})
+        assert activated[-1] == "1"  # Waiting Codex outranks unread Pi too.
+        navigation.session_statuses["2"] = {"status": "finished", "activityKind": "agent"}
+        await navigation.activate_next_finished_session({"1": "running"})
+        assert activated[-1] == "2"  # Finished Pi still outranks running Codex.
+        navigation.session_statuses["1"] = {"status": "finished", "activityKind": "agent"}
+        navigation.session_statuses.pop("2", None)
+        before = len(activated)
+        await navigation.activate_next_finished_session({"1": None, "0": "finished", "closed": "finished"})
+        assert len(activated) == before  # Unknown Codex, current and removed IDs cannot be selected.
+        navigation.finished_navigation_visited.clear()  # Start a fresh round for the window-order scenario.
+        navigation_app.current_window = window_two
+        await navigation.activate_next_finished_session({"1": "idle", "0": "idle"})
+        assert activated[-1] == "0"  # Wrap follows live iTerm order, not dictionary order.
+        navigation_app.current_window = None
+        await navigation.activate_next_finished_session({"1": "finished"})
+        assert activated[-1] == "1"  # A missing current pane still permits Codex navigation.
+        writer = FakeWriter()
+        await navigation.handle_command(writer, encode_message({
+            "type": "activateNextFinishedSession", "requestId": "native-codex",
+            "codexStatuses": {"1": "idle"},
+        }))
+        assert writer.messages[0]["ok"]
+        assert activated[-1] == "1"  # The actual action handler forwards eligible App observations.
+        writer = FakeWriter()
+        before = len(activated)
+        await navigation.handle_command(writer, encode_message({
+            "type": "activateNextFinishedSession", "requestId": "running-codex",
+            "codexStatuses": {"1": "running"},
+        }))
+        assert writer.messages[0]["ok"]
+        assert len(activated) == before + 1
+        assert activated[-1] == "1"  # The action handler includes running Codex observations too.
+        for invalid in ([], {"": "idle"}, {"1": "bogus"}, {"1": []}):
+            writer = FakeWriter()
+            before = len(activated)
+            await navigation.handle_command(writer, encode_message({
+                "type": "activateNextFinishedSession", "requestId": "invalid-codex",
+                "codexStatuses": invalid,
+            }))
+            assert not writer.messages[0]["ok"]
+            assert len(activated) == before
+
     asyncio.run(check_finished_navigation())
+
+    async def check_navigation_rounds():
+        from types import SimpleNamespace
+
+        activated = []
+        tab = SimpleNamespace(all_sessions=[], current_session=None)
+        window = SimpleNamespace(tabs=[tab], current_tab=tab)
+
+        class RoundApp:
+            windows = [window]
+            current_window = window
+
+            async def async_activate(self, raise_all_windows=False):
+                assert not raise_all_windows
+
+        class RoundSession:
+            def __init__(self, session_id):
+                self.session_id = session_id
+
+            async def async_activate(self):
+                activated.append(self.session_id)
+                tab.current_session = self
+
+        sessions = {
+            session_id: RoundSession(session_id)
+            for session_id in ("waiting-a", "waiting-b", "idle", "finished", "running", "shell", "unknown")
+        }
+        tab.all_sessions = list(sessions.values())
+        tab.current_session = sessions["shell"]
+        navigation = Bridge(None, RoundApp())
+        for session_id, status in (
+            ("waiting-a", "awaitingInput"), ("waiting-b", "awaitingInput"),
+            ("idle", "idle"), ("finished", "finished"), ("running", "running"),
+        ):
+            navigation.set_agent_status(session_id, status)
+        navigation.session_statuses["shell"] = {"status": "idle", "activityKind": "command"}
+        navigation.session_statuses["unknown"] = {"status": "idle"}
+        statuses_before = {key: dict(value) for key, value in navigation.session_statuses.items()}
+        expected = ["waiting-a", "waiting-b", "finished", "idle", "running"]
+        for session_id in expected:
+            await navigation.activate_next_finished_session()
+            assert activated[-1] == session_id
+        assert activated == expected  # All four tiers are visited before any waiting Agent repeats.
+        assert navigation.session_statuses["finished"]["status"] == "idle"
+        for session_id in ("waiting-a", "waiting-b", "idle", "running"):
+            assert navigation.session_statuses[session_id] == statuses_before[session_id]
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "waiting-a"  # Only the exhausted round restarts at highest priority.
+
+        # Closed Sessions must leave the round even if their status entry remains.
+        tab.all_sessions.remove(sessions["waiting-b"])
+        navigation.finished_navigation_visited.clear()
+        tab.current_session = sessions["shell"]
+        before = len(activated)
+        for _ in range(4):
+            await navigation.activate_next_finished_session()
+        assert activated[before:] == ["waiting-a", "idle", "finished", "running"]
+        assert "waiting-b" not in navigation.finished_navigation_visited
+
+        # Re-evaluate live eligibility without revisiting already-seen Sessions in this round.
+        navigation.finished_navigation_visited.clear()
+        tab.current_session = sessions["shell"]
+        navigation.set_agent_status("finished", "finished")
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "waiting-a"
+        navigation.set_agent_status("finished", "running")
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "idle"  # A newly running Agent falls below remaining idle Agents.
+        navigation.set_agent_status("finished", "idle")
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "finished"  # The unvisited Agent now joins the idle tier.
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "running"  # Waiting cannot starve the remaining running Agent.
+
+        # A new pane joins by its real identity; command and unknown panes never do.
+        new_session = RoundSession("new")
+        tab.all_sessions.append(new_session)
+        navigation.set_agent_status("new", "idle")
+        await navigation.activate_next_finished_session()
+        assert activated[-1] == "new"
+        assert not {"shell", "unknown"}.intersection(activated)
+        for session_id in ("waiting-a", "idle", "finished", "new", "running"):
+            navigation.set_agent_status(session_id, "detached")
+        before = len(activated)
+        await navigation.activate_next_finished_session()
+        assert len(activated) == before  # Ordinary commands, unknown and closed Agents are ineligible.
+
+        # Each press extends the window: exactly five seconds continues the same round,
+        # even when the complete sequence takes longer than five seconds.
+        from unittest.mock import patch
+
+        navigation.set_agent_status("waiting-a", "awaitingInput")
+        navigation.set_agent_status("idle", "idle")
+        tab.current_session = sessions["shell"]
+        navigation.finished_navigation_last_press = None
+        before = len(activated)
+        for now, expected_id in (
+            (100, "waiting-a"), (105, "finished"), (110, "idle"),
+        ):
+            with patch.object(time, "monotonic", return_value=now):
+                await navigation.activate_next_finished_session({"finished": "finished"})
+            assert activated[-1] == expected_id
+        assert activated[before:] == ["waiting-a", "finished", "idle"]
+
+        # Timeout restarts an incomplete round against live priority, not its old visited set.
+        navigation.set_agent_status("new", "idle")
+        with patch.object(time, "monotonic", return_value=115.001):
+            await navigation.activate_next_finished_session({"finished": "finished"})
+        assert activated[-1] == "waiting-a"  # Without expiry, the remaining new pane would win.
+        assert "new" not in navigation.finished_navigation_visited
+        for now, expected_id in ((120.001, "finished"), (125.001, "new")):
+            with patch.object(time, "monotonic", return_value=now):
+                await navigation.activate_next_finished_session({"finished": "finished"})
+            assert activated[-1] == expected_id
+        with patch.object(time, "monotonic", return_value=130.002):
+            await navigation.activate_next_finished_session({"finished": "finished"})
+        assert activated[-1] == "waiting-a"
+
+    asyncio.run(check_navigation_rounds())
 
 
 if __name__ == "__main__":

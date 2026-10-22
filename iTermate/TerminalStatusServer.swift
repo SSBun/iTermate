@@ -26,6 +26,8 @@ struct TerminalStatusReport {
     let exitStatus: Int?
     let heartbeat: Bool
     var hasRunningSubagents: Bool = false
+    /// Supplied only by an Agent integration, not ordinary command hooks.
+    var agentKind: SessionAgentKind? = nil
 }
 
 struct VisibleTerminalStatus {
@@ -45,6 +47,7 @@ struct TerminalStatusRegistry {
         let changedAt: TimeInterval
         let heartbeatAt: TimeInterval?
         var hasRunningSubagents: Bool = false
+        var agentKind: SessionAgentKind? = nil
     }
 
     private struct TTYState {
@@ -77,6 +80,7 @@ struct TerminalStatusRegistry {
         recovering: Bool = false
     ) -> Bool {
         guard terminalIDsByTTY[report.tty] != nil else { return false }
+        guard report.agentKind == nil || report.source == .agent else { return false }
         guard report.state != .awaitingInput || report.source == .agent else {
             return false
         }
@@ -120,7 +124,9 @@ struct TerminalStatusRegistry {
                 && (status == .running || status == .awaitingInput)
                 ? uptime
                 : nil,
-            hasRunningSubagents: report.hasRunningSubagents
+            hasRunningSubagents: report.hasRunningSubagents,
+            agentKind: report.source == .agent && report.state != .detached
+                ? report.agentKind ?? .unknown : nil
         )
 
         if report.source == .agent {
@@ -147,14 +153,7 @@ struct TerminalStatusRegistry {
             else {
                 continue
             }
-            ttyState.agent = Channel(
-                reporterID: agent.reporterID,
-                sequence: agent.sequence,
-                status: nil,
-                exitStatus: nil,
-                changedAt: agent.changedAt,
-                heartbeatAt: nil
-            )
+            ttyState.agent = cleared(agent)
             states[tty] = ttyState
             changed = true
         }
@@ -204,7 +203,8 @@ struct TerminalStatusRegistry {
                 status: .idle,
                 exitStatus: nil,
                 changedAt: now,
-                heartbeatAt: nil
+                heartbeatAt: nil,
+                agentKind: agent.agentKind
             )
             changed = true
         }
@@ -214,6 +214,12 @@ struct TerminalStatusRegistry {
         }
         states[tty] = ttyState
         return changed
+    }
+
+    /// Last confirmed environment identity, not evidence that the Agent is working.
+    func agentKind(for tty: String) -> SessionAgentKind? {
+        guard terminalIDsByTTY[tty] != nil else { return nil }
+        return states[tty]?.agent?.agentKind
     }
 
     func visibleStatus(for tty: String) -> VisibleTerminalStatus? {
@@ -247,7 +253,8 @@ struct TerminalStatusRegistry {
             status: nil,
             exitStatus: nil,
             changedAt: channel.changedAt,
-            heartbeatAt: nil
+            heartbeatAt: nil,
+            agentKind: channel.agentKind
         )
     }
 }
@@ -510,6 +517,7 @@ private struct TerminalStatusRequest: Decodable {
     let exitStatus: Int?
     let heartbeat: Bool?
     let hasRunningSubagents: Bool?
+    let agentKind: SessionAgentKind?
 
     func validatedReport() throws -> TerminalStatusReport {
         guard
@@ -519,7 +527,8 @@ private struct TerminalStatusRequest: Decodable {
             let tty = TerminalStatusRegistry.normalizedTTY(tty),
             !reporterId.isEmpty,
             reporterId.count <= 128,
-            sequence > 0
+            sequence > 0,
+            agentKind == nil || source == .agent
         else {
             throw TerminalStatusServerError.invalidRequest
         }
@@ -553,7 +562,8 @@ private struct TerminalStatusRequest: Decodable {
             state: status,
             exitStatus: exitStatus,
             heartbeat: heartbeat,
-            hasRunningSubagents: hasRunningSubagents
+            hasRunningSubagents: hasRunningSubagents,
+            agentKind: agentKind
         )
     }
 }

@@ -2,6 +2,310 @@ import XCTest
 @testable import iTermate
 
 final class ItermBridgeTests: XCTestCase {
+    func testCodexScanSessionSnapshotChangesWhenTTYIsReused() {
+        func windows(sessionID: String) -> [TerminalWindowSnapshot] {
+            [TerminalWindowSnapshot(
+                id: "window",
+                number: 1,
+                isActive: true,
+                tabs: [TerminalTabSnapshot(
+                    id: "tab",
+                    title: "Terminal",
+                    isSelected: true,
+                    sessions: [TerminalSessionSnapshot(
+                        id: sessionID,
+                        name: "zsh",
+                        path: nil,
+                        tty: "/dev/ttys002",
+                        windowId: "window",
+                        tabId: "tab",
+                        isActive: true,
+                        isMinimized: false,
+                        status: .running,
+                        activityKind: .command,
+                        exitStatus: nil,
+                        statusChangedAt: nil
+                    )]
+                )]
+            )]
+        }
+
+        let accepted = ItermStore.codexSessionIdentityByTTY(in: windows(sessionID: "old"))
+        let replacement = ItermStore.codexSessionIdentityByTTY(
+            in: windows(sessionID: "replacement")
+        )
+
+        XCTAssertEqual(
+            ItermStore.staleCodexObservationTTYs(accepted: accepted, current: replacement),
+            ["/dev/ttys002"]
+        )
+        let replacementSession = windows(sessionID: "replacement")[0].tabs[0].sessions[0]
+        let merged = ItermStore.mergingCodexObservation(
+            CodexSessionObservation(status: .running, changedAt: 42),
+            acceptedSessionID: "old",
+            into: replacementSession
+        )
+        XCTAssertEqual(merged.activityKind, .command)
+        XCTAssertNil(merged.agentKind)
+    }
+
+    func testCodexSnapshotDriftResetsOnlyChangedTTY() {
+        XCTAssertEqual(
+            ItermStore.changedCodexSessionTTYs(
+                captured: ["/dev/ttys001": "codex", "/dev/ttys002": "shell-old"],
+                current: ["/dev/ttys001": "codex", "/dev/ttys002": "shell-new"]
+            ),
+            ["/dev/ttys002"]
+        )
+    }
+
+    func testCodexOverlayCountsAsRunningAgent() {
+        let session = TerminalSessionSnapshot(
+            id: "session",
+            name: "codex",
+            path: nil,
+            tty: "/dev/ttys001",
+            windowId: "window",
+            tabId: "tab",
+            isActive: true,
+            isMinimized: false,
+            status: nil,
+            activityKind: nil,
+            exitStatus: nil,
+            statusChangedAt: nil
+        )
+        let overlaid = ItermStore.mergingCodexObservation(
+            CodexSessionObservation(status: .running, changedAt: 42),
+            into: session
+        )
+        let windows = [TerminalWindowSnapshot(
+            id: "window",
+            number: 1,
+            isActive: true,
+            tabs: [TerminalTabSnapshot(
+                id: "tab",
+                title: "Codex",
+                isSelected: true,
+                sessions: [overlaid]
+            )]
+        )]
+
+        XCTAssertEqual(ItermStore.runningAgentCount(in: windows), 1)
+    }
+
+    func testViewedCodexCompletionStaysIdleOnlyForTheSameTurnAndIdentity() throws {
+        let session = try JSONDecoder().decode(TerminalSessionSnapshot.self, from: Data("""
+        {"id":"pane","name":"codex","tty":"/dev/ttys001","isActive":true}
+        """.utf8))
+        let identity = CodexSessionMonitor.ProcessIdentity(pid: 123, startedAt: 10)
+        let finished = CodexSessionObservation(
+            status: .finished, changedAt: 42, processIdentity: identity
+        )
+        let acknowledgement = try XCTUnwrap(ItermStore.CodexCompletionAcknowledgement(
+            observation: finished, sessionID: session.id
+        ))
+        let viewed = ItermStore.mergingCodexObservation(
+            finished, acknowledgement: acknowledgement, into: session
+        )
+        XCTAssertEqual(viewed.status, .idle)
+        XCTAssertEqual(viewed.agentKind, .codex)
+        XCTAssertEqual(viewed.activityKind, .agent)
+        XCTAssertNil(viewed.exitStatus)
+        XCTAssertEqual(viewed.statusChangedAt, 42)
+        XCTAssertEqual(ItermStore.mergingCodexObservation(finished, into: session).status, .finished)
+
+        for observation in [
+            CodexSessionObservation(status: .finished, changedAt: 43, processIdentity: identity),
+            CodexSessionObservation(status: .finished, changedAt: 42,
+                                    processIdentity: .init(pid: 123, startedAt: 11)),
+            CodexSessionObservation(status: .running, changedAt: 43, processIdentity: identity),
+            CodexSessionObservation(status: .awaitingInput, changedAt: 42, processIdentity: identity),
+            CodexSessionObservation(status: .interrupted, changedAt: 42, processIdentity: identity),
+            CodexSessionObservation(status: nil, changedAt: nil, processIdentity: identity),
+        ] {
+            XCTAssertEqual(ItermStore.mergingCodexObservation(
+                observation, acknowledgement: acknowledgement, into: session
+            ).status, observation.status)
+        }
+        let anotherSession = try JSONDecoder().decode(TerminalSessionSnapshot.self, from: Data("""
+        {"id":"replacement","name":"codex","tty":"/dev/ttys001","isActive":true}
+        """.utf8))
+        XCTAssertEqual(ItermStore.mergingCodexObservation(
+            finished, acknowledgement: acknowledgement, into: anotherSession
+        ).status, .finished)
+        XCTAssertNil(ItermStore.CodexCompletionAcknowledgement(
+            observation: .init(status: .awaitingInput, changedAt: 42, processIdentity: identity),
+            sessionID: session.id
+        ))
+        XCTAssertNil(ItermStore.CodexCompletionAcknowledgement(
+            observation: .init(status: .finished, changedAt: nil, processIdentity: identity),
+            sessionID: session.id
+        ))
+    }
+
+    func testCodexFocusRequiresForegroundWindowSelectedTabAndActiveSession() throws {
+        let windows = try JSONDecoder().decode([TerminalWindowSnapshot].self, from: Data("""
+        [{"id":"background","number":1,"isActive":false,"tabs":[
+          {"id":"background-tab","title":"Background","isSelected":true,"sessions":[
+            {"id":"background-pane","name":"codex","isActive":true}]}]},
+         {"id":"foreground","number":2,"isActive":true,"tabs":[
+          {"id":"hidden-tab","title":"Hidden","isSelected":false,"sessions":[
+            {"id":"hidden-pane","name":"codex","isActive":true}]},
+          {"id":"visible-tab","title":"Visible","isSelected":true,"sessions":[
+            {"id":"other-split","name":"codex","isActive":false},
+            {"id":"visible-pane","name":"codex","isActive":true}]}]}]
+        """.utf8))
+        XCTAssertNil(ItermStore.focusedCodexSession(in: windows, isFrontmost: false))
+        XCTAssertEqual(ItermStore.focusedCodexSession(in: windows, isFrontmost: true)?.id, "visible-pane")
+    }
+
+    func testCodexTitleOverlayChangesOnlyTheDisplayedSessionName() {
+        let session = TerminalSessionSnapshot(
+            id: "session",
+            name: "zsh",
+            path: "/tmp/project",
+            tty: "/dev/ttys001",
+            windowId: "window",
+            tabId: "tab",
+            isActive: true,
+            isMinimized: false,
+            status: nil,
+            activityKind: .command,
+            exitStatus: nil,
+            statusChangedAt: nil
+        )
+
+        let overlaid = ItermStore.mergingCodexObservation(
+            CodexSessionObservation(status: .finished, changedAt: 42),
+            title: "修复Codex会话标题",
+            into: session
+        )
+
+        XCTAssertEqual(overlaid.name, "修复Codex会话标题")
+        XCTAssertEqual(overlaid.path, session.path)
+        XCTAssertEqual(overlaid.id, session.id)
+        XCTAssertEqual(overlaid.agentKind, .codex)
+    }
+
+    @MainActor
+    func testRunningCodexManualTitleRefreshKeepsReplacementRequestOwnership() async {
+        var continuations: [CheckedContinuation<String, Error>] = []
+        let store = ItermStore { _ in
+            try await withCheckedThrowingContinuation { continuation in
+                continuations.append(continuation)
+            }
+        }
+        defer { store.stop() }
+        let identity = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 42)
+        let session = TerminalSessionSnapshot(
+            id: "session",
+            name: "zsh",
+            path: "/tmp/project",
+            tty: "/dev/ttys001",
+            windowId: "window",
+            tabId: "tab",
+            isActive: true,
+            isMinimized: false,
+            status: .running,
+            activityKind: .agent,
+            exitStatus: nil,
+            statusChangedAt: 42,
+            agentKind: .codex
+        )
+        store.prepareCodexTitleRefreshForTesting(
+            session,
+            observation: CodexSessionObservation(
+                status: .running,
+                changedAt: 42,
+                processIdentity: identity,
+                titleExcerpt: "[user]\n刷新标题"
+            )
+        )
+
+        store.refreshCodexTitle(session)
+        for _ in 0..<100 where continuations.count < 1 { await Task.yield() }
+        XCTAssertEqual(continuations.count, 1)
+        guard continuations.count == 1 else { return }
+        store.refreshCodexTitle(session)
+        for _ in 0..<100 where continuations.count < 2 { await Task.yield() }
+        XCTAssertEqual(continuations.count, 2)
+        guard continuations.count == 2 else { return }
+        continuations[0].resume(returning: "旧标题")
+        for _ in 0..<10 { await Task.yield() }
+        XCTAssertNil(store.codexTitleForTesting(session))
+        XCTAssertTrue(store.isRefreshingCodexTitle(session))
+
+        continuations[1].resume(returning: "新标题")
+        for _ in 0..<100 where store.codexTitleForTesting(session) == nil { await Task.yield() }
+        XCTAssertEqual(store.codexTitleForTesting(session), "新标题")
+    }
+
+    func testDecodesEnvironmentIdentityWithoutInferringFromTitle() throws {
+        for kind in ["pi", "codex", "unknown"] {
+            let data = Data("""
+            {"id":"pane","name":"a different Agent name","isActive":true,"agentKind":"\(kind)"}
+            """.utf8)
+            let session = try JSONDecoder().decode(TerminalSessionSnapshot.self, from: data)
+            XCTAssertEqual(session.environmentAgentKind?.rawValue, kind)
+            XCTAssertNil(session.status)
+        }
+        let shell = try JSONDecoder().decode(TerminalSessionSnapshot.self, from: Data("""
+        {"id":"pane","name":"Pi Codex","isActive":false}
+        """.utf8))
+        XCTAssertNil(shell.environmentAgentKind)
+        let legacyAgent = try JSONDecoder().decode(TerminalSessionSnapshot.self, from: Data("""
+        {"id":"pane","name":"codex","isActive":false,"activityKind":"agent","status":"idle"}
+        """.utf8))
+        XCTAssertEqual(legacyAgent.environmentAgentKind, .unknown)
+        XCTAssertEqual(legacyAgent.environmentAgentKind?.displayName, "Pi")
+        XCTAssertEqual(SessionAgentKind.pi.displayName, "Pi")
+        XCTAssertEqual(SessionAgentKind.codex.displayName, "Codex")
+    }
+
+    func testAgentIdentitySurvivesFocusAndLeaseExpiryButNotDetachment() {
+        let tty = "/dev/ttys001"
+        var registry = TerminalStatusRegistry()
+        registry.reconcile(terminals: [tty: "pane"])
+        func report(_ state: TerminalStatusReport.State, _ sequence: Int, kind: SessionAgentKind) -> TerminalStatusReport {
+            TerminalStatusReport(tty: tty, source: .agent, reporterID: "reporter", sequence: sequence,
+                                 state: state, exitStatus: state == .finished ? 0 : nil, heartbeat: false,
+                                 agentKind: kind)
+        }
+        XCTAssertTrue(registry.apply(report(.finished, 1, kind: .pi), now: 10, uptime: 10))
+        XCTAssertTrue(registry.activate(tty: tty))
+        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .idle)
+        XCTAssertEqual(registry.agentKind(for: tty), .pi)
+        XCTAssertTrue(registry.apply(report(.running, 2, kind: .pi), uptime: 20))
+        XCTAssertTrue(registry.expireStaleAgentHeartbeats(uptime: 29))
+        XCTAssertNil(registry.visibleStatus(for: tty))
+        XCTAssertEqual(registry.agentKind(for: tty), .pi)
+        XCTAssertFalse(registry.apply(report(.running, 1, kind: .codex)))
+        XCTAssertEqual(registry.agentKind(for: tty), .pi)
+        XCTAssertTrue(registry.apply(report(.idle, 3, kind: .codex)))
+        XCTAssertEqual(registry.agentKind(for: tty), .codex)
+        XCTAssertTrue(registry.apply(report(.detached, 4, kind: .codex)))
+        XCTAssertNil(registry.agentKind(for: tty))
+        XCTAssertTrue(registry.apply(report(.idle, 5, kind: .pi)))
+        registry.reconcile(terminals: [tty: "replacement-pane"])
+        XCTAssertNil(registry.agentKind(for: tty))
+    }
+
+    func testAgentIdentityRequiresAgentChannel() {
+        let tty = "/dev/ttys001"
+        var registry = TerminalStatusRegistry()
+        registry.reconcile(terminals: [tty: "pane"])
+        XCTAssertFalse(registry.apply(TerminalStatusReport(
+            tty: tty, source: .command, reporterID: "shell", sequence: 1,
+            state: .running, exitStatus: nil, heartbeat: false, agentKind: .pi
+        )))
+        XCTAssertNil(registry.agentKind(for: tty))
+        XCTAssertTrue(registry.apply(TerminalStatusReport(
+            tty: tty, source: .agent, reporterID: "legacy", sequence: 1,
+            state: .idle, exitStatus: nil, heartbeat: false
+        )))
+        XCTAssertEqual(registry.agentKind(for: tty), .unknown)
+    }
+
     func testDecodesSnapshotHierarchy() throws {
         let data = Data(
             """

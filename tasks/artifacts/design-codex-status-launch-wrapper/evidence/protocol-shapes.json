@@ -1,0 +1,141 @@
+{
+  "codexVersion": "0.162.1",
+  "definitions": {
+    "ThreadStatus": {
+      "oneOf": [
+        {
+          "properties": {
+            "type": {
+              "enum": [
+                "notLoaded"
+              ],
+              "title": "NotLoadedThreadStatusType",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "NotLoadedThreadStatus",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "enum": [
+                "idle"
+              ],
+              "title": "IdleThreadStatusType",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "IdleThreadStatus",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "type": {
+              "enum": [
+                "systemError"
+              ],
+              "title": "SystemErrorThreadStatusType",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "title": "SystemErrorThreadStatus",
+          "type": "object"
+        },
+        {
+          "properties": {
+            "activeFlags": {
+              "items": {
+                "$ref": "#/definitions/ThreadActiveFlag"
+              },
+              "type": "array"
+            },
+            "type": {
+              "enum": [
+                "active"
+              ],
+              "title": "ActiveThreadStatusType",
+              "type": "string"
+            }
+          },
+          "required": [
+            "activeFlags",
+            "type"
+          ],
+          "title": "ActiveThreadStatus",
+          "type": "object"
+        }
+      ]
+    },
+    "ThreadActiveFlag": {
+      "enum": [
+        "waitingOnApproval",
+        "waitingOnUserInput"
+      ],
+      "type": "string"
+    },
+    "TurnStatus": {
+      "enum": [
+        "completed",
+        "interrupted",
+        "failed",
+        "inProgress"
+      ],
+      "type": "string"
+    },
+    "TurnCompletedNotification": {
+      "properties": {
+        "threadId": {
+          "type": "string"
+        },
+        "turn": {
+          "$ref": "#/definitions/Turn"
+        }
+      },
+      "required": [
+        "threadId",
+        "turn"
+      ],
+      "type": "object"
+    },
+    "TurnStartedNotification": {
+      "properties": {
+        "threadId": {
+          "type": "string"
+        },
+        "turn": {
+          "$ref": "#/definitions/Turn"
+        }
+      },
+      "required": [
+        "threadId",
+        "turn"
+      ],
+      "type": "object"
+    },
+    "ThreadStatusChangedNotification": {
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/ThreadStatus"
+        },
+        "threadId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "status",
+        "threadId"
+      ],
+      "type": "object"
+    }
+  }
+}

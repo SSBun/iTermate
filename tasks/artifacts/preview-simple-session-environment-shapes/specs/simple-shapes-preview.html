@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>iTermate 简单几何前缀 · 截图对照预览</title>
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #151618; color: #e8e9ec; }
+canvas { display: block; width: 960px; height: 850px; }
+.description { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+</style>
+</head>
+<body>
+<p class="description" id="description">左右对照用户原始截图。左侧保留当前图标，右侧仅将前缀换成小尺寸几何形状：圆形为Shell、三角形为Pi、方形为Codex。未聚焦灰色空心，聚焦蓝色实心。标题、行布局、选中背景和右侧工作状态逐像素保留。下方展示三类正常尺寸与放大细节。这是静态视觉预览，不修改App。</p>
+<canvas id="preview" width="1920" height="1700" role="img" aria-labelledby="description"></canvas>
+<script>
+'use strict';
+const canvas = document.getElementById('preview');
+const ctx = canvas.getContext('2d');
+ctx.scale(2, 2);
+const W = 960, H = 850;
+const panels = { before: { x: 68, y: 128 }, after: { x: 530, y: 128 } };
+const crop = { x: 116, y: 31 };
+const gray = '#9399A2', accent = '#71ADFF';
+const glyphs = {
+  shell: {
+    outline: ['00111100','01000010','10000001','10000001','10000001','10000001','01000010','00111100'],
+    filled: ['00111100','01111110','11111111','11111111','11111111','11111111','01111110','00111100']
+  },
+  pi: {
+    outline: ['00011000','00011000','00100100','00100100','01000010','01000010','10000001','11111111'],
+    filled: ['00011000','00011000','00111100','00111100','01111110','01111110','11111111','11111111']
+  },
+  codex: {
+    outline: ['1111111','1000001','1000001','1000001','1000001','1000001','1111111'],
+    filled: ['1111111','1111111','1111111','1111111','1111111','1111111','1111111']
+  }
+};
+// Coordinates refer only to the actual marks in the supplied screenshot, not title inference.
+const rows = [
+  { y: 208.5, kind: 'shell' }, { y: 272.5, kind: 'shell' },
+  { y: 403.5, kind: 'pi', background: '#1D293A' },
+  { y: 483.5, kind: 'pi', focused: true, background: '#1B355A' },
+  { y: 555.5, kind: 'shell', background: '#1D293A' },
+  { y: 619.5, kind: 'shell', background: '#1D293A' },
+  { y: 750.5, kind: 'pi' }, { y: 822.5, kind: 'shell' },
+  { y: 894.5, kind: 'pi' }, { y: 1033.5, kind: 'codex' },
+  { y: 1105.5, kind: 'shell' }, { y: 1169.5, kind: 'shell' }
+];
+function fillRect(x, y, w, h, color, radius = 0) {
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, radius); ctx.fill();
+}
+function text(value, x, y, size = 13, color = '#E8E9EC', weight = 400) {
+  ctx.font = `${weight} ${size}px -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif`;
+  ctx.fillStyle = color; ctx.fillText(value, x, y);
+}
+function shape(kind, cx, cy, focused = false, scale = 1) {
+  const grid = glyphs[kind][focused ? 'filled' : 'outline'];
+  const x = cx - grid[0].length * scale / 2;
+  const y = cy - grid.length * scale / 2;
+  ctx.fillStyle = focused ? accent : gray;
+  for (let row = 0; row < grid.length; row++) {
+    for (let col = 0; col < grid[row].length; col++) {
+      if (grid[row][col] !== '1') continue;
+      ctx.fillRect(x + col * scale, y + row * scale, scale, scale);
+    }
+  }
+}
+function draw(reference) {
+  ctx.clearRect(0, 0, W, H); fillRect(0, 0, W, H, '#151618');
+  text('同一列表，只换左侧标记', 58, 45, 23, '#F1F2F5', 600);
+  text('圆形 Shell · 三角形 Pi · 方形 Codex    /    约 7–8 pt', 58, 74, 13, '#9DA4AF');
+  text('当前', panels.before.x, 109, 13, '#9CA1AA', 600);
+  text('简单形状', panels.after.x, 109, 13, '#D6D9DF', 600);
+  ctx.drawImage(reference, panels.before.x, panels.before.y, reference.width / 2, reference.height / 2);
+  ctx.drawImage(reference, panels.after.x, panels.after.y, reference.width / 2, reference.height / 2);
+  // Background colors were sampled from the source screenshot during preparation.
+  // Avoid getImageData so the standalone file also works under normal file:// isolation.
+  for (const row of rows) {
+    const centerY = (row.y - crop.y) / 2;
+    const background = row.background ?? '#1E1E1E';
+    fillRect(panels.after.x + (152 - crop.x) / 2, panels.after.y + centerY - 8, 19, 16, background);
+    shape(row.kind, panels.after.x + (169 - crop.x) / 2, panels.after.y + centerY, row.focused === true);
+  }
+  fillRect(58, 742, 844, 1, '#303338');
+  const names = { shell: 'Shell · 圆形', pi: 'Pi · 三角形', codex: 'Codex · 方形' };
+  ['shell', 'pi', 'codex'].forEach((kind, index) => {
+    const x = 70 + index * 290;
+    shape(kind, x + 5, 770);
+    text(names[kind], x + 21, 775, 12, '#CCD0D7', 500);
+    shape(kind, x + 5, 804, false, 3);
+    shape(kind, x + 46, 804, true, 3);
+    text('空心 / 聚焦实心', x + 72, 808, 11, '#969DA9');
+  });
+  text('截图对照预览 · 标题、背景与右侧状态保持原样 · 尚未接入 App', 58, 841, 11, '#888F9B');
+  document.body.dataset.ready = 'true';
+}
+const reference = new Image();
+reference.onload = () => draw(reference);
+reference.onerror = () => { document.body.dataset.ready = 'error'; };
+reference.src = 'reference-panel.png';
+window.previewSpecification = { panels, crop, rows, glyphs };
+</script>
+</body>
+</html>

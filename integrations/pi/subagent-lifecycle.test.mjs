@@ -123,7 +123,9 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model 
     "node:os": { homedir: () => "/isolated-home" },
     "node:path": { join },
   };
-  const module = new SourceTextModule(source, { context });
+  // These retained legacy-Decision cases are isolated from the production-disabled gate.
+  const legacySource = source.replace("const legacyDecisionsEnabled = false", "const legacyDecisionsEnabled = true");
+  const module = new SourceTextModule(legacySource, { context });
   await module.link((specifier) => {
     assert.ok(mocks[specifier], `Unexpected import: ${specifier}`);
     const values = mocks[specifier];
@@ -435,10 +437,12 @@ test("known parent activity remains leased when only the child observation becom
   await h.emit("session_shutdown");
 });
 
-for (const provider of ["laya", "vela"]) {
+for (const provider of ["laya", "vela", "local-llm"]) {
   test(`${provider}: selected question model is used and full text is preserved`, async () => {
     const h = await harness({ count: 0, model: { answers: {
-      question: { type: "choice", choice: "question", probabilities: { normal: 0.2, question: 0.8 } },
+      question: provider === "local-llm"
+        ? { type: "choice", choice: "question", source: "local-llm" }
+        : { type: "choice", choice: "question", probabilities: { normal: 0.2, question: 0.8 } },
     } } });
     h.setProvider(provider);
     await h.emit("session_start");

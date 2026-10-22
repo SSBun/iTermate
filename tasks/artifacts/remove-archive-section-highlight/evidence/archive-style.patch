@@ -1,0 +1,38 @@
+--- before/iTermate/iTermateApp.swift
++++ after/iTermate/iTermateApp.swift
+@@ -433,7 +433,6 @@
+     @ObservedObject var settings: AppSettings
+     @ObservedObject var archives: PiSessionArchives
+     private static let archiveSectionID = "archive:pi"
+-    private static let archiveTint = Color(nsColor: .systemPurple)
+     @State private var collapsedSectionIDs: Set<String> = [PanelContent.archiveSectionID]
+     @State private var hoveredSessionID: String?
+     @State private var hoveredCloseButtonSessionID: String?
+@@ -697,7 +696,7 @@
+             }
+             .buttonStyle(.plain)
+             .font(headerFont())
+-            .foregroundStyle(Self.archiveTint)
++            .foregroundStyle(.secondary)
+             .padding(.top, 5)
+             .accessibilityLabel(collapsedSectionIDs.contains(Self.archiveSectionID) ? "Expand Archive" : "Collapse Archive")
+ 
+@@ -723,7 +722,6 @@
+                         .frame(maxWidth: .infinity, alignment: .leading)
+                         Button("Resume") { store.resumePiArchive(record) }
+                             .font(panelFont(0.8))
+-                            .foregroundStyle(Self.archiveTint)
+                             .buttonStyle(.plain)
+                             .disabled(archives.isBusy)
+                             .accessibilityLabel("Resume archived Pi session \(record.name), \(record.sessionId), in \(record.terminal)")
+@@ -742,10 +740,6 @@
+             }
+         }
+         .frame(maxWidth: .infinity, alignment: .leading)
+-        .background {
+-            RoundedRectangle(cornerRadius: 9)
+-                .fill(Self.archiveTint.opacity(effectiveColorScheme == .dark ? 0.14 : 0.08))
+-        }
+     }
+ 
+     /// Sessions of one tab when its header should render.

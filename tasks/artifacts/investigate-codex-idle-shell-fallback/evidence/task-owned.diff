@@ -1,0 +1,92 @@
+--- before/integrations/status/iTermate-codex.py
++++ after/integrations/status/iTermate-codex.py
+@@ -85,6 +85,12 @@
+         request_id = message.get("id")
+         if not from_server:
+             if method in {"thread/start", "thread/resume", "thread/fork"}:
++                if not isinstance(params, dict):
++                    return
++                # The TUI also starts hidden feature threads (e.g. thread_title).
++                # Ephemeral user conversations are still valid main threads.
++                if method == "thread/start" and params.get("threadSource") not in (None, "user"):
++                    return
+                 if type(request_id) in (int, str) and len(self.requests) < 64:
+                     self.requests[request_id] = method
+             return
+--- before/integrations/status/test_codex_wrapper.py
++++ after/integrations/status/test_codex_wrapper.py
+@@ -81,6 +81,74 @@
+         notify(self.monitor, "turn/started", thread="child", turn={"id": "child-turn"})
+         self.monitor.observe({"id": 99, "result": {"thread": {"id": "other"}}}, True)
+         self.assertEqual((self.monitor.thread_id, self.monitor.status), ("thread-1", "idle"))
++
++    def test_internal_thread_start_cannot_replace_main_lifecycle(self):
++        for source in ("thread_title", "subagent", "guardian_review", "memory_consolidation"):
++            with self.subTest(source=source):
++                monitor = wrapper.StatusMonitor()
++                select(monitor)
++                notify(monitor, "turn/started", turn={"id": "main-turn"})
++                generation = monitor.generation
++                snapshots = list(monitor.snapshots)
++                monitor.observe({
++                    "id": 20, "method": "thread/start",
++                    "params": {"ephemeral": True, "threadSource": source},
++                }, False)
++                self.assertNotIn(20, monitor.requests)
++                monitor.observe({"id": 20, "result": {"thread": {
++                    "id": "temporary", "status": {"type": "idle"},
++                }}}, True)
++                notify(monitor, "turn/started", thread="temporary", turn={"id": "temp-turn"})
++                notify(monitor, "turn/completed", turn={"id": "main-turn", "status": "completed"})
++                self.assertEqual((monitor.thread_id, monitor.status), ("thread-1", "finished"))
++                notify(monitor, "turn/completed", thread="temporary", turn={"id": "temp-turn", "status": "completed"})
++                notify(monitor, "thread/closed", thread="temporary")
++                self.assertEqual((monitor.thread_id, monitor.status), ("thread-1", "finished"))
++                self.assertEqual(list(monitor.snapshots)[:-1], snapshots)
++                self.assertGreater(monitor.generation, generation)
++                notify(monitor, "turn/started", turn={"id": "next-turn"})
++                self.assertEqual(monitor.status, "running")
++                notify(monitor, "thread/closed")
++                self.assertEqual(monitor.status, "detached")
++
++    def test_internal_thread_response_before_main_response_is_ignored(self):
++        monitor = wrapper.StatusMonitor()
++        monitor.observe({"id": 1, "method": "thread/start", "params": {}}, False)
++        monitor.observe({
++            "id": 2, "method": "thread/start",
++            "params": {"ephemeral": True, "threadSource": "thread_title"},
++        }, False)
++        monitor.observe({"id": 2, "result": {"thread": {
++            "id": "temporary", "status": {"type": "idle"},
++        }}}, True)
++        self.assertIsNone(monitor.thread_id)
++        monitor.observe({"id": 1, "result": {"thread": {
++            "id": "main", "status": {"type": "idle"},
++        }}}, True)
++        self.assertEqual((monitor.thread_id, monitor.status), ("main", "idle"))
++
++    def test_user_start_resume_and_fork_still_rebind(self):
++        for method in ("thread/start", "thread/resume", "thread/fork"):
++            for params in ({}, {"threadSource": None}, {"threadSource": "user", "ephemeral": True}):
++                with self.subTest(method=method, params=params):
++                    monitor = wrapper.StatusMonitor()
++                    select(monitor)
++                    monitor.observe({"id": 30, "method": method, "params": params}, False)
++                    monitor.observe({"id": 30, "result": {"thread": {
++                        "id": "new-main", "status": {"type": "idle"},
++                    }}}, True)
++                    self.assertEqual((monitor.thread_id, monitor.status), ("new-main", "idle"))
++                    notify(monitor, "thread/closed")
++                    self.assertEqual(monitor.status, "idle")
++                    monitor.close()
++                    self.assertEqual(monitor.status, "detached")
++
++    def test_malformed_start_params_cannot_replace_main(self):
++        for params in (None, [], "invalid"):
++            with self.subTest(params=params):
++                self.monitor.observe({"id": 40, "method": "thread/start", "params": params}, False)
++                self.assertNotIn(40, self.monitor.requests)
++                self.assertEqual(self.monitor.thread_id, "thread-1")
+ 
+     def test_old_completion_cannot_finish_new_turn(self):
+         notify(self.monitor, "turn/started", turn={"id": "turn-1"})

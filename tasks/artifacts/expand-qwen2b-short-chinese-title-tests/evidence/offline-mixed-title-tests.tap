@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: both model adapters use the production excerpt and identical title prompt without requiring equal titles
+ok 1 - both model adapters use the production excerpt and identical title prompt without requiring equal titles
+  ---
+  duration_ms: 15.119792
+  type: 'test'
+  ...
+# Subtest: goal changes and English requests retain the exact same visible input for both models
+ok 2 - goal changes and English requests retain the exact same visible input for both models
+  ---
+  duration_ms: 1.008042
+  type: 'test'
+  ...
+# Subtest: the 24-character preference is soft while invalid title forms are reported
+ok 3 - the 24-character preference is soft while invalid title forms are reported
+  ---
+  duration_ms: 0.199042
+  type: 'test'
+  ...
+# Subtest: provider failures preserve both outcomes and never reveal credentials or raw errors
+ok 4 - provider failures preserve both outcomes and never reveal credentials or raw errors
+  ---
+  duration_ms: 0.874875
+  type: 'test'
+  ...
+# Subtest: a credential echoed in a successful response is never saved in diagnostics
+ok 5 - a credential echoed in a successful response is never saved in diagnostics
+  ---
+  duration_ms: 0.855375
+  type: 'test'
+  ...
+# Subtest: incomplete or thinking-only local responses cannot count as a valid title
+ok 6 - incomplete or thinking-only local responses cannot count as a valid title
+  ---
+  duration_ms: 0.536708
+  type: 'test'
+  ...
+# Subtest: an already cancelled comparison never calls either provider
+ok 7 - an already cancelled comparison never calls either provider
+  ---
+  duration_ms: 0.074834
+  type: 'test'
+  ...
+# Subtest: live comparison is opt-in and validates complete explicit remote configuration
+ok 8 - live comparison is opt-in and validates complete explicit remote configuration
+  ---
+  duration_ms: 0.290458
+  type: 'test'
+  ...
+# Subtest: live local 2B title generation
+ok 9 - live local 2B title generation # SKIP
+  ---
+  duration_ms: 0.10275
+  type: 'test'
+  ...
+# Subtest: live remote versus local 2B session-title comparison
+ok 10 - live remote versus local 2B session-title comparison # SKIP
+  ---
+  duration_ms: 0.209
+  type: 'test'
+  ...
+# Subtest: short title validation counts each Han character and English technical word as one element
+ok 11 - short title validation counts each Han character and English technical word as one element
+  ---
+  duration_ms: 1.266584
+  type: 'test'
+  ...
+# Subtest: short title fixtures use only bounded visible synthetic conversation
+ok 12 - short title fixtures use only bounded visible synthetic conversation
+  ---
+  duration_ms: 0.321583
+  type: 'test'
+  ...
+# Subtest: live local 2B mixed Chinese technical title generation
+ok 13 - live local 2B mixed Chinese technical title generation # SKIP
+  ---
+  duration_ms: 0.038208
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 3
+# todo 0
+# duration_ms 182.188959

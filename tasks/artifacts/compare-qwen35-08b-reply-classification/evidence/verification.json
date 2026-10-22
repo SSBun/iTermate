@@ -1,0 +1,61 @@
+{
+  "schema": "reply-comparison-verification/v1",
+  "formal_result": "results-20261020T094324Z.json",
+  "formal_rows": 240,
+  "unique_cases": 40,
+  "no_missing_or_duplicated_case_round_pairs": true,
+  "source_and_dataset_hashes_match": true,
+  "recomputed_metrics": {
+    "vela": {
+      "correct": 99,
+      "matrix": {
+        "normal": {
+          "normal": 42,
+          "question": 18
+        },
+        "question": {
+          "normal": 3,
+          "question": 57
+        }
+      },
+      "false_positives": 18,
+      "false_negatives": 3,
+      "wall_ms_p50": 71.9285,
+      "wall_ms_p95_nearest_rank": 123.432,
+      "wall_ms_max": 207.126,
+      "over_800ms": 0
+    },
+    "qwen": {
+      "correct": 68,
+      "matrix": {
+        "normal": {
+          "normal": 8,
+          "question": 52
+        },
+        "question": {
+          "normal": 0,
+          "question": 60
+        }
+      },
+      "false_positives": 52,
+      "false_negatives": 0,
+      "wall_ms_p50": 109.294,
+      "wall_ms_p95_nearest_rank": 164.491,
+      "wall_ms_max": 226.866,
+      "over_800ms": 0
+    }
+  },
+  "protected_files_checked": 61,
+  "protected_files_changed": [],
+  "original_processes_still_running": {
+    "iTermate": 94088,
+    "Bridge": 86437
+  },
+  "installed_model_names": [
+    "qwen3.5:0.8b"
+  ],
+  "cloud_disabled_log_confirmed": true,
+  "python_scripts_compile": true,
+  "unit_or_project_test_suite_run": false,
+  "scope_limit": "检查固定语料、输出结构、计数、哈希与当前进程，不证明其他 Python 项目兼容性、生产准确率或并发稳定性。"
+}

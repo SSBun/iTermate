@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: both model adapters use the production excerpt and identical title prompt without requiring equal titles
+ok 1 - both model adapters use the production excerpt and identical title prompt without requiring equal titles
+  ---
+  duration_ms: 9.787833
+  type: 'test'
+  ...
+# Subtest: goal changes and English requests retain the exact same visible input for both models
+ok 2 - goal changes and English requests retain the exact same visible input for both models
+  ---
+  duration_ms: 0.919
+  type: 'test'
+  ...
+# Subtest: the 24-character preference is soft while invalid title forms are reported
+ok 3 - the 24-character preference is soft while invalid title forms are reported
+  ---
+  duration_ms: 0.597
+  type: 'test'
+  ...
+# Subtest: provider failures preserve both outcomes and never reveal credentials or raw errors
+ok 4 - provider failures preserve both outcomes and never reveal credentials or raw errors
+  ---
+  duration_ms: 0.464458
+  type: 'test'
+  ...
+# Subtest: a credential echoed in a successful response is never saved in diagnostics
+ok 5 - a credential echoed in a successful response is never saved in diagnostics
+  ---
+  duration_ms: 0.8575
+  type: 'test'
+  ...
+# Subtest: incomplete or thinking-only local responses cannot count as a valid title
+ok 6 - incomplete or thinking-only local responses cannot count as a valid title
+  ---
+  duration_ms: 0.635959
+  type: 'test'
+  ...
+# Subtest: an already cancelled comparison never calls either provider
+ok 7 - an already cancelled comparison never calls either provider
+  ---
+  duration_ms: 0.0895
+  type: 'test'
+  ...
+# Subtest: live comparison is opt-in and validates complete explicit remote configuration
+ok 8 - live comparison is opt-in and validates complete explicit remote configuration
+  ---
+  duration_ms: 0.319167
+  type: 'test'
+  ...
+# Subtest: live local 2B title generation
+ok 9 - live local 2B title generation # SKIP
+  ---
+  duration_ms: 0.099084
+  type: 'test'
+  ...
+# Subtest: live remote versus local 2B session-title comparison
+ok 10 - live remote versus local 2B session-title comparison # SKIP
+  ---
+  duration_ms: 0.214042
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 122.3305

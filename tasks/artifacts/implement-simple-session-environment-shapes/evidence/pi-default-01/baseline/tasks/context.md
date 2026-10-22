@@ -1,0 +1,124 @@
+# 工作区上下文
+
+## Project Core
+
+### Purpose
+- iTermate 是原生 macOS 辅助应用：跟随当前前台 iTerm2 主窗口显示浮动面板，汇总并操作 Window、Tab、Session，以及展示命令或 Agent 的活动状态。
+
+### Global Vocabulary
+- Window、Tab、Session 对应 iTerm2 的原生层级；Project Path 是按 Session 当前目录进行的跨层级分组。
+- Bridge 指随 App 分发并由其管理的 Python helper；Integration 指 Pi、Codex 等 Agent 向 Bridge 报告生命周期的适配资源。
+
+### System Map
+- `iTermate/` 包含 SwiftUI/AppKit 应用壳、浮动面板、设置、通知和 Bridge 客户端；`iTermateBridge/iTermateBridge.py` 通过 iTerm2 API采集快照，并经 Unix Socket 与 App 通信。
+- `integrations/` 包含 Agent 生命周期适配；`project.yml` 是 XcodeGen 工程配置的规范来源，`iTermateTests/` 覆盖主要纯逻辑与集成边界。
+
+### Global Invariants
+- Session 状态必须来自 Bridge 或 Integration 的真实观察路径，不得根据 Session 名称猜测。
+- Window、Tab、Session 的语义与操作由 Bridge 提供；面板几何在 Swift 侧跟随前台 iTerm2 可见主窗口。
+- Target、资源或构建设置的持久变更以 `project.yml` 为准，并由它重新生成 Xcode 工程。
+
+## CTX-session-list-ui — Session 列表分组与交互
+- Scope: 浮动面板中的 Window 与 Project Path 分组、Tab 标题栏、Session 行、状态动画，以及菜单栏 Agent 摘要、收藏项目入口和相关交互。
+- Paths: `iTermate/iTermateApp.swift`, `iTermate/ItermBridge.swift`, `iTermate/SessionNotifications.swift`, `iTermate/SettingsViews.swift`, `iTermateBridge/iTermateBridge.py`
+- Keywords: Session list, Window, Project Path, Tab header, status animation, status menu, running agents, completion statistics, daily buckets, favorite project, style, color, subgroup, collapse, focus, close
+- Authority: `iTermate/iTermateApp.swift`, `iTermate/ItermBridge.swift`, `iTermate/SessionNotifications.swift`, `iTermate/SettingsViews.swift`, `iTermateBridge/iTermateBridge.py`
+- Recheck: 分组模式、Tab 标题、状态动画设置或渲染、菜单栏统计与收藏项目动作、终端快照层级、数据源或 Session 操作发生变化时复查。
+
+### Workflows
+- Session 左侧环境标记独立于右侧生命周期：Shell 为8pt圆形、Pi为8pt三角形、Codex为7pt方形，均居中于14pt槽位；像素Canvas静态显示，未聚焦为语义灰色空心、聚焦为用户强调色实心，保留原有行背景及右侧状态动画。`SessionAgentKind` 来自集成明确的 `agentKind`，由 Bridge 或 Ghostty Registry 传递，Pi 主动恢复也标记 Pi；不根据标题推断。旧通用 Agent 无身份时显示8pt中性菱形，不与Shell圆形混淆。身份不因聚焦、完成或工作租约过期而丢失，在 Agent 退出或终端身份复用时清除；右侧状态及统计仍只依赖既有生命周期。权威为 `iTermate/iTermateApp.swift`、`iTermate/ItermBridge.swift`、`iTermate/TerminalStatusServer.swift`、`iTermateBridge/iTermateBridge.py` 及两类集成；身份协议、清理路径或图标渲染变化时复查。
+- 面板可按 Window 平铺其所有 Session，或按 Session 的精确当前目录跨 Window/Tab 分组；Window 或文件夹路径只显示在 section header，Session 行显示标题与状态图标；由 Agent lifecycle 明确确认的 idle 显示低透明度静止 Agent 像素图标，不纳入状态动画设置，finished 在用户重新激活后才转为 idle，普通命令无 idle 图标；Pi 的 `awaitingInput` 默认使用间歇左右摇晃的像素问号，不随聚焦清除、不进入运行/完成耗时展示，且不触发成功通知或完成计数；Status Animation Settings 按 Agent 与普通 Shell 的 Running、Success、Failed、Shell Finished 及 Agent Waiting for Reply 分成八项，独立持久化样式和颜色并显示预览；Waiting for Reply 默认 Question Mark，问号与设置预览共用 TimelineView，每四秒短暂做 ±1pt 水平位移，减少动态效果时停在中间；等待状态固定使用 Question Mark，历史保存的 Alien、Robot、Classic 样式通过可用样式校验回退为问号；默认颜色跟随项目强调色，支持恢复默认颜色；其余七项继续使用原有三种动画样式；Classic 分别使用 `^_`、`^_^`、`x_x` 表达运行、完成与失败，全部偏好由 `AppSettings` 持久化且不改变状态判定；General Settings 可显示/隐藏运行及完成时间，并在按分钟更新的 Compact 与按秒更新的 Detailed 格式间切换。Window 样式默认为每个 Tab 显示弱化小节标题并缩进其 Session，可在 General Settings 中关闭；Project Path 样式同样受该开关控制，启用后每个 Tab 都显示 Tab 子分组标题并缩进，包括在对应 Project Path 组内仅贡献一个 Session 的 Tab；子分组标题显示 "Tab N"（N 为该 Tab 在其 Window 中的位置），不重复动态标题中的路径；当当前数据源的全局焦点 Session 属于某 Project Path 组时，整个项目分组区域显示 accentColor 背景；其透明度可在 General Settings 的 Focused Section Opacity 中按 0%–100% 调整，默认 5%，并由 `AppSettings` 持久化；section header 仍按项目自定义颜色或次要色显示，不叠加独立焦点效果，聚焦转移后整体背景自动恢复；同一 Tab 的 Session 在组内聚类相邻；普通命令 Session 行保留紧凑间距，实时 Agent 行增加上下内边距并配套增大关闭按钮区域；Window/Tab/Project Path 标题前保留更大垂直留白。标题栏配置菜单按 Group By、Display、Sections 分区，各操作项使用语义图标且分组项保留原生选中标记；Window、Tab 和 Project Path 标题均可临时折叠，并支持全部展开/折叠；各类 section header 的原生上下文菜单可通过 `Close All Sessions` 请求非强制关闭该 Window、Tab 或精确 Project Path 当前包含的全部 Session。样式与 Tab 标题开关持久化，折叠状态仅保存在当前运行时；点击 Session 会由当前数据源选择父 Tab、聚焦 pane 并将 Window 置前；当前焦点由快照中的 Window、Tab 与 Session 选中关系共同生成，保证每份快照最多一个聚焦 Session；每行的独立关闭按钮默认隐藏；非激活面板以唯一的行与关闭按钮悬停 Session ID 配合 `.activeAlways` AppKit tracking area，仅在指针悬停当前行时显示对应按钮，悬停 `xmark` 本身时显示圆形背景反馈，离开按钮、行或面板时清理，并通过当前数据源请求原生非强制关闭。
+- 菜单栏 `MenuBarExtra(.window)` 使用 Live-first 层级显示跨 iTerm2 与 Ghostty 的可确认 Agent Running 总数，以及成功 Agent `running → finished` 次数；数据源未就绪时 Running 显示未知而不是零。完成次数按本地自然日聚合并持久化，由同一份每日数据计算 Total、当前自然月、当前本地日历周和 Today；旧版当天计数首次读取时迁入对应日期；状态菜单以 Today 作为大号强调指标，并将 Running 数量作为次要标签；Settings 的 Statistics 标签页以原生分组表单展示四项汇总。其 Favorite Projects 复用按精确路径持久化的现有收藏，按标题排序为“左标题、右完整路径”的单行 Cell；点击后由 iTerm2 Bridge 按 Window、Tab、Session 顺序读取当前动态路径，激活首个精确匹配 Session，否则以该路径为初始目录在当前窗口新建 Tab、无窗口时新建窗口；成功后关闭菜单，失败时保留菜单并显示错误。
+
+## CTX-pi-session-archives — Pi 实时摘要、归档与恢复
+- Scope: 实时Session任务摘要、Session行归档菜单、面板Archive折叠分区、活跃Pi身份发现、私有JSONL快照、归档列表和新终端恢复。
+- Paths: `iTermate/PiSessionArchives.swift`, `iTermate/ItermBridge.swift`, `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `integrations/pi/iTermate-integration.ts`, `iTermateBridge/iTermateBridge.py`, `docs/pi-session-archives.md`
+- Keywords: Pi, task summary, session title, archive, resume, session ID, JSONL, current leaf, private socket, parent PID
+- Authority: `iTermate/PiSessionArchives.swift`, `integrations/pi/iTermate-integration.ts`, `iTermate/ItermBridge.swift`, `iTermateBridge/iTermateBridge.py`, `docs/pi-session-archives.md`
+- Recheck: Pi SDK会话格式/生命周期接口、私有发现协议、归档目录、面板Archive布局/配色、终端关闭校验或CLI恢复参数变化时复查。
+
+### Vocabulary
+- 终端Session ID与Pi原生Session ID不是同一身份。Pi集成提供原生ID、文件、工作目录及进程信息；iTerm2按明确的终端ID匹配，Ghostty按唯一TTY匹配，不按标题或目录猜测。
+
+### Structure
+- `PiSessionArchives`负责活跃实例发现、归档元数据读取、摘要与header校验，以及恢复工作副本；归档原生条目由目标Pi进程自己读取SessionManager并写入。私有Unix socket与发现凭据位于用户配置目录的pi-live，归档/恢复副本位于App支持目录。
+- JSONL保留完整历史并追加不进入模型上下文的custom锚点，以固定当前分支；原始Pi文件不由App删除，恢复不直接写归档快照。归档不等于工作目录或外部资源备份。
+
+### Workflows
+- 实时Pi任务标题由集成在启动/重载/分支切换后的安全空闲时补生成，并在交互会话成功回复settled后后台调用当前Pi模型更新，仅使用当前分支有界的用户/助手可见文本，不传隐藏思考或原始工具输出；复用私有发现元数据的可选taskSummary，Swift按明确终端身份唯一匹配后优先显示，缺失、过期或不合法时回退终端标题，悬停保留原始标题。摘要不进入状态协议、对话或归档；轮询与只读状态查询不调用模型，失败保留旧摘要；新一轮取消在途请求，Session/分支切换或退出清除，迟到结果须通过请求、会话与leaf核验。缓存仅覆盖当前集成运行期；自动生成对连续未变化的可见对话最多尝试两次，失败后延迟重试且显示脱敏原因，成功内容去重；生命周期取消清理定时器与在途请求，重载和分支切换重置缓存及预算；右键Refresh Session Title仍可手动生成。手动刷新使用声明supportsTitleRefresh/canRefreshTitle的私有认证refreshTitle动作，仅空闲会话可用；绕过自动去重，但保留请求取消与身份/leaf复核，同一会话刷新串行、不锁输入，失败保留标题并反馈；App按端点实例跟踪在途请求，响应后重读发现元数据核对结果。App与集成源码改变仍需用户自行运行新版App并安装/reload集成。
+- 右键归档直接执行、不显示确认弹窗，仍要求Pi空闲、没有草稿/排队消息/交互弹窗，且子代理活动可确认安全；先经当前Pi的modelRegistry使用当前模型生成短摘要（无工具、无新CLI，60秒截止），输入是活动分支投影的可见对话与压缩摘要，不含隐藏思考或原始工具输出；生成失败不归档/退出。生成后重新核验身份、分支与空闲条件，写入、校验并发布含summary的归档后请求Pi正常退出。App要求活跃实例声明supportsSummary，旧集成需重载；旧归档summary可缺省并继续恢复。App复核记录、观察目标进程退出，再检查原Shell身份后仅关闭目标分屏，不关闭同Tab其他分屏；iTerm2对退出后的前台状态有短暂刷新等待，发现新存活进程仍拒绝关闭。无法确认安全时保留分屏和已保存的归档。
+- 主面板Archive分区默认折叠，标题与恢复文案使用独立系统紫色，并配以适应明暗外观的浅紫背景；归档行间距不随实时Agent行留白变化，与实时Session共用滚动区域；展开时刷新归档列表，参与现有Expand All/Collapse All，折叠状态仅属于面板生命周期。即使实时数据源连接未就绪或没有当前Session，分区也可显示；展开不触发恢复或删除。
+- 主面板 Archive 行提供右键删除菜单，点击直接执行、不显示确认弹窗，由 `PiSessionArchives` 校验 UUID、目录非符号链接及元数据一致性，并将所选归档目录移至系统废纸篓；与归档/恢复共用忙碌状态，结束后刷新列表，失败沿用面板错误提示，不操作原始 Pi 文件、工作目录或恢复副本。
+- 面板Archive归档行和Archives设置页共用恢复入口，只有明确点击Resume按钮才恢复，名称/路径/行空白不触发恢复；悬停显示持久化summary，旧归档无摘要时显示缺省提示。在原工作目录的新iTerm2/Ghostty终端使用独立可写副本与明确的`--session-dir`定位原Session ID；路径形态的特殊ID使用明确文件路径。恢复完成由新Pi报告打开了预期副本来确认，单纯创建窗口不算恢复成功。
+
+## CTX-terminal-backends — iTerm2 与 Ghostty 数据源
+- Scope: 前台终端识别、面板窗口跟随、Window/Tab/Session 快照与操作路由、跨终端 Agent 摘要，以及不同终端的状态能力边界。
+- Paths: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/ItermBridge.swift`, `iTermate/VenomDebugMonitor.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`
+- Keywords: iTerm2, Ghostty, AppleScript, Bridge, TerminalApp, frontmost, panel setting, snapshot, tty, telemetry, shell hook, focus, close, open project, favorite project, agent summary, completion count, session status, venom-cli, debug monitoring, radar
+- Authority: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/FinishedSessionShortcut.swift`, `iTermate/ItermBridge.swift`, `iTermate/VenomDebugMonitor.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`, `https://ghostty.org/docs/features/applescript`
+- Recheck: 支持的终端、Ghostty AppleScript 层级或属性、面板按终端启用偏好、快照轮询、TTY 状态协议、Integration 安装、前台窗口选择、跨终端统计、venom-cli 调试子进程结构或 Bridge 操作路由发生变化时复查。
+
+### Purpose and Boundaries
+- `PanelFollower` 只在 iTerm2 或 Ghostty 是系统前台应用、存在可见 layer-0 窗口，且 `AppSettings` 中该终端的独立面板开关启用时显示面板；两个开关默认启用并持久化，关闭仅隐藏对应终端的面板，不阻断 `ItermStore` 的终端切换和状态采集。iTerm2 保留选择最大窗口以排除模态框的策略，Ghostty 使用 Core Graphics 前后顺序中的首个窗口；无需 Accessibility 权限。
+- iTerm2 继续由 Python Bridge 提供层级、操作、普通命令和 Agent 状态；Ghostty 由官方 AppleScript 提供 Window、Tab、Terminal、工作目录、焦点与关闭操作。运行时能读取 terminal `tty` 时，App 才把本机 Integration 状态合并到唯一匹配的 Ghostty Terminal；缺少 TTY、映射重复或来源未映射时状态保持未知，不根据标题、目录或进程名称猜测。
+
+### Workflows
+- venom-cli 调试雷达由 `iTermate/VenomDebugMonitor.swift` 读取 macOS 原生进程信息确认：iTerm2 Bridge 从动态 `tty` 变量提供真实设备路径；唯一 TTY 的普通 running 命令与该终端前台进程树中仍存活的前台 venom-cli debug build 必须同时成立；通过真实父子关系追踪终端包装器的嵌套 PTY，不按终端名称或相邻 TTY 编号猜测。识别从 debug build 启动即成立，覆盖构建、安装、重建及日志采集阶段，不再等待直接日志子进程出现。共享 Store 每两秒重新观察，仅细化状态图标，不更改命令生命周期、Agent 优先级或完成统计；非 debug build、未知权限或 TTY 不显示雷达。Canvas 绘制青绿色 7×7 雷达，扫描点沿轮廓循环，减少动态效果时静止；实际面板生效仍需用户运行新构建。
+- Pi 子代理活动通过进程内 `subagents:rpc:v1:request` 的 `status` 方法读取当前会话 Fleet v1 `totalActive`；只传布尔 `hasRunningSubagents`，不解析终端文字或子代理历史。子代理存在时维持 running，明确待回复仍为 awaitingInput，两种情况都显示像素 Canvas 分支图标：7×7 点阵、2pt 间距、每 0.14 秒高亮一行，从底部沿两支向上流动；开启减少动态效果时暂停时间线并显示完整静态图形。活动观察失败不等同完成；失去确认后停止续报仅由子代理支撑的运行状态，由接收端租约清理。主 Agent 的真实运行与待回复仍独立上报。随 App 分发的源码改变不等于用户已经安装新集成，生效需通过既有安装入口更新并在 Pi 中重新加载。
+- Pi 待回复只在交互 TUI 上报：明确 confirm/select/input/editor UI 事件，或 `agent_settled` 后的问句识别产生 `awaitingInput`；启用模型辅助时使用所选Laya/Vela的独立问句接口，不再与隐含待回复规则OR合并，模型不可用时仅保留明确生命周期状态；关闭辅助时保留旧规则。已确认问题持续续租，新一轮或会话导航清理，custom UI不默认视为提问。两端等待状态通过有限租约维持，重复续报不改变起始时间；Pi重启不从历史文字恢复问题，仍活跃Pi可续报恢复App/Bridge重建后的状态。识别与生命周期权威为 `integrations/pi/iTermate-integration.ts`，接收与失效权威为 `TerminalStatusServer.swift` 和Python Bridge。
+- App 启动时仅在 iTerm2 已运行时启动其 Bridge client；否则在 iTerm2 首次成为前台终端时启动。Ghostty 前台期间通过 `osascript` 最多每秒读取一次快照，并把结果复用到同一 Session 分组 UI；切回 iTerm2 时恢复其缓存快照和连接状态。
+- App 自有的本机状态 listener 与 Store 同生命周期；状态按 TTY 独立维护 Agent 与普通命令通道，Agent 优先，并通过 sequence、Agent heartbeat、唤醒清理和 Terminal identity 重建避免显示不可证实的 running 或复用旧状态。
+- Pi 与 Codex 只有在 `TERM_PROGRAM=iTerm.app` 时才信任 iTerm Session ID 并使用 Bridge 协议；Ghostty 从 iTerm2 启动时可能继承陈旧的 `ITERM_SESSION_ID`/`TERM_SESSION_ID`，必须忽略它们并按控制 TTY 改走本机状态 listener。zsh、Bash、fish 普通命令状态必须由用户在设置中显式安装可逆 shell hook 后才报告。
+- Codex 的 iTerm 状态由 `integrations/status/iTermate-status.py` 解析生命周期事件，按终端 UUID 保存 Codex session/turn 与单调序号；Bridge 对 Codex 专属报告校验 owner 并去重结束事件。上报等待匹配 ACK；续报仅依赖有界的新鲜 hook 观察和存活的 Codex 上游进程，不把进程存活单独当作工作状态。压缩不会置 idle，中断不计成功。工具前后 hook 续新观察，超出观察期限时停止续租而不猜测完成。Codex 安装器改为显式启用 CSL Agent Kit Agent Hooks 的内置规则：只安装 reporter 与 opt-in 标记，并在用户启用时删除自己的旧原生 hook 条目；不再创建独立原生入口，App 启动的资源更新不自动迁移。框架将 native payload 原样转发；中断与退出由仅 Codex 的补充分发提供。用户需要更新并信任 CSL 插件；移除旧条目可能改变其他条目的索引，需复查 `/hooks`。关闭标记后已有 worker 停止续租。源码、标记或规则 eligible 不证明宿主已加载、信任或实际投递。
+- Codex 精确监控的可选启动入口为 `integrations/status/iTermate-codex.py`：创建独占 app-server 与私有 Unix Socket，原字节代理原生 TUI 的 WebSocket 流，仅从 TUI 自己的 thread/start、resume、fork 响应绑定 Session；thread/start 请求显式标记非 user 的 threadSource（如 thread_title）时排除该内部功能线程，不能让其覆盖主对话；缺省/null/user 来源及用户 ephemeral 对话保留绑定行为；用 thread/status/changed、turn/started、turn/completed 区分运行、原生待审批/输入、完成、失败与中断。包装器只支持真实 iTerm2 Session ID；UUID 解析仅用于校验，上报保留原始字符串及大小写，因为 iTerm2 按字符串精确查找 Session；不按文本或目录关联；未知协议、连接丢失与退出释放状态，周期续报使用 Bridge 的现有 owner/sequence/租约。包装器子进程通过环境标记跳过自身 hooks，避免双提供方冲突；App 仅为已启用 Codex 安装或更新入口，不改 shell 命令，真实生效仍需用户运行新 App 并经包装器启动。权威为入口、`integrations/status/iTermate-status.py`、`iTermateBridge/iTermateBridge.py` 和 `docs/codex-agent-hooks.md`；Codex 远程协议或安装入口变化时复查。
+- 标题栏刷新按钮对 iTerm2 重启 Bridge 并重建状态，对 Ghostty 立即重新读取 AppleScript 快照；两条路径都不重启 App 或用户的终端 Session。
+- General 中的全局快捷键由 `FinishedSessionShortcut` 使用系统热键 API 注册，配置由 `AppSettings` 持久化；动作固定路由 iTerm2 Bridge，不依赖当前前台终端或面板分组顺序。Bridge 按实际 Window/Tab/Session 顺序从当前项之后循环，只选 `activityKind=agent`，依次优先其他 awaitingInput（问号）、finished、running、idle Agent；普通命令、当前项、未知及独立模型推测均不参与，待回复、运行中及空闲目标不执行完成状态清理，聚焦不会清除问号。
+- 状态菜单打开时刷新正在运行的终端数据源；`ItermStore` 分别保留两端快照与完成转换基线，只把可确认的 Agent Running 相加，并只累计退出状态为 0 的 Agent 完成。收藏项目操作固定路由到 iTerm2 Bridge；Bridge 在同一动作内用动态 `path` 判断首个精确匹配 Session，只有确认不存在时才通过 `LocalWriteOnlyProfile` 的自定义初始目录创建 Tab 或 Window，并以 `actionResult` 驱动菜单成功关闭或失败提示。
+
+## CTX-local-decision-models — 本地决策模型选择
+- Scope: 设置中的Laya/Vela选择、模型安装与服务、Pi回答结束hook的用户参与分类。
+- Paths: `iTermate/LocalModelService.swift`, `integrations/laya/`, `integrations/pi/iTermate-integration.ts`, `iTermateBridge/iTermateBridge.py`, `docs/local-model-api.md`
+- Keywords: Laya, Vela, decision model, provider, question, local model, epoch
+- Authority: `iTermate/LocalModelService.swift`, `integrations/laya/iTermate-laya.py`, `integrations/pi/iTermate-integration.ts`, `iTermateBridge/iTermateBridge.py`
+- Recheck: provider选择、安装目录、控制协议、问句定义、推理结果合并或服务生命周期变化时复查。
+
+### Structure
+- `LocalModelService`拥有单个所选worker、持久偏好及设置入口；沿用Laya控制目录以兼容已有客户端位置，Vela资产与运行时分开存放。Python helper承载统一鉴权API和provider适配，固定模型版本与Vela代码/权重校验来源在helper，不缓存到Context。
+- 配置revision、ready分析许可及端点provider/instance共同绑定推理身份；Pi响应校验身份，拒绝切换后的旧结果。新模型不可用不会自动切回另一模型；默认选择Vela，有效持久化选择保持优先。
+
+### Decision and Verification Boundaries
+- 产品仅在Pi回答结束的agent_settled hook分析最新完整回复；请求确认、选择、授权或信息以及隐含确认门均视为需要用户参与，不要求疑问句。Bridge不抓取屏幕或轮询模型；无对应hook的会话不做模型猜测。等待结果由心跳续租，心跳不推理；原生finished作为未读idle标记显示高亮，点击灰显。模型判断不构成安全授权。
+- 源码和构建通过不代表用户已运行新App或重新加载Pi集成；安装、启动和真实切换验收与源码交付区分。
+
+## CTX-pi-status-recovery — Pi 状态主动恢复
+- Scope: Pi已存在但Agent状态缺失时的认证查询、跨终端恢复、乱序防护和旧集成能力边界。
+- Paths: `integrations/pi/iTermate-integration.ts`, `iTermate/PiSessionArchives.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/SessionNotifications.swift`, `iTermateBridge/iTermateBridge.py`
+- Keywords: Pi, status, recovery, reconnect, heartbeat, unknown, idle, finished, readonly, supportsStatus
+- Authority: `integrations/pi/iTermate-integration.ts`, `iTermate/PiSessionArchives.swift`, `iTermate/ItermBridge.swift`, `iTermate/TerminalStatusServer.swift`, `iTermate/SessionNotifications.swift`, `iTermateBridge/iTermateBridge.py`
+- Recheck: 状态协议、Pi生命周期、私有发现身份、补查调度、连接代际、接收端序列或完成追踪变化时复查。
+
+### Workflows
+- Pi私有端点以supportsStatus声明能力；status请求验证token与原生Session ID，返回实例身份、当前状态、来源ID/序列及子代理标记，不发布状态、不调用模型、不归档或关闭会话。无法确认子代理且父Agent不忙时返回未知，不用canArchive推断空闲。
+- Store在既有两秒定时器中扫描缺失Agent状态的会话，最多4个在途请求，每次3秒截止；轮转位置只在实际预留请求后前移，满额轮次保持游标，避免慢端点阻塞后续健康候选；iTerm2用明确Session ID匹配，Ghostty用唯一TTY匹配。查回后重新核验实例与当前快照，连接/唤醒/停止代际失效的结果丢弃；iTerm2接收端和Ghostty registry均只填补缺失Agent状态，不覆盖新推送或聚焦后的idle。
+- 查询快照和正常Pi推送共用单调序列；接收端拒绝迟到消息并保留detached序列保护。恢复的running/awaitingInput有租约；状态来源由普通Shell变为Agent的finished不计作完成事件。旧集成缺少supportsStatus时不查询，源码更新仍需通过既有安装入口并在Pi中reload后生效。
+
+## 工程与组件
+
+- Session 状态快照以 `activityKind` 保存由真实观察路径确定的 `agent` 或 `command` 类型，UI 不根据 Session 名称猜测；非空状态使用 36×16pt 的 AppKit `NSView` 以 20 FPS 绘制 18×8 点阵动画，Agent 使用外星人、普通命令使用机器人，二者均带状态条并以动作和语义色区分运行、成功、失败及未知结果；点亮像素保持全不透明并通过语义色向白色混合表现亮度，未点亮像素透明，以保证模糊背景上的对比度；由 Agent lifecycle 明确确认的 idle 显示低透明度静止外星人图标，普通命令空闲与未知状态不显示；减少动态效果时所有图标停在静态关键帧。——权威来源：[`iTermateBridge.py`](../iTermateBridge/iTermateBridge.py)、[`ItermBridge.swift`](../iTermate/ItermBridge.swift) 与 [`iTermateApp.swift`](../iTermate/iTermateApp.swift)
+
+- 面板标题栏的手动状态刷新按钮只重启 Bridge helper，不重启 App、iTerm 或任何 Session；Bridge 内存状态因此归零，普通 Shell running 由新 Bridge 的命令观察器初始同步恢复，真实工作的 Pi 由后续 heartbeat 恢复。该入口是睡眠后 stale 状态的手动兜底，不代表自动唤醒根因已解决。——权威来源：[`iTermateApp.swift`](../iTermate/iTermateApp.swift)、[`ItermBridge.swift`](../iTermate/ItermBridge.swift) 与真实 PID/面板验证
+
+- 本项目的本地构建并启动入口是在 workspace 根目录执行 `venom-cli -p "$PWD" build --run`；该入口使用 iTermate scheme 与 My Mac arm64 destination，构建 `project.xcworkspace` 后启动 DerivedData 中的 Debug App，可用于需要真实运行窗口和 Bridge 安装链路的验证。——权威来源：用户确认与成功的本地命令验证；venom-cli 行为或工程入口变化时复查
+
+- 设置窗口由 SwiftUI `Settings` scene 承载，并使用标准顶部 `TabView` 在 General、Agents、Status Animation、Statistics、About 之间切换；不使用侧边栏、隐藏标题栏、强制 window toolbar 样式或手绘系统外观。各页继续使用 grouped `Form`、`Section` 与标准 SwiftUI 控件，窗口固定为 520×420pt 的旧式顶部标签布局；各设置 `Form` 使用标准 `.scrollIndicators(.hidden)` 隐藏滚动指示器，同时保留滚动行为。——权威来源：[`iTermateApp.swift`](../iTermate/iTermateApp.swift)、[`SettingsViews.swift`](../iTermate/SettingsViews.swift) 与 [`AgentIntegrations.swift`](../iTermate/AgentIntegrations.swift)
+
+- App 通过固定为 2.9.4 的 Sparkle SPM package 提供应用级 `SPUStandardUpdaterController`；正常启动时启用 updater，About 设置页只调用标准检查入口。`project.yml` 生成包含 HTTPS GitHub Pages feed URL 与 EdDSA 公钥的 Info.plist，私钥仅存于本机 Keychain 的 `SSBun.iTermate` account；更新资产由 `SSBun/iTermate` GitHub Releases 承载，基线 appcast 位于 `docs/appcast.xml`。——权威来源：[`project.yml`](../project.yml)、[`iTermateApp.swift`](../iTermate/iTermateApp.swift)、[`SettingsViews.swift`](../iTermate/SettingsViews.swift) 与 [`appcast.xml`](../docs/appcast.xml)
+- 菜单栏入口与浮动面板标题共用 `iTermate/Assets.xcassets/StatusIcon.imageset/status-icon.png` 中用户指定的 `terminal-icon.png` 高分辨率转换资源；源图保留 554×549px、可见边界约 475×412px，二者通过预设 `NSImage.size` 为 18pt 高的 `Image(nsImage:)` 控制运行时大小，再使用 template rendering 适配浅色/深色外观；资源说明记录在 [`THIRD-PARTY-NOTICES.md`](../THIRD-PARTY-NOTICES.md)。——权威来源：[`iTermateApp.swift`](../iTermate/iTermateApp.swift)、[`StatusIcon.imageset`](../iTermate/Assets.xcassets/StatusIcon.imageset) 与 [`project.yml`](../project.yml)
+- XcodeGen 的 [`project.yml`](../project.yml) 是 Xcode 工程配置的规范来源，生成的 [`iTermate.xcodeproj`](../iTermate.xcodeproj) 可直接构建；修改 target 或构建设置时应更新 YAML 后重新生成工程。——权威来源：[`project.yml`](../project.yml)
+- 应用 shell 使用 SwiftUI `App`；`MenuBarExtra(.window)` 提供跨 iTerm2/Ghostty 的 Agent Running 与今日成功完成摘要、收藏项目快捷入口及 Settings/Quit，浮动面板左下角的齿轮入口和 `Settings` scene 提供 General、Agents、Status Animation、Statistics、About 设置页面；`AppDelegate` 启动共享 Store、浮动面板与完成通知控制器。面板和菜单栏 Settings 入口在 macOS 14+ 共用 `OpenSettingsButton`，先激活后台 App 再调用 SwiftUI `openSettings` 环境动作；macOS 13 保留 `showSettingsWindow:` fallback，不设置持续浮动层级。——权威来源：[`iTermateApp.swift`](../iTermate/iTermateApp.swift)、[`ItermBridge.swift`](../iTermate/ItermBridge.swift)、[`SettingsViews.swift`](../iTermate/SettingsViews.swift)、[`SessionNotifications.swift`](../iTermate/SessionNotifications.swift) 与 [`iTermateBridge.py`](../iTermateBridge/iTermateBridge.py)
+- 窗口几何与 iTerm 语义分层：`PanelFollower` 在 Swift 侧通过 Core Graphics 以 30Hz 跟随 active iTerm 的可见窗口；`ItermWindow.frontmost()` 要求 iTerm 为系统前台应用，并从可见 layer-0 候选中选择最大窗口，以排除 Close Tab 等模态提示框。iTerm 失去焦点或没有可见窗口时面板隐藏。Window/Tab/Session 层级及操作由 Python Bridge 提供，因此当前无需 Accessibility 权限；若需要多个主 iTerm 窗口的精确前台识别，应改用窗口 ID/Accessibility 并复查。——权威来源：[`iTermateApp.swift`](../iTermate/iTermateApp.swift)、[`PanelLayoutTests.swift`](../iTermateTests/PanelLayoutTests.swift) 与 [`ItermBridge.swift`](../iTermate/ItermBridge.swift)
+- Bridge 作为 App resource 安装到 iTerm2 AutoLaunch，使用文件锁保证单实例，并通过用户私有目录中的 Unix Socket 与 App 交换 JSON Lines；App 启动流程负责替换并重启 Bridge，因此 App↔Bridge 不做运行时协议版本校验。独立安装的 integration 可继续携带版本元数据，Bridge 只校验当前操作所需字段和值，不按版本号拒绝请求。——权威来源：[`iTermateBridge.py`](../iTermateBridge/iTermateBridge.py)、[`ItermBridge.swift`](../iTermate/ItermBridge.swift)、[`integrations`](../integrations) 与 [`project.yml`](../project.yml)
+- Bridge 同步全量 Window/Tab/Session 快照、命令状态与状态转换时间；Session 标题和路径每 2 秒从 iTerm 动态变量读取；动态标题非空时更新，只有尚无历史标题时才使用对象属性回退，激活切换期间动态标题暂空时优先沿用该 Session 最近的非空标题。每个 Tab 的当前 Session 最终使用该 Tab 的动态标题，以匹配 iTerm 当前可见标题并避免选中后非空的用户名或 shell fallback 覆盖正确标题；因此标题变化无需 Layout 事件或重启。App 启动时安装当前 bundle 资源、停止占用 socket 的旧 Bridge，并通过 iTerm2 `it2run` 启动新实例；App 退出时停止 Bridge。Bridge 监听 iTerm2 WebSocket，iTerm2 重启导致连接关闭时 Bridge 会退出并释放进程锁与 socket，App 同时清空旧窗口快照并在重连时按需启动新 Bridge。Bridge 接受 App 新连接时会在首个快照前重新验证 running 状态：先清理超时 heartbeat，仍有新鲜 heartbeat 的 Agent running 直接保留，其余状态再按当前 Prompt 或 iTerm2 原生前台任务变量判断，避免 Pi 每 2 秒的 heartbeat 短连接先清空再恢复图标。周期发布使用墙上时钟检测睡眠造成的长时间间隔；App 同时监听 `NSWorkspace.didWakeNotification`，在系统唤醒后主动重连 Bridge client，让既有连接刷新路径无需等待新 Agent prompt 即可运行。唤醒刷新会清理无法确认的 running 状态，并且只在 Prompt 或 iTerm2 原生前台任务变量能确认当前任务且不是 Pi/Codex 时恢复普通 Shell running；普通 shell 命令优先由 Shell Integration PromptMonitor 观察并保留真实退出码，Prompt 不可用时订阅 iTerm2 的 `jobPid`，以 `jobName` 对比 `shell` 判断前台任务、用 `commandLine` 排除 Agent 外层进程，完成时保留未知退出码而不伪造成功或失败；两条路径恢复中的命令都因系统 API 不提供起始时间而从 Bridge 观察时刻计时。Pi/Codex 长驻 CLI 改由原生 agent lifecycle integration 报告 working/finished/idle，并优先于 PromptMonitor；每个 PromptMonitor 独立记住当前外层命令是否为 Agent，因此即使 detached lifecycle 先于外层 `COMMAND_END` 到达，也不会把 Agent 进程退出误报为普通命令完成，退出后下一条普通命令再交还给 shell fallback；Pi 扩展在 agent 工作期间每 2 秒串行上报显式 running 心跳，settled 时停止并按顺序发送终态，使首次发送失败或 Bridge 重启后状态能在下一次心跳自动恢复，且在途 running 不会覆盖 finished。Bridge 对相同状态保留 `statusChangedAt`，并以 macOS 睡眠期间仍推进的 `CLOCK_MONOTONIC_RAW` 计算心跳年龄，只在显式心跳 running 超过 8 秒未刷新时清除其可见状态；普通 Shell、旧 integration 的非心跳 running 与 finished 不参与该过期逻辑。Pi lifecycle handler 会等待匹配 request ID 的 Bridge `actionResult`，避免 fire-and-forget 丢失 settled 状态；最终 assistant `stopReason` 为 `error` 时上报非零退出状态，使 App 显示失败图标，自动重试后成功则仍上报零。完成状态不会按时间消失；完成后再次激活 Session 时，仍由 Agent lifecycle 管理的 Session 转为 idle，普通命令则清除状态。——权威来源：[`iTermateBridge.py`](../iTermateBridge/iTermateBridge.py)、[`Pi integration`](../integrations/pi/iTermate-integration.ts)、[`Codex hook`](../integrations/codex/iTermate-hook.py) 与 [`ItermBridge.swift`](../iTermate/ItermBridge.swift)
+- `SessionNotificationController` 观察所有 Session 的 `running → finished` 快照转换；全局开关默认关闭，开启时请求 macOS 通知权限，后续启动也会重新确认当前 App bundle 的授权，并对普通 shell 与 agent 完成都发送带 Session 名称和结果的原生通知。初始 finished 快照与重复 finished 快照不会通知；通知携带 Session ID，用户点击后复用 Bridge 激活请求选择对应 Session 并将 iTerm 置前；系统明确拒绝授权会阻止通知投递并写入日志，但不会覆盖 `~/.iTermate/config.toml` 中持久化的用户开关；只有无技术错误且未获授权时，General Settings 才使用标准 SwiftUI Alert 引导至 macOS Notifications 设置页。通知运行验证必须使用代码签名 identifier 与 `CFBundleIdentifier` 一致的单一 App 实例；`CODE_SIGNING_ALLOWED=NO` 产物即使复用 bundle ID，也不代表系统设置中的已授权 App 身份。——权威来源：[`SessionNotifications.swift`](../iTermate/SessionNotifications.swift)、[`SettingsViews.swift`](../iTermate/SettingsViews.swift)、[`iTermateApp.swift`](../iTermate/iTermateApp.swift) 与 [`iTermateBridge.py`](../iTermateBridge/iTermateBridge.py)
+- Agents Settings 列出 Claude Code、Codex、OpenCode、Cursor CLI、Kimi Code、Pi 与 omp；当前仅 Pi/Codex 可管理。两套 integration 资源随 App bundle 分发；Pi 开关管理 `~/.pi/agent/extensions/iTermate-integration.ts`；App 启动时若该文件已存在且与 bundle 资源不同，会保留启用态并原子更新为 bundle 版本，未安装时不会自动安装。Codex 开关只合并/移除 `~/.codex/hooks.json` 中带 `_iTermate` 的 entries 并管理 helper，不改其他 hooks。Pi integration 更新后已有 Session 需 `/reload`，Codex 新 hooks 需在 `/hooks` 中信任。——权威来源：[`AgentIntegrations.swift`](../iTermate/AgentIntegrations.swift)、[`Pi integration`](../integrations/pi/iTermate-integration.ts)、[`Codex hook`](../integrations/codex/iTermate-hook.py) 与 [`project.yml`](../project.yml)
+- `AppSettings` 是面板宽度、字体、背景样式、Session 列表样式、Project Path section title 样式、Tab 标题、时间显示开关及格式、完成通知开关，以及按精确项目路径保存 Pin、Favorite 与颜色的共享权威状态：全部配置从用户 `~/.iTermate/config.toml` 读取并写回，不使用 `UserDefaults` 或旧配置迁移；初始化已有文件时只读取而不重写，每次修改会重新读取磁盘当前配置并只合并目标字段，避免多个 Debug App 或设置实例用陈旧内存值覆盖其他设置；面板字体默认系统 13pt，General Settings 通过标准 SwiftUI `Picker` 选择 `NSFontManager.availableFonts` 提供的任一本机已安装字形，并用数字 `TextField` 输入字号，保存其 PostScript 名称与字号，字体不可用时回退到同字号系统字体；Background Style 提供 System/Dark/Light 与 Blur/Opaque 的六种预设，默认 System Blur：Blur 使用系统 `.regularMaterial`，Opaque 使用语义窗口背景，Dark/Light 同步覆盖整个面板的文字、图标和控件配色，System 跟随 macOS 外观；Project Path section title 可选择完整路径或最后一级文件夹名，默认完整路径；项目文件夹标题的上下文菜单可切换并持久化 Pin、Favorite 与系统颜色选择器的自定义颜色，Pin 文件夹优先排序，Favorite 显示星标，颜色同时着色文件夹图标与标题，Unknown Path 不提供这些操作；面板仍可通过原生边缘拖拽在 180–600pt 之间调整，左右边缘通过带 `.activeAlways` 的 `NSTrackingArea` 显示水平调整光标；默认宽度为 260pt。面板高度始终匹配 iTerm，与 iTerm 间隔 8pt，优先放右侧，空间不足放左侧，再不足则覆盖在可见屏幕内。——权威来源：[`SettingsViews.swift`](../iTermate/SettingsViews.swift)、[`iTermateApp.swift`](../iTermate/iTermateApp.swift)、[`PanelLayout.swift`](../iTermate/PanelLayout.swift) 与 [`PanelLayoutTests.swift`](../iTermateTests/PanelLayoutTests.swift)

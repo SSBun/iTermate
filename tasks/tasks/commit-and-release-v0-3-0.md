@@ -27,8 +27,7 @@ Kind: Queue
 
 ## Result
 
-- T1: Ghostty 操作、普通命令与 Pi 生命周期状态均经用户真实运行确认；全部产品、文档、版本和任务改动已形成可追溯提交。
-- T1: `v0.3.0`、GitHub Release、arm64 DMG、SHA-256 资产与 Sparkle 0.3.0/build 9 appcast 已公开，且公开下载与签名复核通过。
+- T1: Ghostty 操作、普通命令与 Pi 生命周期状态均经用户真实运行确认；全部产品、文档、版本和任务改动已形成可追溯提交；`v0.3.0`、GitHub Release、arm64 DMG、SHA-256 资产与 Sparkle 0.3.0/build 9 appcast 已公开，且公开下载与签名复核通过。
 - Review gate: Skipped — 用户未要求独立 Reviewer、对抗审查或双 Agent 审批。
 
 ## Verification

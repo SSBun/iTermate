@@ -1,0 +1,58 @@
+{
+  "model": "qwen3.5:2b",
+  "modelDigestObserved": "dfaf2605162e689c8cac330dc4a190c4c50ad30aa47814a8fe9b79fa5127e97e",
+  "rows": [
+    {
+      "caseId": "pagination",
+      "model": "qwen3.5:2b",
+      "input": "[user]\\n修复文章列表滚动到底部后不能加载下一页的问题。\\n\\n[assistant]\\n正在检查分页游标和触底回调，尚未修改代码。",
+      "rawTitle": "修复文章列表滚动到底部无法加载下一页问题",
+      "title": "修复文章列表滚动到底部无法加载下一页问题",
+      "elapsedMs": 679.801708,
+      "issues": [],
+      "withinPreferred24": true,
+      "characters": 20
+    },
+    {
+      "caseId": "changed-goal",
+      "model": "qwen3.5:2b",
+      "input": "[user]\\n检查客户端点赞数格式化规则。\\n\\n[assistant]\\n规则已核实，两个客户端均采用截断。\\n\\n[user]\\n现在先不要改点赞数，改为定位登录后白屏的原因。\\n\\n[assistant]\\n开始追踪登录回调与首页初始化路径。",
+      "rawTitle": "定位登录后白屏原因",
+      "title": "定位登录后白屏原因",
+      "elapsedMs": 398.33179199999995,
+      "issues": [],
+      "withinPreferred24": true,
+      "characters": 9
+    },
+    {
+      "caseId": "english-request",
+      "model": "qwen3.5:2b",
+      "input": "[user]\\nInvestigate why the macOS sidebar loses the selected session after reconnecting.\\n\\n[assistant]\\nI am comparing session identity before and after reconnection. No fix has been applied yet.",
+      "rawTitle": "macOS 侧边栏重连后丢失选中会话原因调查",
+      "title": "macOS 侧边栏重连后丢失选中会话原因调查",
+      "elapsedMs": 549.326959,
+      "issues": [],
+      "withinPreferred24": true,
+      "characters": 22
+    }
+  ],
+  "meanElapsedMs": 542.4868196666666,
+  "live": {
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "cases": 3
+  },
+  "offline": {
+    "tests": 10,
+    "pass": 8,
+    "fail": 0,
+    "skip": 2
+  },
+  "limitations": [
+    "仅三个固定合成案例，每例生成一次，不能推断整体准确率或延迟分布。",
+    "未控制冷启动或缓存状态；耗时为每次端到端调用墙钟耗时，不是纯推理耗时。",
+    "关键词检查只是目标匹配的近似规则；本轮另行人工核对三个实际标题。",
+    "未调用远程模型、读取真实会话或修改生产标题逻辑。"
+  ]
+}

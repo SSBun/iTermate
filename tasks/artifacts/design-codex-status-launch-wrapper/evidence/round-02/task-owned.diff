@@ -1,0 +1,1286 @@
+--- baseline/integrations/status/iTermate-codex.py
++++ current/integrations/status/iTermate-codex.py
+@@ -0,0 +1,455 @@
++#!/usr/bin/env python3
++"""在原生 Codex TUI 与专属 app-server 之间只读观察生命周期。"""
++
++from collections import deque
++import importlib.util
++import json
++import os
++from pathlib import Path
++import shutil
++import signal
++import socket
++import subprocess
++import sys
++import tempfile
++import threading
++import time
++import uuid
++
++FINAL_REPORT_TIMEOUT = 3
++
++
++class StatusMonitor:
++    def __init__(self):
++        self.condition = threading.Condition()
++        self.requests = {}
++        self.thread_id = None
++        self.turn_id = None
++        self.retired_turns = []
++        self.status = "detached"
++        self.exit_status = None
++        self.generation = 0
++        self.closed = False
++        self.snapshots = deque()
++        self.last_snapshot = None
++
++    def publish(self):
++        snapshot = (self.thread_id, self.status, self.exit_status, self.generation, self.closed)
++        if snapshot != self.last_snapshot:
++            if len(self.snapshots) >= 256:
++                self.closed = True
++                self.status = "detached"
++                self.snapshots.clear()
++                snapshot = (self.thread_id, "detached", None, self.generation + 1, True)
++            self.snapshots.append(snapshot)
++            self.last_snapshot = snapshot
++            self.condition.notify_all()
++
++    def update(self, status, exit_status=None):
++        if (status, exit_status) != (self.status, self.exit_status):
++            self.status, self.exit_status = status, exit_status
++            self.generation += 1
++            self.condition.notify_all()
++
++    def runtime_status(self, status):
++        kind = status.get("type") if isinstance(status, dict) else None
++        if kind == "active":
++            flags = status.get("activeFlags")
++            if not isinstance(flags, list) or any(
++                flag not in {"waitingOnApproval", "waitingOnUserInput"} for flag in flags
++            ):
++                self.update("detached")
++            else:
++                self.update("awaitingInput" if flags else "running")
++        elif kind == "idle":
++            # Only turn/completed proves success; a later idle must not erase it.
++            if self.status != "finished":
++                self.update("idle")
++        else:
++            self.update("detached")
++
++    def observe(self, message, from_server):
++        if not isinstance(message, dict):
++            return
++        with self.condition:
++            if self.closed:
++                return
++            try:
++                self.observe_locked(message, from_server)
++            finally:
++                self.publish()
++
++    def observe_locked(self, message, from_server):
++        method = message.get("method")
++        params = message.get("params", {})
++        request_id = message.get("id")
++        if not from_server:
++            if method in {"thread/start", "thread/resume", "thread/fork"}:
++                if type(request_id) in (int, str) and len(self.requests) < 64:
++                    self.requests[request_id] = method
++            return
++        if method is None and type(request_id) in (int, str):
++            if self.requests.pop(request_id, None) is None:
++                return
++            result = message.get("result")
++            thread = result.get("thread") if isinstance(result, dict) else None
++            if not isinstance(thread, dict) or not isinstance(thread.get("id"), str):
++                return
++            thread_id = thread["id"]
++            if not 1 <= len(thread_id) <= 128:
++                return
++            self.thread_id, self.turn_id, self.retired_turns = thread_id, None, []
++            self.generation += 1
++            self.status, self.exit_status = "detached", None
++            self.runtime_status(thread.get("status"))
++            for turn in thread.get("turns", []):
++                if isinstance(turn, dict) and turn.get("status") == "inProgress":
++                    self.turn_id = turn.get("id")
++            self.condition.notify_all()
++            return
++        if not isinstance(params, dict) or params.get("threadId") != self.thread_id or self.thread_id is None:
++            return
++        if method == "thread/status/changed":
++            self.runtime_status(params.get("status"))
++        elif method == "turn/started":
++            turn = params.get("turn", {})
++            if isinstance(turn, dict) and isinstance(turn.get("id"), str) and turn["id"] not in self.retired_turns:
++                self.turn_id = turn["id"]
++                self.generation += 1
++                self.update("running")
++                self.condition.notify_all()
++        elif method == "turn/completed":
++            turn = params.get("turn", {})
++            if not isinstance(turn, dict) or not isinstance(turn.get("id"), str):
++                return
++            turn_id = turn["id"]
++            if turn_id in self.retired_turns or (self.turn_id is not None and turn_id != self.turn_id):
++                return
++            self.retired_turns = (self.retired_turns + [turn_id])[-128:]
++            self.turn_id = None
++            self.generation += 1
++            status = turn.get("status")
++            if status in {"completed", "failed"}:
++                self.update("finished", 0 if status == "completed" else 1)
++            else:
++                self.update("idle" if status == "interrupted" else "detached")
++            self.condition.notify_all()
++        elif method == "thread/closed":
++            self.update("detached")
++
++    def close(self):
++        with self.condition:
++            if self.closed:
++                return
++            # Never replay a backlog of working states after the TUI disconnects.
++            terminal = next((snapshot for snapshot in reversed(self.snapshots)
++                             if snapshot[0] == self.thread_id and snapshot[1] == "finished"), None)
++            self.snapshots.clear()
++            if terminal is not None:
++                self.snapshots.append(terminal)
++            self.closed = True
++            self.update("detached")
++            self.publish()
++            self.condition.notify_all()
++
++
++class WebSocketObserver:
++    """只解析副本；HTTP Upgrade、帧和审批回复始终原字节转发。"""
++
++    maximum_size = 16 * 1024 * 1024
++
++    def __init__(self, on_message):
++        self.on_message = on_message
++        self.buffer = bytearray()
++        self.upgraded = False
++        self.fragments = None
++
++    def feed(self, data):
++        self.buffer.extend(data)
++        if not self.upgraded:
++            end = self.buffer.find(b"\r\n\r\n")
++            if end < 0:
++                if len(self.buffer) > 16384:
++                    raise ValueError("oversized handshake")
++                return
++            del self.buffer[:end + 4]
++            self.upgraded = True
++        while len(self.buffer) >= 2:
++            first, second = self.buffer[:2]
++            final, opcode, masked = bool(first & 128), first & 15, bool(second & 128)
++            if first & 112:
++                raise ValueError("unsupported WebSocket extension")
++            size, offset = second & 127, 2
++            if size in (126, 127):
++                width = 2 if size == 126 else 8
++                if len(self.buffer) < 2 + width:
++                    return
++                size = int.from_bytes(self.buffer[2:2 + width], "big")
++                offset += width
++            if size > self.maximum_size:
++                raise ValueError("oversized frame")
++            total = offset + (4 if masked else 0) + size
++            if len(self.buffer) < total:
++                return
++            mask = self.buffer[offset:offset + 4] if masked else None
++            offset += 4 if masked else 0
++            payload = self.buffer[offset:total]
++            del self.buffer[:total]
++            if mask:
++                payload = bytearray(value ^ mask[index % 4] for index, value in enumerate(payload))
++            if opcode >= 8:
++                continue
++            if opcode == 1 and self.fragments is None:
++                self.fragments = bytearray()
++            elif opcode != 0 or self.fragments is None:
++                raise ValueError("unsupported data frame")
++            self.fragments.extend(payload)
++            if len(self.fragments) > self.maximum_size:
++                raise ValueError("oversized message")
++            if final:
++                message = json.loads(self.fragments.decode("utf-8"))
++                self.fragments = None
++                self.on_message(message)
++
++
++def relay(source, destination, monitor, from_server):
++    observer = WebSocketObserver(lambda message: monitor.observe(message, from_server))
++    try:
++        while True:
++            data = source.recv(65536)
++            if not data:
++                break
++            if observer is not None:
++                try:
++                    observer.feed(data)
++                except (ValueError, UnicodeError, TypeError):
++                    # A newer protocol may remain usable, but its status is no longer proven.
++                    monitor.close()
++                    observer = None
++            destination.sendall(data)
++    except OSError:
++        pass
++    finally:
++        monitor.close()
++        for peer in (source, destination):
++            try:
++                peer.shutdown(socket.SHUT_RDWR)
++            except OSError:
++                pass
++            peer.close()
++
++
++def deliver_final_status(reporter, state):
++    deadline = time.monotonic() + FINAL_REPORT_TIMEOUT
++    while time.monotonic() < deadline:
++        if reporter.send_codex_state(state):
++            return True
++        # Rejection can mean a newer Agent owns the terminal. Never reclaim it.
++        if state.get("lastError") == "rejected":
++            break
++        time.sleep(min(0.1, max(0, deadline - time.monotonic())))
++    print("iTermate Codex：最终状态 " + state["status"] + " 未获确认（"
++          + (state.get("lastError") or "timeout") + "）。", file=sys.stderr)
++    return False
++
++
++def report_status(monitor, reporter, session_id):
++    state = {"reporterId": str(uuid.uuid4()), "sequence": 0}
++    last_generation = -1
++    observed_at = time.monotonic()
++    snapshot = (None, "detached", None, 0, False)
++    while True:
++        with monitor.condition:
++            if monitor.snapshots:
++                snapshot = monitor.snapshots.popleft()
++        thread_id, status, exit_status, generation, closed = snapshot
++        if thread_id is not None:
++            # Keep an in-flight, failed completion intact until its final retry.
++            # close() cannot recover it from the queue once it has been popped.
++            if ((closed or status == "detached") and state.get("codexSessionId") == thread_id
++                    and state.get("status") == "finished" and not state.get("acknowledged")):
++                deliver_final_status(reporter, state)
++            changed = generation != last_generation
++            if changed:
++                new_owner = thread_id != state.get("codexSessionId")
++                state.update({
++                    "itermSessionId": session_id, "codexSessionId": thread_id,
++                    "status": status, "exitStatus": exit_status,
++                    "generation": str(uuid.uuid4()), "acknowledged": False,
++                })
++                if new_owner:
++                    # The existing receiver only permits explicit idle/running ownership claims.
++                    state["pendingClaim"] = True
++                    state["status"] = "idle"
++                    reporter.send_codex_state(state, claim=True)
++                    state.update({"status": status, "acknowledged": False, "generation": str(uuid.uuid4())})
++                last_generation, observed_at = generation, time.monotonic()
++            if closed:
++                deliver_final_status(reporter, state)
++            elif changed or status in {"running", "awaitingInput"} or (
++                not state.get("acknowledged") and time.monotonic() - observed_at < 15
++            ):
++                reporter.send_codex_state(state)
++        if closed:
++            return
++        with monitor.condition:
++            if not monitor.snapshots and not monitor.closed:
++                monitor.condition.wait(timeout=2)
++
++
++def launch_arguments(arguments):
++    # Keep the native TUI argument parser; prevent escaping the owned transport or
++    # silently using a local-only profile on a differently configured server.
++    server_arguments = []
++    working_directory = None
++    index = 0
++    first_operand = None
++    value_options = {"-C", "--cd", "-m", "--model", "-s", "--sandbox", "-a", "--ask-for-approval", "-i", "--image", "--add-dir", "--local-provider"}
++    while index < len(arguments):
++        argument = arguments[index]
++        if argument == "--":
++            break
++        if argument.startswith("-c") and not argument.startswith("--") and len(argument) > 2:
++            server_arguments.extend(["-c", argument[2:].removeprefix("=")])
++            index += 1
++            continue
++        if argument.startswith("-p") and not argument.startswith("--") and len(argument) > 2:
++            raise ValueError("包装器不支持 --profile；请直接使用 codex 执行该模式。")
++        if argument.startswith("-C") and len(argument) > 2:
++            working_directory = argument[2:].removeprefix("=")
++            index += 1
++            continue
++        key = argument.split("=", 1)[0]
++        if key in {"--remote", "--remote-auth-token-env", "--no-daemon", "--profile", "-p", "--worktree"}:
++            raise ValueError("包装器不支持 " + key + "；请直接使用 codex 执行该模式。")
++        if key in {"-c", "--config", "--enable", "--disable"}:
++            server_arguments.append(argument)
++            if "=" not in argument:
++                index += 1
++                if index >= len(arguments):
++                    raise ValueError("缺少参数：" + key)
++                server_arguments.append(arguments[index])
++        elif key == "--strict-config":
++            server_arguments.append(argument)
++        elif key in {"-C", "--cd"}:
++            if "=" in argument:
++                working_directory = argument.split("=", 1)[1]
++            else:
++                index += 1
++                if index >= len(arguments):
++                    raise ValueError("缺少参数：" + key)
++                working_directory = arguments[index]
++        elif key in value_options and "=" not in argument:
++            index += 1
++        elif not argument.startswith("-") and first_operand is None:
++            first_operand = argument
++        index += 1
++    if first_operand in {"agents", "exec", "e", "review", "login", "logout", "mcp", "plugin", "app-server", "remote-control", "app", "completion", "update", "doctor", "sandbox", "debug", "apply", "a", "queue", "archive", "delete", "migrate-rollouts", "unarchive", "cloud", "exec-server", "features", "help"}:
++        raise ValueError("包装器只支持交互 TUI、resume 和 fork；其他命令请直接使用 codex。")
++    return server_arguments, working_directory
++
++
++def stop_process(process, process_group=False):
++    if process is None or process.poll() is not None:
++        return
++    try:
++        if process_group:
++            os.killpg(process.pid, signal.SIGTERM)
++        else:
++            process.terminate()
++        process.wait(timeout=3)
++    except subprocess.TimeoutExpired:
++        if process_group:
++            os.killpg(process.pid, signal.SIGKILL)
++        else:
++            process.kill()
++        process.wait(timeout=3)
++    except ProcessLookupError:
++        pass
++
++
++def run(arguments, reporter):
++    server_arguments, working_directory = launch_arguments(arguments)
++    session_id = reporter.iterm_session_id()
++    try:
++        session_id = str(uuid.UUID(session_id))
++    except (ValueError, TypeError, AttributeError):
++        raise ValueError("此包装器目前仅支持具有真实 Session ID 的 iTerm2 终端。")
++    codex = shutil.which("codex")
++    if codex is None:
++        raise ValueError("PATH 中未找到 codex。")
++    monitor = StatusMonitor()
++    backend = tui = None
++    worker = None
++    connections = []
++    environment = dict(os.environ, ITERMATE_CODEX_WRAPPER="1")
++    # Short, private paths also fit macOS's sockaddr_un limit.
++    with tempfile.TemporaryDirectory(prefix="itc-", dir="/tmp") as directory:
++        backend_path, frontend_path = directory + "/b.sock", directory + "/f.sock"
++        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
++            listener.bind(frontend_path)
++            listener.listen(1)
++            listener.settimeout(0.1)
++            try:
++                backend = subprocess.Popen(
++                    [codex, "app-server", *server_arguments, "--listen", "unix://" + backend_path],
++                    stdin=subprocess.DEVNULL, env=environment, start_new_session=True,
++                    cwd=working_directory,
++                )
++                deadline = time.monotonic() + 15
++                while not os.path.exists(backend_path):
++                    if backend.poll() is not None or time.monotonic() >= deadline:
++                        raise ValueError("Codex app-server 未能启动；需要支持 --remote 与 Unix Socket 的版本。")
++                    time.sleep(0.05)
++                tui = subprocess.Popen([codex, "--remote", "unix://" + frontend_path, *arguments], env=environment)
++                while tui.poll() is None and backend.poll() is None:
++                    try:
++                        client, _ = listener.accept()
++                    except socket.timeout:
++                        continue
++                    connections.append(client)
++                    upstream = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
++                    connections.append(upstream)
++                    upstream.connect(backend_path)
++                    worker = threading.Thread(target=report_status, args=(monitor, reporter, session_id), daemon=True)
++                    worker.start()
++                    for source, destination, from_server in ((client, upstream, False), (upstream, client, True)):
++                        threading.Thread(target=relay, args=(source, destination, monitor, from_server), daemon=True).start()
++                    break
++                while tui.poll() is None and backend.poll() is None:
++                    time.sleep(0.1)
++                code = tui.returncode
++                return (128 - code if code < 0 else code) if code is not None else 1
++            finally:
++                monitor.close()
++                for connection in connections:
++                    connection.close()
++                if worker is not None:
++                    worker.join(timeout=2 * FINAL_REPORT_TIMEOUT + 3)
++                stop_process(tui)
++                stop_process(backend, process_group=True)
++
++
++def main():
++    if sys.argv[1:] in (["--help"], ["-h"]):
++        print("用法：iTermate-codex.py [Codex TUI 参数] [resume|fork]\n"
++              "保留原生 TUI，通过专属 app-server 监控状态，仅支持 iTerm2。\n"
++              "不支持 --remote、--no-daemon、--profile、--worktree 或非交互子命令。")
++        return 0
++    if sys.argv[1:] in (["--version"], ["-V"]):
++        return subprocess.call(["codex", "--version"])
++    spec = importlib.util.spec_from_file_location("itermate_status", Path(__file__).with_name("iTermate-status.py"))
++    reporter = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(reporter)
++    # Let the foreground TUI handle Ctrl-C as a turn interrupt, not a wrapper exit.
++    signal.signal(signal.SIGINT, lambda *_: None)
++    signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
++    try:
++        return run(sys.argv[1:], reporter)
++    except (OSError, ValueError) as error:
++        print("iTermate Codex：" + str(error), file=sys.stderr)
++        return 1
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+--- baseline/integrations/status/test_codex_wrapper.py
++++ current/integrations/status/test_codex_wrapper.py
+@@ -0,0 +1,492 @@
++import importlib.util
++import io
++import json
++import os
++from pathlib import Path
++import socket
++import struct
++import tempfile
++import threading
++import unittest
++from unittest.mock import patch
++
++SPEC = importlib.util.spec_from_file_location("codex_wrapper", Path(__file__).with_name("iTermate-codex.py"))
++wrapper = importlib.util.module_from_spec(SPEC)
++SPEC.loader.exec_module(wrapper)
++SPEC = importlib.util.spec_from_file_location("wrapper_reporter", Path(__file__).with_name("iTermate-status.py"))
++reporter = importlib.util.module_from_spec(SPEC)
++SPEC.loader.exec_module(reporter)
++
++
++def frame(message, mask=False, opcode=1, final=True):
++    payload = message if isinstance(message, bytes) else json.dumps(message).encode()
++    header = bytes([(128 if final else 0) | opcode])
++    size = len(payload)
++    flag = 128 if mask else 0
++    if size < 126:
++        header += bytes([flag | size])
++    elif size < 65536:
++        header += bytes([flag | 126]) + struct.pack("!H", size)
++    else:
++        header += bytes([flag | 127]) + struct.pack("!Q", size)
++    if mask:
++        key = b"1234"
++        return header + key + bytes(value ^ key[index % 4] for index, value in enumerate(payload))
++    return header + payload
++
++
++def select(monitor, thread="thread-1", status=None, request_id=10):
++    monitor.observe({"id": request_id, "method": "thread/resume", "params": {"threadId": thread}}, False)
++    monitor.observe({"id": request_id, "result": {"thread": {"id": thread, "status": status or {"type": "idle"}}}}, True)
++
++
++def notify(monitor, method, thread="thread-1", **params):
++    monitor.observe({"method": method, "params": {"threadId": thread, **params}}, True)
++
++
++class MonitorTests(unittest.TestCase):
++    def setUp(self):
++        self.monitor = wrapper.StatusMonitor()
++        select(self.monitor)
++
++    def test_selected_thread_is_idle_not_historical_finished(self):
++        self.assertEqual(self.monitor.status, "idle")
++        self.assertIsNone(self.monitor.exit_status)
++
++    def test_lifecycle_and_approval_flags(self):
++        notify(self.monitor, "turn/started", turn={"id": "turn-1", "status": "inProgress"})
++        self.assertEqual(self.monitor.status, "running")
++        for flag in ("waitingOnApproval", "waitingOnUserInput"):
++            notify(self.monitor, "thread/status/changed", status={"type": "active", "activeFlags": [flag]})
++            self.assertEqual(self.monitor.status, "awaitingInput")
++        notify(self.monitor, "thread/status/changed", status={"type": "active", "activeFlags": []})
++        self.assertEqual(self.monitor.status, "running")
++        notify(self.monitor, "turn/completed", turn={"id": "turn-1", "status": "completed"})
++        self.assertEqual((self.monitor.status, self.monitor.exit_status), ("finished", 0))
++        generation = self.monitor.generation
++        notify(self.monitor, "thread/status/changed", status={"type": "idle"})
++        notify(self.monitor, "turn/completed", turn={"id": "turn-1", "status": "completed"})
++        self.assertEqual(self.monitor.generation, generation)
++
++    def test_failure_and_interrupt_are_not_success(self):
++        for status, expected in (("failed", ("finished", 1)), ("interrupted", ("idle", None))):
++            monitor = wrapper.StatusMonitor()
++            select(monitor)
++            notify(monitor, "turn/started", turn={"id": "turn-1"})
++            notify(monitor, "turn/completed", turn={"id": "turn-1", "status": status})
++            self.assertEqual((monitor.status, monitor.exit_status), expected)
++
++    def test_other_threads_and_unsolicited_responses_never_rebind(self):
++        notify(self.monitor, "thread/started", thread="child", status={"type": "active"})
++        notify(self.monitor, "turn/started", thread="child", turn={"id": "child-turn"})
++        self.monitor.observe({"id": 99, "result": {"thread": {"id": "other"}}}, True)
++        self.assertEqual((self.monitor.thread_id, self.monitor.status), ("thread-1", "idle"))
++
++    def test_old_completion_cannot_finish_new_turn(self):
++        notify(self.monitor, "turn/started", turn={"id": "turn-1"})
++        notify(self.monitor, "turn/started", turn={"id": "turn-2"})
++        notify(self.monitor, "turn/completed", turn={"id": "turn-1", "status": "completed"})
++        self.assertEqual((self.monitor.status, self.monitor.turn_id), ("running", "turn-2"))
++
++    def test_resume_active_and_switch_thread(self):
++        select(self.monitor, "thread-2", {"type": "active", "activeFlags": ["waitingOnApproval"]})
++        self.assertEqual((self.monitor.thread_id, self.monitor.status), ("thread-2", "awaitingInput"))
++        notify(self.monitor, "turn/completed", turn={"id": "turn-1", "status": "completed"})
++        self.assertEqual(self.monitor.status, "awaitingInput")
++
++    def test_unknown_status_and_disconnect_fail_closed(self):
++        for status in ({"type": "systemError"}, {"type": "notLoaded"}, {"type": "active", "activeFlags": ["newFlag"]}, {}):
++            notify(self.monitor, "thread/status/changed", status=status)
++            self.assertEqual(self.monitor.status, "detached")
++        self.monitor.close()
++        notify(self.monitor, "turn/started", turn={"id": "turn-1"})
++        self.assertEqual(self.monitor.status, "detached")
++
++    def test_rapid_turns_retain_each_transition(self):
++        self.monitor.snapshots.clear()
++        for turn in ("turn-1", "turn-2"):
++            notify(self.monitor, "turn/started", turn={"id": turn})
++            notify(self.monitor, "turn/completed", turn={"id": turn, "status": "completed"})
++        self.assertEqual([snapshot[1] for snapshot in self.monitor.snapshots], ["running", "finished", "running", "finished"])
++
++    def test_queue_overflow_releases_status_instead_of_growing(self):
++        for index in range(300):
++            notify(self.monitor, "turn/started", turn={"id": str(index)})
++        self.assertTrue(self.monitor.closed)
++        self.assertLessEqual(len(self.monitor.snapshots), 256)
++        self.assertEqual(self.monitor.snapshots[-1][1], "detached")
++
++
++class ObserverTests(unittest.TestCase):
++    def test_split_handshake_and_masked_fragmented_messages(self):
++        received = []
++        observer = wrapper.WebSocketObserver(received.append)
++        data = b"GET / HTTP/1.1\r\nUpgrade: websocket\r\n\r\n"
++        data += frame(b'{"id":', mask=True, final=False)
++        data += frame(b"ping", opcode=9)
++        data += frame(b"1}", mask=True, opcode=0)
++        data += frame({"id": 2})
++        for byte in data:
++            observer.feed(bytes([byte]))
++        self.assertEqual(received, [{"id": 1}, {"id": 2}])
++
++    def test_extended_lengths(self):
++        for size in (200, 70000):
++            received = []
++            observer = wrapper.WebSocketObserver(received.append)
++            observer.feed(b"HTTP/1.1 101 Switching Protocols\r\n\r\n" + frame({"value": "x" * size}, mask=True))
++            self.assertEqual(len(received[0]["value"]), size)
++
++    def test_oversized_frame_rejected_before_payload_allocation(self):
++        observer = wrapper.WebSocketObserver(lambda _: None)
++        with self.assertRaises(ValueError):
++            observer.feed(b"HTTP/1.1 101 OK\r\n\r\n\x81\x7f" + struct.pack("!Q", observer.maximum_size + 1))
++
++    def test_relay_is_byte_transparent_and_never_replies_to_requests(self):
++        source, writer = socket.socketpair()
++        destination, reader = socket.socketpair()
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        data = b"HTTP/1.1 101 OK\r\n\r\n" + frame({"id": 7, "method": "item/commandExecution/requestApproval", "params": {"threadId": "thread-1"}})
++        thread = threading.Thread(target=wrapper.relay, args=(source, destination, monitor, True))
++        thread.start()
++        try:
++            writer.sendall(data)
++            writer.shutdown(socket.SHUT_WR)
++            reader.settimeout(2)
++            received = bytearray()
++            while True:
++                chunk = reader.recv(4096)
++                if not chunk:
++                    break
++                received.extend(chunk)
++            self.assertEqual(received, data)
++            writer.settimeout(2)
++            self.assertEqual(writer.recv(1), b"")
++        finally:
++            thread.join(timeout=2)
++            for peer in (source, writer, destination, reader):
++                peer.close()
++        self.assertFalse(thread.is_alive())
++        self.assertEqual(monitor.status, "detached")
++
++
++class ReportingTests(unittest.TestCase):
++    def test_real_reporter_preserves_order_failure_and_detach(self):
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        notify(monitor, "turn/started", turn={"id": "turn-1"})
++        notify(monitor, "thread/status/changed", status={"type": "active", "activeFlags": ["waitingOnApproval"]})
++        notify(monitor, "turn/completed", turn={"id": "turn-1", "status": "failed"})
++        sent = []
++        def exchange(path, request, bridge=False):
++            sent.append(dict(request))
++            if request["status"] == "finished":
++                monitor.close()
++            return True, None
++        with patch.object(reporter, "exchange", side_effect=exchange):
++            wrapper.report_status(monitor, reporter, "pane")
++        self.assertEqual([request["status"] for request in sent], ["idle", "idle", "running", "awaitingInput", "finished", "detached"])
++        self.assertEqual(sent[-2]["exitStatus"], 1)
++        self.assertTrue(sent[0]["codexClaim"])
++        self.assertTrue(all(not request["heartbeat"] for request in sent))
++        self.assertEqual([request["sequence"] for request in sent], list(range(1, len(sent) + 1)))
++
++    def test_waiting_heartbeat_is_acknowledged_and_bounded_on_close(self):
++        monitor = wrapper.StatusMonitor()
++        select(monitor, status={"type": "active", "activeFlags": ["waitingOnUserInput"]})
++        sent = []
++        def exchange(path, request, bridge=False):
++            sent.append(dict(request))
++            if request["heartbeat"]:
++                monitor.close()
++            return True, None
++        with patch.object(reporter, "exchange", side_effect=exchange):
++            thread = threading.Thread(target=wrapper.report_status, args=(monitor, reporter, "pane"), daemon=True)
++            thread.start()
++            thread.join(timeout=4)
++        self.assertFalse(thread.is_alive())
++        self.assertTrue(any(request["heartbeat"] and request["status"] == "awaitingInput" for request in sent))
++        self.assertEqual(sent[-1]["status"], "detached")
++
++    def test_real_reporter_delivers_to_actual_bridge_handler(self):
++        bridge_spec = importlib.util.spec_from_file_location(
++            "wrapper_bridge_fixture", Path(__file__).parents[2] / "iTermateBridge/test_codex_status.py"
++        )
++        bridge_module = importlib.util.module_from_spec(bridge_spec)
++        bridge_spec.loader.exec_module(bridge_module)
++        import asyncio
++        bridge = bridge_module.RecordingBridge()
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        notify(monitor, "turn/started", turn={"id": "turn-1"})
++        notify(monitor, "thread/status/changed", status={"type": "active", "activeFlags": ["waitingOnApproval"]})
++        notify(monitor, "turn/completed", turn={"id": "turn-1", "status": "failed"})
++        seen = []
++        def exchange(path, request, bridge=False):
++            receiver = bridge_instance
++            asyncio.run(receiver.handle_command(None, json.dumps(request).encode()))
++            self.assertTrue(receiver.responses[-1][0], receiver.responses[-1])
++            status = receiver.session_statuses.get("pane", {})
++            seen.append(dict(status))
++            if request["status"] == "finished":
++                monitor.close()
++            return True, None
++        bridge_instance = bridge
++        with patch.object(reporter, "exchange", side_effect=exchange):
++            wrapper.report_status(monitor, reporter, "pane")
++        self.assertTrue(any(state.get("status") == "awaitingInput" for state in seen))
++        self.assertTrue(any(state.get("exitStatus") == 1 for state in seen))
++        self.assertNotIn("pane", bridge.agent_managed_session_ids)
++
++    def test_close_retries_finished_that_failed_while_inflight(self):
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        notify(monitor, "turn/started", turn={"id": "turn-1"})
++        notify(monitor, "turn/completed", turn={"id": "turn-1", "status": "failed"})
++        sent = []
++        def exchange(path, request, bridge=False):
++            sent.append(dict(request))
++            if request["status"] == "finished" and sum(item["status"] == "finished" for item in sent) == 1:
++                monitor.close()
++                return False, "transport"
++            return True, None
++        with patch.object(reporter, "exchange", side_effect=exchange), patch.object(wrapper.time, "sleep"):
++            wrapper.report_status(monitor, reporter, "pane")
++        finished = [request for request in sent if request["status"] == "finished"]
++        self.assertEqual(len(finished), 2)
++        self.assertEqual(finished[0]["codexEventId"], finished[1]["codexEventId"])
++        self.assertEqual(finished[1]["exitStatus"], 1)
++        self.assertGreater(finished[1]["sequence"], finished[0]["sequence"])
++        self.assertEqual(sent[-1]["status"], "detached")
++
++    def test_detached_retries_until_ack_after_transient_failure(self):
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        monitor.close()
++        sent = []
++        def exchange(path, request, bridge=False):
++            sent.append(dict(request))
++            if request["status"] == "detached" and sum(item["status"] == "detached" for item in sent) == 1:
++                return False, "transport"
++            return True, None
++        with patch.object(reporter, "exchange", side_effect=exchange), patch.object(wrapper.time, "sleep"):
++            wrapper.report_status(monitor, reporter, "pane")
++        detached = [request for request in sent if request["status"] == "detached"]
++        self.assertEqual(len(detached), 2)
++        self.assertEqual(detached[0]["codexEventId"], detached[1]["codexEventId"])
++        self.assertGreater(detached[1]["sequence"], detached[0]["sequence"])
++
++    def test_close_discards_stale_running_backlog(self):
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        notify(monitor, "turn/started", turn={"id": "turn-1"})
++        monitor.close()
++        sent = []
++        def exchange(path, request, bridge=False):
++            sent.append(dict(request))
++            return False, "transport"
++        clock = [0.0]
++        with patch.object(reporter, "exchange", side_effect=exchange), \
++                patch.object(wrapper.time, "monotonic", side_effect=lambda: clock[0]), \
++                patch.object(wrapper.time, "sleep", side_effect=lambda delay: clock.__setitem__(0, clock[0] + delay)), \
++                patch.object(wrapper.sys, "stderr", io.StringIO()) as diagnostics:
++            wrapper.report_status(monitor, reporter, "pane")
++        self.assertIn("未获确认", diagnostics.getvalue())
++        self.assertLessEqual(clock[0], wrapper.FINAL_REPORT_TIMEOUT + 0.1)
++        self.assertLessEqual(len(sent), 40)
++        self.assertFalse(any(request["status"] == "running" for request in sent))
++        self.assertEqual(sent[-1]["status"], "detached")
++
++    def test_failed_completion_timeout_still_attempts_detach(self):
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        notify(monitor, "turn/started", turn={"id": "turn-1"})
++        notify(monitor, "turn/completed", turn={"id": "turn-1", "status": "completed"})
++        sent = []
++        clock = [0.0]
++        def exchange(path, request, bridge=False):
++            sent.append(dict(request))
++            if request["status"] == "finished":
++                monitor.close()
++                return False, "transport"
++            return True, None
++        with patch.object(reporter, "exchange", side_effect=exchange), \
++                patch.object(wrapper.time, "monotonic", side_effect=lambda: clock[0]), \
++                patch.object(wrapper.time, "sleep", side_effect=lambda delay: clock.__setitem__(0, clock[0] + delay)), \
++                patch.object(wrapper.sys, "stderr", io.StringIO()) as diagnostics:
++            wrapper.report_status(monitor, reporter, "pane")
++        self.assertIn("finished 未获确认", diagnostics.getvalue())
++        self.assertEqual(sent[-1]["status"], "detached")
++        self.assertLessEqual(clock[0], wrapper.FINAL_REPORT_TIMEOUT + 0.1)
++
++    def test_final_retry_respects_receiver_rejection_without_reclaim(self):
++        state = reporter.apply_codex_event({}, {"hook_event_name": "UserPromptSubmit", "session_id": "thread-1", "turn_id": "turn-1"}, 100)
++        state.update({"itermSessionId": "pane", "status": "detached"})
++        with patch.object(reporter, "exchange", return_value=(False, "rejected")) as exchange, \
++                patch.object(wrapper.sys, "stderr", io.StringIO()) as diagnostics:
++            self.assertFalse(wrapper.deliver_final_status(reporter, state))
++        exchange.assert_called_once()
++        self.assertFalse(exchange.call_args.args[1]["codexClaim"])
++        self.assertIn("rejected", diagnostics.getvalue())
++
++    def test_final_retry_after_lost_ack_never_restores_read_completion(self):
++        bridge_spec = importlib.util.spec_from_file_location(
++            "retry_bridge_fixture", Path(__file__).parents[2] / "iTermateBridge/test_codex_status.py"
++        )
++        bridge_module = importlib.util.module_from_spec(bridge_spec)
++        bridge_spec.loader.exec_module(bridge_module)
++        import asyncio
++        receiver = bridge_module.RecordingBridge()
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        notify(monitor, "turn/started", turn={"id": "turn-1"})
++        notify(monitor, "turn/completed", turn={"id": "turn-1", "status": "completed"})
++        completions = []
++        def exchange(path, request, bridge=False):
++            asyncio.run(receiver.handle_command(None, json.dumps(request).encode()))
++            self.assertTrue(receiver.responses[-1][0])
++            if request["status"] == "finished":
++                completions.append(dict(request))
++                if len(completions) == 1:
++                    receiver.clear_finished_status("pane")
++                    monitor.close()
++                    return False, "transport"
++                self.assertEqual(receiver.session_statuses["pane"]["status"], "idle")
++            return True, None
++        with patch.object(reporter, "exchange", side_effect=exchange), patch.object(wrapper.time, "sleep"):
++            wrapper.report_status(monitor, reporter, "pane")
++        self.assertEqual(len(completions), 2)
++        self.assertEqual(completions[0]["codexEventId"], completions[1]["codexEventId"])
++        self.assertNotIn("pane", receiver.agent_managed_session_ids)
++
++    def test_hooks_do_not_compete_with_wrapper(self):
++        with patch.dict(os.environ, {"ITERMATE_CODEX_WRAPPER": "1"}), patch.object(reporter, "report_codex_iterm") as hook:
++            reporter.report_agent("running")
++        hook.assert_not_called()
++
++
++class LaunchTests(unittest.TestCase):
++    def test_config_forwarding_and_transport_protection(self):
++        self.assertEqual(wrapper.launch_arguments(["-c", "model=\"model-x\"", "--enable", "feature", "resume", "session"]), (["-c", "model=\"model-x\"", "--enable", "feature"], None))
++        for option in ("--remote=x", "--no-daemon", "--profile", "--worktree"):
++            with self.assertRaises(ValueError):
++                wrapper.launch_arguments([option])
++        self.assertEqual(wrapper.launch_arguments(["--", "--remote=literal-prompt"]), ([], None))
++        self.assertEqual(wrapper.launch_arguments(["-C", "/tmp", "-cmodel=\"x\""]), (["-c", 'model="x"'], "/tmp"))
++        for option in ("exec", "login", "app-server"):
++            with self.assertRaises(ValueError):
++                wrapper.launch_arguments([option])
++
++    def test_missing_identity_never_starts_codex(self):
++        with patch.object(reporter, "iterm_session_id", return_value=None), patch.object(wrapper.subprocess, "Popen") as spawn:
++            with self.assertRaises(ValueError):
++                wrapper.run([], reporter)
++        spawn.assert_not_called()
++
++    def test_launch_routes_native_style_frames_and_cleans_up_owned_backend(self):
++        fake_source = r'''#!/usr/bin/env python3
++import json, os, socket, sys, time
++from pathlib import Path
++sys.path.insert(0, os.environ["CODEX_TEST_MODULES"])
++from test_codex_wrapper import frame, wrapper
++root = Path(os.environ["CODEX_FAKE_ROOT"])
++is_server = sys.argv[1] == "app-server"
++(root / ("server.json" if is_server else "tui.json")).write_text(json.dumps({"pid": os.getpid(), "args": sys.argv[1:], "cwd": os.getcwd()}))
++parser = wrapper.WebSocketObserver(lambda message: messages.append(message))
++parser.upgraded = True
++messages = []
++def read_message(peer):
++    while not messages:
++        data = peer.recv(65536)
++        if not data:
++            raise EOFError()
++        parser.feed(data)
++    return messages.pop(0)
++def header(peer):
++    data = b""
++    while b"\r\n\r\n" not in data:
++        data += peer.recv(1)
++    return data
++if is_server:
++    path = sys.argv[sys.argv.index("--listen") + 1][7:]
++    listener = socket.socket(socket.AF_UNIX)
++    listener.bind(path)
++    listener.listen(1)
++    peer, _ = listener.accept()
++    peer.settimeout(5)
++    assert header(peer).startswith(b"GET ")
++    peer.sendall(b"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\n\r\n")
++    request = read_message(peer)
++    assert request["method"] == "thread/resume"
++    peer.sendall(frame({"id": request["id"], "result": {"thread": {"id": "fake-thread", "status": {"type": "idle"}}}}))
++    for method, params in [
++        ("turn/started", {"turn": {"id": "fake-turn", "status": "inProgress"}}),
++        ("thread/status/changed", {"status": {"type": "active", "activeFlags": ["waitingOnApproval"]}}),
++        ("item/commandExecution/requestApproval", {"turnId": "fake-turn", "command": "not-executed"}),
++    ]:
++        peer.sendall(frame({"id": 55, "method": method, "params": {"threadId": "fake-thread", **params}}))
++        time.sleep(.1)
++    reply = read_message(peer)
++    (root / "approval.json").write_text(json.dumps(reply))
++    assert reply == {"id": 55, "result": {"decision": "decline"}}
++    peer.sendall(frame({"method": "thread/status/changed", "params": {"threadId": "fake-thread", "status": {"type": "active", "activeFlags": []}}}))
++    time.sleep(.1)
++    peer.sendall(frame({"method": "turn/completed", "params": {"threadId": "fake-thread", "turn": {"id": "fake-turn", "status": "completed"}}}))
++    time.sleep(30)
++else:
++    peer = socket.socket(socket.AF_UNIX)
++    peer.connect(sys.argv[sys.argv.index("--remote") + 1][7:])
++    peer.settimeout(5)
++    peer.sendall(b"GET / HTTP/1.1\r\nUpgrade: websocket\r\n\r\n")
++    header(peer)
++    peer.sendall(frame({"id": 10, "method": "thread/resume", "params": {"threadId": "fake-thread"}}, mask=True))
++    while True:
++        message = read_message(peer)
++        if message.get("method") == "item/commandExecution/requestApproval":
++            peer.sendall(frame({"id": 55, "result": {"decision": "decline"}}, mask=True))
++        if message.get("method") == "turn/completed":
++            break
++    peer.close()
++    sys.exit(7)
++'''
++        with tempfile.TemporaryDirectory(prefix="itc-test-", dir="/tmp") as directory:
++            fake = Path(directory) / "codex"
++            fake.write_text(fake_source)
++            fake.chmod(0o700)
++            sent = []
++            def exchange(path, request, bridge=False):
++                sent.append(dict(request))
++                return True, None
++            environment = {"CODEX_FAKE_ROOT": directory, "CODEX_TEST_MODULES": str(Path(__file__).parent)}
++            with patch.dict(os.environ, environment), patch.object(wrapper.shutil, "which", return_value=str(fake)), \
++                    patch.object(reporter, "iterm_session_id", return_value="11111111-1111-1111-1111-111111111111"), \
++                    patch.object(reporter, "exchange", side_effect=exchange):
++                self.assertEqual(wrapper.run(["-C", directory, "-c", 'model="example"', "resume", "fake-thread"], reporter), 7)
++            self.assertEqual(json.loads((Path(directory) / "approval.json").read_text()), {"id": 55, "result": {"decision": "decline"}})
++            server = json.loads((Path(directory) / "server.json").read_text())
++            self.assertEqual(server["args"][:3], ["app-server", "-c", 'model="example"'])
++            self.assertEqual(server["cwd"], str(Path(directory).resolve()))
++            tui = json.loads((Path(directory) / "tui.json").read_text())
++            self.assertEqual(tui["args"][-4:], ["-c", 'model="example"', "resume", "fake-thread"])
++            for process in (server, tui):
++                with self.assertRaises(ProcessLookupError):
++                    os.kill(process["pid"], 0)
++            states = [request["status"] for request in sent]
++            self.assertIn("running", states)
++            self.assertIn("awaitingInput", states)
++            self.assertIn("finished", states)
++            self.assertEqual(states[-1], "detached")
++
++    def test_cleanup_only_targets_owned_process(self):
++        from unittest.mock import Mock
++        process = Mock(pid=12345)
++        process.poll.return_value = None
++        with patch.object(wrapper.os, "killpg") as kill:
++            wrapper.stop_process(process, process_group=True)
++        kill.assert_called_once_with(12345, wrapper.signal.SIGTERM)
++        process.wait.assert_called_once_with(timeout=3)
++
++
++if __name__ == "__main__":
++    unittest.main()
+--- baseline/integrations/status/iTermate-status.py
++++ current/integrations/status/iTermate-status.py
+@@ -185,13 +185,13 @@
+         "codexEventId": state["generation"],
+         "codexClaim": claim,
+         "status": state["status"],
+-        "heartbeat": state["status"] == "running" and state.get("acknowledged", False),
++        "heartbeat": state["status"] in {"running", "awaitingInput"} and state.get("acknowledged", False),
+     }
+     if state.get("pendingClaim") and state.get("acknowledgedOwner"):
+         # Retry an unacknowledged claim only against the last owner we observed.
+         request["codexPreviousOwner"] = state["acknowledgedOwner"]
+     if state["status"] == "finished":
+-        request["exitStatus"] = 0
++        request["exitStatus"] = state.get("exitStatus", 0)
+     accepted, error = exchange(BRIDGE_SOCKET_PATH, request, bridge=True)
+     state["acknowledged"] = accepted
+     state["lastError"] = error
+@@ -475,6 +475,9 @@
+ 
+ 
+ def report_agent(status):
++    if os.environ.get("ITERMATE_CODEX_WRAPPER") == "1":
++        # The owned app-server stream is authoritative; hooks must not race it.
++        return
+     try:
+         payload = sys.stdin.buffer.read(1024 * 1024 + 1)
+         if len(payload) > 1024 * 1024:
+--- baseline/iTermateBridge/iTermateBridge.py
++++ current/iTermateBridge/iTermateBridge.py
+@@ -240,7 +240,7 @@
+                     await self.send_action_result(writer, request_id, False, "Codex owner changed")
+                     return
+                 # Lost ACK retries must not restore a finished badge after the user read it.
+-                if owns_session and previous_codex[1] == codex_event and status != "running":
++                if owns_session and previous_codex[1] == codex_event and status not in {"running", "awaitingInput"}:
+                     self.agent_report_sequences[key] = sequence
+                     await self.send_action_result(writer, request_id, True, None)
+                     return
+@@ -270,7 +270,7 @@
+             if accepted:
+                 if codex_id is not None:
+                     self.codex_reports[session_id] = (codex_owner, codex_event)
+-                    if status == "running":
++                    if status in {"running", "awaitingInput"}:
+                         self.agent_heartbeat_times[session_id] = heartbeat_time()
+                 else:
+                     # Keep a tombstone: an old Codex retry must not reclaim after another Agent exits.
+--- baseline/iTermateBridge/test_codex_status.py
++++ current/iTermateBridge/test_codex_status.py
+@@ -39,6 +39,27 @@
+         self.assertEqual(bridge.session_statuses["pane"]["activityKind"], "agent")
+         bridge.expire_stale_agent_heartbeats(bridge.agent_heartbeat_times["pane"] + 9)
+         self.assertNotIn("pane", bridge.session_statuses)
++
++    def test_awaiting_input_heartbeat_renews_lease_and_preserves_start_time(self):
++        bridge = RecordingBridge()
++        self.assertTrue(bridge.report("idle", claim=True))
++        self.assertTrue(bridge.report("awaitingInput", 2, event="approval"))
++        changed = bridge.session_statuses["pane"]["statusChangedAt"]
++        first_lease = bridge.agent_heartbeat_times["pane"]
++        from unittest.mock import patch
++        with patch.object(module, "heartbeat_time", return_value=first_lease + 7):
++            self.assertTrue(bridge.report("awaitingInput", 3, event="approval", heartbeat=True))
++        bridge.expire_stale_agent_heartbeats(first_lease + 9)
++        self.assertEqual(bridge.session_statuses["pane"]["status"], "awaitingInput")
++        self.assertEqual(bridge.session_statuses["pane"]["statusChangedAt"], changed)
++        bridge.expire_stale_agent_heartbeats(first_lease + 16)
++        self.assertNotIn("pane", bridge.session_statuses)
++
++    def test_failed_turn_is_not_successful_completion(self):
++        bridge = RecordingBridge()
++        self.assertTrue(bridge.report("running", claim=True))
++        self.assertTrue(bridge.report("finished", 2, event="failed", exitStatus=1))
++        self.assertEqual(bridge.session_statuses["pane"]["exitStatus"], 1)
+ 
+     def test_worker_restores_after_bridge_restart(self):
+         bridge = RecordingBridge()
+--- baseline/iTermate/AgentIntegrations.swift
++++ current/iTermate/AgentIntegrations.swift
+@@ -82,6 +82,7 @@
+     private let homeDirectory: URL
+     private let piResourceURL: URL?
+     private let statusResourceURL: URL?
++    private let codexLauncherResourceURL: URL?
+     private let zshResourceURL: URL?
+     private let bashResourceURL: URL?
+     private let fishResourceURL: URL?
+@@ -95,6 +96,10 @@
+         ),
+         statusResourceURL: URL? = Bundle.main.url(
+             forResource: "iTermate-status",
++            withExtension: "py"
++        ),
++        codexLauncherResourceURL: URL? = Bundle.main.url(
++            forResource: "iTermate-codex",
+             withExtension: "py"
+         ),
+         zshResourceURL: URL? = Bundle.main.url(
+@@ -114,6 +119,7 @@
+         self.homeDirectory = homeDirectory
+         self.piResourceURL = piResourceURL
+         self.statusResourceURL = statusResourceURL
++        self.codexLauncherResourceURL = codexLauncherResourceURL
+         self.zshResourceURL = zshResourceURL
+         self.bashResourceURL = bashResourceURL
+         self.fishResourceURL = fishResourceURL
+@@ -205,6 +211,7 @@
+             if codexIntegrationIsInstalled {
+                 // Updating resources must not silently migrate or enable a different hook provider.
+                 try installStatusReporter()
++                try installCodexLauncher()
+             } else if fileManager.fileExists(atPath: statusReporterURL.path) {
+                 guard let statusResourceURL else {
+                     throw IntegrationError.missingResource("status reporter")
+@@ -266,6 +273,10 @@
+         integrationDirectoryURL.appendingPathComponent("iTermate-status.py")
+     }
+ 
++    private var codexLauncherURL: URL {
++        integrationDirectoryURL.appendingPathComponent("iTermate-codex.py")
++    }
++
+     private var codexAgentHooksURL: URL {
+         integrationDirectoryURL.appendingPathComponent("codex-agent-hooks.json")
+     }
+@@ -327,6 +338,7 @@
+             ? try Data(contentsOf: codexAgentHooksURL) : nil
+         _ = try codexHooksRoot()
+         try installStatusReporter()
++        try installCodexLauncher()
+         do {
+             try removeLegacyCodexHooks()
+             let marker = CodexAgentHooksMarker(schema: "itermate.codex-agent-hooks/v1", enabled: true)
+@@ -347,6 +359,17 @@
+         try removeIfPresent(at: legacyCodexHookURL)
+     }
+ 
++    private func installCodexLauncher() throws {
++        guard let codexLauncherResourceURL else {
++            throw IntegrationError.missingResource("Codex launcher")
++        }
++        try installResource(
++            from: codexLauncherResourceURL,
++            to: codexLauncherURL,
++            permissions: 0o700
++        )
++    }
++
+     private func removeLegacyCodexHooks() throws {
+         guard fileManager.fileExists(atPath: codexHooksURL.path) else {
+             return
+@@ -376,6 +399,7 @@
+     }
+ 
+     private func uninstallCodex() throws {
++        try removeIfPresent(at: codexLauncherURL)
+         try removeIfPresent(at: codexAgentHooksURL)
+         try removeLegacyCodexHooks()
+         try removeIfPresent(at: legacyCodexHookURL)
+@@ -826,7 +850,7 @@
+             return "Not supported yet"
+         }
+         if agent == .codex {
+-            return "Requires updated CSL Agent Kit Agent Hooks in Codex. Enable to migrate legacy hooks, then review /hooks."
++            return "Enable to install the precise-status Codex launch wrapper for iTerm2. Direct codex launches still require trusted CSL Agent Kit hooks; see the Codex integration guide."
+         }
+         return integrations.isInstalled(agent)
+             ? "Reload existing sessions with /reload"
+--- baseline/iTermateTests/AgentIntegrationManagerTests.swift
++++ current/iTermateTests/AgentIntegrationManagerTests.swift
+@@ -73,6 +73,9 @@
+         let installedHookURL = fixture.homeDirectory.appendingPathComponent(
+             "Library/Application Support/iTermate/integrations/iTermate-status.py"
+         )
++        let launcherURL = fixture.homeDirectory.appendingPathComponent(
++            "Library/Application Support/iTermate/integrations/iTermate-codex.py"
++        )
+         let markerURL = fixture.homeDirectory.appendingPathComponent(
+             "Library/Application Support/iTermate/integrations/codex-agent-hooks.json"
+         )
+@@ -81,6 +84,8 @@
+         XCTAssertTrue(manager.isInstalled(.codex))
+         XCTAssertTrue(FileManager.default.fileExists(atPath: installedHookURL.path))
+         XCTAssertEqual(try permissions(at: installedHookURL), 0o700)
++        XCTAssertEqual(try String(contentsOf: launcherURL), "codex launcher")
++        XCTAssertEqual(try permissions(at: launcherURL), 0o700)
+         XCTAssertEqual(try Data(contentsOf: hooksURL), originalHooks)
+         XCTAssertEqual(try permissions(at: markerURL), 0o600)
+         let marker = try jsonObject(at: markerURL)
+@@ -93,6 +98,24 @@
+         XCTAssertEqual(try Data(contentsOf: hooksURL), originalHooks)
+         XCTAssertFalse(FileManager.default.fileExists(atPath: markerURL.path))
+         XCTAssertFalse(FileManager.default.fileExists(atPath: installedHookURL.path))
++        XCTAssertFalse(FileManager.default.fileExists(atPath: launcherURL.path))
++    }
++
++    @MainActor
++    func testCodexLauncherUpdatesOnlyForEnabledCodex() throws {
++        let fixture = try Fixture(testCase: self)
++        let manager = fixture.makeManager()
++        let launcherURL = fixture.homeDirectory.appendingPathComponent(
++            "Library/Application Support/iTermate/integrations/iTermate-codex.py"
++        )
++        manager.updateInstalledIntegrations()
++        XCTAssertFalse(FileManager.default.fileExists(atPath: launcherURL.path))
++        manager.setInstalled(true, for: .codex)
++        try "new launcher".write(to: fixture.codexLauncherResourceURL, atomically: true, encoding: .utf8)
++        manager.updateInstalledIntegrations()
++        XCTAssertEqual(try String(contentsOf: launcherURL), "new launcher")
++        XCTAssertEqual(try permissions(at: launcherURL), 0o700)
++        XCTAssertTrue(manager.isInstalled(.codex))
+     }
+ 
+     @MainActor
+@@ -274,6 +297,7 @@
+     let homeDirectory: URL
+     let piResourceURL: URL
+     let statusResourceURL: URL
++    let codexLauncherResourceURL: URL
+     let zshResourceURL: URL
+     let bashResourceURL: URL
+     let fishResourceURL: URL
+@@ -286,11 +310,13 @@
+         try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
+         piResourceURL = resources.appendingPathComponent("iTermate-integration.ts")
+         statusResourceURL = resources.appendingPathComponent("iTermate-status.py")
++        codexLauncherResourceURL = resources.appendingPathComponent("iTermate-codex.py")
+         zshResourceURL = resources.appendingPathComponent("iTermate.zsh")
+         bashResourceURL = resources.appendingPathComponent("iTermate.bash")
+         fishResourceURL = resources.appendingPathComponent("iTermate.fish")
+         try "pi integration".write(to: piResourceURL, atomically: true, encoding: .utf8)
+         try "status reporter".write(to: statusResourceURL, atomically: true, encoding: .utf8)
++        try "codex launcher".write(to: codexLauncherResourceURL, atomically: true, encoding: .utf8)
+         try "zsh hook".write(to: zshResourceURL, atomically: true, encoding: .utf8)
+         try "bash hook".write(to: bashResourceURL, atomically: true, encoding: .utf8)
+         try "# Managed by iTermate.\nfish hook".write(
+@@ -309,6 +335,7 @@
+             homeDirectory: homeDirectory,
+             piResourceURL: piResourceURL,
+             statusResourceURL: statusResourceURL,
++            codexLauncherResourceURL: codexLauncherResourceURL,
+             zshResourceURL: zshResourceURL,
+             bashResourceURL: bashResourceURL,
+             fishResourceURL: fishResourceURL
+--- baseline/project.yml
++++ current/project.yml
+@@ -25,6 +25,8 @@
+       - path: integrations/pi/iTermate-integration.ts
+         buildPhase: resources
+       - path: integrations/status/iTermate-status.py
++        buildPhase: resources
++      - path: integrations/status/iTermate-codex.py
+         buildPhase: resources
+       - path: integrations/shell/iTermate.zsh
+         buildPhase: resources
+--- baseline/iTermate.xcodeproj/project.pbxproj
++++ current/iTermate.xcodeproj/project.pbxproj
+@@ -20,6 +20,7 @@
+ 		94B162FBE46FC4FD4E2DF794 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 877F89ED3A45C6F8DF3B44C1 /* Sparkle */; };
+ 		9EA014E904BFB2839F940EBA /* SessionNotificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */; };
+ 		AC7587A4E122F8C055A20711 /* SessionNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA5E7E6D2D9302CAC7D2FC3 /* SessionNotifications.swift */; };
++		B19523938DE970AA34431C74 /* iTermate-codex.py in Resources */ = {isa = PBXBuildFile; fileRef = 148913AD3B308BD82A6A318A /* iTermate-codex.py */; };
+ 		B3841525F058DCEF4B08CC48 /* TerminalStatusServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4B0FE61857CD8F369207A70 /* TerminalStatusServer.swift */; };
+ 		BEEB853D6C906357937B0DAF /* iTermate-laya.py in Resources */ = {isa = PBXBuildFile; fileRef = 778A5491FBE924DD5E2ED781 /* iTermate-laya.py */; };
+ 		C7E944908DE9ED9089171685 /* iTermateBridge.py in Resources */ = {isa = PBXBuildFile; fileRef = 98A663F51BCEE90A4D694DFD /* iTermateBridge.py */; };
+@@ -54,6 +55,7 @@
+ 		06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViews.swift; sourceTree = "<group>"; };
+ 		0A5616016F9CC20D9F3ADD3E /* iTermate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iTermate.app; sourceTree = BUILT_PRODUCTS_DIR; };
+ 		0B64B776E9CA4A9EFBFB2C08 /* PiSessionArchives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiSessionArchives.swift; sourceTree = "<group>"; };
++		148913AD3B308BD82A6A318A /* iTermate-codex.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-codex.py"; sourceTree = "<group>"; };
+ 		1A0D84FD9AD3EC207067EAD7 /* VenomDebugMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenomDebugMonitor.swift; sourceTree = "<group>"; };
+ 		1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinishedSessionShortcut.swift; sourceTree = "<group>"; };
+ 		26707EC6497714316C11E6B6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+@@ -120,6 +122,7 @@
+ 		377849C3113349301ACDBD92 /* status */ = {
+ 			isa = PBXGroup;
+ 			children = (
++				148913AD3B308BD82A6A318A /* iTermate-codex.py */,
+ 				88ED6137D49AA3F3F967AC35 /* iTermate-status.py */,
+ 			);
+ 			name = status;
+@@ -281,6 +284,7 @@
+ 			files = (
+ 				F8C2B099533A5060DD6FF222 /* Assets.xcassets in Resources */,
+ 				85814D5023E76DE82EB7F95C /* agent-connection-prompt.md in Resources */,
++				B19523938DE970AA34431C74 /* iTermate-codex.py in Resources */,
+ 				F1BACAA2BF873D0423D5D029 /* iTermate-integration.ts in Resources */,
+ 				BEEB853D6C906357937B0DAF /* iTermate-laya.py in Resources */,
+ 				CF61D396BC472AA8FE36FF58 /* iTermate-status.py in Resources */,
+--- baseline/docs/codex-agent-hooks.md
++++ current/docs/codex-agent-hooks.md
+@@ -1,8 +1,37 @@
+-# Codex 通过 Agent Hooks 接入 iTermate
++# Codex 状态监控
+ 
+-Codex 接入复用 CSL Agent Kit 的 Agent Hooks 分发器与内置规则，不再由 iTermate 注册一组独立的 Codex 原生 hooks。Pi 集成不受影响。
++需要精确状态时，优先使用启动包装器：保留原生 Codex TUI，直接观察专属 app-server 的结构化生命周期。直接运行 `codex` 时，仍可通过 CSL Agent Kit 的 Agent Hooks 分发器与内置规则上报；iTermate 不额外注册一组原生 hooks。Pi 集成不受影响。
+ 
+-## 启用与迁移
++## 精确监控：启动包装器
++
++重新构建并自行运行新版 iTermate，在 **Settings → Agents** 中启用 Codex，会同时安装上报脚本和 ["/Users/caishilin/Library/Application Support/iTermate/integrations/iTermate-codex.py"](<file:///Users/caishilin/Library/Application Support/iTermate/integrations/iTermate-codex.py>)。在 iTerm2 内用 Python 3 运行该入口，即可启动带监控的原生 TUI；`resume`、`fork` 和常规 TUI 参数继续交给 Codex 解析。无需改写 `codex` 命令或全局 shell 配置。
++
++包装器使用权限为 0700 的临时目录和 Unix Socket，在原生 TUI 与专属 app-server 之间原字节转发 WebSocket 流，只解析内存中的副本。它不回答审批、不发起模型轮次、不保存提示词或协议日志，也不连接共享 daemon 或其他终端的会话。`-c`、`--enable`、`--disable` 同时传入服务端，`-C` 也决定服务端工作目录。包装器子进程中的 iTermate hooks 自动跳过，避免两个提供方争抢状态。
++
++| 原生信号 | iTermate 状态 |
++| --- | --- |
++| 已选中 thread 的运行态为 idle | idle，不把历史回复标成新完成 |
++| `turn/started` 或 active 且无等待标记 | running |
++| active 带 `waitingOnApproval` 或 `waitingOnUserInput` | awaitingInput |
++| 当前轮次 `turn/completed`，status 为 completed | finished，退出状态 0 |
++| 当前轮次 `turn/completed`，status 为 failed | finished，退出状态 1，不计成功 |
++| 当前轮次 interrupted | idle，不计成功 |
++| 断连、退出、未知协议或状态 | detached，释放 Agent 所有权，不伪造完成 |
++
++仅绑定 TUI 自己发出的 thread/start、resume、fork 请求的响应，不按目录、进程名、终端文字或其他 thread 的通知匹配。running 和 awaitingInput 使用现有有限租约，重复等待续报不重置开始时间；正常退出清理本次创建的 TUI 和 app-server，不停止用户既有进程。退出前保留已出队但未确认的最后一个完成状态，再上报 detached；两者分别最多重试 3 秒，ACK 丢失时复用事件身份，避免恢复用户已经读过的完成标记。接收端拒绝时不重新抢占所有权；重试超时会明确输出未确认诊断，不能保证 Bridge 全程离线时的历史完成信息。强制杀死包装器时接收端租约会过期，但操作系统未必清理专属后端进程。
++
++### 能力与验证边界
++
++- 当前包装器仅支持具有真实 Session ID 的 iTerm2；Ghostty 继续使用原有 hook/TTY 通路，不能因此声称获得同等精度。
++- 需要支持 `--remote`、app-server Unix Socket 和 `thread/status/changed` 的 Codex；本次核实的本机版本为 0.162.1。app-server 远程传输仍属 Codex 实验接口，后续版本变化需重新验证。
++- 不支持 `--remote`、`--no-daemon`、`--profile`、`--worktree` 和非交互子命令；这些模式请直接使用 `codex`。包装器不会静默忽略已识别的不兼容模式。
++- awaitingInput 只表示原生明确等待审批或结构化输入；不会根据最终回复中的问句推断用户是否必须回答。
++- 取消启用会移除包装器入口；已启动的包装器需退出后才停止该会话的监控。关闭 hook opt-in 不会改变专属协议观察器。
++- 单元测试覆盖状态机、帧拆分与掩码、审批字节透传、参数与退出清理，以及真实 reporter/Bridge 行为；隔离假 Codex 子进程验证启动链路。另以临时 HOME/CODEX_HOME 启动真实 app-server，经同一代理完成 Unix WebSocket 握手、initialize 与 thread/loaded/list，确认未创建 thread 并清理专属后端。源码构建和这些测试不等于真实 Codex/TUI 已现场验收，仍需用户自行运行新 App 并从包装器启动会话。未替换运行中的 App/Bridge 或用户安装副本。
++
++协议依据：[Codex app-server 官方说明](https://developers.openai.com/codex/app-server/)，并与本机 CLI 导出的 JSON Schema 核对。
++
++## 直接运行 Codex：Agent Hooks 启用与迁移
+ 
+ 1. 先更新 Codex 中的 CSL Agent Kit 插件，使其包含 iTermate 内置规则以及 Interrupt、SessionEnd 分发支持。
+ 2. 在 Codex 中用 `/hooks` 检查并信任插件所需 hooks。规则存在或 CLI 显示 active，不代表当前 Codex 会话已加载并信任插件。

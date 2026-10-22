@@ -1,0 +1,595 @@
+--- before/iTermate/ItermBridge.swift
++++ after/iTermate/ItermBridge.swift
+@@ -96,6 +96,25 @@
+ enum SessionActivityKind: String, Codable, Equatable {
+     case agent
+     case command
++}
++
++/// The explicitly observed Agent identity, independent of its working state.
++enum SessionAgentKind: String, Codable, Equatable {
++    /// A Pi session identified by its integration.
++    case pi
++    /// A Codex session identified by its reporter.
++    case codex
++    /// An Agent whose integration has not supplied its identity.
++    case unknown
++
++    /// The environment name used in tooltips and accessibility descriptions.
++    var displayName: String {
++        switch self {
++        case .pi: "Pi"
++        case .codex: "Codex"
++        case .unknown: "Agent (identity unavailable)"
++        }
++    }
+ }
+ 
+ enum SessionTimeFormat: String, CaseIterable, Identifiable {
+@@ -134,6 +153,13 @@
+     /// A short-lived estimate, never used for lifecycle notifications or completion counts.
+     /// Confirmed Pi child activity; absent for integrations without this signal.
+     var hasRunningSubagents: Bool? = nil
++    /// Retained when a working-state lease expires; cleared on Agent detachment.
++    var agentKind: SessionAgentKind? = nil
++
++    /// A legacy Agent without identity must not be presented as a Shell.
++    var environmentAgentKind: SessionAgentKind? {
++        agentKind ?? (activityKind == .agent ? .unknown : nil)
++    }
+ }
+ 
+ struct TerminalTabSnapshot: Codable, Equatable, Identifiable {
+@@ -1027,7 +1053,8 @@
+                     let report = TerminalStatusReport(
+                         tty: tty, source: .agent, reporterID: observation.reporterId,
+                         sequence: observation.sequence, state: state, exitStatus: observation.exitStatus,
+-                        heartbeat: false, hasRunningSubagents: observation.hasRunningSubagents
++                        heartbeat: false, hasRunningSubagents: observation.hasRunningSubagents,
++                        agentKind: .pi
+                     )
+                     if terminalStatusRegistry.apply(report, recovering: true) { publishGhosttyWindows() }
+                 }
+@@ -1110,10 +1137,10 @@
+     private func mergingTerminalStatus(
+         into session: TerminalSessionSnapshot
+     ) -> TerminalSessionSnapshot {
+-        guard
+-            let tty = session.tty,
+-            let status = terminalStatusRegistry.visibleStatus(for: tty)
+-        else {
++        guard let tty = session.tty else { return session }
++        var session = session
++        session.agentKind = terminalStatusRegistry.agentKind(for: tty)
++        guard let status = terminalStatusRegistry.visibleStatus(for: tty) else {
+             return session
+         }
+         return TerminalSessionSnapshot(
+@@ -1129,7 +1156,8 @@
+             activityKind: status.activityKind,
+             exitStatus: status.exitStatus,
+             statusChangedAt: status.changedAt,
+-            hasRunningSubagents: status.hasRunningSubagents
++            hasRunningSubagents: status.hasRunningSubagents,
++            agentKind: session.agentKind
+         )
+     }
+ 
+@@ -1274,6 +1302,7 @@
+         struct Request: Encodable {
+             let type = "setSessionStatus"
+             let requestId = "pi-recovery-" + UUID().uuidString
++            let agentKind = SessionAgentKind.pi
+             let recovery = true
+             let sessionId: String
+             let status: TerminalSessionStatus?
+--- before/iTermate/TerminalStatusServer.swift
++++ after/iTermate/TerminalStatusServer.swift
+@@ -26,6 +26,8 @@
+     let exitStatus: Int?
+     let heartbeat: Bool
+     var hasRunningSubagents: Bool = false
++    /// Supplied only by an Agent integration, not ordinary command hooks.
++    var agentKind: SessionAgentKind? = nil
+ }
+ 
+ struct VisibleTerminalStatus {
+@@ -45,6 +47,7 @@
+         let changedAt: TimeInterval
+         let heartbeatAt: TimeInterval?
+         var hasRunningSubagents: Bool = false
++        var agentKind: SessionAgentKind? = nil
+     }
+ 
+     private struct TTYState {
+@@ -77,6 +80,7 @@
+         recovering: Bool = false
+     ) -> Bool {
+         guard terminalIDsByTTY[report.tty] != nil else { return false }
++        guard report.agentKind == nil || report.source == .agent else { return false }
+         guard report.state != .awaitingInput || report.source == .agent else {
+             return false
+         }
+@@ -120,7 +124,9 @@
+                 && (status == .running || status == .awaitingInput)
+                 ? uptime
+                 : nil,
+-            hasRunningSubagents: report.hasRunningSubagents
++            hasRunningSubagents: report.hasRunningSubagents,
++            agentKind: report.source == .agent && report.state != .detached
++                ? report.agentKind ?? .unknown : nil
+         )
+ 
+         if report.source == .agent {
+@@ -147,14 +153,7 @@
+             else {
+                 continue
+             }
+-            ttyState.agent = Channel(
+-                reporterID: agent.reporterID,
+-                sequence: agent.sequence,
+-                status: nil,
+-                exitStatus: nil,
+-                changedAt: agent.changedAt,
+-                heartbeatAt: nil
+-            )
++            ttyState.agent = cleared(agent)
+             states[tty] = ttyState
+             changed = true
+         }
+@@ -204,7 +203,8 @@
+                 status: .idle,
+                 exitStatus: nil,
+                 changedAt: now,
+-                heartbeatAt: nil
++                heartbeatAt: nil,
++                agentKind: agent.agentKind
+             )
+             changed = true
+         }
+@@ -214,6 +214,12 @@
+         }
+         states[tty] = ttyState
+         return changed
++    }
++
++    /// Last confirmed environment identity, not evidence that the Agent is working.
++    func agentKind(for tty: String) -> SessionAgentKind? {
++        guard terminalIDsByTTY[tty] != nil else { return nil }
++        return states[tty]?.agent?.agentKind
+     }
+ 
+     func visibleStatus(for tty: String) -> VisibleTerminalStatus? {
+@@ -247,7 +253,8 @@
+             status: nil,
+             exitStatus: nil,
+             changedAt: channel.changedAt,
+-            heartbeatAt: nil
++            heartbeatAt: nil,
++            agentKind: channel.agentKind
+         )
+     }
+ }
+@@ -510,6 +517,7 @@
+     let exitStatus: Int?
+     let heartbeat: Bool?
+     let hasRunningSubagents: Bool?
++    let agentKind: SessionAgentKind?
+ 
+     func validatedReport() throws -> TerminalStatusReport {
+         guard
+@@ -519,7 +527,8 @@
+             let tty = TerminalStatusRegistry.normalizedTTY(tty),
+             !reporterId.isEmpty,
+             reporterId.count <= 128,
+-            sequence > 0
++            sequence > 0,
++            agentKind == nil || source == .agent
+         else {
+             throw TerminalStatusServerError.invalidRequest
+         }
+@@ -553,7 +562,8 @@
+             state: status,
+             exitStatus: exitStatus,
+             heartbeat: heartbeat,
+-            hasRunningSubagents: hasRunningSubagents
++            hasRunningSubagents: hasRunningSubagents,
++            agentKind: agentKind
+         )
+     }
+ }
+--- before/iTermate/iTermateApp.swift
++++ after/iTermate/iTermateApp.swift
+@@ -641,7 +641,7 @@
+                                 if !hasTabHeader || !isTabCollapsed(item.tabID) {
+                                     sessionButton(item)
+                                         .id(
+-                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session)):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
++                                            "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session)):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.agentKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                         )
+                                         .padding(.leading, hasTabHeader ? 12 : 0)
+                                 }
+@@ -923,11 +923,7 @@
+                 store.activate(sessionID: item.session.id)
+             } label: {
+                 HStack(spacing: 8) {
+-                    Image(systemName: item.isFocused ? "circle.fill" : "circle")
+-                        .font(.system(size: 8))
+-                        .foregroundStyle(
+-                            item.isFocused ? settings.accentColor : .secondary
+-                        )
++                    SessionEnvironmentIcon(agentKind: item.session.environmentAgentKind)
+ 
+                     Text(sessionName(item.session))
+                         .help(item.session.name)
+@@ -1015,7 +1011,8 @@
+             }
+             .buttonStyle(.plain)
+             .frame(maxWidth: .infinity, alignment: .leading)
+-            .accessibilityLabel("Activate session \(sessionName(item.session))")
++            .accessibilityLabel("Activate \(item.session.environmentAgentKind?.displayName ?? "Shell") session \(sessionName(item.session))")
++            .accessibilityValue(item.isFocused ? "Focused" : "")
+ 
+             Button {
+                 store.close(sessionID: item.session.id)
+@@ -1591,6 +1588,85 @@
+     }
+ }
+ 
++/// A pixel identity mark; animation does not imply an active Agent turn.
++private struct SessionEnvironmentIcon: View {
++    @Environment(\.accessibilityReduceMotion) private var reduceMotion
++    let agentKind: SessionAgentKind?
++
++    private var glyph: [String] {
++        switch agentKind {
++        case .pi:
++            ["111111", "010010", "010010", "010010", "110011"]
++        case .codex:
++            ["0000000", "0010100", "0100010", "1000001", "0100010", "0010100", "0000000"]
++        case .unknown:
++            ["0011100", "0100010", "1000001", "1000001", "1000001", "0100010", "0011100"]
++        case nil:
++            ["0000000", "1000000", "0100000", "0010000", "0100000", "1001111", "0000000"]
++        }
++    }
++
++    private var color: Color {
++        switch agentKind {
++        case .pi: Color(red: 193 / 255, green: 160 / 255, blue: 245 / 255)
++        case .codex: Color(red: 126 / 255, green: 216 / 255, blue: 191 / 255)
++        case .unknown: .secondary
++        case nil: Color(red: 167 / 255, green: 175 / 255, blue: 186 / 255)
++        }
++    }
++
++    private var label: String {
++        agentKind?.displayName ?? "Shell"
++    }
++
++    var body: some View {
++        TimelineView(.animation(minimumInterval: 0.2, paused: reduceMotion)) { timeline in
++            Canvas { context, size in
++                let rows = glyph
++                let columns = rows.first?.count ?? 7
++                let origin = CGPoint(
++                    x: (size.width - CGFloat(columns) * 2) / 2,
++                    y: (size.height - CGFloat(rows.count) * 2) / 2
++                )
++                let time = timeline.date.timeIntervalSinceReferenceDate
++                for (row, bits) in rows.enumerated() {
++                    for (column, bit) in bits.enumerated() where bit == "1" {
++                        let rect = CGRect(
++                            x: origin.x + CGFloat(column) * 2 + 0.25,
++                            y: origin.y + CGFloat(row) * 2 + 0.25,
++                            width: 1.75,
++                            height: 1.75
++                        )
++                        context.fill(
++                            Path(roundedRect: rect, cornerRadius: 0.25),
++                            with: .color(color.opacity(opacity(row: row, column: column, time: time)))
++                        )
++                    }
++                }
++            }
++        }
++        .frame(width: 14, height: 14)
++        .help(label)
++        .accessibilityLabel(label)
++    }
++
++    private func opacity(row: Int, column: Int, time: TimeInterval) -> Double {
++        guard !reduceMotion else { return 0.88 }
++        switch agentKind {
++        case .pi:
++            let sweep = Int(time.truncatingRemainder(dividingBy: 4) / 4 * 6)
++            return row == 0 && column == sweep ? 1 : 0.78
++        case .codex:
++            return (time.truncatingRemainder(dividingBy: 3.2) < 1.6) == (column < 3) ? 1 : 0.62
++        case .unknown:
++            return time.truncatingRemainder(dividingBy: 3.2) < 1.6 ? 0.88 : 0.62
++        case nil:
++            guard row == 5 && column >= 3 else { return 0.88 }
++            return time.truncatingRemainder(dividingBy: 2.4) < 1.6 ? 1 : 0.36
++        }
++    }
++}
++
+ private struct SubagentStatusView: View {
+     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+     let color: Color
+--- before/iTermateBridge/iTermateBridge.py
++++ after/iTermateBridge/iTermateBridge.py
+@@ -59,6 +59,7 @@
+         self.command_monitor_tasks = {}
+         self.command_monitor_unavailable = set()
+         self.agent_managed_session_ids = set()
++        self.session_agent_kinds = {}
+         self.agent_heartbeat_times = {}
+         self.agent_report_sequences = {}
+         self.codex_reports = {}
+@@ -210,7 +211,16 @@
+             if has_sequence and sequence <= self.agent_report_sequences.get(key, 0):
+                 await self.send_action_result(writer, request_id, False, "Stale report")
+                 return
++            agent_kind = request.get("agentKind")
++            if agent_kind is not None and (
++                not isinstance(agent_kind, str) or agent_kind not in {"pi", "codex"}
++            ):
++                await self.send_action_result(writer, request_id, False, "Invalid Agent kind")
++                return
+             codex_id = request.get("codexSessionId")
++            if codex_id is not None and agent_kind not in {None, "codex"}:
++                await self.send_action_result(writer, request_id, False, "Conflicting Agent kind")
++                return
+             codex_event = request.get("codexEventId")
+             codex_claim = request.get("codexClaim", False)
+             codex_previous_owner = request.get("codexPreviousOwner")
+@@ -258,12 +268,14 @@
+             if (codex_id is not None and status == "detached"
+                     and self.session_statuses.get(session_id, {}).get("activityKind") == "command"):
+                 # A delayed SessionEnd releases its owner, not a subsequent shell command.
++                self.session_agent_kinds.pop(session_id, None)
+                 self.agent_managed_session_ids.discard(session_id)
+                 self.agent_heartbeat_times.pop(session_id, None)
+                 accepted = True
+             else:
+                 accepted = self.set_agent_status(
+-                    session_id, status, exit_status, heartbeat, has_running_subagents
++                    session_id, status, exit_status, heartbeat, has_running_subagents,
++                    agent_kind="codex" if codex_id is not None else agent_kind or "unknown",
+                 )
+             if accepted and has_sequence:
+                 self.agent_report_sequences[key] = sequence
+@@ -496,6 +508,7 @@
+             for session_id in monitored_ids - session_ids:
+                 self.command_monitor_tasks.pop(session_id).cancel()
+                 self.command_monitor_unavailable.discard(session_id)
++                self.session_agent_kinds.pop(session_id, None)
+                 self.agent_managed_session_ids.discard(session_id)
+                 self.agent_heartbeat_times.pop(session_id, None)
+                 self.session_statuses.pop(session_id, None)
+@@ -577,6 +590,7 @@
+                 include_agent_commands=status.get("activityKind") == "agent",
+             ):
+                 self.session_statuses.pop(session_id, None)
++                self.session_agent_kinds.pop(session_id, None)
+                 self.agent_managed_session_ids.discard(session_id)
+                 self.agent_heartbeat_times.pop(session_id, None)
+ 
+@@ -680,6 +694,7 @@
+                         had_running_status = self.session_statuses.get(
+                             session_id, {}
+                         ).get("status") == "running"
++                        self.session_agent_kinds.pop(session_id, None)
+                         self.agent_managed_session_ids.discard(session_id)
+                         self.agent_heartbeat_times.pop(session_id, None)
+                         if was_managed or had_running_status:
+@@ -725,6 +740,7 @@
+                             had_running_status = self.session_statuses.get(
+                                 session_id, {}
+                             ).get("status") == "running"
++                            self.session_agent_kinds.pop(session_id, None)
+                             self.agent_managed_session_ids.discard(session_id)
+                             self.agent_heartbeat_times.pop(session_id, None)
+                             if was_managed or had_running_status:
+@@ -760,9 +776,10 @@
+ 
+     def set_agent_status(
+         self, session_id, status, exit_status=0, heartbeat=False,
+-        has_running_subagents=False,
++        has_running_subagents=False, agent_kind="unknown",
+     ):
+         if status == "detached":
++            self.session_agent_kinds.pop(session_id, None)
+             self.agent_managed_session_ids.discard(session_id)
+             self.agent_heartbeat_times.pop(session_id, None)
+             self.session_statuses.pop(session_id, None)
+@@ -772,6 +789,7 @@
+         if heartbeat and current is not None and current.get("status") != status:
+             return False
+         self.agent_managed_session_ids.add(session_id)
++        self.session_agent_kinds[session_id] = agent_kind
+         if heartbeat or status == "awaitingInput" or has_running_subagents:
+             self.agent_heartbeat_times[session_id] = heartbeat_time()
+         else:
+@@ -987,6 +1005,8 @@
+                         "status": self.session_statuses.get(session.session_id, {}).get(
+                             "status"
+                         ),
++                        "agentKind": self.session_agent_kinds.get(session.session_id, "unknown")
++                        if session.session_id in self.agent_managed_session_ids else None,
+                         "activityKind": self.session_statuses.get(
+                             session.session_id, {}
+                         ).get("activityKind"),
+--- before/integrations/pi/iTermate-integration.ts
++++ after/integrations/pi/iTermate-integration.ts
+@@ -122,6 +122,7 @@
+       ? {
+           version: 7,
+           type: "setSessionStatus",
++          agentKind: "pi",
+           requestId,
+           sessionId: sessionID,
+           reporterId,
+@@ -137,6 +138,7 @@
+           requestId,
+           tty,
+           source: "agent",
++          agentKind: "pi",
+           reporterId,
+           sequence,
+           status,
+--- before/integrations/status/iTermate-status.py
++++ after/integrations/status/iTermate-status.py
+@@ -182,6 +182,7 @@
+         "reporterId": state["reporterId"],
+         "sequence": state["sequence"],
+         "codexSessionId": state["codexSessionId"],
++        "agentKind": "codex",
+         "codexEventId": state["generation"],
+         "codexClaim": claim,
+         "status": state["status"],
+@@ -358,6 +359,8 @@
+         "status": status,
+         "heartbeat": heartbeat,
+     }
++    if source == "agent":
++        request["agentKind"] = "codex"
+     if status == "finished":
+         request["exitStatus"] = exit_status
+     exchange(STATUS_SOCKET_PATH, request)
+--- before/iTermateTests/ItermBridgeTests.swift
++++ after/iTermateTests/ItermBridgeTests.swift
+@@ -2,6 +2,69 @@
+ @testable import iTermate
+ 
+ final class ItermBridgeTests: XCTestCase {
++    func testDecodesEnvironmentIdentityWithoutInferringFromTitle() throws {
++        for kind in ["pi", "codex", "unknown"] {
++            let data = Data("""
++            {"id":"pane","name":"a different Agent name","isActive":true,"agentKind":"\(kind)"}
++            """.utf8)
++            let session = try JSONDecoder().decode(TerminalSessionSnapshot.self, from: data)
++            XCTAssertEqual(session.environmentAgentKind?.rawValue, kind)
++            XCTAssertNil(session.status)
++        }
++        let shell = try JSONDecoder().decode(TerminalSessionSnapshot.self, from: Data("""
++        {"id":"pane","name":"Pi Codex","isActive":false}
++        """.utf8))
++        XCTAssertNil(shell.environmentAgentKind)
++        let legacyAgent = try JSONDecoder().decode(TerminalSessionSnapshot.self, from: Data("""
++        {"id":"pane","name":"codex","isActive":false,"activityKind":"agent","status":"idle"}
++        """.utf8))
++        XCTAssertEqual(legacyAgent.environmentAgentKind, .unknown)
++    }
++
++    func testAgentIdentitySurvivesFocusAndLeaseExpiryButNotDetachment() {
++        let tty = "/dev/ttys001"
++        var registry = TerminalStatusRegistry()
++        registry.reconcile(terminals: [tty: "pane"])
++        func report(_ state: TerminalStatusReport.State, _ sequence: Int, kind: SessionAgentKind) -> TerminalStatusReport {
++            TerminalStatusReport(tty: tty, source: .agent, reporterID: "reporter", sequence: sequence,
++                                 state: state, exitStatus: state == .finished ? 0 : nil, heartbeat: false,
++                                 agentKind: kind)
++        }
++        XCTAssertTrue(registry.apply(report(.finished, 1, kind: .pi), now: 10, uptime: 10))
++        XCTAssertTrue(registry.activate(tty: tty))
++        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .idle)
++        XCTAssertEqual(registry.agentKind(for: tty), .pi)
++        XCTAssertTrue(registry.apply(report(.running, 2, kind: .pi), uptime: 20))
++        XCTAssertTrue(registry.expireStaleAgentHeartbeats(uptime: 29))
++        XCTAssertNil(registry.visibleStatus(for: tty))
++        XCTAssertEqual(registry.agentKind(for: tty), .pi)
++        XCTAssertFalse(registry.apply(report(.running, 1, kind: .codex)))
++        XCTAssertEqual(registry.agentKind(for: tty), .pi)
++        XCTAssertTrue(registry.apply(report(.idle, 3, kind: .codex)))
++        XCTAssertEqual(registry.agentKind(for: tty), .codex)
++        XCTAssertTrue(registry.apply(report(.detached, 4, kind: .codex)))
++        XCTAssertNil(registry.agentKind(for: tty))
++        XCTAssertTrue(registry.apply(report(.idle, 5, kind: .pi)))
++        registry.reconcile(terminals: [tty: "replacement-pane"])
++        XCTAssertNil(registry.agentKind(for: tty))
++    }
++
++    func testAgentIdentityRequiresAgentChannel() {
++        let tty = "/dev/ttys001"
++        var registry = TerminalStatusRegistry()
++        registry.reconcile(terminals: [tty: "pane"])
++        XCTAssertFalse(registry.apply(TerminalStatusReport(
++            tty: tty, source: .command, reporterID: "shell", sequence: 1,
++            state: .running, exitStatus: nil, heartbeat: false, agentKind: .pi
++        )))
++        XCTAssertNil(registry.agentKind(for: tty))
++        XCTAssertTrue(registry.apply(TerminalStatusReport(
++            tty: tty, source: .agent, reporterID: "legacy", sequence: 1,
++            state: .idle, exitStatus: nil, heartbeat: false
++        )))
++        XCTAssertEqual(registry.agentKind(for: tty), .unknown)
++    }
++
+     func testDecodesSnapshotHierarchy() throws {
+         let data = Data(
+             """
+--- before/iTermateBridge/test_codex_status.py
++++ after/iTermateBridge/test_codex_status.py
+@@ -156,5 +156,47 @@
+         self.assertFalse(bridge.report("finished", 2, event="stop"))
+ 
+ 
++class EnvironmentIdentityTests(unittest.TestCase):
++    def test_codex_identity_survives_focus_and_expiry_then_detaches(self):
++        bridge = RecordingBridge()
++        self.assertTrue(bridge.report("running", claim=True))
++        self.assertEqual(bridge.session_agent_kinds["pane"], "codex")
++        bridge.expire_stale_agent_heartbeats(bridge.agent_heartbeat_times["pane"] + 9)
++        self.assertNotIn("pane", bridge.session_statuses)
++        self.assertEqual(bridge.session_agent_kinds["pane"], "codex")
++        self.assertTrue(bridge.report("finished", 2, event="finished"))
++        bridge.clear_finished_status("pane")
++        self.assertEqual(bridge.session_agent_kinds["pane"], "codex")
++        self.assertTrue(bridge.report("detached", 3, event="detached"))
++        self.assertNotIn("pane", bridge.session_agent_kinds)
++
++    def test_pi_recovery_identity_and_stale_report(self):
++        bridge = RecordingBridge()
++        request = dict(type="setSessionStatus", sessionId="pane", status="idle",
++                       reporterId="pi-reporter", sequence=2, agentKind="pi", recovery=True)
++        asyncio.run(bridge.handle_command(None, json.dumps(request).encode()))
++        self.assertTrue(bridge.responses[-1][0])
++        self.assertEqual(bridge.session_agent_kinds["pane"], "pi")
++        request.update(sequence=1, agentKind="codex", recovery=False)
++        asyncio.run(bridge.handle_command(None, json.dumps(request).encode()))
++        self.assertFalse(bridge.responses[-1][0])
++        self.assertEqual(bridge.session_agent_kinds["pane"], "pi")
++
++    def test_legacy_agent_is_not_inferred_as_pi(self):
++        bridge = RecordingBridge()
++        request = dict(type="setSessionStatus", sessionId="pane", status="idle")
++        asyncio.run(bridge.handle_command(None, json.dumps(request).encode()))
++        self.assertEqual(bridge.session_agent_kinds["pane"], "unknown")
++
++    def test_invalid_or_conflicting_identity_is_rejected(self):
++        for kind in ("shell", "other", [], {}):
++            bridge = RecordingBridge()
++            self.assertFalse(bridge.report("idle", claim=True, agentKind=kind))
++            self.assertEqual(bridge.session_agent_kinds, {})
++        bridge = RecordingBridge()
++        self.assertFalse(bridge.report("idle", claim=True, agentKind="pi"))
++        self.assertEqual(bridge.session_agent_kinds, {})
++
++
+ if __name__ == "__main__":
+     unittest.main()
+--- before/README.zh-CN.md
++++ after/README.zh-CN.md
+@@ -68,6 +68,9 @@
+ - 将指针悬停在 Session 上可显示关闭按钮。
+ - 展开或折叠 Window、Tab 与 Project Path 分组。
+ - 通过 Project Path 上下文菜单固定、收藏项目，或设置自定义颜色。
++- 左侧像素图标区分会话环境：紫色 `π` 为 Pi、薄荷色 `<>` 为 Codex、灰色 `>_` 为 Shell；右侧仍表示运行、等待或完成状态。选中会话保留强调色行背景；开启系统“减少动态效果”后，环境图标静止显示。
++
++环境身份由集成明确上报，不根据标题猜测。旧版集成尚未提供身份时，已知 Agent 显示中性圆环；状态租约到期只撤销工作状态，不因此把已确认的 Agent 改成 Shell。身份在 Agent 退出、终端复用时清除。更新源码后需自行运行新 App，并通过现有安装入口更新 Pi/Codex 集成；Pi 执行 `/reload`，已运行的 Codex 包装器退出后重新用 `codexm` 启动。
+ 
+ ### 配置 iTermate
+ 

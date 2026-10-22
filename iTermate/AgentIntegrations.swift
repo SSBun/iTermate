@@ -132,10 +132,8 @@ final class AgentIntegrationManager: ObservableObject {
                 try installPi()
             case (.pi, false):
                 try removeIfPresent(at: piExtensionURL)
-            case (.codex, true):
-                try installCodex()
-            case (.codex, false):
-                try uninstallCodex()
+            case (.codex, _):
+                return
             default:
                 return
             }
@@ -195,11 +193,23 @@ final class AgentIntegrationManager: ObservableObject {
     }
 
     private func updateInstalledStatusResources() {
-        defer { refresh() }
+        defer {
+            refresh()
+        }
         do {
-            if codexConfigurationIsInstalled {
-                try installCodex()
-            } else if fileManager.fileExists(atPath: statusReporterURL.path) {
+            try removeManagedCodexHooks()
+        } catch {
+            NSLog(
+                "iTermate could not remove its legacy Codex hooks: %@",
+                error.localizedDescription
+            )
+        }
+        do {
+            try removeIfPresent(at: codexLauncherURL)
+            try removeIfPresent(at: codexAgentHooksURL)
+            try removeIfPresent(at: legacyCodexHookURL)
+            try removeStatusReporterIfUnused()
+            if fileManager.fileExists(atPath: statusReporterURL.path) {
                 guard let statusResourceURL else {
                     throw IntegrationError.missingResource("status reporter")
                 }
@@ -230,9 +240,7 @@ final class AgentIntegrationManager: ObservableObject {
         if fileManager.fileExists(atPath: piExtensionURL.path) {
             installed.insert(.pi)
         }
-        if codexIntegrationIsInstalled {
-            installed.insert(.codex)
-        }
+        installed.insert(.codex)
         installedAgents = installed
         installedShells = Set(
             ShellStatusIntegration.allCases.filter(shellIntegrationIsInstalled)
@@ -260,6 +268,14 @@ final class AgentIntegrationManager: ObservableObject {
         integrationDirectoryURL.appendingPathComponent("iTermate-status.py")
     }
 
+    private var codexLauncherURL: URL {
+        integrationDirectoryURL.appendingPathComponent("iTermate-codex.py")
+    }
+
+    private var codexAgentHooksURL: URL {
+        integrationDirectoryURL.appendingPathComponent("codex-agent-hooks.json")
+    }
+
     private var legacyCodexHookURL: URL {
         integrationDirectoryURL.appendingPathComponent("iTermate-hook.py")
     }
@@ -276,28 +292,6 @@ final class AgentIntegrationManager: ObservableObject {
         homeDirectory.appendingPathComponent(".config/fish/conf.d/iTermate.fish")
     }
 
-    private var codexConfigurationIsInstalled: Bool {
-        guard
-            let root = try? codexHooksRoot(),
-            let hooks = root["hooks"] as? [String: Any]
-        else {
-            return false
-        }
-        // Recognize the original installation so existing users receive added events.
-        return ["SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"].allSatisfy { event in
-            let entries = hooks[event] as? [[String: Any]] ?? []
-            return entries.contains(where: Self.isManagedEntry)
-        }
-    }
-
-    private var codexIntegrationIsInstalled: Bool {
-        codexConfigurationIsInstalled
-            && (
-                fileManager.fileExists(atPath: statusReporterURL.path)
-                    || fileManager.fileExists(atPath: legacyCodexHookURL.path)
-            )
-    }
-
     private func installPi() throws {
         guard let piResourceURL else {
             throw IntegrationError.missingResource("Pi integration")
@@ -305,50 +299,25 @@ final class AgentIntegrationManager: ObservableObject {
         try installResource(from: piResourceURL, to: piExtensionURL, permissions: 0o600)
     }
 
-    private func installCodex() throws {
-        var root = try codexHooksRoot()
-        try installStatusReporter()
-        var hooks = root["hooks"] as? [String: Any] ?? [:]
-        let quotedReporterPath = Self.shellQuoted(statusReporterURL.path)
-
-        for (event, status) in Self.codexEvents {
-            var entries = hooks[event] as? [[String: Any]] ?? []
-            let managedEntry: [String: Any] = [
-                "_iTermate": true,
-                "hooks": [[
-                    "type": "command",
-                    "command": "\(quotedReporterPath) agent \(status)",
-                    "timeout": 3,
-                ]],
-            ]
-            // Hook trust keys include the group index. Do not move existing entries.
-            if let index = entries.firstIndex(where: Self.isManagedEntry) {
-                entries[index] = managedEntry
-            } else {
-                entries.append(managedEntry)
-            }
-            hooks[event] = entries
-        }
-
-        root["hooks"] = hooks
-        try writeCodexHooks(root)
-        try removeIfPresent(at: legacyCodexHookURL)
-    }
-
-    private func uninstallCodex() throws {
+    private func removeManagedCodexHooks() throws {
         if fileManager.fileExists(atPath: codexHooksURL.path) {
             var root = try codexHooksRoot()
             var hooks = root["hooks"] as? [String: Any] ?? [:]
-            for event in Self.codexEvents.keys {
-                var entries = hooks[event] as? [[String: Any]] ?? []
+            var changed = false
+            for event in Array(hooks.keys) {
+                guard var entries = hooks[event] as? [[String: Any]] else { continue }
+                let originalCount = entries.count
                 entries.removeAll(where: Self.isManagedEntry)
-                hooks[event] = entries
+                if entries.count != originalCount {
+                    changed = true
+                    hooks[event] = entries
+                }
             }
-            root["hooks"] = hooks
-            try writeCodexHooks(root)
+            if changed {
+                root["hooks"] = hooks
+                try writeCodexHooks(root)
+            }
         }
-        try removeIfPresent(at: legacyCodexHookURL)
-        try removeStatusReporterIfUnused()
     }
 
     private func installShell(_ shell: ShellStatusIntegration) throws {
@@ -454,7 +423,6 @@ final class AgentIntegrationManager: ObservableObject {
 
     private func removeStatusReporterIfUnused() throws {
         guard
-            !codexIntegrationIsInstalled,
             !ShellStatusIntegration.allCases.contains(where: shellIntegrationIsInstalled)
         else {
             return
@@ -703,15 +671,6 @@ final class AgentIntegrationManager: ObservableObject {
     private static let shellBlockStart = "# >>> iTermate shell status >>>"
     private static let shellBlockEnd = "# <<< iTermate shell status <<<"
     private static let fishFileMarker = "# Managed by iTermate.\n"
-    private static let codexEvents = [
-        "SessionStart": "idle",
-        "UserPromptSubmit": "running",
-        "PreToolUse": "running",
-        "PostToolUse": "running",
-        "Interrupt": "idle",
-        "Stop": "finished",
-        "SessionEnd": "detached",
-    ]
 }
 
 private enum IntegrationError: LocalizedError {
@@ -766,7 +725,18 @@ struct AgentSettingsView: View {
     }
 
     private func row(for agent: CodingAgent) -> some View {
-        Toggle(
+        if agent == .codex {
+            return AnyView(
+                LabeledContent {
+                    Text("Automatic")
+                        .foregroundStyle(.secondary)
+                } label: {
+                    Label(agent.rawValue, systemImage: agent.symbolName)
+                }
+                .help("Monitored automatically when you run the original codex command")
+            )
+        }
+        return AnyView(Toggle(
             isOn: Binding(
                 get: { integrations.isInstalled(agent) },
                 set: { integrations.setInstalled($0, for: agent) }
@@ -777,6 +747,7 @@ struct AgentSettingsView: View {
         .disabled(!agent.isSupported)
         .opacity(agent.isSupported ? 1 : 0.5)
         .help(detail(for: agent))
+        )
     }
 
     private func row(for shell: ShellStatusIntegration) -> some View {
@@ -801,9 +772,7 @@ struct AgentSettingsView: View {
         guard integrations.isInstalled(agent) else {
             return "Not installed"
         }
-        return agent == .codex
-            ? "Approve the new hooks with /hooks"
-            : "Reload existing sessions with /reload"
+        return "Reload existing sessions with /reload"
     }
 
     private func detail(for shell: ShellStatusIntegration) -> String {

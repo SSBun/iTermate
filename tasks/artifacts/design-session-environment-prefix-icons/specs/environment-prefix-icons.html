@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>iTermate 会话环境前缀图标 · 视觉预览</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #171819; }
+  canvas { display: block; width: 1020px; height: 820px; }
+  .description { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  @media (prefers-reduced-motion: reduce) { canvas { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<p class="description" id="description">会话前缀设计预览。Pi 使用紫色像素 π，Codex 使用薄荷绿色像素尖括号，普通 Shell 使用灰色像素提示符。左侧只表示环境，右侧仍表示运行状态；选中状态通过现有蓝色行背景体现。三类使用十四点槽位，Pi 图形缩至十二点宽并居中，Codex 和 Shell 保持原尺寸。动画不移动图形。减少动态效果时暂停动画。这是视觉稿，不是已接入应用的截图。</p>
+<canvas id="preview" role="img" aria-labelledby="description"></canvas>
+<script>
+'use strict';
+const W = 1020, H = 820;
+const canvas = document.getElementById('preview');
+const dpr = window.devicePixelRatio || 1;
+canvas.width = W * dpr;
+canvas.height = H * dpr;
+const ctx = canvas.getContext('2d');
+ctx.scale(dpr, dpr);
+ctx.imageSmoothingEnabled = false;
+const colors = { pi: '#C1A0F5', codex: '#7ED8BF', shell: '#A7AFBA' };
+const glyphs = {
+  pi:    ['111111','010010','010010','010010','110011'],
+  codex: ['0000000','0010100','0100010','1000001','0100010','0010100','0000000'],
+  shell: ['0000000','1000000','0100000','0010000','0100000','1001111','0000000']
+};
+const mono = '"SFMono-Regular", Menlo, "PingFang SC", monospace';
+const sans = '-apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif';
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+function rect(x, y, w, h, color, radius = 0, alpha = 1) {
+  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, radius); ctx.fill(); ctx.restore();
+}
+function text(value, x, y, size = 13, color = '#E7E8EB', weight = 400, align = 'left', family = sans) {
+  ctx.save(); ctx.fillStyle = color; ctx.font = `${weight} ${size}px ${family}`;
+  ctx.textAlign = align; ctx.fillText(value, x, y); ctx.restore();
+}
+function line(x1, y1, x2, y2, color = '#363739') {
+  ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+}
+function environment(kind, x, y, time, scale = 1, color = colors[kind]) {
+  const rows = glyphs[kind].length, cols = glyphs[kind][0].length;
+  x += (7 - cols) * scale;
+  y += (7 - rows) * scale;
+  const sweep = Math.floor((time % 4) / 4 * cols);
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      if (glyphs[kind][row][col] !== '1') continue;
+      let alpha = 0.88;
+      if (!reducedMotion.matches) {
+        if (kind === 'pi') alpha = row === 0 && col === sweep ? 1 : 0.78;
+        if (kind === 'codex') alpha = ((time % 3.2 < 1.6) === (col < 3)) ? 1 : 0.62;
+        if (kind === 'shell' && row === 5 && col >= 3) alpha = time % 2.4 < 1.6 ? 1 : 0.36;
+      }
+      rect(x + (col * 2 + 0.25) * scale, y + (row * 2 + 0.25) * scale,
+           1.75 * scale, 1.75 * scale, color, 0.25 * scale, alpha);
+    }
+  }
+}
+function folder(x, y) {
+  ctx.strokeStyle = '#8C8D90'; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(x, y + 3); ctx.lineTo(x, y + 13); ctx.lineTo(x + 14, y + 13);
+  ctx.lineTo(x + 14, y + 3); ctx.lineTo(x + 7, y + 3); ctx.lineTo(x + 5, y + 1); ctx.lineTo(x, y + 1); ctx.closePath(); ctx.stroke();
+}
+function chevron(x, y) {
+  ctx.strokeStyle = '#96979B'; ctx.lineWidth = 1.2; ctx.beginPath();
+  ctx.moveTo(x, y); ctx.lineTo(x + 4, y + 4); ctx.lineTo(x + 8, y); ctx.stroke();
+}
+function alien(x, y, time, color, idle = false) {
+  const active = (c, r) => {
+    if (r === 0) return c === 2 || c === 8;
+    if (r === 1) return c === 3 || c === 7;
+    if (r === 2) return c >= 2 && c <= 8;
+    if (r === 3) return c >= 1 && c <= 9 && c !== 3 && c !== 7;
+    if (r === 4) return true;
+    if (r === 5) return [0,2,4,5,6,8,10].includes(c);
+    return [3,4,6,7].includes(c);
+  };
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 11; c++) {
+    if (active(c, r)) rect(x + c * 2 + 0.25, y + r * 2 + 0.25, 1.75, 1.75, color, 0.25,
+      idle ? 0.43 : (reducedMotion.matches || (r + Math.floor(time * 2)) % 7 !== 0 ? 0.8 : 1));
+  }
+}
+function commandStatus(x, y, time) {
+  const marks = [[2,1],[1,2],[3,2],[7,5],[8,5],[9,5]];
+  for (const [c,r] of marks) rect(x + c * 2 + 0.25, y + r * 2 + 0.25, 1.75, 1.75, '#D277DA', 0.25,
+    reducedMotion.matches ? 0.8 : 0.66 + 0.22 * Math.sin(time * 2 + c));
+}
+function fitted(value, maxWidth, size = 12) {
+  ctx.font = `500 ${size}px ${mono}`;
+  while (ctx.measureText(value).width > maxWidth) value = value.slice(0, -2) + '…';
+  return value;
+}
+function row(kind, name, centerY, time, selected, status) {
+  if (selected) rect(64, centerY - 22, 408, 44, '#1F395D', 7);
+  environment(kind, 76, centerY - 7, time);
+  text(fitted(name, 300), 102, centerY + 4, 12, '#E5E6E9', 500, 'left', mono);
+  if (status === 'running') alien(438, centerY - 7, time, '#7EA5D6');
+  if (status === 'idle') alien(438, centerY - 7, time, '#A9AFB7', true);
+  if (status === 'command') commandStatus(438, centerY - 7, time);
+}
+function galleryRow(y, time, selected = false, monochrome = false) {
+  if (selected) rect(550, y - 21, 390, 44, '#1F395D', 7);
+  ['pi', 'codex', 'shell'].forEach((kind, i) => {
+    const x = 567 + i * 128;
+    environment(kind, x, y - 7, time, 1, monochrome ? '#D4D7DC' : colors[kind]);
+    text(['Pi', 'Codex', 'Shell'][i], x + 24, y + 4, 12, '#D3D5D9', 500, 'left', mono);
+  });
+}
+function draw(time = 0) {
+  ctx.clearRect(0, 0, W, H); rect(0, 0, W, H, '#171819');
+  text('会话前缀 · 环境识别', 44, 56, 24, '#F0F1F3', 600);
+  text('只替换左侧圆点，右侧状态图标保持原有职责。', 44, 86, 13, '#959BA4');
+  text('实际渲染预览', 976, 54, 12, '#A1A5AD', 400, 'right');
+  const kinds = ['pi', 'codex', 'shell'];
+  kinds.forEach((kind, i) => {
+    const x = 170 + i * 340;
+    environment(kind, x - 21, 126, time, 3);
+    text(['Pi', 'Codex', 'Shell'][i], x, 199, 20, '#E6E9EE', 600, 'center', mono);
+    text(['紫色 π', '薄荷色尖括号', '灰色终端提示符'][i], x, 224, 12, '#989FA9', 400, 'center');
+    environment(kind, x - 36, 243, time);
+    text(kind === 'pi' ? '12 pt · 居中' : '14 pt 原始尺寸', x - 12, 254, 11, '#9298A1');
+  });
+  line(340, 127, 340, 256, '#303236'); line(680, 127, 680, 256, '#303236');
+  line(44, 292, 976, 292);
+  text('放入现有列表', 52, 323, 13, '#AEB3BC', 500);
+  text('同一槽位下的识别效果', 550, 323, 13, '#AEB3BC', 500);
+  rect(52, 340, 432, 408, '#202020', 16);
+  environment('shell', 73, 358, time, 1, '#C8CACF');
+  text('iTermate', 100, 371, 16, '#E3E4E8', 600, 'left', mono);
+  line(68, 389, 468, 389, '#303031');
+  chevron(72, 411); folder(89, 405); text('iTermate', 112, 417, 12, '#A2A5AC', 600, 'left', mono);
+  row('pi', '解释包装器如何监控 Codex', 450, time, true, 'running');
+  row('codex', '查询北京今日天气', 494, time, false, 'idle');
+  row('shell', 'iTermate · zsh', 536, time, false, 'command');
+  chevron(72, 582); folder(89, 576); text('MyTwitter', 112, 588, 12, '#A2A5AC', 600, 'left', mono);
+  row('pi', '整理时间线回复', 621, time, false, 'running');
+  row('codex', '检查当前代码改动', 664, time, false, 'idle');
+  row('shell', 'MyTwitter · zsh', 706, time, false, null);
+  text('未选中', 550, 366, 12, '#8E959F'); galleryRow(400, time);
+  line(550, 432, 940, 432, '#303236');
+  text('已选中 · 保留蓝色行背景', 550, 464, 12, '#8E959F'); galleryRow(501, time, true);
+  line(550, 536, 940, 536, '#303236');
+  text('去掉颜色，形状仍可区分', 550, 569, 12, '#8E959F'); galleryRow(604, time, false, true);
+  text('轻动画，不改变图标轮廓', 550, 664, 13, '#CCD0D7', 500);
+  text('π 扫光 · 尖括号交替提亮 · 光标闪烁', 550, 690, 12, '#939BA7');
+  text('减少动态效果时，保留完整静态图形。', 550, 715, 12, '#939BA7');
+  line(44, 773, 976, 773);
+  text('左侧：环境身份     右侧：工作状态', 44, 800, 12, '#A1A8B2');
+  text('视觉稿 · 尚未接入 App', 976, 800, 12, '#848C97', 400, 'right');
+}
+window.drawPreview = draw;
+const frozen = new URLSearchParams(location.search).get('t');
+if (frozen !== null) draw(Number(frozen));
+else {
+  const start = performance.now();
+  function tick(now) {
+    draw((now - start) / 1000);
+    if (!reducedMotion.matches) requestAnimationFrame(tick);
+  }
+  reducedMotion.addEventListener('change', () => requestAnimationFrame(tick));
+  requestAnimationFrame(tick);
+}
+</script>
+</body>
+</html>

@@ -83,10 +83,10 @@ Open the gear button in the panel or the iTermate menu-bar item to configure:
 
 ### Enable coding-agent status
 
-Open **Settings → Agents** and enable the integration you use:
+Open **Settings → Agents** to configure the integration you use:
 
 - **Pi:** enable Pi, then run `/reload` in existing Pi sessions.
-- **Codex:** enable Codex, then review and approve the new hooks with `/hooks`.
+- **Codex:** run the original `codex` command normally. iTermate monitors its TTY process and native session lifecycle, then uses the selected local model to create a short Session title after the first completed task; no hooks or wrapper are required.
 
 Pi and Codex are currently the supported agent integrations. For ordinary command status in Ghostty, enable the matching zsh, Bash, or fish toggle in the same settings and restart that shell; iTerm2 continues to observe shell activity through its Bridge.
 
@@ -94,7 +94,7 @@ Pi and Codex are currently the supported agent integrations. For ordinary comman
 
 - **“Waiting for iTerm2 Bridge”** — make sure iTerm2 is running, allow iTermate under **System Settings → Privacy & Security → Automation**, then restart iTerm2 if needed.
 - **Stale activity state** — use the refresh button in the panel header; it restarts only the Bridge and does not restart iTerm2 or its sessions.
-- **Missing agent state** — confirm the integration is enabled in **Settings → Agents**, then reload or approve it as described above.
+- **Missing agent state** — for Pi, confirm the integration is enabled and reload it. For Codex, confirm the process is running in the foreground process tree of a visible terminal session.
 
 ## Build from source
 

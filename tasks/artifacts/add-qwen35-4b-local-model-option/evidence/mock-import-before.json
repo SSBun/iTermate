@@ -1,0 +1,95 @@
+{
+  "mode": "static AST only",
+  "imports": {
+    "node:crypto": [
+      "createHash",
+      "randomBytes",
+      "randomUUID",
+      "timingSafeEqual"
+    ],
+    "node:fs/promises": [
+      "readFile"
+    ],
+    "node:fs": [
+      "appendFileSync",
+      "chmodSync",
+      "closeSync",
+      "existsSync",
+      "fsyncSync",
+      "mkdirSync",
+      "mkdtempSync",
+      "openSync",
+      "readFileSync",
+      "readdirSync",
+      "renameSync",
+      "rmSync",
+      "statSync",
+      "writeFileSync"
+    ],
+    "node:http": [
+      "request"
+    ],
+    "node:child_process": [
+      "execFileSync"
+    ],
+    "node:net": [
+      "connect",
+      "createServer"
+    ],
+    "node:os": [
+      "homedir"
+    ],
+    "node:path": [
+      "join"
+    ]
+  },
+  "exportsByModule": {
+    "node:crypto": [
+      "createHash",
+      "randomBytes",
+      "randomUUID",
+      "timingSafeEqual"
+    ],
+    "node:fs/promises": [
+      "readFile"
+    ],
+    "node:fs": [
+      "appendFileSync",
+      "chmodSync",
+      "closeSync",
+      "existsSync",
+      "fsyncSync",
+      "mkdirSync",
+      "mkdtempSync",
+      "openSync",
+      "readFileSync",
+      "renameSync",
+      "rmSync",
+      "statSync",
+      "writeFileSync"
+    ],
+    "node:child_process": [
+      "execFileSync"
+    ],
+    "node:net": [
+      "connect",
+      "createServer"
+    ],
+    "node:os": [
+      "homedir"
+    ],
+    "node:path": [
+      "join"
+    ],
+    "node:http": [
+      "request"
+    ]
+  },
+  "missing": [
+    {
+      "module": "node:fs",
+      "name": "readdirSync"
+    }
+  ],
+  "limitation": "未加载或链接被检查模块 未执行测试 不代表测试行为通过"
+}

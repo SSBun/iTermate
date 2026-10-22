@@ -1,0 +1,168 @@
+--- before/iTermate/ItermBridge.swift
++++ after/iTermate/ItermBridge.swift
+@@ -583,7 +583,13 @@
+     func activateNextFinishedSession() {
+         guard Self.isRunning(.iTerm2) else { return }
+         startClient(for: .iTerm2)
+-        iTermClient.activateNextFinishedSession { [weak self] error in
++        // Native Codex state exists only in the App overlay, not in Bridge lifecycle storage.
++        let codexStatuses = Dictionary(uniqueKeysWithValues: mergingCodexObservations(into: iTermWindows)
++            .flatMap(\.tabs)
++            .flatMap(\.sessions)
++            .filter { $0.agentKind == .codex && $0.activityKind == .agent }
++            .map { ($0.id, $0.status) })
++        iTermClient.activateNextFinishedSession(codexStatuses: codexStatuses) { [weak self] error in
+             self?.actionError = error
+         }
+     }
+@@ -1475,9 +1481,17 @@
+         )
+     }
+ 
+-    func activateNextFinishedSession(completion: @escaping (String?) -> Void) {
++    /// Supplies App-observed Codex states for this navigation only, including unknown states.
++    func activateNextFinishedSession(
++        codexStatuses: [String: TerminalSessionStatus?],
++        completion: @escaping (String?) -> Void
++    ) {
+         perform(
+-            SessionActionRequest(type: "activateNextFinishedSession", requestId: UUID().uuidString),
++            SessionActionRequest(
++                type: "activateNextFinishedSession",
++                requestId: UUID().uuidString,
++                codexStatuses: codexStatuses
++            ),
+             completion: completion
+         )
+     }
+@@ -2003,6 +2017,7 @@
+     let piSessionId: String?
+     let sessionDirectory: String?
+     let expectedShellPID: Int32?
++    let codexStatuses: [String: TerminalSessionStatus?]?
+ 
+     init(
+         type: String,
+@@ -2011,7 +2026,8 @@
+         path: String? = nil,
+         piSessionId: String? = nil,
+         sessionDirectory: String? = nil,
+-        expectedShellPID: Int32? = nil
++        expectedShellPID: Int32? = nil,
++        codexStatuses: [String: TerminalSessionStatus?]? = nil
+     ) {
+         self.type = type
+         self.requestId = requestId
+@@ -2020,6 +2036,7 @@
+         self.piSessionId = piSessionId
+         self.sessionDirectory = sessionDirectory
+         self.expectedShellPID = expectedShellPID
++        self.codexStatuses = codexStatuses
+     }
+ }
+ 
+--- before/iTermateBridge/iTermateBridge.py
++++ after/iTermateBridge/iTermateBridge.py
+@@ -121,7 +121,7 @@
+ 
+         if action == "activateNextFinishedSession":
+             try:
+-                await self.activate_next_finished_session()
++                await self.activate_next_finished_session(request.get("codexStatuses"))
+             except Exception as error:
+                 await self.send_action_result(writer, request_id, False, str(error))
+                 return
+@@ -292,8 +292,19 @@
+         await self.send_action_result(writer, request_id, True, None)
+         await self.publish_snapshot()
+ 
+-    async def activate_next_finished_session(self):
++    async def activate_next_finished_session(self, codex_statuses=None):
+         """仅在真实 Agent Session 间循环：等待回复、已结束、运行中、空闲依次优先。"""
++        if codex_statuses is None:
++            codex_statuses = {}
++        if not isinstance(codex_statuses, dict) or any(
++            not isinstance(session_id, str) or not session_id or len(session_id) > 512
++            or (status is not None and (
++                not isinstance(status, str)
++                or status not in {"awaitingInput", "finished", "running", "idle", "interrupted"}
++            ))
++            for session_id, status in codex_statuses.items()
++        ):
++            raise ValueError("Invalid Codex navigation statuses")
+         async with self.finished_navigation_lock:
+             sessions = [
+                 session for window in self.app.windows for tab in window.tabs
+@@ -309,12 +320,17 @@
+             )
+             for desired_status in ("awaitingInput", "finished", "running", "idle"):
+                 for session in candidates:
+-                    status = self.session_statuses.get(session.session_id, {})
++                    # App observations override Shell fallback, but never acquire lifecycle ownership.
++                    is_codex = session.session_id in codex_statuses
++                    status = (
++                        {"activityKind": "agent", "status": codex_statuses[session.session_id]}
++                        if is_codex else self.session_statuses.get(session.session_id, {})
++                    )
+                     if status.get("activityKind") != "agent" or status.get("status") != desired_status:
+                         continue
+                     await session.async_activate()
+                     await self.app.async_activate(raise_all_windows=False)
+-                    if desired_status == "finished":
++                    if desired_status == "finished" and not is_codex:
+                         self.clear_finished_status(session.session_id)
+                     return
+ 
+@@ -1683,6 +1699,52 @@
+         await navigation.activate_next_finished_session()
+         assert len(activated) == before  # Current idle, ordinary shell and unknown kind are excluded.
+ 
++        # Native Codex is observed in Swift while Bridge sees only its outer shell command.
++        navigation_app.current_window = window_one
++        tab_one.current_session = first
++        navigation.session_statuses = {
++            "1": {"status": "running", "activityKind": "command"},
++            "2": {"status": "idle", "activityKind": "agent"},
++        }
++        shell_statuses = dict(navigation.session_statuses)
++        for codex_status in ("finished", "running", "idle"):
++            await navigation.activate_next_finished_session({"1": codex_status})
++            assert activated[-1] == "1"
++            assert navigation.session_statuses == shell_statuses  # No forged lifecycle or command clearing.
++        navigation.session_statuses["2"] = {"status": "awaitingInput", "activityKind": "agent"}
++        await navigation.activate_next_finished_session({"1": "finished"})
++        assert activated[-1] == "2"  # Pi's waiting state retains priority over finished Codex.
++        navigation.session_statuses["2"] = {"status": "finished", "activityKind": "agent"}
++        await navigation.activate_next_finished_session({"1": "running"})
++        assert activated[-1] == "2"  # Finished Pi still outranks running Codex.
++        navigation.session_statuses["1"] = {"status": "finished", "activityKind": "agent"}
++        navigation.session_statuses.pop("2", None)
++        before = len(activated)
++        await navigation.activate_next_finished_session({"1": None, "0": "finished", "closed": "finished"})
++        assert len(activated) == before  # Unknown Codex, current and removed IDs cannot be selected.
++        navigation_app.current_window = window_two
++        await navigation.activate_next_finished_session({"1": "idle", "0": "idle"})
++        assert activated[-1] == "0"  # Wrap follows live iTerm order, not dictionary order.
++        navigation_app.current_window = None
++        await navigation.activate_next_finished_session({"1": "finished"})
++        assert activated[-1] == "1"  # A missing current pane still permits Codex navigation.
++        writer = FakeWriter()
++        await navigation.handle_command(writer, encode_message({
++            "type": "activateNextFinishedSession", "requestId": "native-codex",
++            "codexStatuses": {"1": "running"},
++        }))
++        assert writer.messages[0]["ok"]
++        assert activated[-1] == "1"  # The actual action handler forwards App observations.
++        for invalid in ([], {"": "idle"}, {"1": "bogus"}, {"1": []}):
++            writer = FakeWriter()
++            before = len(activated)
++            await navigation.handle_command(writer, encode_message({
++                "type": "activateNextFinishedSession", "requestId": "invalid-codex",
++                "codexStatuses": invalid,
++            }))
++            assert not writer.messages[0]["ok"]
++            assert len(activated) == before
++
+     asyncio.run(check_finished_navigation())
+ 
+ 

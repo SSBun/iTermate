@@ -1,9 +1,9 @@
 import Darwin
 import Foundation
 
-/// Observes venom-cli's post-build log capture without changing command lifecycle state.
+/// Observes venom-cli debug builds from startup without changing command lifecycle state.
 enum VenomDebugMonitor {
-    /// Returns terminal TTYs whose foreground process tree contains a debug build with a live capture.
+    /// Returns terminal TTYs whose foreground process tree contains a live debug build.
     static func monitoringTTYs(in ttys: Set<String>) -> Set<String> {
         Set(ttys.filter { tty in
             guard tty.hasPrefix("/dev/tty"), tty.count > 8, tty.count <= 128,
@@ -40,13 +40,9 @@ enum VenomDebugMonitor {
         var found = false
         if parent.pbi_pgid == parent.e_tpgid,
            let parentArguments = arguments(of: pid),
-           let runsApp = debugBuildRunsApp(parentArguments) {
-            found = children.contains { child in
-                guard let childArguments = arguments(of: pid_t(child.pbi_pid)),
-                      isLogCapture(childArguments, runsApp: runsApp),
-                      let current = processInfo(pid_t(child.pbi_pid)) else { return false }
-                return sameProcess(child, current)
-            }
+           debugBuildRunsApp(parentArguments) != nil {
+            // Build/install/rebuild phases precede (or temporarily stop) log capture.
+            found = true
         }
         if !found {
             // Terminal wrappers (for example kiro-cli-term) can give their shell a nested PTY.
@@ -92,47 +88,13 @@ enum VenomDebugMonitor {
             } else if foundBuild, argument == "--run" {
                 run = true
             } else if foundBuild, ["--verbose", "--reconnect"].contains(argument) {
-                // These flags do not select the monitoring phase.
+                // These flags do not change debug-build recognition.
             } else {
                 return nil
             }
             index += 1
         }
         return foundBuild && debug ? run : nil
-    }
-
-    /// Matches the capture commands spawned by venom-cli after successful build and launch.
-    static func isLogCapture(_ arguments: [String], runsApp: Bool) -> Bool {
-        guard let executable = arguments.first else { return false }
-        var name = URL(fileURLWithPath: executable).lastPathComponent
-        var tail = Array(arguments.dropFirst())
-        if name == "xcrun", let tool = tail.first {
-            name = tool
-            tail.removeFirst()
-        }
-        if name == "adb" {
-            // Android --debug implies --run. This child is created only after am start succeeds.
-            guard tail.count == 4, tail[0] == "-s", !tail[1].isEmpty,
-                  tail[2] == "logcat", tail[3].hasPrefix("--pid="),
-                  let pid = Int32(tail[3].dropFirst(6)), pid > 0 else { return false }
-            return true
-        }
-        guard runsApp else { return false }
-        if name == "simctl" {
-            guard tail.count >= 4, tail[0] == "spawn", !tail[1].isEmpty,
-                  tail[2] == "log" else { return false }
-            name = "log"
-            tail = Array(tail.dropFirst(3))
-        }
-        if name == "log" {
-            return tail.count == 5 && Array(tail.prefix(4)) == ["stream", "--style", "compact", "--predicate"]
-                && !tail[4].isEmpty
-        }
-        if name == "devicectl" {
-            return tail.count == 7 && Array(tail.prefix(4)) == ["device", "process", "launch", "--device"]
-                && !tail[4].isEmpty && tail[5] == "--console" && !tail[6].isEmpty
-        }
-        return false
     }
 
     private static func processIDs(type: UInt32, value: UInt32) -> [pid_t] {

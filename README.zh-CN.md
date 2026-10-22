@@ -68,6 +68,9 @@ iTerm2 由随 App 分发的 Python Bridge 通过官方 API 读取，Ghostty 则�
 - 将指针悬停在 Session 上可显示关闭按钮。
 - 展开或折叠 Window、Tab 与 Project Path 分组。
 - 通过 Project Path 上下文菜单固定、收藏项目，或设置自定义颜色。
+- 左侧小尺寸像素标记区分会话环境：圆形为 Shell、三角形为 Pi、方形为 Codex，约7–8pt。未聚焦为灰色空心，聚焦为强调色实心，并保留强调色行背景。环境标记静态显示，右侧原有动画仍表示运行、等待或完成状态。
+
+环境身份来自明确的 Agent 上报或原生进程观察，不根据标题猜测。旧版集成尚未提供身份时，已知 Agent 默认按 Pi 展示三角形和名称，不再单独显示菱形；此默认只影响界面，不改写真实来源记录；状态租约到期只撤销工作状态，不因此把已确认的 Agent 改成 Shell。身份在 Agent 退出、终端复用时清除。Pi 集成更新后需执行 `/reload`；Codex 无需安装或信任 hooks，直接运行原始 `codex` 命令即可。
 
 ### 配置 iTermate
 
@@ -83,10 +86,10 @@ iTerm2 由随 App 分发的 Python Bridge 通过官方 API 读取，Ghostty 则�
 
 ### 启用编程 Agent 状态
 
-打开 **Settings → Agents**，启用所使用的集成：
+打开 **Settings → Agents**，配置所使用的集成：
 
 - **Pi：**启用 Pi，然后在现有 Pi Session 中执行 `/reload`。
-- **Codex：**启用 Codex，然后通过 `/hooks` 检查并批准新增 Hook。
+- **Codex：**直接运行原始 `codex` 命令。iTermate 自动观察对应 TTY 的进程和原生 Session 生命周期，并在首轮任务完成后使用已选择的本地模型生成 Session 短标题；无需 hooks 或包装命令。详见 [Codex 监控说明](docs/codex-monitoring.md)。
 
 目前仅 Pi 与 Codex 支持 Agent 集成。在 Ghostty 中如需普通命令状态，请在同一设置页启用对应的 zsh、Bash 或 fish 开关并重启该 Shell；iTerm2 仍由 Bridge 观察普通 Shell 活动。
 
@@ -94,7 +97,7 @@ iTerm2 由随 App 分发的 Python Bridge 通过官方 API 读取，Ghostty 则�
 
 - **显示“Waiting for iTerm2 Bridge”**——确认 iTerm2 正在运行，在**系统设置 → 隐私与安全性 → 自动化**中允许 iTermate；必要时重启 iTerm2。
 - **活动状态未及时更新**——点击面板标题栏的刷新按钮；它只重启 Bridge，不会重启 iTerm2 或其中的 Session。
-- **未显示 Agent 状态**——确认已在 **Settings → Agents** 中启用集成，并按上文说明重新加载或批准集成。
+- **未显示 Agent 状态**——Pi 请确认集成已启用并重新加载；Codex 请确认它运行在面板可见终端 Session 的前台进程树中。
 
 ## 从源码构建
 

@@ -1,0 +1,210 @@
+--- round-01/integrations/status/iTermate-codex.py
++++ round-02/integrations/status/iTermate-codex.py
+@@ -15,6 +15,8 @@
+ import threading
+ import time
+ import uuid
++
++FINAL_REPORT_TIMEOUT = 3
+ 
+ 
+ class StatusMonitor:
+@@ -237,6 +239,20 @@
+             peer.close()
+ 
+ 
++def deliver_final_status(reporter, state):
++    deadline = time.monotonic() + FINAL_REPORT_TIMEOUT
++    while time.monotonic() < deadline:
++        if reporter.send_codex_state(state):
++            return True
++        # Rejection can mean a newer Agent owns the terminal. Never reclaim it.
++        if state.get("lastError") == "rejected":
++            break
++        time.sleep(min(0.1, max(0, deadline - time.monotonic())))
++    print("iTermate Codex：最终状态 " + state["status"] + " 未获确认（"
++          + (state.get("lastError") or "timeout") + "）。", file=sys.stderr)
++    return False
++
++
+ def report_status(monitor, reporter, session_id):
+     state = {"reporterId": str(uuid.uuid4()), "sequence": 0}
+     last_generation = -1
+@@ -248,6 +264,11 @@
+                 snapshot = monitor.snapshots.popleft()
+         thread_id, status, exit_status, generation, closed = snapshot
+         if thread_id is not None:
++            # Keep an in-flight, failed completion intact until its final retry.
++            # close() cannot recover it from the queue once it has been popped.
++            if ((closed or status == "detached") and state.get("codexSessionId") == thread_id
++                    and state.get("status") == "finished" and not state.get("acknowledged")):
++                deliver_final_status(reporter, state)
+             changed = generation != last_generation
+             if changed:
+                 new_owner = thread_id != state.get("codexSessionId")
+@@ -263,7 +284,9 @@
+                     reporter.send_codex_state(state, claim=True)
+                     state.update({"status": status, "acknowledged": False, "generation": str(uuid.uuid4())})
+                 last_generation, observed_at = generation, time.monotonic()
+-            if changed or status in {"running", "awaitingInput"} or (
++            if closed:
++                deliver_final_status(reporter, state)
++            elif changed or status in {"running", "awaitingInput"} or (
+                 not state.get("acknowledged") and time.monotonic() - observed_at < 15
+             ):
+                 reporter.send_codex_state(state)
+@@ -402,7 +425,7 @@
+                 for connection in connections:
+                     connection.close()
+                 if worker is not None:
+-                    worker.join(timeout=4)
++                    worker.join(timeout=2 * FINAL_REPORT_TIMEOUT + 3)
+                 stop_process(tui)
+                 stop_process(backend, process_group=True)
+ 
+--- round-01/integrations/status/test_codex_wrapper.py
++++ round-02/integrations/status/test_codex_wrapper.py
+@@ -1,4 +1,5 @@
+ import importlib.util
++import io
+ import json
+ import os
+ from pathlib import Path
+@@ -238,6 +239,44 @@
+         self.assertTrue(any(state.get("exitStatus") == 1 for state in seen))
+         self.assertNotIn("pane", bridge.agent_managed_session_ids)
+ 
++    def test_close_retries_finished_that_failed_while_inflight(self):
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        notify(monitor, "turn/started", turn={"id": "turn-1"})
++        notify(monitor, "turn/completed", turn={"id": "turn-1", "status": "failed"})
++        sent = []
++        def exchange(path, request, bridge=False):
++            sent.append(dict(request))
++            if request["status"] == "finished" and sum(item["status"] == "finished" for item in sent) == 1:
++                monitor.close()
++                return False, "transport"
++            return True, None
++        with patch.object(reporter, "exchange", side_effect=exchange), patch.object(wrapper.time, "sleep"):
++            wrapper.report_status(monitor, reporter, "pane")
++        finished = [request for request in sent if request["status"] == "finished"]
++        self.assertEqual(len(finished), 2)
++        self.assertEqual(finished[0]["codexEventId"], finished[1]["codexEventId"])
++        self.assertEqual(finished[1]["exitStatus"], 1)
++        self.assertGreater(finished[1]["sequence"], finished[0]["sequence"])
++        self.assertEqual(sent[-1]["status"], "detached")
++
++    def test_detached_retries_until_ack_after_transient_failure(self):
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        monitor.close()
++        sent = []
++        def exchange(path, request, bridge=False):
++            sent.append(dict(request))
++            if request["status"] == "detached" and sum(item["status"] == "detached" for item in sent) == 1:
++                return False, "transport"
++            return True, None
++        with patch.object(reporter, "exchange", side_effect=exchange), patch.object(wrapper.time, "sleep"):
++            wrapper.report_status(monitor, reporter, "pane")
++        detached = [request for request in sent if request["status"] == "detached"]
++        self.assertEqual(len(detached), 2)
++        self.assertEqual(detached[0]["codexEventId"], detached[1]["codexEventId"])
++        self.assertGreater(detached[1]["sequence"], detached[0]["sequence"])
++
+     def test_close_discards_stale_running_backlog(self):
+         monitor = wrapper.StatusMonitor()
+         select(monitor)
+@@ -247,10 +286,79 @@
+         def exchange(path, request, bridge=False):
+             sent.append(dict(request))
+             return False, "transport"
+-        with patch.object(reporter, "exchange", side_effect=exchange):
+-            wrapper.report_status(monitor, reporter, "pane")
++        clock = [0.0]
++        with patch.object(reporter, "exchange", side_effect=exchange), \
++                patch.object(wrapper.time, "monotonic", side_effect=lambda: clock[0]), \
++                patch.object(wrapper.time, "sleep", side_effect=lambda delay: clock.__setitem__(0, clock[0] + delay)), \
++                patch.object(wrapper.sys, "stderr", io.StringIO()) as diagnostics:
++            wrapper.report_status(monitor, reporter, "pane")
++        self.assertIn("未获确认", diagnostics.getvalue())
++        self.assertLessEqual(clock[0], wrapper.FINAL_REPORT_TIMEOUT + 0.1)
++        self.assertLessEqual(len(sent), 40)
+         self.assertFalse(any(request["status"] == "running" for request in sent))
+         self.assertEqual(sent[-1]["status"], "detached")
++
++    def test_failed_completion_timeout_still_attempts_detach(self):
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        notify(monitor, "turn/started", turn={"id": "turn-1"})
++        notify(monitor, "turn/completed", turn={"id": "turn-1", "status": "completed"})
++        sent = []
++        clock = [0.0]
++        def exchange(path, request, bridge=False):
++            sent.append(dict(request))
++            if request["status"] == "finished":
++                monitor.close()
++                return False, "transport"
++            return True, None
++        with patch.object(reporter, "exchange", side_effect=exchange), \
++                patch.object(wrapper.time, "monotonic", side_effect=lambda: clock[0]), \
++                patch.object(wrapper.time, "sleep", side_effect=lambda delay: clock.__setitem__(0, clock[0] + delay)), \
++                patch.object(wrapper.sys, "stderr", io.StringIO()) as diagnostics:
++            wrapper.report_status(monitor, reporter, "pane")
++        self.assertIn("finished 未获确认", diagnostics.getvalue())
++        self.assertEqual(sent[-1]["status"], "detached")
++        self.assertLessEqual(clock[0], wrapper.FINAL_REPORT_TIMEOUT + 0.1)
++
++    def test_final_retry_respects_receiver_rejection_without_reclaim(self):
++        state = reporter.apply_codex_event({}, {"hook_event_name": "UserPromptSubmit", "session_id": "thread-1", "turn_id": "turn-1"}, 100)
++        state.update({"itermSessionId": "pane", "status": "detached"})
++        with patch.object(reporter, "exchange", return_value=(False, "rejected")) as exchange, \
++                patch.object(wrapper.sys, "stderr", io.StringIO()) as diagnostics:
++            self.assertFalse(wrapper.deliver_final_status(reporter, state))
++        exchange.assert_called_once()
++        self.assertFalse(exchange.call_args.args[1]["codexClaim"])
++        self.assertIn("rejected", diagnostics.getvalue())
++
++    def test_final_retry_after_lost_ack_never_restores_read_completion(self):
++        bridge_spec = importlib.util.spec_from_file_location(
++            "retry_bridge_fixture", Path(__file__).parents[2] / "iTermateBridge/test_codex_status.py"
++        )
++        bridge_module = importlib.util.module_from_spec(bridge_spec)
++        bridge_spec.loader.exec_module(bridge_module)
++        import asyncio
++        receiver = bridge_module.RecordingBridge()
++        monitor = wrapper.StatusMonitor()
++        select(monitor)
++        notify(monitor, "turn/started", turn={"id": "turn-1"})
++        notify(monitor, "turn/completed", turn={"id": "turn-1", "status": "completed"})
++        completions = []
++        def exchange(path, request, bridge=False):
++            asyncio.run(receiver.handle_command(None, json.dumps(request).encode()))
++            self.assertTrue(receiver.responses[-1][0])
++            if request["status"] == "finished":
++                completions.append(dict(request))
++                if len(completions) == 1:
++                    receiver.clear_finished_status("pane")
++                    monitor.close()
++                    return False, "transport"
++                self.assertEqual(receiver.session_statuses["pane"]["status"], "idle")
++            return True, None
++        with patch.object(reporter, "exchange", side_effect=exchange), patch.object(wrapper.time, "sleep"):
++            wrapper.report_status(monitor, reporter, "pane")
++        self.assertEqual(len(completions), 2)
++        self.assertEqual(completions[0]["codexEventId"], completions[1]["codexEventId"])
++        self.assertNotIn("pane", receiver.agent_managed_session_ids)
+ 
+     def test_hooks_do_not_compete_with_wrapper(self):
+         with patch.dict(os.environ, {"ITERMATE_CODEX_WRAPPER": "1"}), patch.object(reporter, "report_codex_iterm") as hook:
+--- round-01/docs/codex-agent-hooks.md
++++ round-02/docs/codex-agent-hooks.md
+@@ -18,7 +18,7 @@
+ | 当前轮次 interrupted | idle，不计成功 |
+ | 断连、退出、未知协议或状态 | detached，释放 Agent 所有权，不伪造完成 |
+ 
+-仅绑定 TUI 自己发出的 thread/start、resume、fork 请求的响应，不按目录、进程名、终端文字或其他 thread 的通知匹配。running 和 awaitingInput 使用现有有限租约，重复等待续报不重置开始时间；正常退出清理本次创建的 TUI 和 app-server，不停止用户既有进程。强制杀死包装器时接收端租约会过期，但操作系统未必清理专属后端进程。
++仅绑定 TUI 自己发出的 thread/start、resume、fork 请求的响应，不按目录、进程名、终端文字或其他 thread 的通知匹配。running 和 awaitingInput 使用现有有限租约，重复等待续报不重置开始时间；正常退出清理本次创建的 TUI 和 app-server，不停止用户既有进程。退出前保留已出队但未确认的最后一个完成状态，再上报 detached；两者分别最多重试 3 秒，ACK 丢失时复用事件身份，避免恢复用户已经读过的完成标记。接收端拒绝时不重新抢占所有权；重试超时会明确输出未确认诊断，不能保证 Bridge 全程离线时的历史完成信息。强制杀死包装器时接收端租约会过期，但操作系统未必清理专属后端进程。
+ 
+ ### 能力与验证边界
+ 

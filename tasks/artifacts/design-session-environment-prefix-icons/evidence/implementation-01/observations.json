@@ -1,0 +1,74 @@
+{
+  "检查范围": "仅构建、编译、静态检查和独立图标渲染，不启动App/Bridge或执行测试",
+  "AppBuild": "BUILD SUCCEEDED（初步构建）；最新源由compile-tests.log的TEST BUILD SUCCEEDED覆盖",
+  "TestCompilation": "build-for-testing成功，新增Swift用例仅编译未执行；Python用例仅语法解析",
+  "PythonSyntax": "3个修改的Python文件ast.parse成功",
+  "TypeScript": "tsc --noEmit严格检查通过，ES2023库；最初ES2022库缺少既有findLast，未改产品代码解决",
+  "glyphsMatchAcceptedPreview": {
+    "pi": true,
+    "codex": true,
+    "shell": true
+  },
+  "nativeImageMeasurements": {
+    "pi": {
+      "pixels": [
+        112,
+        112
+      ],
+      "alphaBounds": [
+        9,
+        17,
+        105,
+        97
+      ],
+      "scale": 8
+    },
+    "codex": {
+      "pixels": [
+        112,
+        112
+      ],
+      "alphaBounds": [
+        1,
+        17,
+        112,
+        97
+      ],
+      "scale": 8
+    },
+    "shell": {
+      "pixels": [
+        112,
+        112
+      ],
+      "alphaBounds": [
+        1,
+        17,
+        112,
+        97
+      ],
+      "scale": 8
+    },
+    "unknown": {
+      "pixels": [
+        112,
+        112
+      ],
+      "alphaBounds": [
+        1,
+        1,
+        112,
+        112
+      ],
+      "scale": 8
+    }
+  },
+  "bundleResourcesMatchSource": {
+    "iTermateBridge/iTermateBridge.py": true,
+    "integrations/pi/iTermate-integration.ts": true,
+    "integrations/status/iTermate-status.py": true
+  },
+  "减少动态效果": "源码检查TimelineView.paused与固定0.88透明度；系统环境为只读，未覆盖或更改用户设置，未声称现场验证",
+  "运行边界": "独立ImageRenderer渲染真实视图源码；不是实际面板截图，真实会话/审批与Ghostty现场未验证",
+  "基线": "implementation-baseline/manifest.json，任务差异不包含已有未提交改动"
+}

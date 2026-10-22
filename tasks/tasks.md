@@ -1,14 +1,108 @@
 # 任务索引
 
+- [保存全部本地改动并实现紧凑项目面板布局](tasks/implement-compact-project-panel.md) — In Progress (2026-10-22 14:18)
+
+- [将本地提交完成报告加入问题分类回归并修正提示词](tasks/classify-local-commit-report-as-normal.md) — Completed (2026-10-22 11:54)
+
+- [修复 Codex 启动延迟导致的会话映射失败](tasks/fix-codex-session-mapping-startup-delay.md) — Cancelled (2026-10-22 11:29)
+
+- [将待确认的 Task Target 回复识别为问题类型](tasks/classify-task-target-confirmation-as-question.md) — Completed (2026-10-21 18:03)
+
+- [扩大 Codex 标题输出预算并支持再次摘要](tasks/expand-codex-title-generation-budget.md) — Completed (2026-10-21 18:10)
+
+- [按等待回复、完成、空闲、运行中调整会话切换优先级](tasks/prioritize-session-shortcut-states.md) — Completed (2026-10-21 17:56)
+
+- [改进会话标题提示词以生成简短目标摘要](tasks/improve-session-title-summarization-prompt.md) — Completed (2026-10-21 18:01)
+
+- [修复历史发布任务重复结果编号](tasks/fix-release-task-duplicate-result.md) — Completed (2026-10-21 16:45)
+
+- [为会话快捷键循环加入五秒连续操作窗口](tasks/add-session-cycle-timeout.md) — Completed (2026-10-21 16:51)
+
+- [为 Codex 会话标题失败添加文件诊断日志](tasks/add-codex-title-diagnostic-logs.md) — Completed (2026-10-21 16:58)
+
+- [取消 Archive 区域高亮](tasks/remove-archive-section-highlight.md) — Completed (2026-10-21 16:34)
+
+- [调查部分会话标题生成失败的日志原因](tasks/investigate-session-title-generation-logs.md) — Pending (2026-10-21 16:25)
+
+- [为回复分类提示词加入正反例](tasks/add-reply-classification-prompt-examples.md) — Completed (2026-10-21 16:37)
+
+- [Codex 非问题回复完成后在激活查看时转为空闲](tasks/codex-finished-seen-idle.md) — Completed (2026-10-21 16:04)
+
+- [Add automatic titles for native Codex sessions](tasks/add-native-codex-session-titles.md) — Completed (2026-10-21 16:13)
+
+- [按独立功能与关注点分组提交当前全部本地改动](tasks/commit-pending-features-separately.md) — Pending (2026-10-21 15:23)
+
+- [修复会话快捷键困在高优先级状态中循环](tasks/fix-session-shortcut-starvation.md) — Completed (2026-10-21 16:03)
+
+- [排查并修复本地模型短标题生成失败](tasks/fix-local-model-session-title-failure.md) — Completed (2026-10-21 15:20)
+
+- [修复 Control-Tab 切换跳过 Codex 会话](tasks/fix-control-tab-skips-codex.md) — Completed (2026-10-21 14:45)
+
+- [Add local diagnostic logs](tasks/add-local-diagnostic-logs.md) — Completed (2026-10-21 14:49)
+
+- [新增Qwen3.5四十亿参数本地模型选项](tasks/add-qwen35-4b-local-model-option.md) — Completed (2026-10-21 15:55)
+
+- [本地模型统一用于问题判断与标题生成](tasks/local-llm-only-question-and-title.md) — Completed (2026-10-21 12:06)
+
+- [扩展2B纯中文短标题生成实测](tasks/expand-qwen2b-short-chinese-title-tests.md) — Blocked (2026-10-21 11:10)
+
+- [生成并运行本地2B模型标题生成测试](tasks/test-qwen2b-title-generation.md) — Completed (2026-10-21 10:31)
+
+- [在本地模型设置接入2B会话回复分类](tasks/integrate-local-llm-response-classifier.md) — Completed (2026-10-20 20:42)
+
+- [执行会话标题对比测试并汇报结果](tasks/run-session-title-model-tests.md) — Blocked (2026-10-20 18:52)
+
+- [添加远程与本地2B会话标题生成对比测试](tasks/compare-session-title-model-tests.md) — Completed (2026-10-20 18:35)
+
+- [测试 Qwen3.5-2B 回复状态分类](tasks/compare-qwen35-2b-reply-classification.md) — Completed (2026-10-20 18:18)
+
+- [安装并比较 Qwen3.5-0.8B 回复状态分类](tasks/compare-qwen35-08b-reply-classification.md) — Completed (2026-10-20 17:51)
+
+- [调查截图中回复被判定为问题的原因](tasks/investigate-screenshot-question-classification.md) — Pending (2026-10-20 16:48)
+
+- [Replace codexm with native Codex monitoring](tasks/replace-codexm-with-native-monitoring.md) — Completed (2026-10-21 15:09)
+
+- [提交同 Tab 会话分组与连接线改动](tasks/commit-tab-session-connectors.md) — Completed (2026-10-20 14:06)
+
 - [用连接线标识同一 Tab 的会话组](tasks/connect-same-tab-session-cells.md) — Completed (2026-10-20 11:46)
+
+- [提交会话前缀菱形尺寸修复](tasks/commit-small-session-prefix-icon.md) — Blocked (2026-10-20 11:42)
 
 - [将侧边栏中同一 Tab 的会话排列在一起](tasks/group-sidebar-sessions-by-tab.md) — Completed (2026-10-20 11:40)
 
-- [实现 Codex 经 Agent Hooks 上报并执行单元测试](tasks/implement-codex-agent-hooks.md) — Pending (2026-10-13 10:41)
+- [修复会话前缀图标视觉尺寸过小](tasks/fix-small-session-prefix-icon.md) — Completed (2026-10-19 11:15)
 
-- [提交 Agent Hooks 迁移前的全部本地基线](tasks/commit-agent-hooks-baseline.md) — In Progress (2026-10-13 10:41)
+- [接入简洁几何会话环境标记](tasks/implement-simple-session-environment-shapes.md) — Completed (2026-10-19 11:38)
 
-- [提交当前改动并将 Codex 状态接入 Agent Hooks](tasks/migrate-codex-to-agent-hooks.md) — In Progress (2026-10-13 10:39)
+- [预览圆形、三角形与方形会话环境标记](tasks/preview-simple-session-environment-shapes.md) — Completed (2026-10-19 10:51)
+
+- [调查 Codex 空闲时回退 Shell 图标的原因](tasks/investigate-codex-idle-shell-fallback.md) — Completed (2026-10-16 17:11)
+
+- [设计 Pi、Codex 与 Shell 会话前缀图标](tasks/design-session-environment-prefix-icons.md) — Completed (2026-10-16 17:43)
+
+- [添加 Codex 监控启动别名 codexm](tasks/add-codexm-alias.md) — Completed (2026-10-16 16:02)
+
+- [设计可精确监控 Codex 状态的启动包装器](tasks/design-codex-status-launch-wrapper.md) — Completed (2026-10-16 16:27)
+
+- [验证读取运行中的 Pi 与 Codex 会话 ID](tasks/verify-live-agent-session-ids.md) — Completed (2026-10-16 10:46)
+
+- [iTermate 产品介绍与能力宣讲文档](tasks/itermate-product-presentation.md) — Completed (2026-10-15 18:14)
+
+- [排查 subagent 委派工具未暴露](tasks/investigate-subagent-tool-activation.md) — Pending (2026-10-14 18:15)
+
+- [优化 Pi 当前任务标题更新可靠性](tasks/improve-pi-title-refresh.md) — Blocked (2026-10-14 18:05)
+
+- [添加独立模式 Codex 启动别名](tasks/add-codex-local-alias.md) — Completed (2026-10-14 17:30)
+
+- [修复 Pi 会话未显示 Agent 运行图标](tasks/fix-pi-running-icon.md) — Blocked (2026-10-14 16:16)
+
+- [修复 venom-cli 执行期间的监控状态刷新](tasks/fix-venom-live-status.md) — Completed (2026-10-13 11:51)
+
+- [实现 Codex 经 Agent Hooks 上报并执行单元测试](tasks/implement-codex-agent-hooks.md) — Blocked (2026-10-13 11:50)
+
+- [提交 Agent Hooks 迁移前的全部本地基线](tasks/commit-agent-hooks-baseline.md) — Completed (2026-10-13 10:43)
+
+- [提交当前改动并将 Codex 状态接入 Agent Hooks](tasks/migrate-codex-to-agent-hooks.md) — Blocked (2026-10-13 11:50)
 
 - [通过 Session 右键菜单手动刷新任务标题](tasks/refresh-pi-session-title-menu.md) — Blocked (2026-10-12 20:05)
 

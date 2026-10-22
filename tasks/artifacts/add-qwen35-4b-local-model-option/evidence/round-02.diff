@@ -1,0 +1,501 @@
+--- review-base/iTermate/LocalModelService.swift
++++ current/iTermate/LocalModelService.swift
+@@ -722,13 +722,41 @@
+     }
+ }
+ 
++/// Supported Ollama tags for the shared question and title model.
++enum LocalLLMModel: String, CaseIterable, Identifiable, Codable {
++    /// Keeps the existing lightweight model and its supported revision.
++    case twoB = "qwen3.5:2b"
++    /// Uses the locally installed four-billion-parameter model without downloading it.
++    case fourB = "qwen3.5:4b"
++
++    var id: String { rawValue }
++    var title: String { self == .twoB ? "Qwen3.5 · 2B" : "Qwen3.5 · 4B" }
++
++    /// Resolves a supported inventory identity; 4B is bound to its installed digest per request.
++    func installedRevision(in models: [[String: Any]]) -> String? {
++        guard let entry = models.first(where: { $0["name"] as? String == rawValue }),
++              let digest = entry["digest"] as? String, digest.count == 64,
++              digest.allSatisfy({ "0123456789abcdef".contains($0) }),
++              self != .twoB || digest == LocalDecisionProvider.localLLMRevision else { return nil }
++        return digest
++    }
++}
++
++private struct LocalLLMSelection: Codable {
++    let model: LocalLLMModel
++    let revision: UUID
++}
++
+ /// Checks and warms the shared Ollama model without running a Decision API worker.
+ @MainActor
+ final class LocalLLMService: ObservableObject {
+     @Published private(set) var status = "Not checked"
+     @Published private(set) var isBusy = false
+     @Published private(set) var isReady = false
+-
++    @Published private(set) var selectedModel: LocalLLMModel? = .twoB
++
++    private let directory: URL
++    private var configurationURL: URL { directory.appendingPathComponent("configuration.json") }
+     private var operation: Task<Void, Never>?
+     private let session: URLSession = {
+         let configuration = URLSessionConfiguration.ephemeral
+@@ -737,39 +765,87 @@
+         return URLSession(configuration: configuration, delegate: LocalLLMRedirectPolicy(), delegateQueue: nil)
+     }()
+ 
+-    /// Refreshes inventory and renews ten minutes of idle residency; never downloads a model.
++    init(directory: URL = FileManager.default.homeDirectoryForCurrentUser
++        .appendingPathComponent("Library/Application Support/iTermate/LocalLLM", isDirectory: true)) {
++        self.directory = directory
++        do { selectedModel = try readSelection().model }
++        catch { selectedModel = nil; status = "Saved model selection is invalid. Choose a model again." }
++    }
++
++    /// Saves only an explicit selection; never downloads a model or starts an inference request.
++    func selectModel(_ model: LocalLLMModel) {
++        guard !isBusy else { return }
++        do {
++            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
++                                                    attributes: [.posixPermissions: 0o700])
++            let data = try JSONEncoder().encode(LocalLLMSelection(model: model, revision: UUID()))
++            try data.write(to: configurationURL, options: .atomic)
++            selectedModel = model
++            isReady = false
++            status = "Not checked · \(model.title)"
++        } catch {
++            isReady = false
++            status = "Could not save model selection. Previous selection is unchanged."
++        }
++    }
++
++    private func readSelection() throws -> (model: LocalLLMModel, identity: Data?) {
++        let data: Data
++        do { data = try Data(contentsOf: configurationURL) }
++        catch let error as CocoaError where error.code == .fileReadNoSuchFile { return (.twoB, nil) }
++        guard data.count <= 4096 else { throw ServiceError("Invalid model selection") }
++        let selection = try JSONDecoder().decode(LocalLLMSelection.self, from: data)
++        return (selection.model, data)
++    }
++
++    /// Refreshes the saved selection and renews ten minutes of idle residency; never downloads.
+     func refresh() {
+         guard !isBusy else { return }
++        let selection: (model: LocalLLMModel, identity: Data?)
++        do { selection = try readSelection() }
++        catch {
++            selectedModel = nil
++            isReady = false
++            status = "Saved model selection is invalid. Choose a model again."
++            return
++        }
++        selectedModel = selection.model
+         isBusy = true
+         isReady = false
+-        status = "Checking local model…"
++        status = "Checking \(selection.model.title)…"
+         operation = Task { @MainActor in
+             defer { isBusy = false; operation = nil }
+             do {
+                 let inventory = try await request(path: "tags")
+-                let models = inventory["models"] as? [[String: Any]] ?? []
+-                guard models.contains(where: {
+-                    $0["name"] as? String == LocalDecisionProvider.localLLM.modelID
+-                        && $0["digest"] as? String == LocalDecisionProvider.localLLMRevision
+-                }) else {
+-                    status = "Install the supported Qwen3.5-2B model in Ollama, then refresh."
++                guard let digest = selection.model.installedRevision(in: inventory["models"] as? [[String: Any]] ?? []) else {
++                    status = "Install \(selection.model.rawValue) in Ollama, then refresh. No other model will be used."
+                     return
+                 }
+-                status = "Warming local model…"
++                status = "Warming \(selection.model.title)…"
+                 let warmed = try await request(path: "generate", body: [
+-                    "model": LocalDecisionProvider.localLLM.modelID,
++                    "model": selection.model.rawValue,
+                     "prompt": "", "stream": false, "keep_alive": "10m",
+                 ])
+                 try Task.checkCancellation()
+                 guard warmed["done"] as? Bool == true,
+-                      warmed["model"] as? String == LocalDecisionProvider.localLLM.modelID else {
++                      warmed["model"] as? String == selection.model.rawValue else {
+                     throw ServiceError("Incomplete model warmup")
+                 }
++                let inventoryAfter = try await request(path: "tags")
++                let current = try readSelection()
++                guard current.identity == selection.identity else {
++                    selectedModel = current.model
++                    status = "Model selection changed. Refresh to check the selected model."
++                    return
++                }
++                guard selection.model.installedRevision(in: inventoryAfter["models"] as? [[String: Any]] ?? []) == digest else {
++                    throw ServiceError("Local model revision changed during warmup")
++                }
+                 isReady = true
+-                status = "Available · Qwen3.5-2B"
++                status = "Available · \(selection.model.title)"
+             } catch {
+                 isReady = false
+-                status = Task.isCancelled ? "Stopped" : "Local model unavailable. Check Ollama, then refresh."
++                status = Task.isCancelled ? "Stopped" : "Selected model unavailable. Check Ollama, then refresh."
+             }
+         }
+     }
+@@ -819,7 +895,19 @@
+     var body: some View {
+         Form {
+             Section("Local LLM") {
+-                Text("Qwen3.5-2B · Ollama")
++                Picker("Model", selection: Binding(get: { service.selectedModel }, set: { model in
++                    if let model { service.selectModel(model) }
++                })) {
++                    if service.selectedModel == nil {
++                        Text("Choose a model").tag(Optional<LocalLLMModel>.none)
++                    }
++                    ForEach(LocalLLMModel.allCases) { model in
++                        Text(model.title).tag(Optional(model))
++                    }
++                }
++                .disabled(service.isBusy)
++                Text("The saved choice is shared by question detection and session titles. Existing titles are retained until refreshed.")
++                    .font(.caption).foregroundStyle(.secondary)
+                 Label {
+                     Text(service.status).foregroundStyle(.secondary)
+                 } icon: {
+@@ -832,7 +920,7 @@
+                     .font(.caption).foregroundStyle(.secondary)
+                 Text("Each request keeps the model loaded for 10 minutes of inactivity. Ollama manages memory; iTermate does not start or stop it.")
+                     .font(.caption).foregroundStyle(.secondary)
+-                Text("If unavailable, start Ollama and install qwen3.5:2b, then refresh. Existing model downloads are preserved.")
++                Text("Install the selected model in Ollama before using it, then check and warm it here. Changing the choice does not download a model. Existing downloads are preserved.")
+                     .font(.caption).foregroundStyle(.secondary)
+             }
+         }
+--- review-base/integrations/pi/iTermate-integration.ts
++++ current/integrations/pi/iTermate-integration.ts
+@@ -24,8 +24,9 @@
+ 
+ // Retain the old Decision implementation for restoration; no runtime path may enable it.
+ const legacyDecisionsEnabled = false;
+-const localLLMModel = "qwen3.5:2b";
+-const localLLMRevision = "dfaf2605162e689c8cac330dc4a190c4c50ad30aa47814a8fe9b79fa5127e97e";
++const localLLM2BRevision = "dfaf2605162e689c8cac330dc4a190c4c50ad30aa47814a8fe9b79fa5127e97e";
++const localLLMConfigurationPath = join(supportDirectory, "LocalLLM", "configuration.json");
++type LocalLLMSelection = { model: "qwen3.5:2b" | "qwen3.5:4b"; identity: string | null };
+ 
+ function iTermSessionID(): string | undefined {
+   if (process.env.TERM_PROGRAM !== "iTerm.app") return undefined;
+@@ -380,19 +381,58 @@
+   });
+ }
+ 
++export function parseLocalLLMSelection(identity: string | null): LocalLLMSelection {
++  if (identity === null) return { model: "qwen3.5:2b", identity };
++  try {
++    if (typeof identity !== "string" || Buffer.byteLength(identity) > 4096) throw new Error();
++    const configuration = JSON.parse(identity);
++    if (!configuration || !["qwen3.5:2b", "qwen3.5:4b"].includes(configuration.model)
++      || typeof configuration.revision !== "string" || configuration.revision.length !== 36
++      || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(configuration.revision)) {
++      throw new Error();
++    }
++    return { model: configuration.model, identity };
++  } catch { throw new SummaryGenerationError("provider"); }
++}
++
++function readLocalLLMSelection(): LocalLLMSelection {
++  let identity: string | null;
++  try { identity = readFileSync(localLLMConfigurationPath, "utf8"); }
++  catch (error) {
++    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw new SummaryGenerationError("provider");
++    identity = null;
++  }
++  return parseLocalLLMSelection(identity);
++}
++
++export function installedLocalLLMRevision(selection: LocalLLMSelection, inventory: any): string | undefined {
++  if (!Array.isArray(inventory?.models)) return undefined;
++  const model = inventory.models.find((entry: any) => entry?.name === selection.model);
++  const digest = model?.digest;
++  if (typeof digest !== "string" || digest.length !== 64 || !/^[0-9a-f]{64}$/.test(digest)
++    || (selection.model === "qwen3.5:2b" && digest !== localLLM2BRevision)) return undefined;
++  return digest;
++}
++
+ async function completeLocalLLM(prompt: string, text: string, signal: AbortSignal, maxTokens: number): Promise<string> {
++  const selection = readLocalLLMSelection();
+   const inventory = await localLLMRequest("/api/tags", undefined, signal, 2 * 1024 * 1024);
+-  if (!Array.isArray(inventory?.models) || !inventory.models.some((model: any) =>
+-    model?.name === localLLMModel && model?.digest === localLLMRevision)) {
++  const digest = installedLocalLLMRevision(selection, inventory);
++  if (!digest || readLocalLLMSelection().identity !== selection.identity) {
+     throw new SummaryGenerationError("provider");
+   }
+   const value = await localLLMRequest("/api/chat", {
+-    model: localLLMModel, stream: false, think: false, keep_alive: "10m",
++    model: selection.model, stream: false, think: false, keep_alive: "10m",
+     messages: [{ role: "system", content: prompt }, { role: "user", content: text }],
+     options: { temperature: 0, seed: 42, num_ctx: 16384, num_predict: maxTokens },
+   }, signal);
+-  if (value?.model !== localLLMModel || value.done !== true || value.done_reason !== "stop"
++  if (value?.model !== selection.model || value.done !== true || value.done_reason !== "stop"
+     || value.message?.thinking || typeof value.message?.content !== "string") {
++    throw new SummaryGenerationError("response");
++  }
++  const inventoryAfter = await localLLMRequest("/api/tags", undefined, signal, 2 * 1024 * 1024);
++  if (readLocalLLMSelection().identity !== selection.identity
++    || installedLocalLLMRevision(selection, inventoryAfter) !== digest) {
+     throw new SummaryGenerationError("response");
+   }
+   return value.message.content;
+--- review-base/iTermateTests/LocalModelExitBarrierTests.swift
++++ current/iTermateTests/LocalModelExitBarrierTests.swift
+@@ -73,3 +73,44 @@
+         XCTAssertTrue(passed)
+     }
+ }
++
++final class LocalLLMSelectionTests: XCTestCase {
++    @MainActor
++    func testSelectionDefaultsToTwoBAndPersistsFourBWithoutInference() throws {
++        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
++        defer { try? FileManager.default.removeItem(at: directory) }
++        let service = LocalLLMService(directory: directory)
++        XCTAssertEqual(service.selectedModel, .twoB)
++        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
++        service.selectModel(.fourB)
++        XCTAssertEqual(service.selectedModel, .fourB)
++        XCTAssertFalse(service.isBusy)
++        XCTAssertFalse(service.isReady)
++        XCTAssertEqual(LocalLLMService(directory: directory).selectedModel, .fourB)
++        let data = try Data(contentsOf: directory.appendingPathComponent("configuration.json"))
++        let configuration = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: String])
++        XCTAssertEqual(configuration["model"], "qwen3.5:4b")
++        XCTAssertNotNil(configuration["revision"].flatMap(UUID.init(uuidString:)))
++        service.selectModel(.twoB)
++        XCTAssertEqual(LocalLLMService(directory: directory).selectedModel, .twoB)
++    }
++
++    @MainActor
++    func testMalformedSelectionDoesNotFallBackToTwoB() throws {
++        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
++        defer { try? FileManager.default.removeItem(at: directory) }
++        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
++        try Data("{\"model\":\"qwen3.5:4b\"}".utf8).write(to: directory.appendingPathComponent("configuration.json"))
++        XCTAssertNil(LocalLLMService(directory: directory).selectedModel)
++    }
++
++    func testInventoryIdentitiesNeverSubstituteAnotherModel() {
++        let twoB = ["name": "qwen3.5:2b", "digest": LocalDecisionProvider.localLLMRevision]
++        let fourB = ["name": "qwen3.5:4b", "digest": String(repeating: "a", count: 64)]
++        XCTAssertEqual(LocalLLMModel.twoB.installedRevision(in: [twoB, fourB]), twoB["digest"])
++        XCTAssertEqual(LocalLLMModel.fourB.installedRevision(in: [twoB, fourB]), fourB["digest"])
++        XCTAssertNil(LocalLLMModel.fourB.installedRevision(in: [twoB]))
++        XCTAssertNil(LocalLLMModel.twoB.installedRevision(in: [["name": "qwen3.5:2b", "digest": fourB["digest"] ?? ""]]))
++        XCTAssertNil(LocalLLMModel.fourB.installedRevision(in: [["name": "qwen3.5:4b", "digest": "invalid"]]))
++    }
++}
+--- review-base/docs/local-model-api.md
++++ current/docs/local-model-api.md
+@@ -2,15 +2,19 @@
+ 
+ ## 当前启用方式
+ 
+-当前版本只使用本机 Ollama 中的 Qwen3.5-2B。Pi 的问题类型判断和实时任务标题直接访问固定回环 Ollama，不再经过旧 Decision API，也不调用当前 Pi 模型或云端作为后备。设置仅保留 Local LLM 的可用性检查和预热，不展示旧模型选择、公共 API 地址、连接提示词或令牌。
++当前版本支持本机 Ollama 中的 **Qwen3.5 · 2B** 与 **Qwen3.5 · 4B**，在 **Local Model → Model** 中选择。没有保存选择时保持2B；选择后仅保存偏好，不下载模型、不立即清空已有标题。问题类型判断和实时任务标题的后续推理都使用所选模型，直接访问固定回环Ollama，不经过旧Decision API，也不调用当前Pi模型或云端作为后备。设置保留所选模型的可用性检查和预热，不展示旧模型、公共API地址、连接提示词或令牌。
+ 
+-每次生成都传递 `keep_alive: "10m"`，即最后一次推理后保留十分钟空闲驻留；应用启动或点击 **Check & Warm Model** 会检查固定模型版本并请求预热，不定时续租、不下载模型、不启动或停止共享 Ollama。内存与过期回收仍由 Ollama 负责。
++选择保存在当前用户Application Support下的 `iTermate/LocalLLM/configuration.json`，字段为 `model` 与UUID格式的 `revision`，App原子写入，Pi每次推理重新读取。配置错误、不可读、所选标签未安装时明确失败，不回退2B。配置在推理期间改变时丢弃旧结果，失败保留原标题或明确生命周期状态。若需使用4B，请自行准备官方标签 [`qwen3.5:4b`](https://ollama.com/library/qwen3.5:4b)，再点击 **Check & Warm Model**；应用不会自动安装或启动Ollama。
++
++2B沿用已支持版本的digest校验；4B不虚构尚未安装模型的固定digest，而是按用户安装的同名标签解析合法库存digest，并在每次预热或推理前后核对其未变化。切换不卸载任何模型，也不定时保持旧模型常驻。
++
++每次生成都传递 `keep_alive: "10m"`，即最后一次推理后保留十分钟空闲驻留；应用启动或点击 **Check & Warm Model** 会检查所选模型的库存身份并请求预热，不定时续租、不下载模型、不启动或停止共享 Ollama。内存与过期回收仍由 Ollama 负责。
+ 
+ 问题判断只在 Pi 回答结束后分析最后一条助手可见文本，识别当前是否需要用户回答、确认、选择、授权或提供信息；严格接受 `question` 或 `normal` 的 JSON 标签，不构造概率。失败、超时或超过输入边界时保留生命周期状态，不扫描终端屏幕或改用其他模型。
+ 
+ 实时标题只使用有界用户与助手可见文本，最多十六个元素：每个汉字计一元素，每个连续英文技术词或缩写计一元素。禁止标点、空白、数字或解释文字，直接校验原始输出，失败保留旧标题。普通归档操作生成的多句摘要与实时标题独立，仍采用原有归档流程。
+ 
+-本地 HTTP 请求不使用代理、不跟随重定向；每个请求十秒截止，标题生成另有六十秒总截止和取消保护。库存必须匹配固定模型身份，模型不可用时明确失败。没有新增 iTermate 对外 HTTP 服务。
++本地 HTTP 请求不使用代理、不跟随重定向；每个请求十秒截止，标题生成另有六十秒总截止和取消保护。库存必须匹配所选标签与该次请求绑定的digest，模型不可用或版本在请求中变化时明确失败。没有新增 iTermate 对外 HTTP 服务。
+ 
+ ## 旧 Decision 体系已暂停
+ 
+--- review-base/docs/pi-session-archives.md
++++ current/docs/pi-session-archives.md
+@@ -2,9 +2,9 @@
+ 
+ ## 实时任务标题
+ 
+-安装新版 Pi 集成并执行 `/reload` 后，交互式 Pi 会在启动、重载或切换分支后的安全空闲时，根据已有对话补生成简短中文任务标题；没有对话时不调用模型。每轮成功回复结束后也会在后台使用本机 Ollama 的 Qwen3.5-2B 更新标题，不再使用当前 Pi 模型。面板的实时 Session 行优先显示这个标题，悬停文字可查看原始终端标题；iTerm2 与 Ghostty 都通过明确的会话身份匹配，不按目录或名称猜测。
++安装新版 Pi 集成并执行 `/reload` 后，交互式 Pi 会在启动、重载或切换分支后的安全空闲时，根据已有对话补生成简短中文任务标题；没有对话时不调用模型。每轮成功回复结束后也会在后台使用Local LLM设置中选择的本机Qwen3.5 2B或4B更新标题，不再使用当前Pi模型。面板的实时 Session 行优先显示这个标题，悬停文字可查看原始终端标题；iTerm2 与 Ghostty 都通过明确的会话身份匹配，不按目录或名称猜测。
+ 
+-输入只取当前分支最近四条用户消息和四条助手可见文本，每条最多保留开头与末尾各约1000字符，不发送隐藏思考、图片、系统指令或原始工具输出。标题调用无工具、不写入对话，不使用云端或旧 Decision API；每次推理后请求十分钟本地热驻留。原始标题最多十六个元素，汉字逐字计数、连续英文技术词或缩写整体计一元素，禁止标点、空白和数字；不合规输出直接拒绝，不通过清洗或截断修补。模型不能保证语义准确，也不能保证自动去除用户消息中的所有敏感内容。
++输入只取当前分支最近四条用户消息和四条助手可见文本，每条最多保留开头与末尾各约1000字符，不发送隐藏思考、图片、系统指令或原始工具输出。标题调用无工具、不写入对话，不使用云端或旧Decision API；每次推理读取App保存的同一模型选择，分类与标题保持一致，所选模型不可用或请求中选择改变时不回退其他模型。每次推理后请求十分钟本地热驻留。原始标题最多十六个元素，汉字逐字计数、连续英文技术词或缩写整体计一元素，禁止标点、空白和数字；不合规输出直接拒绝，不通过清洗或截断修补。模型不能保证语义准确，也不能保证自动去除用户消息中的所有敏感内容。
+ 
+ 生成期间或生成失败时保留上一条标题；没有可用摘要、集成未更新或活跃身份失效时，回退原始终端标题。新一轮工作会取消上一轮尚未完成的请求；切换 Session、分支、重载或退出会清除旧摘要和待执行请求，迟到结果不能覆盖新会话标题。摘要仅在当前 Pi 运行期间缓存。启动补生成与回复结束后的生成先等待约1.5秒，忙碌、有待处理消息或交互提示时继续等待空闲，不阻塞对话。列表轮询和状态查询仍不调用模型。
+ 
+--- review-base/tasks/context.md
++++ current/tasks/context.md
+@@ -82,13 +82,15 @@
+ - Recheck: 旧体系关闭门、模型身份、调用路径、标题格式、问句定义或热驻留策略变化时复查。
+ 
+ ### Structure
+-- App使用`LocalLLMService`和`LocalLLMSettingsView`检查固定回环Ollama库存并预热，不启动Python模型worker、不展示公共API地址或令牌，也不自动下载或控制共享Ollama。固定模型及digest的规范来源为Swift常量和Pi集成，不缓存到Context。
++- App使用`LocalLLMService`和`LocalLLMSettingsView`提供本地模型选择、固定回环Ollama库存检查和预热；支持模型标签及身份规则以Swift的`LocalLLMModel`与Pi集成为准，不缓存实际库存或选择值到Context。不启动Python模型worker、不展示公共API地址或令牌，也不自动下载或控制共享Ollama。
++- App原子保存独立的`LocalLLM/configuration.json`，包含模型标签和UUID配置revision；Pi每次推理重新读取。仅文件缺失时使用默认2B，错误或不可读配置不回退。请求前后核对配置身份及所选库存digest，切换时的迟到结果丢弃。标题保留旧值直到后续生成或手动刷新，不因换模型立即清空。
+ - `LocalModelService`、旧设置视图、Python Decision服务和Pi旧调用实现仍保留，但由编译内关闭门阻止当前入口执行；旧偏好不影响新路径，缓存不删除。恢复旧体系需要明确修改源码，不能通过旧设置开启。
+-- Pi问题判断与实时标题直接访问本机Ollama，校验库存身份、不用代理或重定向，每次推理请求十分钟空闲驻留，不周期续租。App启动和手动检查可预热；驻留过期与内存回收由Ollama负责。
++- Pi问题判断与实时标题使用同一所选模型直接访问本机Ollama；2B保留固定revision校验，4B按已安装的同名标签绑定每次请求的合法digest。不用代理或重定向，每次推理请求十分钟空闲驻留，不周期续租。App启动和手动检查可预热所选模型；驻留过期与内存回收由Ollama负责。
+ 
+ ### Decision and Verification Boundaries
+ - 问题判断只在Pi的agent_settled hook分析最后一条完整助手回复；请求回答、确认、选择、授权或信息均为需要用户参与，不要求问号；只接收严格二分类JSON，不伪造概率。失败保留明确生命周期，不回退旧模型、规则或云端；Bridge不扫描终端屏幕。心跳仅保持已确认状态，不再次推理。
+ - 实时标题不使用当前Pi模型；原始输出最多十六元素，汉字逐字计数、连续英文技术词整体计一元素，拒绝标点空白数字；Swift显示与手动刷新响应也校验原始格式，失败保留旧标题。仅归档时的多句摘要继续使用原有Pi模型路径。
++- Pi实时标题生成失败会把脱敏的失败类别写入`~/Library/Logs/iTermate`中由进程唯一拥有、单文件1 MiB轮转的JSONL日志对；不写入对话、模型输出、路径或凭据，写入失败不改变标题回退。写入时清理已退出PID的旧日志对，About设置页提供打开该目录的入口。
+ - 源码和构建通过不代表新App或Pi集成已运行；需用户自行运行App并安装或reload集成，旧进程不会因源码改动自动停用。
+ 
+ ## CTX-pi-status-recovery — Pi 状态主动恢复
+--- /dev/null
++++ current/integrations/pi/local-llm-selection.test.mjs
+@@ -0,0 +1,139 @@
++// Node 22.13+: node --experimental-vm-modules --test integrations/pi/local-llm-selection.test.mjs
++import assert from "node:assert/strict";
++import { test } from "node:test";
++import * as fs from "node:fs";
++import * as crypto from "node:crypto";
++import { EventEmitter } from "node:events";
++import { stripTypeScriptTypes } from "node:module";
++import { join } from "node:path";
++import { createContext, SourceTextModule, SyntheticModule } from "node:vm";
++
++const source = stripTypeScriptTypes(fs.readFileSync(new URL("./iTermate-integration.ts", import.meta.url), "utf8"));
++const twoB = { name: "qwen3.5:2b", digest: "dfaf2605162e689c8cac330dc4a190c4c50ad30aa47814a8fe9b79fa5127e97e" };
++const fourB = { name: "qwen3.5:4b", digest: "a".repeat(64) };
++const selection = (model, revision = "11111111-1111-1111-1111-111111111111") => JSON.stringify({ model, revision });
++
++// All HTTP and filesystem operations are isolated mocks; no model or preference is changed.
++async function harness({ configuration = selection("qwen3.5:4b"), inventory = [twoB, fourB], onChat } = {}) {
++  const requests = [];
++  const unavailable = () => { throw new Error("Unexpected side effect"); };
++  const context = createContext({
++    Buffer, URL, AbortController, setTimeout, clearTimeout,
++    process: { pid: 123, env: {} }, performance: { now: () => 0 },
++  });
++  const mocks = {
++    "node:crypto": { createHash: crypto.createHash, randomBytes: crypto.randomBytes,
++      randomUUID: crypto.randomUUID, timingSafeEqual: crypto.timingSafeEqual },
++    "node:fs/promises": { readFile: unavailable },
++    "node:fs": {
++      ...Object.fromEntries(["appendFileSync", "chmodSync", "closeSync", "existsSync", "fsyncSync", "mkdirSync",
++        "mkdtempSync", "openSync", "readdirSync", "renameSync", "rmSync", "statSync", "writeFileSync"].map(name => [name, unavailable])),
++      readFileSync: path => {
++        assert.ok(path.endsWith("/LocalLLM/configuration.json"));
++        if (configuration === null) throw Object.assign(new Error("Missing selection"), { code: "ENOENT" });
++        return configuration;
++      },
++    },
++    "node:child_process": { execFileSync: () => "" },
++    "node:net": { connect: unavailable, createServer: unavailable },
++    "node:os": { homedir: () => "/isolated" },
++    "node:path": { join },
++    "node:http": { request: (options, receive) => {
++      assert.equal(options.hostname, "127.0.0.1");
++      assert.equal(options.port, 11434);
++      assert.equal(options.agent, false);
++      assert.equal(options.headers.Authorization, undefined);
++      const request = new EventEmitter();
++      let destroyed = false;
++      request.destroy = () => { destroyed = true; };
++      request.end = encoded => {
++        const body = encoded === undefined ? undefined : JSON.parse(encoded);
++        requests.push({ options, body });
++        queueMicrotask(() => {
++          if (destroyed) return;
++          const response = new EventEmitter();
++          response.statusCode = 200;
++          receive(response);
++          let payload;
++          if (options.path === "/api/tags") {
++            payload = { models: inventory };
++          } else {
++            assert.equal(options.path, "/api/chat");
++            payload = { model: body.model, done: true, done_reason: "stop", message: {
++              content: body.messages[0].content.startsWith("Classify") ? '{"label":"question"}' : "修复分页",
++            } };
++            onChat?.();
++          }
++          response.emit("data", Buffer.from(JSON.stringify(payload)));
++          response.emit("end");
++        });
++      };
++      return request;
++    } },
++  };
++  const module = new SourceTextModule(source, { context });
++  await module.link(name => {
++    const values = mocks[name];
++    assert.ok(values, name);
++    return new SyntheticModule(Object.keys(values), function () {
++      for (const [key, value] of Object.entries(values)) this.setExport(key, value);
++    }, { context });
++  });
++  await module.evaluate();
++  return { api: module.namespace, requests,
++    setConfiguration: value => { configuration = value; },
++    setInventory: value => { inventory = value; } };
++}
++
++const title = h => h.api.summarizeTask({}, "[user]\n修复分页", new AbortController().signal);
++
++test("saved 4B choice drives both question and title requests with ten-minute residency", async () => {
++  const h = await harness();
++  assert.equal(await h.api.classifyReplyWithModel("请确认后我再继续"), true);
++  assert.equal(await title(h), "修复分页");
++  const chats = h.requests.filter(row => row.options.path === "/api/chat");
++  assert.equal(chats.length, 2);
++  for (const row of chats) {
++    assert.equal(row.body.model, "qwen3.5:4b");
++    assert.equal(row.body.keep_alive, "10m");
++    assert.equal(row.body.think, false);
++  }
++});
++
++test("missing choice keeps 2B without writing preferences", async () => {
++  const h = await harness({ configuration: null });
++  assert.equal(await title(h), "修复分页");
++  assert.equal(h.requests.find(row => row.body).body.model, "qwen3.5:2b");
++});
++
++test("unavailable 4B never falls back to installed 2B", async () => {
++  const h = await harness({ inventory: [twoB] });
++  await assert.rejects(title(h));
++  assert.equal(await h.api.classifyReplyWithModel("请确认"), undefined);
++  assert.equal(h.requests.filter(row => row.options.path === "/api/chat").length, 0);
++});
++
++test("malformed and unsupported saved choices do not use default 2B", async () => {
++  for (const configuration of ["{", "{}", selection("other:4b"), selection("qwen3.5:4b", "invalid")]) {
++    const h = await harness({ configuration });
++    await assert.rejects(title(h));
++    assert.equal(h.requests.length, 0);
++  }
++});
++
++test("changed selection or configuration revision invalidates in-flight replies", async () => {
++  for (const model of ["qwen3.5:2b", "qwen3.5:4b"]) {
++    for (const kind of ["title", "question"]) {
++      let h;
++      h = await harness({ onChat: () => h.setConfiguration(selection(model, "22222222-2222-2222-2222-222222222222")) });
++      if (kind === "title") await assert.rejects(title(h));
++      else assert.equal(await h.api.classifyReplyWithModel("请确认"), undefined);
++    }
++  }
++});
++
++test("changed installed model digest invalidates an otherwise complete reply", async () => {
++  let h;
++  h = await harness({ onChat: () => h.setInventory([{ ...fourB, digest: "b".repeat(64) }]) });
++  await assert.rejects(title(h));
++});

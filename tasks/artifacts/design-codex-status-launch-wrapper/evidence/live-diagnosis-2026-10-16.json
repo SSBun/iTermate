@@ -1,0 +1,45 @@
+{
+  "schema": "itermate.live-diagnosis/v1",
+  "observedAt": "2026-10-16T16:12:54+08:00",
+  "scope": "只读调查，不修改产品源码、安装副本或配置，不重启现有进程，不运行测试",
+  "processes": {
+    "app": {"pid": 53895, "startedLocal": "2026-10-16 16:03:38"},
+    "bridge": {"pid": 54067, "startedLocal": "2026-10-16 16:03:40"},
+    "wrapper": {"pid": 55357, "startedLocal": "2026-10-16 16:03:57"},
+    "nativeTUI": {"pid": 55384, "startedLocal": "2026-10-16 16:03:57"}
+  },
+  "observations": {
+    "wrapperEnvironmentSessionId": "39D02C5F-C984-4422-903B-66E950088BBE",
+    "termProgram": "iTerm.app",
+    "bridgeSnapshot": {
+      "id": "39D02C5F-C984-4422-903B-66E950088BBE",
+      "status": "running",
+      "activityKind": "command",
+      "tty": "/dev/ttys002"
+    },
+    "nativeReadonlyQuery": {
+      "methods": ["initialize", "thread/loaded/list", "thread/read"],
+      "threadId": "01a143bd-5111-76a2-999b-794a07af9852",
+      "runtimeStatus": {"type": "idle"},
+      "startedOrResumedThread": false
+    },
+    "installedBridgeMatchesSourceSha256": "946ff58ae9c109d5b472522ac07b5bbfc70a3f6bd925cf78b6b49458c5158919",
+    "installedReporterMatchesSourceSha256": "23b8ccad4bec4244f2e4c805afe4421b07fb795b08c6743f817d4f85c0d4eab7"
+  },
+  "sourceEstablishedCause": {
+    "launcher": "integrations/status/iTermate-codex.py:373-375",
+    "operation": "session_id = str(uuid.UUID(session_id))",
+    "reporterSessionIdDerivedFromObservedEnvironment": "39d02c5f-c984-4422-903b-66e950088bbe",
+    "actualItermIdIsPreserved": false,
+    "receiver": "iTermateBridge/iTermateBridge.py:231-233",
+    "lookup": "已安装 iterm2.App._search_for_session_id 使用 session.session_id == session_id 精确匹配",
+    "expectedRejectionFromVerifiedSource": "Session no longer exists",
+    "limitation": "拒绝原因由实际环境值、执行源码及已安装库的精确匹配行为确定，未抓取或伪造正在运行包装器的 ACK；未注入任何状态报告。"
+  },
+  "coverageGap": {
+    "launcherFixture": "integrations/status/test_codex_wrapper.py:463 使用全数字 UUID，大小写转换无可见差异",
+    "bridgeFixture": "iTermateBridge/test_codex_status.py:15 的查找替身对任意字符串均返回对象，未覆盖真实 ID 匹配",
+    "testsRunInThisInvestigation": false
+  },
+  "proposedRepair": "只解析 UUID 验证合法性，保留原始 Session ID 字符串作为上报路由；补充带大写字母 UUID 和严格匹配接收端的回归。当前未实施。"
+}

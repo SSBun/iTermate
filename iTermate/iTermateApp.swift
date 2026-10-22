@@ -55,8 +55,11 @@ private func statusBarIcon() -> Image {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings = AppSettings()
-    let store = ItermStore()
-    let localModel = LocalModelService()
+    let localModel = LocalLLMService()
+    lazy var store = ItermStore { [weak self] excerpt in
+        guard let self else { throw CancellationError() }
+        return try await self.localModel.generateSessionTitle(from: excerpt)
+    }
     lazy var finishedSessionShortcut = FinishedSessionShortcut(settings: settings) { [weak self] in
         self?.store.activateNextFinishedSession()
     }
@@ -84,7 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         panelFollower?.start()
         store.start()
-        localModel.startIfEnabled()
+        localModel.refresh()
         finishedSessionShortcut.start()
         NSWorkspace.shared.notificationCenter.addObserver(
             self,
@@ -430,7 +433,6 @@ private struct PanelContent: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var archives: PiSessionArchives
     private static let archiveSectionID = "archive:pi"
-    private static let archiveTint = Color(nsColor: .systemPurple)
     @State private var collapsedSectionIDs: Set<String> = [PanelContent.archiveSectionID]
     @State private var hoveredSessionID: String?
     @State private var hoveredCloseButtonSessionID: String?
@@ -641,7 +643,7 @@ private struct PanelContent: View {
                                         ForEach(sessions) { item in
                                             sessionButton(item)
                                                 .id(
-                                                    "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session)):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                                    "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session)):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.agentKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
                                                 )
                                                 .padding(.leading, hasTabHeader ? 12 : 0)
                                         }
@@ -694,7 +696,7 @@ private struct PanelContent: View {
             }
             .buttonStyle(.plain)
             .font(headerFont())
-            .foregroundStyle(Self.archiveTint)
+            .foregroundStyle(.secondary)
             .padding(.top, 5)
             .accessibilityLabel(collapsedSectionIDs.contains(Self.archiveSectionID) ? "Expand Archive" : "Collapse Archive")
 
@@ -720,7 +722,6 @@ private struct PanelContent: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         Button("Resume") { store.resumePiArchive(record) }
                             .font(panelFont(0.8))
-                            .foregroundStyle(Self.archiveTint)
                             .buttonStyle(.plain)
                             .disabled(archives.isBusy)
                             .accessibilityLabel("Resume archived Pi session \(record.name), \(record.sessionId), in \(record.terminal)")
@@ -739,10 +740,6 @@ private struct PanelContent: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: 9)
-                .fill(Self.archiveTint.opacity(effectiveColorScheme == .dark ? 0.14 : 0.08))
-        }
     }
 
     /// Sessions of one tab when its header should render.
@@ -935,14 +932,14 @@ private struct PanelContent: View {
                 store.activate(sessionID: item.session.id)
             } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: item.isFocused ? "circle.fill" : "circle")
-                        .font(.system(size: 8))
-                        .foregroundStyle(
-                            item.isFocused ? settings.accentColor : .secondary
-                        )
-                        .anchorPreference(key: SessionIconAnchors.self, value: .bounds) {
-                            [item.id: $0]
-                        }
+                    SessionEnvironmentIcon(
+                        agentKind: item.session.environmentAgentKind,
+                        isFocused: item.isFocused,
+                        color: item.isFocused ? settings.accentColor : .secondary
+                    )
+                    .anchorPreference(key: SessionIconAnchors.self, value: .bounds) {
+                        [item.id: $0]
+                    }
 
                     Text(sessionName(item.session))
                         .help(item.session.name)
@@ -1030,7 +1027,8 @@ private struct PanelContent: View {
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityLabel("Activate session \(sessionName(item.session))")
+            .accessibilityLabel("Activate \(item.session.environmentAgentKind?.displayName ?? "Shell") session \(sessionName(item.session))")
+            .accessibilityValue(item.isFocused ? "Focused" : "")
 
             Button {
                 store.close(sessionID: item.session.id)
@@ -1072,11 +1070,19 @@ private struct PanelContent: View {
         .clipShape(RoundedRectangle(cornerRadius: 7))
         .contextMenu {
             let terminal = store.terminalApp ?? .iTerm2
-            Button(archives.isRefreshingTitle(item.session, terminal: terminal)
+            let isCodex = item.session.environmentAgentKind == .codex
+            let isRefreshingTitle = isCodex
+                ? store.isRefreshingCodexTitle(item.session)
+                : archives.isRefreshingTitle(item.session, terminal: terminal)
+            Button(isRefreshingTitle
                 ? "Refreshing Session Title…" : "Refresh Session Title") {
-                Task { await archives.refreshTitle(item.session, terminal: terminal) }
+                if isCodex {
+                    store.refreshCodexTitle(item.session)
+                } else {
+                    Task { await archives.refreshTitle(item.session, terminal: terminal) }
+                }
             }
-            .disabled(!archives.canRefreshTitle(item.session, terminal: terminal))
+            .disabled(!isCodex && !archives.supportsTitleRefresh(item.session, terminal: terminal))
 
             Button("Archive Pi Session") {
                 store.archivePiSession(item.session, in: terminal)
@@ -1215,6 +1221,10 @@ enum SessionStatusAnimation: String, CaseIterable, Identifiable {
             self = .agentRunning
         case (.command, .running, _):
             self = .commandRunning
+        case (.agent, .interrupted, _):
+            self = .agentFailed
+        case (.command, .interrupted, _):
+            self = .commandFailed
         case (_, .finished, nil):
             self = .commandFinished
         case (.agent, .finished, .some(0)):
@@ -1640,6 +1650,59 @@ private struct SessionGroupConnectors: View {
                 }
             }
         }
+    }
+}
+
+/// A static pixel identity mark: shape identifies the environment, fill identifies focus.
+private struct SessionEnvironmentIcon: View {
+    let agentKind: SessionAgentKind?
+    let isFocused: Bool
+    let color: Color
+
+    private var glyph: [String] {
+        switch agentKind {
+        case .pi, .unknown:
+            isFocused
+                ? ["00011000", "00011000", "00111100", "00111100", "01111110", "01111110", "11111111", "11111111"]
+                : ["00011000", "00011000", "00100100", "00100100", "01000010", "01000010", "10000001", "11111111"]
+        case .codex:
+            isFocused
+                ? ["1111111", "1111111", "1111111", "1111111", "1111111", "1111111", "1111111"]
+                : ["1111111", "1000001", "1000001", "1000001", "1000001", "1000001", "1111111"]
+        case nil:
+            isFocused
+                ? ["00111100", "01111110", "11111111", "11111111", "11111111", "11111111", "01111110", "00111100"]
+                : ["00111100", "01000010", "10000001", "10000001", "10000001", "10000001", "01000010", "00111100"]
+        }
+    }
+
+    private var label: String {
+        agentKind?.displayName ?? "Shell"
+    }
+
+    var body: some View {
+        Canvas { context, size in
+            let rows = glyph
+            let columns = rows.first?.count ?? 8
+            let origin = CGPoint(
+                x: (size.width - CGFloat(columns)) / 2,
+                y: (size.height - CGFloat(rows.count)) / 2
+            )
+            for (row, bits) in rows.enumerated() {
+                for (column, bit) in bits.enumerated() where bit == "1" {
+                    let rect = CGRect(
+                        x: origin.x + CGFloat(column),
+                        y: origin.y + CGFloat(row),
+                        width: 1,
+                        height: 1
+                    )
+                    context.fill(Path(rect), with: .color(color))
+                }
+            }
+        }
+        .frame(width: 14, height: 14)
+        .help(label)
+        .accessibilityLabel(label)
     }
 }
 

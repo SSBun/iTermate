@@ -8,6 +8,7 @@ import tempfile
 import threading
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location("local_model", Path(__file__).with_name("iTermate-laya.py"))
 helper = importlib.util.module_from_spec(spec)
@@ -15,10 +16,26 @@ spec.loader.exec_module(helper)
 
 
 class LocalModelProtocolTests(unittest.TestCase):
+    def setUp(self):
+        # 仅在隔离回归中启用保留实现；生产模块默认禁止所有旧服务入口。
+        enabled = patch.object(helper, "LEGACY_DECISIONS_ENABLED", True)
+        enabled.start()
+        self.addCleanup(enabled.stop)
+
+    def test_production_gate_blocks_server_and_model_entrypoints(self):
+        with patch.object(helper, "LEGACY_DECISIONS_ENABLED", False):
+            with self.assertRaises(RuntimeError):
+                helper.Server(("127.0.0.1", 0), helper.Handler)
+            with self.assertRaises(RuntimeError):
+                helper.LocalLLMAgent().predict("reply", helper.QUESTION_QUESTIONS)
+            with self.assertRaises(RuntimeError):
+                helper.serve(Path("/not-created"), 1, 0)
+
     def test_provider_assets_are_separate_but_laya_stays_compatible(self):
         directory = Path("/isolated/Laya")
         self.assertEqual(helper.model_directory(directory, "laya"), directory)
         self.assertEqual(helper.model_directory(directory, "vela"), directory / "Vela")
+        self.assertEqual(helper.model_directory(directory, "local-llm"), directory / "LocalLLM")
 
     def test_question_contract_is_binary_and_not_terminal_state(self):
         state, questions = helper.validate_payload({"state": "May I proceed?", "questions": helper.QUESTION_QUESTIONS}, "vela")
@@ -60,6 +77,49 @@ class LocalModelProtocolTests(unittest.TestCase):
             self.assertEqual(replies[0][1]["provider"], provider)
             self.assertEqual(replies[0][1]["instance"], "test-instance")
             self.assertFalse(handler.server.inference.locked())
+
+    def test_local_llm_uses_fixed_model_and_validated_labels_without_fake_probabilities(self):
+        for label in ("normal", "question"):
+            response = {"model": helper.LOCAL_LLM_ID, "done": True, "done_reason": "stop",
+                        "message": {"content": json.dumps({"label": label})}}
+            with patch.object(helper, "ollama_model_available", return_value=True), \
+                    patch.object(helper, "ollama_request", return_value=response) as request:
+                result = helper.LocalLLMAgent().predict("A reply", helper.QUESTION_QUESTIONS)
+                value = result["answers"]["question"]
+                self.assertEqual(value, {"type": "choice", "choice": label, "source": "local-llm"})
+                payload = request.call_args.args[1]
+                self.assertEqual(payload["model"], "qwen3.5:2b")
+                self.assertFalse(payload["think"])
+                self.assertEqual(payload["options"]["num_predict"], 32)
+                self.assertEqual(request.call_args.kwargs["timeout"], 6)
+
+    def test_local_llm_rejects_invalid_or_incomplete_output(self):
+        for content in ["not json", "{}", '{"label":"other"}', '{"label":{}}',
+                        '{"label":"normal","confidence":1}']:
+            response = {"model": helper.LOCAL_LLM_ID, "done": True, "done_reason": "stop",
+                        "message": {"content": content}}
+            with patch.object(helper, "ollama_model_available", return_value=True), \
+                    patch.object(helper, "ollama_request", return_value=response):
+                with self.assertRaises(ValueError):
+                    helper.LocalLLMAgent().predict("A reply", helper.QUESTION_QUESTIONS)
+        with self.assertRaises(ValueError):
+            helper.LocalLLMAgent().predict("A reply", {"arbitrary": {}})
+
+    def test_local_llm_missing_model_is_not_a_normal_reply(self):
+        with patch.object(helper, "ollama_model_available", return_value=False), \
+                patch.object(helper, "ollama_request") as request:
+            with self.assertRaises(ValueError):
+                helper.LocalLLMAgent().predict("A reply", helper.QUESTION_QUESTIONS)
+            request.assert_not_called()
+
+    def test_local_llm_deployment_reuses_existing_weights_without_hub_dependencies(self):
+        with tempfile.TemporaryDirectory() as directory, \
+                patch.object(helper, "ollama_model_available", return_value=True), \
+                patch.object(helper, "emit"):
+            helper.download(Path(directory), "local-llm")
+            marker = json.loads((Path(directory) / "LocalLLM/model.json").read_text())
+            self.assertEqual(marker["model"], helper.LOCAL_LLM_ID)
+            self.assertEqual(marker["revision"], helper.LOCAL_LLM_DIGEST)
 
     def test_session_contract_uses_only_two_participation_states(self):
         _, questions = helper.validate_payload({"state": "请确认范围。", "questions": helper.SESSION_QUESTIONS}, "vela")

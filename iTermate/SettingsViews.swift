@@ -689,7 +689,7 @@ struct OpenSettingsButton<Label: View>: View {
 struct SettingsView: View {
     @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
-    @ObservedObject var localModel: LocalModelService
+    @ObservedObject var localModel: LocalLLMService
     @ObservedObject var finishedSessionShortcut: FinishedSessionShortcut
     let updater: SPUUpdater
 
@@ -705,7 +705,7 @@ struct SettingsView: View {
                     Label("Agents", systemImage: "terminal")
                 }
 
-            LocalModelSettingsView(service: localModel)
+            LocalLLMSettingsView(service: localModel)
                 .tabItem {
                     Label("Local Model", systemImage: "brain")
                 }
@@ -1117,6 +1117,7 @@ private final class CheckForUpdatesViewModel: ObservableObject {
 private struct AboutSettingsView: View {
     let updater: SPUUpdater
     @StateObject private var viewModel: CheckForUpdatesViewModel
+    @State private var diagnosticError: String?
 
     init(updater: SPUUpdater) {
         self.updater = updater
@@ -1136,6 +1137,14 @@ private struct AboutSettingsView: View {
                 }
                 LabeledContent("Copyright", value: copyrightText)
             }
+            Section("Diagnostics") {
+                Button("Show Logs in Finder", action: showDiagnosticLogs)
+                if let diagnosticError {
+                    Text(diagnosticError)
+                        .foregroundStyle(.red)
+                        .textSelection(.enabled)
+                }
+            }
         }
         .formStyle(.grouped)
         .scrollIndicators(.hidden)
@@ -1152,6 +1161,29 @@ private struct AboutSettingsView: View {
         ) as? String ?? "Development"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
         return build.map { "Version \(version) (\($0))" } ?? "Version \(version)"
+    }
+
+    private func showDiagnosticLogs() {
+        let directory = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Logs/iTermate", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(
+                at: directory,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700]
+            )
+            try FileManager.default.setAttributes(
+                [.posixPermissions: 0o700],
+                ofItemAtPath: directory.path
+            )
+            guard NSWorkspace.shared.open(directory) else {
+                diagnosticError = "Finder could not open the diagnostic logs folder."
+                return
+            }
+            diagnosticError = nil
+        } catch {
+            diagnosticError = "Could not open diagnostic logs: \(error.localizedDescription)"
+        }
     }
 }
 

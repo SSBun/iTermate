@@ -1,0 +1,112 @@
+[
+  {
+    "id": "restart-report",
+    "expected": "normal",
+    "text": "因为修复还没加载到当前运行的 App：当前进程启动于 15:51，而修复后的构建在 15:57 才完成，我没有替你重启。\n\n请退出当前 iTermate，再运行本次构建的 App（\"/Users/caishilin/Desktop/personal/iTermate/.build/codex-finished-seen-idle/Build/Products/Debug/iTermate.app\"）。\n\n截图已显示选中高亮，不是你没选中；新版本的真实交互仍需这一步验证。"
+  },
+  {
+    "id": "install-instructions",
+    "expected": "normal",
+    "text": "安装完成后，请在系统设置中开启辅助功能权限。"
+  },
+  {
+    "id": "verification-instructions",
+    "expected": "normal",
+    "text": "修复已完成，尚未执行测试。你可以运行以下命令验证：npm test。"
+  },
+  {
+    "id": "approval",
+    "expected": "question",
+    "text": "需要重启 App 才能继续验证，是否允许我现在重启？"
+  },
+  {
+    "id": "choice",
+    "expected": "question",
+    "text": "你希望保留原来的交互，还是改成单击展开？"
+  },
+  {
+    "id": "missing-information",
+    "expected": "question",
+    "text": "请提供当前版本号和错误日志，我才能继续定位。"
+  },
+  {
+    "id": "implicit-gate",
+    "expected": "question",
+    "text": "方案已整理，等你确认后我再开始修改。"
+  },
+  {
+    "id": "mixed-report-and-question",
+    "expected": "question",
+    "text": "修复已经完成。要不要我现在替你重启 App？"
+  },
+  {
+    "id": "autonomous-progress",
+    "expected": "normal",
+    "text": "我会继续检查其他调用方，完成后汇报。"
+  },
+  {
+    "id": "quoted-question",
+    "expected": "normal",
+    "text": "已将示例中的‘是否允许重启？’保留为测试数据，不需要你回答。"
+  },
+  {
+    "id": "english-instructions",
+    "expected": "normal",
+    "text": "The fix is built. Please restart the app to load it and verify the behavior."
+  },
+  {
+    "id": "english-gate",
+    "expected": "question",
+    "text": "Please send the failing command and its output so I can continue debugging."
+  },
+  {
+    "id": "task-target-confirmation",
+    "expected": "question",
+    "text": "Task Target\n\n - 目标：分别提交并推送 iOS、Android 本次 API-only 完读修复的全部相关改动。\n - 完成条件：两端提交均推送至各自当前分支对应的远程分支，并核实远程包含这些提交。\n - 边界：不包含无关改动，不强制推送，不运行测试。\n\n 请确认，之后我会核对差异、提交并推送。"
+  },
+  {
+    "id": "markdown-task-target",
+    "expected": "question",
+    "text": "**Task Target**\n- **Outcome**: Update the API response handling.\n- **Done when**: Both clients handle the response correctly.\n- **Boundaries**: No unrelated changes.\nPlease confirm. I will begin only after your confirmation."
+  },
+  {
+    "id": "completed-task-target",
+    "expected": "normal",
+    "text": "Task Target 已完成：iOS、Android 的相关提交均已推送，并已核实远程包含这些提交。不需要你确认或回复。"
+  },
+  {
+    "id": "quoted-task-target",
+    "expected": "normal",
+    "text": "文档已更新，下面只是引用的格式：\n> Task Target\n> 目标：更新接口。\n> 请确认，之后我会继续。\n以上仅是格式示例，无需回复。"
+  },
+  {
+    "id": "english-approval",
+    "expected": "question",
+    "text": "The fix is built. May I restart the app now? I will wait for your approval."
+  },
+  {
+    "id": "local-commit-report",
+    "expected": "normal",
+    "text": "已本地提交：8eedc21 — fix: account for navigation bar on external story entry\n\n仅包含本次修复的两个文件。工作树干净，未推送远端、未运行测试。"
+  },
+  {
+    "id": "local-commit-report-checklist",
+    "expected": "normal",
+    "text": "已本地提交：8eedc21 — fix: account for navigation bar on external story entry\n\n仅包含本次修复的两个文件。工作树干净，未推送远端、未运行测试。\n\n📋 This Session\n✅ (1/1) 仅提交iOS外部进入故事标题对齐修复\n📁 Workspace\n⏳ (0/2) 分析Figma品牌标签并规划替换远端样式\n✅ (2/2) 提交iOS品牌标签背景修复"
+  },
+  {
+    "id": "commit-awaiting-push-approval",
+    "expected": "question",
+    "text": "已本地提交，仅包含本次修复的两个文件。工作树干净，未推送远端、未运行测试。是否允许我现在推送到远端？确认后我再执行。"
+  },
+  {
+    "id": "english-local-commit-report",
+    "expected": "normal",
+    "text": "Committed locally. Only the two files for this fix were included. The working tree is clean. Not pushed; tests were not run."
+  },
+  {
+    "id": "commit-report-missing-information",
+    "expected": "question",
+    "text": "修复已本地提交，尚未推送。请提供目标远程分支，我才能继续推送。"
+  }
+]

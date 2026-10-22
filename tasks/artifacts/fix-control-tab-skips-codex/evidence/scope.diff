@@ -1,0 +1,730 @@
+diff --git a/iTermate/ItermBridge.swift b/iTermate/ItermBridge.swift
+index d7638ce..51e2319 100644
+--- a/iTermate/ItermBridge.swift
++++ b/iTermate/ItermBridge.swift
+@@ -48,6 +48,7 @@ enum TerminalSessionStatus: String, Codable, Equatable {
+     case running
+     /// An Agent has requested a user response instead of completing its work.
+     case awaitingInput
++    case interrupted
+     case finished
+ 
+     func label(
+@@ -55,9 +56,14 @@ enum TerminalSessionStatus: String, Codable, Equatable {
+         now: Date,
+         format: SessionTimeFormat
+     ) -> String {
+-        guard self != .idle else { return "Idle" }
+-        guard self != .awaitingInput else { return "Waiting for your reply" }
+-        let title = self == .running ? "Running" : "Finished"
++        let title: String
++        switch self {
++        case .idle: return "Idle"
++        case .awaitingInput: return "Waiting for your reply"
++        case .running: title = "Running"
++        case .interrupted: title = "Interrupted"
++        case .finished: title = "Finished"
++        }
+         guard let changedAt else { return title }
+ 
+         let formatter = format == .compact
+@@ -98,6 +104,24 @@ enum SessionActivityKind: String, Codable, Equatable {
+     case command
+ }
+ 
++/// The explicitly observed Agent identity, independent of its working state.
++enum SessionAgentKind: String, Codable, Equatable {
++    /// A Pi session identified by its integration.
++    case pi
++    /// A Codex session identified by its reporter.
++    case codex
++    /// An Agent whose integration has not supplied its identity.
++    case unknown
++
++    /// The UI environment name; unidentified Agents default to Pi without changing their recorded identity.
++    var displayName: String {
++        switch self {
++        case .pi, .unknown: "Pi"
++        case .codex: "Codex"
++        }
++    }
++}
++
+ enum SessionTimeFormat: String, CaseIterable, Identifiable {
+     case compact
+     case detailed
+@@ -134,6 +158,13 @@ struct TerminalSessionSnapshot: Codable, Equatable, Identifiable {
+     /// A short-lived estimate, never used for lifecycle notifications or completion counts.
+     /// Confirmed Pi child activity; absent for integrations without this signal.
+     var hasRunningSubagents: Bool? = nil
++    /// Retained when a working-state lease expires; cleared on Agent detachment.
++    var agentKind: SessionAgentKind? = nil
++
++    /// A legacy Agent without identity must not be presented as a Shell.
++    var environmentAgentKind: SessionAgentKind? {
++        agentKind ?? (activityKind == .agent ? .unknown : nil)
++    }
+ }
+ 
+ struct TerminalTabSnapshot: Codable, Equatable, Identifiable {
+@@ -386,6 +417,10 @@ final class ItermStore: ObservableObject {
+     private var ghosttyWindows: [TerminalWindowSnapshot] = []
+     private var terminalStatusRegistry = TerminalStatusRegistry()
+     private var statusExpiryTimer: Timer?
++    private let codexSessionMonitor = CodexSessionMonitor()
++    private var codexMonitorScanID: UUID?
++    private var codexObservations: [String: CodexSessionObservation] = [:]
++    private var codexObservationSessionIdentityByTTY: [String: String] = [:]
+     private var venomMonitorScanID: UUID?
+     private var piRecoveryGeneration = 0
+     private var piRecoveryScheduler = PiStatusRecoveryScheduler()
+@@ -413,6 +448,7 @@ final class ItermStore: ObservableObject {
+         piArchives.start()
+         let statusExpiryTimer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+             self?.expireTerminalStatuses()
++            self?.refreshCodexMonitoring()
+             self?.refreshVenomDebugMonitoring()
+             self?.recoverUnknownPiStatuses()
+         }
+@@ -430,6 +466,10 @@ final class ItermStore: ObservableObject {
+         isStarted = false
+         statusExpiryTimer?.invalidate()
+         statusExpiryTimer = nil
++        codexMonitorScanID = nil
++        codexObservations = [:]
++        codexObservationSessionIdentityByTTY = [:]
++        codexSessionMonitor.reset()
+         venomMonitorScanID = nil
+         venomDebugMonitoringSessions = [:]
+         invalidatePiStatusRecovery()
+@@ -543,7 +583,13 @@ final class ItermStore: ObservableObject {
+     func activateNextFinishedSession() {
+         guard Self.isRunning(.iTerm2) else { return }
+         startClient(for: .iTerm2)
+-        iTermClient.activateNextFinishedSession { [weak self] error in
++        // Native Codex state exists only in the App overlay, not in Bridge lifecycle storage.
++        let codexStatuses = Dictionary(uniqueKeysWithValues: mergingCodexObservations(into: iTermWindows)
++            .flatMap(\.tabs)
++            .flatMap(\.sessions)
++            .filter { $0.agentKind == .codex && $0.activityKind == .agent }
++            .map { ($0.id, $0.status) })
++        iTermClient.activateNextFinishedSession(codexStatuses: codexStatuses) { [weak self] error in
+             self?.actionError = error
+         }
+     }
+@@ -668,14 +714,16 @@ final class ItermStore: ObservableObject {
+             }
+             latestSequence = sequence
+             iTermWindows = windows
++            reconcileCodexObservationSessions()
+             iTermSnapshotIsReady = true
++            let visibleWindows = mergingCodexObservations(into: windows)
+             let completions = iTermAgentCompletionTracker.completions(
+-                in: windows,
++                in: visibleWindows,
+                 activityKind: .agent
+             )
+             recordSuccessfulAgentCompletions(completions)
+             updateStatusMenuSummary()
+-            let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
++            let sessions = visibleWindows.flatMap(\.tabs).flatMap(\.sessions)
+             let runningCount = sessions.lazy.filter { $0.status == .running }.count
+             let finishedCount = sessions.lazy.filter { $0.status == .finished }.count
+             let snapshotCounts = [
+@@ -692,7 +740,7 @@ final class ItermStore: ObservableObject {
+             }
+             iTermConnectionState = .connected
+             if terminalApp != .ghostty {
+-                self.windows = windows
++                self.windows = visibleWindows
+                 actionError = nil
+                 connectionState = .connected
+             }
+@@ -713,6 +761,7 @@ final class ItermStore: ObservableObject {
+             latestSequence = 0
+             lastLoggedSnapshotCounts = nil
+             iTermWindows = []
++            reconcileCodexObservationSessions()
+             iTermSnapshotIsReady = false
+             _ = iTermAgentCompletionTracker.completions(
+                 in: [],
+@@ -722,7 +771,7 @@ final class ItermStore: ObservableObject {
+         updateStatusMenuSummary()
+         if terminalApp != .ghostty {
+             connectionState = state
+-            windows = iTermWindows
++            windows = mergingCodexObservations(into: iTermWindows)
+         }
+     }
+ 
+@@ -786,8 +835,10 @@ final class ItermStore: ObservableObject {
+ 
+         let newCount: Int?
+         if newState == .connected {
+-            newCount = (iTermIsRunning ? runningAgentCount(in: iTermWindows) : 0)
+-                + (ghosttyIsRunning ? runningAgentCount(in: ghosttyWindows) : 0)
++            newCount = (iTermIsRunning
++                ? Self.runningAgentCount(in: mergingCodexObservations(into: iTermWindows))
++                : 0)
++                + (ghosttyIsRunning ? Self.runningAgentCount(in: ghosttyWindows) : 0)
+         } else {
+             newCount = nil
+         }
+@@ -807,7 +858,7 @@ final class ItermStore: ObservableObject {
+         return .connecting
+     }
+ 
+-    private func runningAgentCount(in windows: [TerminalWindowSnapshot]) -> Int {
++    static func runningAgentCount(in windows: [TerminalWindowSnapshot]) -> Int {
+         windows
+             .flatMap(\.tabs)
+             .flatMap(\.sessions)
+@@ -940,6 +991,7 @@ final class ItermStore: ObservableObject {
+     private func applyGhosttySnapshot(_ windows: [TerminalWindowSnapshot]) {
+         ghosttyRefreshIsPending = false
+         ghosttySourceWindows = windows
++        reconcileCodexObservationSessions()
+ 
+         let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
+         let sessionsByTTY = Dictionary(
+@@ -1028,7 +1080,8 @@ final class ItermStore: ObservableObject {
+                     let report = TerminalStatusReport(
+                         tty: tty, source: .agent, reporterID: observation.reporterId,
+                         sequence: observation.sequence, state: state, exitStatus: observation.exitStatus,
+-                        heartbeat: false, hasRunningSubagents: observation.hasRunningSubagents
++                        heartbeat: false, hasRunningSubagents: observation.hasRunningSubagents,
++                        agentKind: .pi
+                     )
+                     if terminalStatusRegistry.apply(report, recovering: true) { publishGhosttyWindows() }
+                 }
+@@ -1083,7 +1136,7 @@ final class ItermStore: ObservableObject {
+     }
+ 
+     private func publishGhosttyWindows() {
+-        ghosttyWindows = ghosttySourceWindows.map { window in
++        let statusWindows = ghosttySourceWindows.map { window in
+             TerminalWindowSnapshot(
+                 id: window.id,
+                 number: window.number,
+@@ -1098,6 +1151,7 @@ final class ItermStore: ObservableObject {
+                 }
+             )
+         }
++        ghosttyWindows = mergingCodexObservations(into: statusWindows)
+         let completions = ghosttyAgentCompletionTracker.completions(
+             in: ghosttyWindows,
+             activityKind: .agent
+@@ -1111,10 +1165,10 @@ final class ItermStore: ObservableObject {
+     private func mergingTerminalStatus(
+         into session: TerminalSessionSnapshot
+     ) -> TerminalSessionSnapshot {
+-        guard
+-            let tty = session.tty,
+-            let status = terminalStatusRegistry.visibleStatus(for: tty)
+-        else {
++        guard let tty = session.tty else { return session }
++        var session = session
++        session.agentKind = terminalStatusRegistry.agentKind(for: tty)
++        guard let status = terminalStatusRegistry.visibleStatus(for: tty) else {
+             return session
+         }
+         return TerminalSessionSnapshot(
+@@ -1130,16 +1184,179 @@ final class ItermStore: ObservableObject {
+             activityKind: status.activityKind,
+             exitStatus: status.exitStatus,
+             statusChangedAt: status.changedAt,
+-            hasRunningSubagents: status.hasRunningSubagents
++            hasRunningSubagents: status.hasRunningSubagents,
++            agentKind: session.agentKind
++        )
++    }
++
++    private func mergingCodexObservations(
++        into windows: [TerminalWindowSnapshot]
++    ) -> [TerminalWindowSnapshot] {
++        windows.map { window in
++            TerminalWindowSnapshot(
++                id: window.id,
++                number: window.number,
++                isActive: window.isActive,
++                tabs: window.tabs.map { tab in
++                    TerminalTabSnapshot(
++                        id: tab.id,
++                        title: tab.title,
++                        isSelected: tab.isSelected,
++                        sessions: tab.sessions.map(mergingCodexObservation)
++                    )
++                }
++            )
++        }
++    }
++
++    private func mergingCodexObservation(
++        into session: TerminalSessionSnapshot
++    ) -> TerminalSessionSnapshot {
++        guard let tty = session.tty,
++              codexObservationSessionIdentityByTTY[tty] == session.id,
++              let observation = codexObservations[tty] else {
++            return session
++        }
++        return Self.mergingCodexObservation(
++            observation,
++            acceptedSessionID: codexObservationSessionIdentityByTTY[tty],
++            into: session
+         )
+     }
+ 
++    static func mergingCodexObservation(
++        _ observation: CodexSessionObservation,
++        acceptedSessionID: String? = nil,
++        into session: TerminalSessionSnapshot
++    ) -> TerminalSessionSnapshot {
++        guard acceptedSessionID == nil || acceptedSessionID == session.id else { return session }
++        return TerminalSessionSnapshot(
++            id: session.id,
++            name: session.name,
++            path: session.path,
++            tty: session.tty,
++            windowId: session.windowId,
++            tabId: session.tabId,
++            isActive: session.isActive,
++            isMinimized: session.isMinimized,
++            status: observation.status,
++            activityKind: .agent,
++            exitStatus: observation.status == .finished ? 0 : nil,
++            statusChangedAt: observation.changedAt,
++            hasRunningSubagents: false,
++            agentKind: .codex
++        )
++    }
++
++    private func refreshCodexMonitoring() {
++        guard isStarted, codexMonitorScanID == nil else { return }
++        let sessionIdentityByTTY = Self.codexSessionIdentityByTTY(
++            in: iTermWindows + ghosttySourceWindows
++        )
++        let ttys = Set(sessionIdentityByTTY.keys)
++        guard !ttys.isEmpty else {
++            codexObservations = [:]
++            codexObservationSessionIdentityByTTY = [:]
++            codexSessionMonitor.reset()
++            return
++        }
++        let scanID = UUID()
++        let generation = codexSessionMonitor.scanGeneration()
++        codexMonitorScanID = scanID
++        DispatchQueue.global(qos: .utility).async { [weak self] in
++            guard let self else { return }
++            let observations = codexSessionMonitor.observations(
++                in: ttys,
++                expectedGeneration: generation
++            )
++            DispatchQueue.main.async { [weak self] in
++                guard let self, isStarted, codexMonitorScanID == scanID else { return }
++                codexMonitorScanID = nil
++                let currentIdentityByTTY = Self.codexSessionIdentityByTTY(
++                    in: iTermWindows + ghosttySourceWindows
++                )
++                guard sessionIdentityByTTY == currentIdentityByTTY else {
++                    codexSessionMonitor.reset(ttys: Self.changedCodexSessionTTYs(
++                        captured: sessionIdentityByTTY,
++                        current: currentIdentityByTTY
++                    ))
++                    refreshCodexMonitoring()
++                    return
++                }
++                let observationIdentities = sessionIdentityByTTY.filter {
++                    observations[$0.key] != nil
++                }
++                guard codexObservations != observations
++                        || codexObservationSessionIdentityByTTY != observationIdentities else { return }
++                codexObservations = observations
++                codexObservationSessionIdentityByTTY = observationIdentities
++                publishItermWindows()
++                publishGhosttyWindows()
++            }
++        }
++    }
++
++    static func codexSessionIdentityByTTY(
++        in windows: [TerminalWindowSnapshot]
++    ) -> [String: String] {
++        var identities: [String: String] = [:]
++        for session in windows.flatMap(\.tabs).flatMap(\.sessions) {
++            if let tty = session.tty {
++                identities[tty] = session.id
++            }
++        }
++        return identities
++    }
++
++    private func reconcileCodexObservationSessions() {
++        let current = Self.codexSessionIdentityByTTY(in: iTermWindows + ghosttySourceWindows)
++        let staleTTYs = Self.staleCodexObservationTTYs(
++            accepted: codexObservationSessionIdentityByTTY,
++            current: current
++        )
++        guard !staleTTYs.isEmpty else { return }
++        codexObservations = codexObservations.filter { !staleTTYs.contains($0.key) }
++        codexObservationSessionIdentityByTTY = codexObservationSessionIdentityByTTY.filter {
++            !staleTTYs.contains($0.key)
++        }
++        codexMonitorScanID = nil
++        codexSessionMonitor.reset(ttys: staleTTYs)
++        refreshCodexMonitoring()
++    }
++
++    static func staleCodexObservationTTYs(
++        accepted: [String: String],
++        current: [String: String]
++    ) -> Set<String> {
++        Set(accepted.compactMap { current[$0.key] == $0.value ? nil : $0.key })
++    }
++
++    static func changedCodexSessionTTYs(
++        captured: [String: String],
++        current: [String: String]
++    ) -> Set<String> {
++        Set(Set(captured.keys).union(current.keys).filter { captured[$0] != current[$0] })
++    }
++
++    private func publishItermWindows() {
++        let visibleWindows = mergingCodexObservations(into: iTermWindows)
++        let completions = iTermAgentCompletionTracker.completions(
++            in: visibleWindows,
++            activityKind: .agent
++        )
++        recordSuccessfulAgentCompletions(completions)
++        updateStatusMenuSummary()
++        guard terminalApp != .ghostty else { return }
++        windows = visibleWindows
++    }
++
+     private func updateGhosttyConnectionState(_ state: BridgeConnectionState) {
+         ghosttyRefreshIsPending = false
+         ghosttyConnectionState = state
+         if state != .connected {
+             invalidatePiStatusRecovery()
+             ghosttySourceWindows = []
++            reconcileCodexObservationSessions()
+             ghosttyWindows = []
+             ghosttySnapshotIsReady = false
+             lastActiveGhosttyTerminalID = nil
+@@ -1264,9 +1481,17 @@ final class ItermBridgeClient {
+         )
+     }
+ 
+-    func activateNextFinishedSession(completion: @escaping (String?) -> Void) {
++    /// Supplies App-observed Codex states for this navigation only, including unknown states.
++    func activateNextFinishedSession(
++        codexStatuses: [String: TerminalSessionStatus?],
++        completion: @escaping (String?) -> Void
++    ) {
+         perform(
+-            SessionActionRequest(type: "activateNextFinishedSession", requestId: UUID().uuidString),
++            SessionActionRequest(
++                type: "activateNextFinishedSession",
++                requestId: UUID().uuidString,
++                codexStatuses: codexStatuses
++            ),
+             completion: completion
+         )
+     }
+@@ -1275,6 +1500,7 @@ final class ItermBridgeClient {
+         struct Request: Encodable {
+             let type = "setSessionStatus"
+             let requestId = "pi-recovery-" + UUID().uuidString
++            let agentKind = SessionAgentKind.pi
+             let recovery = true
+             let sessionId: String
+             let status: TerminalSessionStatus?
+@@ -1791,6 +2017,7 @@ private struct SessionActionRequest: Encodable {
+     let piSessionId: String?
+     let sessionDirectory: String?
+     let expectedShellPID: Int32?
++    let codexStatuses: [String: TerminalSessionStatus?]?
+ 
+     init(
+         type: String,
+@@ -1799,7 +2026,8 @@ private struct SessionActionRequest: Encodable {
+         path: String? = nil,
+         piSessionId: String? = nil,
+         sessionDirectory: String? = nil,
+-        expectedShellPID: Int32? = nil
++        expectedShellPID: Int32? = nil,
++        codexStatuses: [String: TerminalSessionStatus?]? = nil
+     ) {
+         self.type = type
+         self.requestId = requestId
+@@ -1808,6 +2036,7 @@ private struct SessionActionRequest: Encodable {
+         self.piSessionId = piSessionId
+         self.sessionDirectory = sessionDirectory
+         self.expectedShellPID = expectedShellPID
++        self.codexStatuses = codexStatuses
+     }
+ }
+ 
+diff --git a/iTermateBridge/iTermateBridge.py b/iTermateBridge/iTermateBridge.py
+index ad186c0..730cc4c 100644
+--- a/iTermateBridge/iTermateBridge.py
++++ b/iTermateBridge/iTermateBridge.py
+@@ -59,9 +59,9 @@ class Bridge:
+         self.command_monitor_tasks = {}
+         self.command_monitor_unavailable = set()
+         self.agent_managed_session_ids = set()
++        self.session_agent_kinds = {}
+         self.agent_heartbeat_times = {}
+         self.agent_report_sequences = {}
+-        self.codex_reports = {}
+         self.session_statuses = {}
+         self.session_names = {}
+         self.ignore_prompt_events_until = 0
+@@ -121,7 +121,7 @@ class Bridge:
+ 
+         if action == "activateNextFinishedSession":
+             try:
+-                await self.activate_next_finished_session()
++                await self.activate_next_finished_session(request.get("codexStatuses"))
+             except Exception as error:
+                 await self.send_action_result(writer, request_id, False, str(error))
+                 return
+@@ -210,43 +210,12 @@ class Bridge:
+             if has_sequence and sequence <= self.agent_report_sequences.get(key, 0):
+                 await self.send_action_result(writer, request_id, False, "Stale report")
+                 return
+-            codex_id = request.get("codexSessionId")
+-            codex_event = request.get("codexEventId")
+-            codex_claim = request.get("codexClaim", False)
+-            codex_previous_owner = request.get("codexPreviousOwner")
+-            codex_owner = (reporter_id, codex_id)
+-            previous_codex = self.codex_reports.get(session_id)
+-            if codex_id is not None:
+-                if (not has_sequence or not isinstance(codex_id, str)
+-                        or not 1 <= len(codex_id) <= 128
+-                        or not isinstance(codex_event, str) or not 1 <= len(codex_event) <= 128
+-                        or not isinstance(codex_claim, bool)
+-                        or (codex_previous_owner is not None and (
+-                            not isinstance(codex_previous_owner, list) or len(codex_previous_owner) != 2
+-                            or any(not isinstance(value, str) or not 1 <= len(value) <= 128
+-                                   for value in codex_previous_owner)))
+-                        or (codex_claim and (heartbeat or status not in {"idle", "running"}))):
+-                    await self.send_action_result(writer, request_id, False, "Invalid Codex report")
+-                    return
+-                if self.app.get_session_by_id(session_id) is None:
+-                    await self.send_action_result(writer, request_id, False, "Session no longer exists")
+-                    return
+-                owns_session = previous_codex is not None and previous_codex[0] == codex_owner
+-                retries_previous_owner = (previous_codex is not None
+-                                          and list(previous_codex[0]) == codex_previous_owner)
+-                if not codex_claim and not owns_session and not retries_previous_owner and (
+-                    session_id in self.codex_reports or session_id in self.agent_managed_session_ids
+-                ):
+-                    await self.send_action_result(writer, request_id, False, "Codex owner changed")
+-                    return
+-                # Lost ACK retries must not restore a finished badge after the user read it.
+-                if owns_session and previous_codex[1] == codex_event and status != "running":
+-                    self.agent_report_sequences[key] = sequence
+-                    await self.send_action_result(writer, request_id, True, None)
+-                    return
+-                if not owns_session:
+-                    # A restarted Bridge may only know a shell fallback with another status.
+-                    heartbeat = False
++            agent_kind = request.get("agentKind")
++            if agent_kind is not None and (
++                not isinstance(agent_kind, str) or agent_kind != "pi"
++            ):
++                await self.send_action_result(writer, request_id, False, "Invalid Agent kind")
++                return
+             if recovery:
+                 current = self.session_statuses.get(session_id, {})
+                 if self.app.get_session_by_id(session_id) is None:
+@@ -255,26 +224,12 @@ class Bridge:
+                 if current.get("activityKind") == "agent" and current.get("status"):
+                     await self.send_action_result(writer, request_id, False, "Agent status is already known")
+                     return
+-            if (codex_id is not None and status == "detached"
+-                    and self.session_statuses.get(session_id, {}).get("activityKind") == "command"):
+-                # A delayed SessionEnd releases its owner, not a subsequent shell command.
+-                self.agent_managed_session_ids.discard(session_id)
+-                self.agent_heartbeat_times.pop(session_id, None)
+-                accepted = True
+-            else:
+-                accepted = self.set_agent_status(
+-                    session_id, status, exit_status, heartbeat, has_running_subagents
+-                )
++            accepted = self.set_agent_status(
++                session_id, status, exit_status, heartbeat, has_running_subagents,
++                agent_kind=agent_kind or "unknown",
++            )
+             if accepted and has_sequence:
+                 self.agent_report_sequences[key] = sequence
+-            if accepted:
+-                if codex_id is not None:
+-                    self.codex_reports[session_id] = (codex_owner, codex_event)
+-                    if status == "running":
+-                        self.agent_heartbeat_times[session_id] = heartbeat_time()
+-                else:
+-                    # Keep a tombstone: an old Codex retry must not reclaim after another Agent exits.
+-                    self.codex_reports[session_id] = None
+             if accepted and recovery and status in {"running", "awaitingInput"}:
+                 self.agent_heartbeat_times[session_id] = heartbeat_time()
+             await self.send_action_result(
+@@ -337,8 +292,19 @@ class Bridge:
+         await self.send_action_result(writer, request_id, True, None)
+         await self.publish_snapshot()
+ 
+-    async def activate_next_finished_session(self):
++    async def activate_next_finished_session(self, codex_statuses=None):
+         """仅在真实 Agent Session 间循环：等待回复、已结束、运行中、空闲依次优先。"""
++        if codex_statuses is None:
++            codex_statuses = {}
++        if not isinstance(codex_statuses, dict) or any(
++            not isinstance(session_id, str) or not session_id or len(session_id) > 512
++            or (status is not None and (
++                not isinstance(status, str)
++                or status not in {"awaitingInput", "finished", "running", "idle", "interrupted"}
++            ))
++            for session_id, status in codex_statuses.items()
++        ):
++            raise ValueError("Invalid Codex navigation statuses")
+         async with self.finished_navigation_lock:
+             sessions = [
+                 session for window in self.app.windows for tab in window.tabs
+@@ -354,12 +320,17 @@ class Bridge:
+             )
+             for desired_status in ("awaitingInput", "finished", "running", "idle"):
+                 for session in candidates:
+-                    status = self.session_statuses.get(session.session_id, {})
++                    # App observations override Shell fallback, but never acquire lifecycle ownership.
++                    is_codex = session.session_id in codex_statuses
++                    status = (
++                        {"activityKind": "agent", "status": codex_statuses[session.session_id]}
++                        if is_codex else self.session_statuses.get(session.session_id, {})
++                    )
+                     if status.get("activityKind") != "agent" or status.get("status") != desired_status:
+                         continue
+                     await session.async_activate()
+                     await self.app.async_activate(raise_all_windows=False)
+-                    if desired_status == "finished":
++                    if desired_status == "finished" and not is_codex:
+                         self.clear_finished_status(session.session_id)
+                     return
+ 
+@@ -496,10 +467,10 @@ class Bridge:
+             for session_id in monitored_ids - session_ids:
+                 self.command_monitor_tasks.pop(session_id).cancel()
+                 self.command_monitor_unavailable.discard(session_id)
++                self.session_agent_kinds.pop(session_id, None)
+                 self.agent_managed_session_ids.discard(session_id)
+                 self.agent_heartbeat_times.pop(session_id, None)
+                 self.session_statuses.pop(session_id, None)
+-                self.codex_reports.pop(session_id, None)
+                 self.agent_report_sequences = {
+                     key: value for key, value in self.agent_report_sequences.items()
+                     if key[0] != session_id
+@@ -577,6 +548,7 @@ class Bridge:
+                 include_agent_commands=status.get("activityKind") == "agent",
+             ):
+                 self.session_statuses.pop(session_id, None)
++                self.session_agent_kinds.pop(session_id, None)
+                 self.agent_managed_session_ids.discard(session_id)
+                 self.agent_heartbeat_times.pop(session_id, None)
+ 
+@@ -680,6 +652,7 @@ class Bridge:
+                         had_running_status = self.session_statuses.get(
+                             session_id, {}
+                         ).get("status") == "running"
++                        self.session_agent_kinds.pop(session_id, None)
+                         self.agent_managed_session_ids.discard(session_id)
+                         self.agent_heartbeat_times.pop(session_id, None)
+                         if was_managed or had_running_status:
+@@ -725,6 +698,7 @@ class Bridge:
+                             had_running_status = self.session_statuses.get(
+                                 session_id, {}
+                             ).get("status") == "running"
++                            self.session_agent_kinds.pop(session_id, None)
+                             self.agent_managed_session_ids.discard(session_id)
+                             self.agent_heartbeat_times.pop(session_id, None)
+                             if was_managed or had_running_status:
+@@ -760,9 +734,10 @@ class Bridge:
+ 
+     def set_agent_status(
+         self, session_id, status, exit_status=0, heartbeat=False,
+-        has_running_subagents=False,
++        has_running_subagents=False, agent_kind="unknown",
+     ):
+         if status == "detached":
++            self.session_agent_kinds.pop(session_id, None)
+             self.agent_managed_session_ids.discard(session_id)
+             self.agent_heartbeat_times.pop(session_id, None)
+             self.session_statuses.pop(session_id, None)
+@@ -772,6 +747,7 @@ class Bridge:
+         if heartbeat and current is not None and current.get("status") != status:
+             return False
+         self.agent_managed_session_ids.add(session_id)
++        self.session_agent_kinds[session_id] = agent_kind
+         if heartbeat or status == "awaitingInput" or has_running_subagents:
+             self.agent_heartbeat_times[session_id] = heartbeat_time()
+         else:
+@@ -987,6 +963,8 @@ class Bridge:
+                         "status": self.session_statuses.get(session.session_id, {}).get(
+                             "status"
+                         ),
++                        "agentKind": self.session_agent_kinds.get(session.session_id, "unknown")
++                        if session.session_id in self.agent_managed_session_ids else None,
+                         "activityKind": self.session_statuses.get(
+                             session.session_id, {}
+                         ).get("activityKind"),
+@@ -1721,6 +1699,52 @@ def self_test():
+         await navigation.activate_next_finished_session()
+         assert len(activated) == before  # Current idle, ordinary shell and unknown kind are excluded.
+ 
++        # Native Codex is observed in Swift while Bridge sees only its outer shell command.
++        navigation_app.current_window = window_one
++        tab_one.current_session = first
++        navigation.session_statuses = {
++            "1": {"status": "running", "activityKind": "command"},
++            "2": {"status": "idle", "activityKind": "agent"},
++        }
++        shell_statuses = dict(navigation.session_statuses)
++        for codex_status in ("finished", "running", "idle"):
++            await navigation.activate_next_finished_session({"1": codex_status})
++            assert activated[-1] == "1"
++            assert navigation.session_statuses == shell_statuses  # No forged lifecycle or command clearing.
++        navigation.session_statuses["2"] = {"status": "awaitingInput", "activityKind": "agent"}
++        await navigation.activate_next_finished_session({"1": "finished"})
++        assert activated[-1] == "2"  # Pi's waiting state retains priority over finished Codex.
++        navigation.session_statuses["2"] = {"status": "finished", "activityKind": "agent"}
++        await navigation.activate_next_finished_session({"1": "running"})
++        assert activated[-1] == "2"  # Finished Pi still outranks running Codex.
++        navigation.session_statuses["1"] = {"status": "finished", "activityKind": "agent"}
++        navigation.session_statuses.pop("2", None)
++        before = len(activated)
++        await navigation.activate_next_finished_session({"1": None, "0": "finished", "closed": "finished"})
++        assert len(activated) == before  # Unknown Codex, current and removed IDs cannot be selected.
++        navigation_app.current_window = window_two
++        await navigation.activate_next_finished_session({"1": "idle", "0": "idle"})
++        assert activated[-1] == "0"  # Wrap follows live iTerm order, not dictionary order.
++        navigation_app.current_window = None
++        await navigation.activate_next_finished_session({"1": "finished"})
++        assert activated[-1] == "1"  # A missing current pane still permits Codex navigation.
++        writer = FakeWriter()
++        await navigation.handle_command(writer, encode_message({
++            "type": "activateNextFinishedSession", "requestId": "native-codex",
++            "codexStatuses": {"1": "running"},
++        }))
++        assert writer.messages[0]["ok"]
++        assert activated[-1] == "1"  # The actual action handler forwards App observations.
++        for invalid in ([], {"": "idle"}, {"1": "bogus"}, {"1": []}):
++            writer = FakeWriter()
++            before = len(activated)
++            await navigation.handle_command(writer, encode_message({
++                "type": "activateNextFinishedSession", "requestId": "invalid-codex",
++                "codexStatuses": invalid,
++            }))
++            assert not writer.messages[0]["ok"]
++            assert len(activated) == before
++
+     asyncio.run(check_finished_navigation())
+ 
+ 

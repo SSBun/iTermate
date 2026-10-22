@@ -50,7 +50,7 @@ final class AgentIntegrationManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testCodexInstallPreservesOtherHooksAndUninstallRemovesOnlyItermate() throws {
+    func testUpdateRemovesOnlyItermateCodexHooksAndLegacyFiles() throws {
         let fixture = try Fixture(testCase: self)
         let hooksURL = fixture.homeDirectory.appendingPathComponent(".codex/hooks.json")
         try FileManager.default.createDirectory(
@@ -61,102 +61,79 @@ final class AgentIntegrationManagerTests: XCTestCase {
         {
           "custom": "keep",
           "hooks": {
-            "Stop": [{
-              "hooks": [{"type": "command", "command": "other-tool"}]
-            }]
+            "Stop": [
+              {"hooks": [{"type": "command", "command": "other-tool"}]},
+              {"_iTermate": true, "hooks": [{"type": "command", "command": "old"}]}
+            ],
+            "FutureEvent": [
+              {"_iTermate": true, "hooks": [{"type": "command", "command": "old"}]}
+            ]
           }
         }
         """.write(to: hooksURL, atomically: true, encoding: .utf8)
+        let directory = fixture.homeDirectory.appendingPathComponent(
+            "Library/Application Support/iTermate/integrations"
+        )
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        for name in ["iTermate-codex.py", "codex-agent-hooks.json", "iTermate-hook.py"] {
+            try "legacy".write(
+                to: directory.appendingPathComponent(name),
+                atomically: true,
+                encoding: .utf8
+            )
+        }
 
         let manager = fixture.makeManager()
-        let installedHookURL = fixture.homeDirectory.appendingPathComponent(
-            "Library/Application Support/iTermate/integrations/iTermate-status.py"
-        )
-        manager.setInstalled(true, for: .codex)
+        manager.updateInstalledIntegrations()
 
         XCTAssertTrue(manager.isInstalled(.codex))
-        XCTAssertTrue(FileManager.default.fileExists(atPath: installedHookURL.path))
-        XCTAssertEqual(try permissions(at: installedHookURL), 0o700)
-        XCTAssertEqual(try permissions(at: hooksURL), 0o600)
-        var root = try jsonObject(at: hooksURL)
+        let root = try jsonObject(at: hooksURL)
         XCTAssertEqual(root["custom"] as? String, "keep")
-        var hooks = try XCTUnwrap(root["hooks"] as? [String: Any])
-        for event in ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Interrupt", "Stop", "SessionEnd"] {
-            let entries = try XCTUnwrap(hooks[event] as? [[String: Any]])
-            XCTAssertTrue(entries.contains {
-                $0["_iTermate"] as? Bool == true
-            })
-        }
+        let hooks = try XCTUnwrap(root["hooks"] as? [String: Any])
         let stopEntries = try XCTUnwrap(hooks["Stop"] as? [[String: Any]])
-        XCTAssertTrue(stopEntries.contains { entry in
-            let commands = entry["hooks"] as? [[String: Any]]
-            return commands?.first?["command"] as? String == "other-tool"
-        })
-
-        manager.setInstalled(false, for: .codex)
-
-        XCTAssertFalse(manager.isInstalled(.codex))
-        root = try jsonObject(at: hooksURL)
-        hooks = try XCTUnwrap(root["hooks"] as? [String: Any])
-        for event in ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Interrupt", "Stop", "SessionEnd"] {
-            let entries = try XCTUnwrap(hooks[event] as? [[String: Any]])
-            XCTAssertFalse(entries.contains {
-                $0["_iTermate"] as? Bool == true
-            })
+        XCTAssertEqual(stopEntries.count, 1)
+        XCTAssertEqual((stopEntries[0]["hooks"] as? [[String: Any]])?.first?["command"] as? String, "other-tool")
+        XCTAssertTrue((hooks["FutureEvent"] as? [[String: Any]])?.isEmpty == true)
+        for name in ["iTermate-codex.py", "codex-agent-hooks.json", "iTermate-hook.py"] {
+            XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent(name).path))
         }
-        XCTAssertFalse(FileManager.default.fileExists(atPath: installedHookURL.path))
     }
 
     @MainActor
-    func testCodexUpgradePreservesHookPositionsAndAddsEvents() throws {
+    func testUpdateLeavesInvalidHooksUntouchedAndStillRemovesLegacyFiles() throws {
         let fixture = try Fixture(testCase: self)
+        let directory = fixture.homeDirectory.appendingPathComponent(
+            "Library/Application Support/iTermate/integrations"
+        )
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let launcherURL = directory.appendingPathComponent("iTermate-codex.py")
+        let markerURL = directory.appendingPathComponent("codex-agent-hooks.json")
         let hooksURL = fixture.homeDirectory.appendingPathComponent(".codex/hooks.json")
         try FileManager.default.createDirectory(
             at: hooksURL.deletingLastPathComponent(),
             withIntermediateDirectories: true
         )
-        var original: [String: Any] = [:]
-        for event in ["SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"] {
-            original[event] = [
-                ["_iTermate": true, "hooks": [["type": "command", "command": "old-reporter"]]],
-                ["hooks": [["type": "command", "command": "keep-position"]]],
-            ]
-        }
-        try JSONSerialization.data(withJSONObject: ["hooks": original]).write(to: hooksURL)
+        try "legacy wrapper".write(to: launcherURL, atomically: true, encoding: .utf8)
+        try "{}".write(to: markerURL, atomically: true, encoding: .utf8)
+        try "not json".write(to: hooksURL, atomically: true, encoding: .utf8)
+
+        fixture.makeManager().updateInstalledIntegrations()
+
+        XCTAssertFalse(FileManager.default.fileExists(atPath: launcherURL.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: markerURL.path))
+        XCTAssertEqual(try String(contentsOf: hooksURL), "not json")
+    }
+
+    @MainActor
+    func testUpdateDoesNotCreateCodexConfiguration() throws {
+        let fixture = try Fixture(testCase: self)
+        let hooksURL = fixture.homeDirectory.appendingPathComponent(".codex/hooks.json")
         let manager = fixture.makeManager()
 
         manager.updateInstalledIntegrations()
 
-        let root = try jsonObject(at: hooksURL)
-        let hooks = try XCTUnwrap(root["hooks"] as? [String: Any])
-        for event in ["SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"] {
-            let entries = try XCTUnwrap(hooks[event] as? [[String: Any]])
-            XCTAssertEqual(entries.count, 2)
-            XCTAssertEqual(entries[0]["_iTermate"] as? Bool, true)
-            let handlers = try XCTUnwrap(entries[1]["hooks"] as? [[String: Any]])
-            XCTAssertEqual(handlers[0]["command"] as? String, "keep-position")
-        }
-        XCTAssertNotNil(hooks["PreToolUse"])
-        XCTAssertNotNil(hooks["PostToolUse"])
-        XCTAssertNotNil(hooks["Interrupt"])
-    }
-
-    @MainActor
-    func testCodexInstallDoesNotReplaceInvalidHooksFile() throws {
-        let fixture = try Fixture(testCase: self)
-        let hooksURL = fixture.homeDirectory.appendingPathComponent(".codex/hooks.json")
-        try FileManager.default.createDirectory(
-            at: hooksURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        try "not json".write(to: hooksURL, atomically: true, encoding: .utf8)
-
-        let manager = fixture.makeManager()
-        manager.setInstalled(true, for: .codex)
-
-        XCTAssertFalse(manager.isInstalled(.codex))
-        XCTAssertNotNil(manager.errors[.codex])
-        XCTAssertEqual(try String(contentsOf: hooksURL), "not json")
+        XCTAssertTrue(manager.isInstalled(.codex))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: hooksURL.path))
     }
 
     @MainActor

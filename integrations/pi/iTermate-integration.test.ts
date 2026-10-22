@@ -13,6 +13,18 @@ test("direct question decisions use the binary protocol without a terminal-state
   ]) assert.equal(modelQuestionDecision(answer), undefined);
 });
 
+test("local 2B accepts explicit generated labels without inventing probabilities", () => {
+  const answer = (choice: unknown) => ({ question: { type: "choice", choice, source: "local-llm" } });
+  assert.equal(modelQuestionDecision(answer("question"), "local-llm"), true);
+  assert.equal(modelQuestionDecision(answer("normal"), "local-llm"), false);
+  assert.equal(modelQuestionDecision(answer("normal")), undefined);
+  assert.equal(modelQuestionDecision(answer("question"), "vela"), undefined);
+  for (const value of [answer("unknown"), answer(true),
+    { question: { type: "choice", choice: "normal" } },
+    { question: { type: "choice", choice: "normal", source: "local-llm", probabilities: { normal: 1, question: 0 } } },
+  ]) assert.equal(modelQuestionDecision(value, "local-llm"), undefined);
+});
+
 function modelAnswers(choice: string, probability: unknown, noul: unknown) {
   return {
     state: { type: "choice", choice, probabilities: { [choice]: probability } },

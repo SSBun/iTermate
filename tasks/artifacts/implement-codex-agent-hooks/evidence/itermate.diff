@@ -1,0 +1,596 @@
+diff --git a/README.zh-CN.md b/README.zh-CN.md
+index b73b5b2..35d456c 100644
+--- a/README.zh-CN.md
++++ b/README.zh-CN.md
+@@ -86,7 +86,7 @@ iTerm2 由随 App 分发的 Python Bridge 通过官方 API 读取，Ghostty 则
+ 打开 **Settings → Agents**，启用所使用的集成：
+ 
+ - **Pi：**启用 Pi，然后在现有 Pi Session 中执行 `/reload`。
+-- **Codex：**启用 Codex，然后通过 `/hooks` 检查并批准新增 Hook。
++- **Codex**：先更新 CSL Agent Kit 的 Agent Hooks 并通过 `/hooks` 审核，再启用 Codex；启用会迁移 iTermate 的旧独立 hooks。详见 [Codex 接入说明](docs/codex-agent-hooks.md)。
+ 
+ 目前仅 Pi 与 Codex 支持 Agent 集成。在 Ghostty 中如需普通命令状态，请在同一设置页启用对应的 zsh、Bash 或 fish 开关并重启该 Shell；iTerm2 仍由 Bridge 观察普通 Shell 活动。
+ 
+diff --git a/iTermate/AgentIntegrations.swift b/iTermate/AgentIntegrations.swift
+index 3edc7a6..8a93cbf 100644
+--- a/iTermate/AgentIntegrations.swift
++++ b/iTermate/AgentIntegrations.swift
+@@ -68,6 +68,11 @@ enum ShellStatusIntegration: String, CaseIterable, Identifiable {
+ 
+ @MainActor
+ final class AgentIntegrationManager: ObservableObject {
++    private struct CodexAgentHooksMarker: Codable {
++        let schema: String
++        let enabled: Bool
++    }
++
+     @Published private(set) var installedAgents: Set<CodingAgent> = []
+     @Published private(set) var installedShells: Set<ShellStatusIntegration> = []
+     @Published private(set) var errors: [CodingAgent: String] = [:]
+@@ -197,8 +202,9 @@ final class AgentIntegrationManager: ObservableObject {
+     private func updateInstalledStatusResources() {
+         defer { refresh() }
+         do {
+-            if codexConfigurationIsInstalled {
+-                try installCodex()
++            if codexIntegrationIsInstalled {
++                // Updating resources must not silently migrate or enable a different hook provider.
++                try installStatusReporter()
+             } else if fileManager.fileExists(atPath: statusReporterURL.path) {
+                 guard let statusResourceURL else {
+                     throw IntegrationError.missingResource("status reporter")
+@@ -260,6 +266,10 @@ final class AgentIntegrationManager: ObservableObject {
+         integrationDirectoryURL.appendingPathComponent("iTermate-status.py")
+     }
+ 
++    private var codexAgentHooksURL: URL {
++        integrationDirectoryURL.appendingPathComponent("codex-agent-hooks.json")
++    }
++
+     private var legacyCodexHookURL: URL {
+         integrationDirectoryURL.appendingPathComponent("iTermate-hook.py")
+     }
+@@ -276,7 +286,7 @@ final class AgentIntegrationManager: ObservableObject {
+         homeDirectory.appendingPathComponent(".config/fish/conf.d/iTermate.fish")
+     }
+ 
+-    private var codexConfigurationIsInstalled: Bool {
++    private var legacyCodexConfigurationIsInstalled: Bool {
+         guard
+             let root = try? codexHooksRoot(),
+             let hooks = root["hooks"] as? [String: Any]
+@@ -291,11 +301,15 @@ final class AgentIntegrationManager: ObservableObject {
+     }
+ 
+     private var codexIntegrationIsInstalled: Bool {
+-        codexConfigurationIsInstalled
+-            && (
+-                fileManager.fileExists(atPath: statusReporterURL.path)
+-                    || fileManager.fileExists(atPath: legacyCodexHookURL.path)
+-            )
++        guard
++            let data = try? Data(contentsOf: codexAgentHooksURL),
++            let marker = try? JSONDecoder().decode(CodexAgentHooksMarker.self, from: data),
++            marker.schema == "itermate.codex-agent-hooks/v1",
++            marker.enabled
++        else {
++            return false
++        }
++        return fileManager.fileExists(atPath: statusReporterURL.path)
+     }
+ 
+     private func installPi() throws {
+@@ -306,47 +320,64 @@ final class AgentIntegrationManager: ObservableObject {
+     }
+ 
+     private func installCodex() throws {
+-        var root = try codexHooksRoot()
++        // Explicit opt-in to CSL Agent Kit's bundled rules, not another native hooks registration.
++        let previousHooks = fileManager.fileExists(atPath: codexHooksURL.path)
++            ? try Data(contentsOf: codexHooksURL) : nil
++        let previousMarker = fileManager.fileExists(atPath: codexAgentHooksURL.path)
++            ? try Data(contentsOf: codexAgentHooksURL) : nil
++        _ = try codexHooksRoot()
+         try installStatusReporter()
+-        var hooks = root["hooks"] as? [String: Any] ?? [:]
+-        let quotedReporterPath = Self.shellQuoted(statusReporterURL.path)
+-
+-        for (event, status) in Self.codexEvents {
+-            var entries = hooks[event] as? [[String: Any]] ?? []
+-            let managedEntry: [String: Any] = [
+-                "_iTermate": true,
+-                "hooks": [[
+-                    "type": "command",
+-                    "command": "\(quotedReporterPath) agent \(status)",
+-                    "timeout": 3,
+-                ]],
+-            ]
+-            // Hook trust keys include the group index. Do not move existing entries.
+-            if let index = entries.firstIndex(where: Self.isManagedEntry) {
+-                entries[index] = managedEntry
++        do {
++            try removeLegacyCodexHooks()
++            let marker = CodexAgentHooksMarker(schema: "itermate.codex-agent-hooks/v1", enabled: true)
++            try JSONEncoder().encode(marker)
++                .write(to: codexAgentHooksURL, options: .atomic)
++            try fileManager.setAttributes([.posixPermissions: 0o600], ofItemAtPath: codexAgentHooksURL.path)
++        } catch {
++            if let previousMarker {
++                try previousMarker.write(to: codexAgentHooksURL, options: .atomic)
+             } else {
+-                entries.append(managedEntry)
++                try removeIfPresent(at: codexAgentHooksURL)
++            }
++            if let previousHooks {
++                try previousHooks.write(to: codexHooksURL, options: .atomic)
+             }
+-            hooks[event] = entries
++            throw error
+         }
+-
+-        root["hooks"] = hooks
+-        try writeCodexHooks(root)
+         try removeIfPresent(at: legacyCodexHookURL)
+     }
+ 
+-    private func uninstallCodex() throws {
+-        if fileManager.fileExists(atPath: codexHooksURL.path) {
+-            var root = try codexHooksRoot()
+-            var hooks = root["hooks"] as? [String: Any] ?? [:]
+-            for event in Self.codexEvents.keys {
+-                var entries = hooks[event] as? [[String: Any]] ?? []
+-                entries.removeAll(where: Self.isManagedEntry)
+-                hooks[event] = entries
++    private func removeLegacyCodexHooks() throws {
++        guard fileManager.fileExists(atPath: codexHooksURL.path) else {
++            return
++        }
++        var root = try codexHooksRoot()
++        var hooks = root["hooks"] as? [String: Any] ?? [:]
++        var changed = false
++        for event in Self.codexEvents {
++            guard hooks[event] != nil else {
++                continue
++            }
++            guard let entries = hooks[event] as? [[String: Any]] else {
++                throw IntegrationError.invalidCodexHooks
+             }
++            let remaining = entries.filter {
++                !Self.isManagedEntry($0)
++            }
++            if remaining.count != entries.count {
++                hooks[event] = remaining
++                changed = true
++            }
++        }
++        if changed {
+             root["hooks"] = hooks
+             try writeCodexHooks(root)
+         }
++    }
++
++    private func uninstallCodex() throws {
++        try removeIfPresent(at: codexAgentHooksURL)
++        try removeLegacyCodexHooks()
+         try removeIfPresent(at: legacyCodexHookURL)
+         try removeStatusReporterIfUnused()
+     }
+@@ -455,6 +486,7 @@ final class AgentIntegrationManager: ObservableObject {
+     private func removeStatusReporterIfUnused() throws {
+         guard
+             !codexIntegrationIsInstalled,
++            !legacyCodexConfigurationIsInstalled,
+             !ShellStatusIntegration.allCases.contains(where: shellIntegrationIsInstalled)
+         else {
+             return
+@@ -704,13 +736,8 @@ final class AgentIntegrationManager: ObservableObject {
+     private static let shellBlockEnd = "# <<< iTermate shell status <<<"
+     private static let fishFileMarker = "# Managed by iTermate.\n"
+     private static let codexEvents = [
+-        "SessionStart": "idle",
+-        "UserPromptSubmit": "running",
+-        "PreToolUse": "running",
+-        "PostToolUse": "running",
+-        "Interrupt": "idle",
+-        "Stop": "finished",
+-        "SessionEnd": "detached",
++        "SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse",
++        "Interrupt", "Stop", "SessionEnd",
+     ]
+ }
+ 
+@@ -798,12 +825,12 @@ struct AgentSettingsView: View {
+         guard agent.isSupported else {
+             return "Not supported yet"
+         }
+-        guard integrations.isInstalled(agent) else {
+-            return "Not installed"
++        if agent == .codex {
++            return "Requires updated CSL Agent Kit Agent Hooks in Codex. Enable to migrate legacy hooks, then review /hooks."
+         }
+-        return agent == .codex
+-            ? "Approve the new hooks with /hooks"
+-            : "Reload existing sessions with /reload"
++        return integrations.isInstalled(agent)
++            ? "Reload existing sessions with /reload"
++            : "Not installed"
+     }
+ 
+     private func detail(for shell: ShellStatusIntegration) -> String {
+diff --git a/iTermateTests/AgentIntegrationManagerTests.swift b/iTermateTests/AgentIntegrationManagerTests.swift
+index 33aa522..cd5df76 100644
+--- a/iTermateTests/AgentIntegrationManagerTests.swift
++++ b/iTermateTests/AgentIntegrationManagerTests.swift
+@@ -68,47 +68,35 @@ final class AgentIntegrationManagerTests: XCTestCase {
+         }
+         """.write(to: hooksURL, atomically: true, encoding: .utf8)
+ 
++        let originalHooks = try Data(contentsOf: hooksURL)
+         let manager = fixture.makeManager()
+         let installedHookURL = fixture.homeDirectory.appendingPathComponent(
+             "Library/Application Support/iTermate/integrations/iTermate-status.py"
+         )
++        let markerURL = fixture.homeDirectory.appendingPathComponent(
++            "Library/Application Support/iTermate/integrations/codex-agent-hooks.json"
++        )
+         manager.setInstalled(true, for: .codex)
+ 
+         XCTAssertTrue(manager.isInstalled(.codex))
+         XCTAssertTrue(FileManager.default.fileExists(atPath: installedHookURL.path))
+         XCTAssertEqual(try permissions(at: installedHookURL), 0o700)
+-        XCTAssertEqual(try permissions(at: hooksURL), 0o600)
+-        var root = try jsonObject(at: hooksURL)
+-        XCTAssertEqual(root["custom"] as? String, "keep")
+-        var hooks = try XCTUnwrap(root["hooks"] as? [String: Any])
+-        for event in ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Interrupt", "Stop", "SessionEnd"] {
+-            let entries = try XCTUnwrap(hooks[event] as? [[String: Any]])
+-            XCTAssertTrue(entries.contains {
+-                $0["_iTermate"] as? Bool == true
+-            })
+-        }
+-        let stopEntries = try XCTUnwrap(hooks["Stop"] as? [[String: Any]])
+-        XCTAssertTrue(stopEntries.contains { entry in
+-            let commands = entry["hooks"] as? [[String: Any]]
+-            return commands?.first?["command"] as? String == "other-tool"
+-        })
++        XCTAssertEqual(try Data(contentsOf: hooksURL), originalHooks)
++        XCTAssertEqual(try permissions(at: markerURL), 0o600)
++        let marker = try jsonObject(at: markerURL)
++        XCTAssertEqual(marker["schema"] as? String, "itermate.codex-agent-hooks/v1")
++        XCTAssertEqual(marker["enabled"] as? Bool, true)
+ 
+         manager.setInstalled(false, for: .codex)
+ 
+         XCTAssertFalse(manager.isInstalled(.codex))
+-        root = try jsonObject(at: hooksURL)
+-        hooks = try XCTUnwrap(root["hooks"] as? [String: Any])
+-        for event in ["SessionStart", "UserPromptSubmit", "PreToolUse", "PostToolUse", "Interrupt", "Stop", "SessionEnd"] {
+-            let entries = try XCTUnwrap(hooks[event] as? [[String: Any]])
+-            XCTAssertFalse(entries.contains {
+-                $0["_iTermate"] as? Bool == true
+-            })
+-        }
++        XCTAssertEqual(try Data(contentsOf: hooksURL), originalHooks)
++        XCTAssertFalse(FileManager.default.fileExists(atPath: markerURL.path))
+         XCTAssertFalse(FileManager.default.fileExists(atPath: installedHookURL.path))
+     }
+ 
+     @MainActor
+-    func testCodexUpgradePreservesHookPositionsAndAddsEvents() throws {
++    func testCodexMigrationIsExplicitAndRemovesOnlyLegacyEntries() throws {
+         let fixture = try Fixture(testCase: self)
+         let hooksURL = fixture.homeDirectory.appendingPathComponent(".codex/hooks.json")
+         try FileManager.default.createDirectory(
+@@ -125,20 +113,50 @@ final class AgentIntegrationManagerTests: XCTestCase {
+         try JSONSerialization.data(withJSONObject: ["hooks": original]).write(to: hooksURL)
+         let manager = fixture.makeManager()
+ 
++        let beforeUpdate = try Data(contentsOf: hooksURL)
+         manager.updateInstalledIntegrations()
++        XCTAssertEqual(try Data(contentsOf: hooksURL), beforeUpdate)
++        XCTAssertFalse(manager.isInstalled(.codex))
+ 
++        manager.setInstalled(true, for: .codex)
++        XCTAssertTrue(manager.isInstalled(.codex))
+         let root = try jsonObject(at: hooksURL)
+         let hooks = try XCTUnwrap(root["hooks"] as? [String: Any])
+         for event in ["SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"] {
+             let entries = try XCTUnwrap(hooks[event] as? [[String: Any]])
+-            XCTAssertEqual(entries.count, 2)
+-            XCTAssertEqual(entries[0]["_iTermate"] as? Bool, true)
+-            let handlers = try XCTUnwrap(entries[1]["hooks"] as? [[String: Any]])
++            XCTAssertEqual(entries.count, 1)
++            XCTAssertNil(entries[0]["_iTermate"])
++            let handlers = try XCTUnwrap(entries[0]["hooks"] as? [[String: Any]])
+             XCTAssertEqual(handlers[0]["command"] as? String, "keep-position")
+         }
+-        XCTAssertNotNil(hooks["PreToolUse"])
+-        XCTAssertNotNil(hooks["PostToolUse"])
+-        XCTAssertNotNil(hooks["Interrupt"])
++        XCTAssertNil(hooks["PreToolUse"])
++        XCTAssertNil(hooks["PostToolUse"])
++        XCTAssertNil(hooks["Interrupt"])
++    }
++
++    @MainActor
++    func testFreshCodexInstallDoesNotCreateNativeHooks() throws {
++        let fixture = try Fixture(testCase: self)
++        let manager = fixture.makeManager()
++        manager.setInstalled(true, for: .codex)
++        XCTAssertTrue(manager.isInstalled(.codex))
++        XCTAssertFalse(FileManager.default.fileExists(
++            atPath: fixture.homeDirectory.appendingPathComponent(".codex/hooks.json").path
++        ))
++    }
++
++    @MainActor
++    func testCodexMigrationFailurePreservesNativeHooks() throws {
++        let fixture = try Fixture(testCase: self)
++        let hooksURL = fixture.homeDirectory.appendingPathComponent(".codex/hooks.json")
++        try FileManager.default.createDirectory(at: hooksURL.deletingLastPathComponent(), withIntermediateDirectories: true)
++        let original = Data("{\"hooks\":{\"Stop\":\"invalid-group\"}}".utf8)
++        try original.write(to: hooksURL)
++        let manager = fixture.makeManager()
++        manager.setInstalled(true, for: .codex)
++        XCTAssertNotNil(manager.errors[.codex])
++        XCTAssertFalse(manager.isInstalled(.codex))
++        XCTAssertEqual(try Data(contentsOf: hooksURL), original)
+     }
+ 
+     @MainActor
+diff --git a/integrations/status/iTermate-status.py b/integrations/status/iTermate-status.py
+index f6b6cb1..b18d75a 100644
+--- a/integrations/status/iTermate-status.py
++++ b/integrations/status/iTermate-status.py
+@@ -13,6 +13,7 @@ SUPPORT_DIRECTORY = os.path.expanduser("~/Library/Application Support/iTermate")
+ BRIDGE_SOCKET_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.sock")
+ STATUS_SOCKET_PATH = os.path.join(SUPPORT_DIRECTORY, "status.sock")
+ AGENT_STATE_DIRECTORY = os.path.join(SUPPORT_DIRECTORY, "agent-state")
++CODEX_AGENT_HOOKS_MARKER = os.path.join(SUPPORT_DIRECTORY, "integrations", "codex-agent-hooks.json")
+ VALID_STATUSES = {"idle", "running", "finished", "detached"}
+ # ponytail: bounds orphaned Codex heartbeat workers; raise if real turns exceed six hours.
+ MAX_AGENT_HEARTBEAT_AGE = 6 * 60 * 60
+@@ -268,6 +269,17 @@ def ensure_codex_worker(state_file, state):
+         write_agent_state(state_file, state)
+ 
+ 
++def codex_provider_is_enabled(state):
++    if not state.get("agentHooks"):
++        return True
++    try:
++        with open(CODEX_AGENT_HOOKS_MARKER, encoding="utf-8") as marker_file:
++            marker = json.load(marker_file)
++        return isinstance(marker, dict) and marker.get("schema") == "itermate.codex-agent-hooks/v1" and marker.get("enabled") is True
++    except (OSError, ValueError):
++        return False
++
++
+ def run_codex_worker(session_id, token):
+     key = codex_state_key(session_id)
+     # Bound lock outages too; successful reads still require fresh lifecycle evidence.
+@@ -281,7 +293,8 @@ def run_codex_worker(session_id, token):
+         try:
+             if state.get("workerToken") != token:
+                 return
+-            if (not codex_state_is_fresh(state, time.time())
++            if (not codex_provider_is_enabled(state)
++                    or not codex_state_is_fresh(state, time.time())
+                     or (state.get("status") == "running" and state.get("ownerProcess")
+                         and not codex_owner_is_alive(state["ownerProcess"]))
+                     or (not state.get("ownerProcess")
+@@ -310,6 +323,7 @@ def report_codex_iterm(event, session_id):
+             if state is None:
+                 return
+             state["itermSessionId"] = session_id
++            state["agentHooks"] = os.environ.get("AGENT_HOOKS_HOST") == "codex"
+             # Keep transition and delivery under one lock: an old worker cannot send after Stop.
+             write_agent_state(state_file, state)
+             claim = event.get("hook_event_name") in {"SessionStart", "UserPromptSubmit"}
+@@ -403,6 +417,7 @@ def update_agent_state(tty, status):
+             "reporterId": reporter_id,
+             "sequence": sequence,
+             "status": status,
++            "agentHooks": os.environ.get("AGENT_HOOKS_HOST") == "codex",
+         }
+         if status == "running":
+             state["startedAt"] = time.time()
+@@ -415,7 +430,8 @@ def update_agent_state(tty, status):
+ def next_heartbeat(tty, reporter_id):
+     state_file, state = locked_agent_state(tty)
+     try:
+-        if state.get("reporterId") != reporter_id or state.get("status") != "running":
++        if (state.get("reporterId") != reporter_id or state.get("status") != "running"
++                or not codex_provider_is_enabled(state)):
+             return None
+         state["sequence"] = state.get("sequence", 0) + 1
+         status = "running"
+diff --git a/integrations/status/test_codex_status.py b/integrations/status/test_codex_status.py
+index 7d6b01a..da83221 100644
+--- a/integrations/status/test_codex_status.py
++++ b/integrations/status/test_codex_status.py
+@@ -133,6 +133,19 @@ class CodexStatusTests(unittest.TestCase):
+         send.assert_called_once()
+         alive.assert_not_called()
+ 
++    def test_agent_hooks_worker_requires_opt_in_marker(self):
++        import json
++        import tempfile
++        with tempfile.TemporaryDirectory() as directory:
++            marker = pathlib.Path(directory) / "codex-agent-hooks.json"
++            with patch.object(reporter, "CODEX_AGENT_HOOKS_MARKER", str(marker)):
++                self.assertTrue(reporter.codex_provider_is_enabled({}))
++                self.assertFalse(reporter.codex_provider_is_enabled({"agentHooks": True}))
++                marker.write_text(json.dumps({"schema": "itermate.codex-agent-hooks/v1", "enabled": True}))
++                self.assertTrue(reporter.codex_provider_is_enabled({"agentHooks": True}))
++                marker.unlink()
++                self.assertFalse(reporter.codex_provider_is_enabled({"agentHooks": True}))
++
+     def test_delivery_uses_session_route_and_monotonic_sequence(self):
+         state = self.running()
+         state["itermSessionId"] = "terminal-1"
+diff --git a/Users/caishilin/Desktop/personal/iTermate/integrations/status/test_agent_hooks_integration.py b/Users/caishilin/Desktop/personal/iTermate/integrations/status/test_agent_hooks_integration.py
+new file mode 100644
+index 0000000..58ac34d
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/iTermate/integrations/status/test_agent_hooks_integration.py
+@@ -0,0 +1,114 @@
++"""Isolated integration check. Set AGENT_HOOKS_CLI to the framework dispatcher."""
++import asyncio
++import importlib.util
++import json
++import os
++from pathlib import Path
++import socket
++import subprocess
++import tempfile
++import threading
++from types import SimpleNamespace
++import unittest
++
++ROOT = Path(__file__).resolve().parents[2]
++CLI = os.environ.get("AGENT_HOOKS_CLI")
++SPEC = importlib.util.spec_from_file_location("bridge", ROOT / "iTermateBridge/iTermateBridge.py")
++bridge_module = importlib.util.module_from_spec(SPEC)
++SPEC.loader.exec_module(bridge_module)
++SESSION = "11111111-1111-1111-1111-111111111111"
++
++
++class LocalBridge(bridge_module.Bridge):
++    def __init__(self):
++        super().__init__(None, SimpleNamespace(get_session_by_id=lambda value: object() if value == SESSION else None))
++        self.response = None
++
++    async def send_action_result(self, writer, request_id, ok, error):
++        self.response = dict(type="actionResult", requestId=request_id, ok=ok, error=error)
++
++    async def publish_snapshot(self, target=None):
++        pass
++
++
++@unittest.skipUnless(CLI, "AGENT_HOOKS_CLI is required for the optional cross-repository integration")
++class AgentHooksIntegrationTests(unittest.TestCase):
++    def test_native_dispatcher_reporter_and_bridge_lifecycle(self):
++        with tempfile.TemporaryDirectory(prefix="itc-", dir="/tmp") as home:
++            support = Path(home) / "Library/Application Support/iTermate"
++            directory = support / "integrations"
++            directory.mkdir(parents=True)
++            (directory / "codex-agent-hooks.json").write_text(json.dumps({
++                "schema": "itermate.codex-agent-hooks/v1", "enabled": True,
++            }))
++            reporter = directory / "iTermate-status.py"
++            # Keep transport/state code real; the test is not a live Codex producer.
++            reporter.write_text("#!/usr/bin/env python3\nimport importlib.util\n"
++                                f"s=importlib.util.spec_from_file_location('reporter',{str(ROOT / 'integrations/status/iTermate-status.py')!r})\n"
++                                "m=importlib.util.module_from_spec(s);s.loader.exec_module(m)\n"
++                                "m.codex_hook_owner=lambda:None\nm.main()\n")
++            reporter.chmod(0o700)
++            data = Path(home) / "kit"
++            (data / "hooks").mkdir(parents=True)
++            (data / "hooks/config.json").write_text(json.dumps({
++                "schema": "agent-hooks.config/v1",
++                "disabledHooks": ["inner:agent-rules", "inner:csl-agent-kit-contract", "inner:refresh-tab-title"],
++            }))
++            bridge = LocalBridge()
++            errors = []
++            stopped = threading.Event()
++            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as listener:
++                listener.bind(str(support / "bridge.sock"))
++                listener.listen()
++                listener.settimeout(0.1)
++
++                def serve():
++                    while not stopped.is_set():
++                        try:
++                            client, _ = listener.accept()
++                        except socket.timeout:
++                            continue
++                        try:
++                            with client, client.makefile("rb") as stream:
++                                client.settimeout(2)
++                                request = stream.readline()
++                                asyncio.run(bridge.handle_command(None, request))
++                                frames = [{"type": "hello"}, {"type": "snapshot"}, bridge.response]
++                                client.sendall(b"".join((json.dumps(frame) + "\n").encode() for frame in frames))
++                        except Exception as error:
++                            errors.append(error)
++
++                worker = threading.Thread(target=serve)
++                worker.start()
++                env = {**os.environ, "HOME": home, "CSL_AGENT_KIT_HOME": str(data),
++                       "PLUGIN_ROOT": str(Path(CLI).resolve().parents[4]), "TERM_PROGRAM": "iTerm.app",
++                       "ITERM_SESSION_ID": "w0t0p0:" + SESSION}
++                try:
++                    steps = [
++                        ("SessionStart", "idle", {"source": "startup"}),
++                        ("UserPromptSubmit", "running", {"turn_id": "turn-1"}),
++                        ("SessionStart", "running", {"source": "compact"}),
++                        ("Interrupt", "idle", {"turn_id": "turn-1"}),
++                        ("UserPromptSubmit", "running", {"turn_id": "turn-2"}),
++                        ("Stop", "finished", {"turn_id": "turn-2"}),
++                        ("SessionEnd", None, {}),
++                    ]
++                    for event, expected, extra in steps:
++                        result = subprocess.run(["node", CLI, "dispatch"], input=json.dumps({
++                            "hook_event_name": event, "session_id": "codex-test", "cwd": home, **extra,
++                        }), text=True, capture_output=True, env=env, timeout=8)
++                        self.assertEqual(result.returncode, 0, result.stderr)
++                        self.assertNotIn("runtime-error", result.stderr)
++                        observed = bridge.session_statuses.get(SESSION, {})
++                        self.assertEqual(observed.get("status"), expected, event)
++                        if expected is not None:
++                            self.assertEqual(observed["activityKind"], "agent")
++                    self.assertEqual(errors, [])
++                finally:
++                    stopped.set()
++                    worker.join(timeout=3)
++                    self.assertFalse(worker.is_alive())
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/Users/caishilin/Desktop/personal/iTermate/docs/codex-agent-hooks.md b/Users/caishilin/Desktop/personal/iTermate/docs/codex-agent-hooks.md
+new file mode 100644
+index 0000000..73df5a8
+--- /dev/null
++++ b/Users/caishilin/Desktop/personal/iTermate/docs/codex-agent-hooks.md
+@@ -0,0 +1,27 @@
++# Codex 通过 Agent Hooks 接入 iTermate
++
++Codex 接入复用 CSL Agent Kit 的 Agent Hooks 分发器与内置规则，不再由 iTermate 注册一组独立的 Codex 原生 hooks。Pi 集成不受影响。
++
++## 启用与迁移
++
++1. 先更新 Codex 中的 CSL Agent Kit 插件，使其包含 iTermate 内置规则以及 Interrupt、SessionEnd 分发支持。
++2. 在 Codex 中用 `/hooks` 检查并信任插件所需 hooks。规则存在或 CLI 显示 active，不代表当前 Codex 会话已加载并信任插件。
++3. 自行构建并运行新版 iTermate，在 **Settings → Agents** 中启用 Codex。旧版独立集成需要显式启用新接入；启动 App 只更新上报资源，不会自动迁移提供方。
++4. 显式启用会安装上报资源、移除 iTermate 自己的旧原生条目并写入启用标记，保留其他工具的条目。删除旧条目可能改变剩余条目的索引，需要再次检查 `/hooks` 的信任状态。
++5. 在 Codex 开始新一轮对话，观察 iTermate 是否显示 Agent 状态。若当前 Codex 仍加载旧插件，请自行重新打开会话后再验证。
++
++只有启用标记有效且对应内置规则开启时才调用上报脚本。禁用 iTermate 中的 Codex 会移除标记；已有上报 worker 停止续租，运行状态随后过期，不伪造成功。缺少 CSL Agent Kit、规则被禁用、hooks 未获信任或 Bridge 不可用时，不能仅根据设置开关判断接入成功。
++
++## 状态通路
++
++- session-start、prompt-submit、before-tool、after-tool、stop 使用 Agent Hooks 已有原生分发入口。
++- interrupt、session-end 使用 Codex 专属补充分发配置，不改变 Claude Code 或 Pi 的原生事件集合。
++- 内置规则仅匹配 Codex，将原生 session、turn、source 等字段原样传给 iTermate reporter；规则不生成提示词，也不会阻止用户输入或工具执行。
++- iTermate reporter 继续负责 Socket ACK、轮次隔离、有限重试与恢复；Agent Hooks 不承担工作状态推测。
++- 压缩不重置为 idle；Interrupt 不计成功；Stop 若被其他规则要求继续，则依靠后续 UserPromptSubmit 更新。
++
++## 验证边界
++
++源码构建和隔离单元测试不等于用户安装态已生效。需要分别确认插件版本与信任、规则启用、App 显式启用以及真实上报。
++
++iTerm 路径对 running 使用有限的新鲜 hook 观察窗口；长期没有新观察时停止续租并变为未知，不把后台进程存活当作模型持续工作的证明。Ghostty 仍使用原有 TTY 通路，不因此获得新的状态查询能力。
+diff --git a/tasks/context.md b/tasks/context.md
+index f08e59b..54d7ba3 100644
+--- a/tasks/context.md
++++ b/tasks/context.md
+@@ -68,7 +68,7 @@
+ - App 启动时仅在 iTerm2 已运行时启动其 Bridge client；否则在 iTerm2 首次成为前台终端时启动。Ghostty 前台期间通过 `osascript` 最多每秒读取一次快照，并把结果复用到同一 Session 分组 UI；切回 iTerm2 时恢复其缓存快照和连接状态。
+ - App 自有的本机状态 listener 与 Store 同生命周期；状态按 TTY 独立维护 Agent 与普通命令通道，Agent 优先，并通过 sequence、Agent heartbeat、唤醒清理和 Terminal identity 重建避免显示不可证实的 running 或复用旧状态。
+ - Pi 与 Codex 只有在 `TERM_PROGRAM=iTerm.app` 时才信任 iTerm Session ID 并使用 Bridge 协议；Ghostty 从 iTerm2 启动时可能继承陈旧的 `ITERM_SESSION_ID`/`TERM_SESSION_ID`，必须忽略它们并按控制 TTY 改走本机状态 listener。zsh、Bash、fish 普通命令状态必须由用户在设置中显式安装可逆 shell hook 后才报告。
+-- Codex 的 iTerm 状态由 `integrations/status/iTermate-status.py` 解析生命周期事件，按终端 UUID 保存 Codex session/turn 与单调序号；Bridge 对 Codex 专属报告校验 owner 并去重结束事件。上报等待匹配 ACK；续报仅依赖有界的新鲜 hook 观察和存活的 Codex 上游进程，不把进程存活单独当作工作状态。压缩不会置 idle，中断不计成功。工具前后 hook 续新观察，超出观察期限时停止续租而不猜测完成。安装器保持已有 hook 位置并补齐事件，新增 hook 需用户在 Codex `/hooks` 中审核；源码或磁盘配置存在不证明已安装或已信任。
++- Codex 的 iTerm 状态由 `integrations/status/iTermate-status.py` 解析生命周期事件，按终端 UUID 保存 Codex session/turn 与单调序号；Bridge 对 Codex 专属报告校验 owner 并去重结束事件。上报等待匹配 ACK；续报仅依赖有界的新鲜 hook 观察和存活的 Codex 上游进程，不把进程存活单独当作工作状态。压缩不会置 idle，中断不计成功。工具前后 hook 续新观察，超出观察期限时停止续租而不猜测完成。Codex 安装器改为显式启用 CSL Agent Kit Agent Hooks 的内置规则：只安装 reporter 与 opt-in 标记，并在用户启用时删除自己的旧原生 hook 条目；不再创建独立原生入口，App 启动的资源更新不自动迁移。框架将 native payload 原样转发；中断与退出由仅 Codex 的补充分发提供。用户需要更新并信任 CSL 插件；移除旧条目可能改变其他条目的索引，需复查 `/hooks`。关闭标记后已有 worker 停止续租。源码、标记或规则 eligible 不证明宿主已加载、信任或实际投递。
+ - 标题栏刷新按钮对 iTerm2 重启 Bridge 并重建状态，对 Ghostty 立即重新读取 AppleScript 快照；两条路径都不重启 App 或用户的终端 Session。
+ - General 中的全局快捷键由 `FinishedSessionShortcut` 使用系统热键 API 注册，配置由 `AppSettings` 持久化；动作固定路由 iTerm2 Bridge，不依赖当前前台终端或面板分组顺序。Bridge 按实际 Window/Tab/Session 顺序从当前项之后循环，只选 `activityKind=agent`，依次优先其他 awaitingInput（问号）、finished、running、idle Agent；普通命令、当前项、未知及独立模型推测均不参与，待回复、运行中及空闲目标不执行完成状态清理，聚焦不会清除问号。
+ - 状态菜单打开时刷新正在运行的终端数据源；`ItermStore` 分别保留两端快照与完成转换基线，只把可确认的 Agent Running 相加，并只累计退出状态为 0 的 Agent 完成。收藏项目操作固定路由到 iTerm2 Bridge；Bridge 在同一动作内用动态 `path` 判断首个精确匹配 Session，只有确认不存在时才通过 `LocalWriteOnlyProfile` 的自定义初始目录创建 Tab 或 Window，并以 `actionResult` 驱动菜单成功关闭或失败提示。

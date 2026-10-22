@@ -1,0 +1,197 @@
+TAP version 13
+# Subtest: reply regression cases have unique identities and fit the production input boundary
+ok 1 - reply regression cases have unique identities and fit the production input boundary
+  ---
+  duration_ms: 3.340083
+  type: 'test'
+  ...
+# Subtest: production reply classifier matches every regression case on the selected local model
+    # Subtest: restart-report: normal
+    ok 1 - restart-report: normal
+      ---
+      duration_ms: 4178.44325
+      type: 'test'
+      ...
+    # Subtest: install-instructions: normal
+    ok 2 - install-instructions: normal
+      ---
+      duration_ms: 1278.300875
+      type: 'test'
+      ...
+    # Subtest: verification-instructions: normal
+    ok 3 - verification-instructions: normal
+      ---
+      duration_ms: 386.174542
+      type: 'test'
+      ...
+    # Subtest: approval: question
+    ok 4 - approval: question
+      ---
+      duration_ms: 431.702041
+      type: 'test'
+      ...
+    # Subtest: choice: question
+    ok 5 - choice: question
+      ---
+      duration_ms: 310.925
+      type: 'test'
+      ...
+    # Subtest: missing-information: question
+    ok 6 - missing-information: question
+      ---
+      duration_ms: 307.485583
+      type: 'test'
+      ...
+    # Subtest: implicit-gate: question
+    ok 7 - implicit-gate: question
+      ---
+      duration_ms: 308.960541
+      type: 'test'
+      ...
+    # Subtest: mixed-report-and-question: question
+    ok 8 - mixed-report-and-question: question
+      ---
+      duration_ms: 301.969833
+      type: 'test'
+      ...
+    # Subtest: autonomous-progress: normal
+    ok 9 - autonomous-progress: normal
+      ---
+      duration_ms: 303.2425
+      type: 'test'
+      ...
+    # Subtest: quoted-question: normal
+    ok 10 - quoted-question: normal
+      ---
+      duration_ms: 319.07625
+      type: 'test'
+      ...
+    # Subtest: english-instructions: normal
+    ok 11 - english-instructions: normal
+      ---
+      duration_ms: 327.499959
+      type: 'test'
+      ...
+    # Subtest: english-gate: question
+    ok 12 - english-gate: question
+      ---
+      duration_ms: 306.176416
+      type: 'test'
+      ...
+    # Subtest: task-target-confirmation: question
+    ok 13 - task-target-confirmation: question
+      ---
+      duration_ms: 379.655709
+      type: 'test'
+      ...
+    # Subtest: markdown-task-target: question
+    ok 14 - markdown-task-target: question
+      ---
+      duration_ms: 392.056083
+      type: 'test'
+      ...
+    # Subtest: completed-task-target: normal
+    ok 15 - completed-task-target: normal
+      ---
+      duration_ms: 464.565583
+      type: 'test'
+      ...
+    # Subtest: quoted-task-target: normal
+    ok 16 - quoted-task-target: normal
+      ---
+      duration_ms: 386.976792
+      type: 'test'
+      ...
+    # Subtest: english-approval: question
+    ok 17 - english-approval: question
+      ---
+      duration_ms: 577.099834
+      type: 'test'
+      ...
+    # Subtest: local-commit-report: normal
+    not ok 18 - local-commit-report: normal
+      ---
+      duration_ms: 408.980292
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/pi/reply-classification.test.ts:2:2271'
+      failureType: 'testCodeFailure'
+      error: |-
+        local-commit-report
+        
+        true !== false
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: false
+      actual: true
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/pi/reply-classification.test.ts:30:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/pi/reply-classification.test.ts:29:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: local-commit-report-checklist: normal
+    ok 19 - local-commit-report-checklist: normal
+      ---
+      duration_ms: 492.541292
+      type: 'test'
+      ...
+    # Subtest: commit-awaiting-push-approval: question
+    ok 20 - commit-awaiting-push-approval: question
+      ---
+      duration_ms: 381.054541
+      type: 'test'
+      ...
+    # Subtest: english-local-commit-report: normal
+    not ok 21 - english-local-commit-report: normal
+      ---
+      duration_ms: 366.413
+      type: 'test'
+      location: '/Users/caishilin/Desktop/personal/iTermate/integrations/pi/reply-classification.test.ts:2:2271'
+      failureType: 'testCodeFailure'
+      error: |-
+        english-local-commit-report
+        
+        true !== false
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: false
+      actual: true
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/pi/reply-classification.test.ts:30:14)
+        process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (/Users/caishilin/Desktop/personal/iTermate/integrations/pi/reply-classification.test.ts:29:5)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+      ...
+    # Subtest: commit-report-missing-information: question
+    ok 22 - commit-report-missing-information: question
+      ---
+      duration_ms: 347.370292
+      type: 'test'
+      ...
+    1..22
+not ok 2 - production reply classifier matches every regression case on the selected local model
+  ---
+  duration_ms: 12961.289541
+  type: 'test'
+  location: '/Users/caishilin/Desktop/personal/iTermate/integrations/pi/reply-classification.test.ts:2:2067'
+  failureType: 'subtestsFailed'
+  error: '2 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..2
+# tests 24
+# suites 0
+# pass 21
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13155.477375

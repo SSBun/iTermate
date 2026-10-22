@@ -150,13 +150,17 @@ final class PiSessionArchives: ObservableObject {
     func sessionTitle(for session: TerminalSessionSnapshot, terminal: TerminalApp?) -> String {
         if let terminal, let live = descriptor(for: session, terminal: terminal),
            (0...8).contains(Date().timeIntervalSince1970 - live.updatedAt),
-           kill(live.pid, 0) == 0, let summary = live.taskSummary?.trimmingCharacters(in: .whitespacesAndNewlines),
-           !summary.isEmpty, summary.utf16.count <= 80,
-           summary.rangeOfCharacter(from: .controlCharacters) == nil {
+           kill(live.pid, 0) == 0, let summary = live.taskSummary,
+           Self.isValidTaskTitle(summary) {
             return summary
         }
         let name = session.name.trimmingCharacters(in: .whitespacesAndNewlines)
         return name.isEmpty ? "Session" : name
+    }
+
+    /// Checks only for nonblank text within the discovery transport bound, not title style.
+    private static func isValidTaskTitle(_ title: String) -> Bool {
+        title.utf16.count <= 16384 && !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     /// Whether this Pi instance has a title request in flight from the panel.
@@ -165,11 +169,19 @@ final class PiSessionArchives: ObservableObject {
         return refreshingTitleIDs.contains(live.id)
     }
 
+    /// Whether this identified Pi instance implements manual title refresh.
+    func supportsTitleRefresh(_ session: TerminalSessionSnapshot, terminal: TerminalApp) -> Bool {
+        guard let live = descriptor(for: session, terminal: terminal),
+              (0...8).contains(Date().timeIntervalSince1970 - live.updatedAt),
+              kill(live.pid, 0) == 0 else { return false }
+        return live.supportsTitleRefresh == true
+    }
+
     /// Whether the identified Pi instance supports an idle, manual title refresh.
     func canRefreshTitle(_ session: TerminalSessionSnapshot, terminal: TerminalApp) -> Bool {
-        guard !isBusy, let live = descriptor(for: session, terminal: terminal),
-              (0...8).contains(Date().timeIntervalSince1970 - live.updatedAt), kill(live.pid, 0) == 0 else { return false }
-        return live.supportsTitleRefresh == true && live.canRefreshTitle == true && !refreshingTitleIDs.contains(live.id)
+        guard !isBusy, supportsTitleRefresh(session, terminal: terminal),
+              let live = descriptor(for: session, terminal: terminal) else { return false }
+        return live.canRefreshTitle == true && !refreshingTitleIDs.contains(live.id)
     }
 
     /// Regenerates a title without advancing the conversation or closing the terminal.
@@ -192,8 +204,7 @@ final class PiSessionArchives: ObservableObject {
             guard let current = descriptor(for: session, terminal: terminal),
                   current.id == live.id, current.pid == live.pid, current.sessionId == live.sessionId,
                   response.version == 1, response.instanceId == live.id, response.sessionId == live.sessionId,
-                  !response.taskSummary.isEmpty, response.taskSummary.utf16.count <= 80,
-                  response.taskSummary.rangeOfCharacter(from: .controlCharacters) == nil,
+                  Self.isValidTaskTitle(response.taskSummary),
                   current.taskSummary == response.taskSummary,
                   sessionTitle(for: session, terminal: terminal) == response.taskSummary else {
                 throw PiArchiveError("Pi session changed or its new title could not be confirmed. Retry when idle.")

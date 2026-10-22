@@ -63,6 +63,10 @@ final class PiSessionArchiveTests: XCTestCase {
             for ready: Bool? in [nil, false, true] {
                 let file = try writeLiveDescriptor(at: root, supportsTitleRefresh: supported, canRefreshTitle: ready)
                 archives.refresh()
+                XCTAssertEqual(
+                    archives.supportsTitleRefresh(terminalSession(), terminal: .iTerm2),
+                    supported == true
+                )
                 XCTAssertEqual(archives.canRefreshTitle(terminalSession(), terminal: .iTerm2), supported == true && ready == true)
                 XCTAssertFalse(archives.canRefreshTitle(terminalSession(id: "other-pane"), terminal: .iTerm2))
                 XCTAssertFalse(archives.canRefreshTitle(terminalSession(), terminal: .ghostty))
@@ -125,11 +129,24 @@ final class PiSessionArchiveTests: XCTestCase {
         XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "π - project (zsh)")
     }
 
+    func testLiveTitlesPreserveModelOutputWithoutStyleFiltering() throws {
+        let root = try liveFixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let archives = PiSessionArchives(liveRoot: root)
+        for title in ["控制 Tab 切换会话跳过 Codex 故障", " 修复 HTTP429 重试。\n",
+                      String(repeating: "字", count: 81), "Fix pagination", "已完成", "修复🔔"] {
+            let file = try writeLiveDescriptor(at: root, summary: title)
+            archives.refresh()
+            XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), title)
+            try FileManager.default.removeItem(at: file)
+        }
+    }
+
     func testMissingMalformedAndExpiredTaskTitlesFallBack() throws {
         let root = try liveFixture()
         defer { try? FileManager.default.removeItem(at: root) }
         let archives = PiSessionArchives(liveRoot: root)
-        for summary: Any? in [nil, " ", String(repeating: "x", count: 81), "bad\nlabel", "bad\u{001B}label", 42] {
+        for summary: Any? in [nil, "", " \n\t", String(repeating: "x", count: 16385), 42] {
             let file = try writeLiveDescriptor(at: root, summary: summary)
             archives.refresh()
             XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "π - project (zsh)")
