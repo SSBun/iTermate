@@ -9,7 +9,7 @@ import { createContext, SourceTextModule, SyntheticModule } from "node:vm";
 
 const source = stripTypeScriptTypes(fs.readFileSync(new URL("./iTermate-integration.ts", import.meta.url), "utf8"));
 
-async function harness({ complete, disconnectAfterResponse = false, writeError = false, fleetCount = 0, fleetAvailable = true, hasSubagentTool = false, mode = "tui", termProgram = "iTerm.app" } = {}) {
+async function harness({ complete, classify = async () => false, disconnectAfterResponse = false, writeError = false, fleetCount = 0, fleetAvailable = true, hasSubagentTool = false, mode = "tui", termProgram = "iTerm.app" } = {}) {
   const home = fs.mkdtempSync("/tmp/itermate-archive-");
   const handlers = new Map();
   const events = new EventEmitter();
@@ -32,6 +32,7 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
   const clearTimeout = (timer) => { timers.delete(timer); globalThis.clearTimeout(timer); };
   const context = createContext({
     Buffer, URL, AbortController, AbortSignal,
+    mockQuestion: classify,
     // Inject an isolated local-title transport; archive summaries keep their separate Pi adapter.
     mockLocalTitle: async (systemPrompt, text, signal, maxTokens) => {
       const result = await (complete ?? (async () => taskReply("修改分页逻辑")))(
@@ -49,7 +50,7 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
     "node:crypto": { createHash: crypto.createHash, randomBytes: crypto.randomBytes, randomUUID: crypto.randomUUID, timingSafeEqual: crypto.timingSafeEqual },
     "node:fs/promises": { readFile: async () => { throw new Error("No Laya access"); }, access: async () => { throw new Error("No Laya access"); } },
     "node:fs": {
-      ...Object.fromEntries(["closeSync", "existsSync", "fsyncSync", "mkdirSync", "mkdtempSync", "openSync", "readFileSync", "renameSync", "rmSync", "writeFileSync"].map(name => [name, fs[name]])),
+      ...Object.fromEntries(["appendFileSync", "closeSync", "existsSync", "fsyncSync", "mkdirSync", "mkdtempSync", "openSync", "readFileSync", "readdirSync", "renameSync", "rmSync", "statSync", "writeFileSync"].map(name => [name, fs[name]])),
       // The listener is a mock, so there is deliberately no actual socket file.
       chmodSync: (path, mode) => { if (!path.endsWith(".sock")) fs.chmodSync(path, mode); },
     },
@@ -80,7 +81,8 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
       },
     },
   };
-  const isolatedSource = source.replace(/generate\s*=\s*completeLocalLLM/, "generate = globalThis.mockLocalTitle");
+  const isolatedSource = source.replace(/generate\s*=\s*completeLocalLLM/, "generate = globalThis.mockLocalTitle")
+    .replace("classifyReplyWithModel(lastAssistantText, request.signal)", "globalThis.mockQuestion(lastAssistantText, request.signal)");
   const module = new SourceTextModule(isolatedSource, { context });
   await module.link((name) => {
     const values = mocks[name];
@@ -121,7 +123,7 @@ async function harness({ complete, disconnectAfterResponse = false, writeError =
     return file ? JSON.parse(fs.readFileSync(join(livePath, file), "utf8")) : undefined;
   };
   const descriptor = readDescriptor();
-  if (mode === "tui") assert.equal(descriptor.supportsSummary, true);
+  if (mode === "tui" && termProgram === "iTerm.app") assert.equal(descriptor.supportsSummary, true);
   const makeClient = () => {
     const socket = new EventEmitter();
     socket.destroyed = false;
@@ -312,15 +314,17 @@ test("live labels publish without blocking settled status and deduplicate repeat
   } finally { await h.dispose(); }
 });
 
-test("Ghostty publishes the label with TTY identity, ignoring inherited iTerm IDs", async () => {
-  const h = await harness({ termProgram: "ghostty", complete: async () => taskReply("修复分页逻辑") });
+test("other terminals do not publish iTerm2 discovery or task titles", async () => {
+  let calls = 0;
+  const h = await harness({ termProgram: "other-terminal", complete: async () => {
+    calls += 1;
+    return taskReply("修复分页逻辑");
+  } });
   try {
     await settleTask(h);
-    const live = h.readDescriptor();
-    assert.equal(live.taskSummary, "修复分页逻辑");
-    assert.equal(live.terminal, "Ghostty");
-    assert.equal(live.terminalSessionId, null);
-    assert.equal(live.tty, "/dev/ttys-isolated");
+    assert.equal(h.readDescriptor(), undefined);
+    assert.equal(h.reports.length, 0);
+    assert.equal(calls, 0);
   } finally { await h.dispose(); }
 });
 
@@ -545,9 +549,14 @@ test("completion identity survives readonly queries but changes on the next turn
     await h.queryStatus({}, h.makeClient());
     assert.equal(h.responses[0].completionId, first.completionId);
     assert.equal(h.responses[1].completionId, first.completionId);
+    assert.equal(h.responses[0].completedAt, first.completedAt);
+    assert.deepEqual(h.responses[1].latestCompletion, first.latestCompletion);
+    assert.deepEqual(h.responses[1].recentCompletions, first.recentCompletions);
     assert.ok(h.responses[1].sequence > h.responses[0].sequence);
     await h.emit("agent_start");
     assert.equal(h.reports.at(-1).completionId, undefined);
+    assert.deepEqual(h.reports.at(-1).latestCompletion, first.latestCompletion);
+    assert.deepEqual(h.reports.at(-1).recentCompletions, first.recentCompletions);
     await h.emit("agent_end", { messages: [assistantReply] });
     await h.emit("agent_settled");
     assert.notEqual(h.reports.at(-1).completionId, first.completionId);
@@ -584,6 +593,30 @@ test("readonly status keeps unknown fleet unknown rather than reporting idle", a
     assert.equal(h.responses[0].ok, true);
     assert.equal(h.responses[0].status, null);
     assert.equal(h.responses[0].hasRunningSubagents, false);
+    assert.equal(h.reports.at(-1).status, null);
+  } finally { await h.dispose(); }
+});
+
+test("readonly recovery cannot report completion before the background question decision", async () => {
+  let finish;
+  const h = await harness({ classify: () => new Promise(resolve => { finish = resolve; }) });
+  try {
+    await h.emit("agent_start");
+    await h.emit("agent_end", { messages: [assistantReply] });
+    await h.emit("agent_settled", { aborted: false });
+    await h.queryStatus();
+    assert.equal(h.responses[0].status, null);
+    assert.equal(h.responses[0].latestCompletion, undefined);
+    assert.equal(h.reports.some(state => state.status === "finished"), false);
+    finish(false);
+    await flushSummary();
+    await h.queryStatus({}, h.makeClient());
+    const state = h.responses[1];
+    assert.equal(state.status, "finished");
+    assert.deepEqual(state.latestCompletion, {
+      id: state.completionId, completedAt: state.completedAt, exitStatus: 0,
+    });
+    assert.deepEqual(state.recentCompletions, [state.latestCompletion]);
   } finally { await h.dispose(); }
 });
 

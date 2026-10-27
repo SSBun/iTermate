@@ -748,7 +748,7 @@ private struct LocalLLMSelection: Codable {
     var autoFillMissingTitles: Bool? = nil
 }
 
-/// Checks and warms the shared Ollama model without running a Decision API worker.
+/// Starts Ollama when needed and warms the shared model without a Decision API worker.
 @MainActor
 final class LocalLLMService: ObservableObject {
     @Published private(set) var status = "Not checked"
@@ -777,6 +777,8 @@ final class LocalLLMService: ObservableObject {
     private let directory: URL
     private var configurationURL: URL { directory.appendingPathComponent("configuration.json") }
     private var operation: Task<Void, Never>?
+    // Retain the launched server across refreshes; cancelling a request must not stop it.
+    private var ollamaProcess: Process?
     private let session: URLSession = {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.connectionProxyDictionary = [:]
@@ -881,7 +883,7 @@ final class LocalLLMService: ObservableObject {
         return (selection.model, selection.autoFillMissingTitles ?? true, data)
     }
 
-    /// Refreshes the saved selection and renews ten minutes of idle residency; never downloads.
+    /// Ensures Ollama is running, then checks and warms the saved model without downloading.
     func refresh() {
         guard !isBusy else { return }
         let selection: (model: LocalLLMModel, autoFillMissingTitles: Bool, identity: Data?)
@@ -902,9 +904,15 @@ final class LocalLLMService: ObservableObject {
         operation = Task { @MainActor in
             defer { isBusy = false; operation = nil }
             do {
-                let inventory = try await request(path: "tags")
-                guard let digest = selection.model.installedRevision(in: inventory["models"] as? [[String: Any]] ?? []) else {
-                    status = "Install \(selection.model.rawValue) in Ollama, then refresh. No other model will be used."
+                let inventory = try await inventoryStartingOllamaIfNeeded()
+                let models = inventory["models"] as? [[String: Any]] ?? []
+                guard let digest = selection.model.installedRevision(in: models) else {
+                    let isInstalled = models.contains {
+                        $0["name"] as? String == selection.model.rawValue
+                    }
+                    status = isInstalled
+                        ? "Installed \(selection.model.rawValue) revision is unsupported. Install the supported revision, then refresh."
+                        : "Install \(selection.model.rawValue) in Ollama, then refresh. No other model will be used."
                     return
                 }
                 status = "Warming \(selection.model.title)…"
@@ -931,9 +939,65 @@ final class LocalLLMService: ObservableObject {
                 status = "Available · \(selection.model.title)"
             } catch {
                 isReady = false
-                status = Task.isCancelled ? "Stopped" : "Selected model unavailable. Check Ollama, then refresh."
+                status = Task.isCancelled ? "Stopped" : "Could not check or warm the model: \(error.localizedDescription)"
             }
         }
+    }
+
+    /// Reuses a reachable server and starts an installed Ollama only for a refused connection.
+    private func inventoryStartingOllamaIfNeeded() async throws -> [String: Any] {
+        do {
+            return try await request(path: "tags")
+        } catch let error as URLError where error.code == .cannotConnectToHost {
+            // HTTP errors, invalid responses, and timeouts do not justify another server.
+        }
+        try Task.checkCancellation()
+        status = "Starting Ollama…"
+        if ollamaProcess?.isRunning != true {
+            let candidates = [
+                Bundle.main.url(forAuxiliaryExecutable: "ollama")?.path,
+                "/opt/homebrew/bin/ollama",
+                "/usr/local/bin/ollama",
+                "/Applications/Ollama.app/Contents/Resources/ollama",
+                FileManager.default.homeDirectoryForCurrentUser
+                    .appendingPathComponent("Applications/Ollama.app/Contents/Resources/ollama").path,
+            ].compactMap { $0 }
+            guard let executable = candidates.first(where: {
+                FileManager.default.isExecutableFile(atPath: $0)
+            }) else {
+                throw ServiceError("Ollama is not installed. Install Ollama, then check again.")
+            }
+            let child = Process()
+            child.executableURL = URL(fileURLWithPath: executable)
+            child.arguments = ["serve"]
+            var environment = ProcessInfo.processInfo.environment
+            // Never inherit a public or remote bind address from the parent environment.
+            environment["OLLAMA_HOST"] = "127.0.0.1:11434"
+            child.environment = environment
+            child.standardInput = FileHandle.nullDevice
+            child.standardOutput = FileHandle.nullDevice
+            child.standardError = FileHandle.nullDevice
+            do {
+                try child.run()
+            } catch {
+                throw ServiceError("Could not start Ollama: \(error.localizedDescription)")
+            }
+            ollamaProcess = child
+        }
+        let deadline = ProcessInfo.processInfo.systemUptime + 15
+        repeat {
+            try Task.checkCancellation()
+            do {
+                return try await request(path: "tags")
+            } catch let error as URLError where error.code == .cannotConnectToHost {
+                // Another App instance may win the port; accept its API once it is ready.
+            }
+            try await Task.sleep(nanoseconds: 250_000_000)
+        } while ProcessInfo.processInfo.systemUptime < deadline
+        if let child = ollamaProcess, !child.isRunning {
+            throw ServiceError("Ollama exited before becoming ready (code \(child.terminationStatus)). Run ollama serve for details, then check again.")
+        }
+        throw ServiceError("Ollama did not become ready on 127.0.0.1:11434. Check the local service, then retry.")
     }
 
     /// Cancels only this App's request, leaving the shared Ollama process and model alone.
@@ -1125,7 +1189,7 @@ struct LocalLLMSettingsView: View {
                     .disabled(service.isBusy)
                 Text("Question detection and session titles use this local model only. No cloud or other model fallback.")
                     .font(.caption).foregroundStyle(.secondary)
-                Text("Each request keeps the model loaded for 10 minutes of inactivity. Ollama manages memory; iTermate does not start or stop it.")
+                Text("iTermate starts an installed Ollama automatically when needed and leaves it running on quit. Each request keeps the model loaded for 10 minutes of inactivity; Ollama manages memory.")
                     .font(.caption).foregroundStyle(.secondary)
                 Text("Install the selected model in Ollama before using it, then check and warm it here. Changing the choice does not download a model. Existing downloads are preserved.")
                     .font(.caption).foregroundStyle(.secondary)

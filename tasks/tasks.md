@@ -1,5 +1,31 @@
 # 任务索引
 
+- [提交当前全部本地改动](tasks/commit-all-local-changes-20261027.md) — In Progress (2026-10-27 11:46)
+
+- [启动iTermate时自动启动本地Ollama服务](tasks/auto-start-ollama-on-launch.md) — Completed (2026-10-27 11:45)
+
+- [排查本地模型不可用的原因](tasks/diagnose-local-model-unavailable.md) — Completed (2026-10-27 11:32)
+
+- [错误横幅显示数秒后自动关闭](tasks/auto-dismiss-error-banner.md) — Completed (2026-10-23 16:48)
+
+- [修复普通回复被误判为问题的分类逻辑](tasks/fix-response-question-false-positives.md) — Completed (2026-10-23 16:10)
+
+- [调研 Codex 会话可靠关联与状态恢复的完整修复方案](tasks/research-robust-codex-session-association.md) — Pending (2026-10-23 14:21)
+
+- [修复 Pi 与 Codex 状态监听的准确性和恢复问题](tasks/fix-pi-codex-state-monitoring.md) — Blocked (2026-10-23 14:12)
+
+- [分析 Pi 与 Codex 状态监听的准确性和改进路径](tasks/analyze-pi-codex-state-monitoring.md) — Completed (2026-10-22 18:26)
+
+- [深入调研 Gemma 4 E2B 及 iTermate 适用性](tasks/research-gemma4-e2b.md) — Pending (2026-10-22 18:07)
+
+- [调研 Qwen3.5 2B 同级小模型及性能对比](tasks/compare-qwen2b-alternative-models.md) — Pending (2026-10-22 17:37)
+
+- [移除 Ghostty 支持，仅保留 iTerm2](tasks/remove-ghostty-support.md) — Completed (2026-10-22 17:57)
+
+- [推送当前代码并发布 iTermate 新版本](tasks/publish-next-itermate-release.md) — In Progress (2026-10-22 17:08)
+
+- [调研 Splash 与 Ollama 的差异及 iTermate 适用性](tasks/research-splash-vs-ollama.md) — Pending (2026-10-22 17:07)
+
 - [提交当前全部本地改动](tasks/commit-current-local-changes.md) — Completed (2026-10-22 16:56)
 
 - [通过本地模型重新摘要不合格的实时会话标题](tasks/resummarize-invalid-session-titles.md) — Completed (2026-10-22 16:44)

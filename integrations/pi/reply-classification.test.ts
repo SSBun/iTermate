@@ -9,7 +9,7 @@ type ReplyCase = { id: string; expected: "normal" | "question"; text: string };
 const cases: ReplyCase[] = JSON.parse(readFileSync(new URL("./reply-classification-cases.json", import.meta.url), "utf8"));
 
 test("reply regression cases have unique identities and fit the production input boundary", () => {
-  assert.equal(cases.length, 22);
+  assert.equal(cases.length, 27);
   assert.equal(new Set(cases.map(row => row.id)).size, cases.length);
   for (const row of cases) {
     assert.ok(["normal", "question"].includes(row.expected), row.id);

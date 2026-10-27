@@ -49,6 +49,16 @@ final class ItermBridgeTests: XCTestCase {
         XCTAssertNil(merged.agentKind)
     }
 
+    func testCodexIdentityRejectsAmbiguousTTYs() throws {
+        let windows = try JSONDecoder().decode([TerminalWindowSnapshot].self, from: Data("""
+        [{"id":"w","number":1,"isActive":true,"tabs":[
+          {"id":"t","title":"Terminal","isSelected":true,"sessions":[
+            {"id":"one","name":"codex","tty":"/dev/ttys001","isActive":true},
+            {"id":"two","name":"codex","tty":"/dev/ttys001","isActive":false}]}]}]
+        """.utf8))
+        XCTAssertTrue(ItermStore.codexSessionIdentityByTTY(in: windows).isEmpty)
+    }
+
     func testCodexSnapshotDriftResetsOnlyChangedTTY() {
         XCTAssertEqual(
             ItermStore.changedCodexSessionTTYs(
@@ -57,6 +67,237 @@ final class ItermBridgeTests: XCTestCase {
             ),
             ["/dev/ttys002"]
         )
+    }
+
+    func testAutomaticCodexBindingRequiresAnUnambiguousSharedDaemonThread() {
+        let thread = "11111111-2222-3333-4444-555555555555"
+        let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
+        let shared = CodexSessionObservation(
+            status: .running, changedAt: 20, processIdentity: process,
+            sessionID: thread.uppercased(), requiresRuntimeStatus: true
+        )
+        let exact = CodexSessionObservation(
+            status: .running, changedAt: 20, processIdentity: process, sessionID: thread
+        )
+        let invalid = CodexSessionObservation(
+            status: nil, changedAt: nil, processIdentity: process,
+            sessionID: "invalid", requiresRuntimeStatus: true
+        )
+        let bindings = ItermStore.reconciledCodexBindings(
+            [:], observations: ["auto": shared, "file": exact, "invalid": invalid, "detached": shared],
+            identities: ["auto": "pane", "file": "file-pane", "invalid": "invalid-pane"]
+        )
+        XCTAssertEqual(bindings.count, 1)
+        XCTAssertEqual(bindings["auto"]?.threadID, thread)
+        XCTAssertEqual(bindings["auto"]?.terminalSessionID, "pane")
+        XCTAssertEqual(bindings["auto"]?.processIdentity, process)
+        XCTAssertEqual(bindings["auto"]?.isManual, false)
+        XCTAssertTrue(ItermStore.reconciledCodexBindings(
+            [:], observations: ["one": shared, "two": shared], identities: ["one": "one", "two": "two"]
+        ).isEmpty)
+    }
+
+    func testAutomaticCodexBindingChangesWithThreadProcessAndTerminalIdentity() throws {
+        let thread = "11111111-2222-3333-4444-555555555555"
+        let replacement = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
+        let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
+        let old = ItermStore.CodexThreadBinding(
+            terminalSessionID: "old-pane", processIdentity: process, threadID: thread, isManual: false
+        )
+        let observation = CodexSessionObservation(
+            status: .running, changedAt: 20,
+            processIdentity: .init(pid: 42, startedAt: 11),
+            sessionID: replacement, requiresRuntimeStatus: true
+        )
+        let updated = try XCTUnwrap(ItermStore.reconciledCodexBindings(
+            ["tty": old], observations: ["tty": observation], identities: ["tty": "new-pane"]
+        )["tty"])
+        XCTAssertNotEqual(updated, old)
+        XCTAssertEqual(updated.threadID, replacement)
+        XCTAssertEqual(updated.terminalSessionID, "new-pane")
+        XCTAssertEqual(updated.processIdentity.startedAt, 11)
+        XCTAssertTrue(ItermStore.reconciledCodexBindings(
+            ["tty": old], observations: ["tty": observation], identities: [:]
+        ).isEmpty)
+    }
+
+    func testManualCodexBindingRemainsAnOverrideAndFinalReadKeepsItsAssociation() {
+        let thread = "11111111-2222-3333-4444-555555555555"
+        let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
+        let manual = ItermStore.CodexThreadBinding(
+            terminalSessionID: "manual-pane", processIdentity: process, threadID: thread
+        )
+        let shared = CodexSessionObservation(
+            status: .running, changedAt: 20, processIdentity: process,
+            sessionID: thread, requiresRuntimeStatus: true
+        )
+        let bindings = ItermStore.reconciledCodexBindings(
+            ["manual": manual], observations: ["manual": shared, "auto": shared],
+            identities: ["manual": "manual-pane", "auto": "auto-pane"]
+        )
+        XCTAssertEqual(bindings, ["manual": manual])
+        let automatic = ItermStore.CodexThreadBinding(
+            terminalSessionID: "pane", processIdentity: process, threadID: thread, isManual: false
+        )
+        let stopped = CodexSessionObservation(
+            status: .interrupted, changedAt: 21, processIdentity: process,
+            sessionID: thread, isProcessAlive: false, requiresRuntimeStatus: true
+        )
+        XCTAssertEqual(ItermStore.reconciledCodexBindings(
+            ["tty": automatic], observations: ["tty": stopped], identities: ["tty": "pane"]
+        )["tty"], automatic)
+        XCTAssertTrue(ItermStore.reconciledCodexBindings(
+            [:], observations: ["tty": stopped], identities: ["tty": "pane"]
+        ).isEmpty)
+    }
+
+    func testUnknownCodexRuntimePreservesTheAutomaticRolloutStateAndTitle() {
+        let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
+        let completion = SessionCompletion(id: "done", completedAt: 20, exitStatus: 0)
+        let native = CodexSessionObservation(
+            status: .finished, changedAt: 20, processIdentity: process,
+            titleExcerpt: "current conversation", sessionID: "thread", latestCompletion: completion,
+            recentCompletions: [completion], requiresRuntimeStatus: true
+        )
+        let unknown = CodexSessionObservation(
+            status: nil, changedAt: nil, processIdentity: process, titleExcerpt: "older excerpt", sessionID: "thread"
+        )
+        let merged = ItermStore.mergingCodexRuntimeObservation(
+            .init(observation: unknown, sampledFrom: native), into: native
+        )
+        XCTAssertEqual(merged, native)
+    }
+
+    func testCodexRuntimeWaitingOverlayAppliesOnlyToTheSampledTurn() {
+        let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
+        func running(turn: String, excerpt: String = "current conversation") -> CodexSessionObservation {
+            CodexSessionObservation(
+                status: .running, changedAt: 20, processIdentity: process,
+                titleExcerpt: excerpt, sessionID: "thread", completionInProgressID: turn,
+                requiresRuntimeStatus: true
+            )
+        }
+        let native = running(turn: "turn-one")
+        let waiting = CodexSessionObservation(
+            status: .awaitingInput, changedAt: nil, processIdentity: process,
+            sessionID: "thread", completionInProgressID: "turn-one"
+        )
+        let overlay = ItermStore.CodexRuntimeOverlay(observation: waiting, sampledFrom: native)
+        XCTAssertEqual(ItermStore.mergingCodexRuntimeObservation(overlay, into: native).status, .awaitingInput)
+        let updatedText = running(turn: "turn-one", excerpt: "new conversation text")
+        XCTAssertEqual(ItermStore.mergingCodexRuntimeObservation(overlay, into: updatedText).titleExcerpt,
+                       "new conversation text")
+        let nextTurn = running(turn: "turn-two")
+        XCTAssertEqual(ItermStore.mergingCodexRuntimeObservation(overlay, into: nextTurn), nextTurn)
+        let completion = SessionCompletion(id: "turn-one", completedAt: 21, exitStatus: 0)
+        let finished = CodexSessionObservation(
+            status: .finished, changedAt: 21, processIdentity: process,
+            sessionID: "thread", latestCompletion: completion, recentCompletions: [completion]
+        )
+        XCTAssertEqual(ItermStore.mergingCodexRuntimeObservation(overlay, into: finished), finished)
+    }
+
+    func testCodexRuntimeOverlayCannotCrossThreadProcessOrExit() {
+        let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
+        let baseline = CodexSessionObservation(
+            status: .running, changedAt: 20, processIdentity: process, sessionID: "thread"
+        )
+        let runtime = CodexSessionObservation(
+            status: .awaitingInput, changedAt: nil, processIdentity: process, sessionID: "thread"
+        )
+        let overlay = ItermStore.CodexRuntimeOverlay(observation: runtime, sampledFrom: baseline)
+        for replacement in [
+            CodexSessionObservation(status: .running, changedAt: 20, processIdentity: process, sessionID: "new-thread"),
+            CodexSessionObservation(status: .running, changedAt: 20,
+                                    processIdentity: .init(pid: 42, startedAt: 11), sessionID: "thread"),
+            CodexSessionObservation(status: .running, changedAt: 20, processIdentity: process,
+                                    sessionID: "thread", isProcessAlive: false),
+        ] {
+            XCTAssertEqual(ItermStore.mergingCodexRuntimeObservation(overlay, into: replacement), replacement)
+        }
+    }
+
+    func testOlderCodexRuntimeCompletionDoesNotReplaceANewerRunningTurn() {
+        let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
+        let native = CodexSessionObservation(
+            status: .running, changedAt: 20.8, processIdentity: process,
+            sessionID: "thread", completionInProgressID: "new-turn"
+        )
+        let completion = SessionCompletion(id: "old-turn", completedAt: 20, exitStatus: 0)
+        let runtime = CodexSessionObservation(
+            status: .finished, changedAt: 20, processIdentity: process,
+            sessionID: "thread", latestCompletion: completion, recentCompletions: [completion]
+        )
+        let merged = ItermStore.mergingCodexRuntimeObservation(
+            .init(observation: runtime, sampledFrom: native), into: native
+        )
+        XCTAssertEqual(merged.status, .running)
+        XCTAssertEqual(merged.completionInProgressID, "new-turn")
+        XCTAssertEqual(merged.recentCompletions, [completion])
+    }
+
+    func testCodexRuntimeHistoryAugmentsTheLongerRolloutWindow() {
+        let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
+        let older = SessionCompletion(id: "older", completedAt: 18, exitStatus: 0)
+        let nativeLast = SessionCompletion(id: "native", completedAt: 19, exitStatus: nil)
+        let completed = SessionCompletion(id: "native", completedAt: 19, exitStatus: 0)
+        let newest = SessionCompletion(id: "new", completedAt: 20, exitStatus: 1)
+        let native = CodexSessionObservation(
+            status: nil, changedAt: nil, processIdentity: process, sessionID: "thread",
+            latestCompletion: nativeLast, recentCompletions: [older, nativeLast]
+        )
+        let runtime = CodexSessionObservation(
+            status: nil, changedAt: nil, processIdentity: process, titleExcerpt: "daemon excerpt", sessionID: "thread",
+            latestCompletion: newest, recentCompletions: [completed, newest]
+        )
+        let merged = ItermStore.mergingCodexRuntimeObservation(
+            .init(observation: runtime, sampledFrom: native), into: native
+        )
+        XCTAssertEqual(merged.recentCompletions, [older, completed, newest])
+        XCTAssertEqual(merged.latestCompletion, newest)
+        XCTAssertEqual(merged.titleExcerpt, "daemon excerpt")
+    }
+
+    func testCodexRuntimeKeepsRolloutCompletionPrecisionAndViewedAcknowledgement() throws {
+        let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
+        let completion = SessionCompletion(id: "turn", completedAt: 20.9, exitStatus: 0)
+        let native = CodexSessionObservation(
+            status: .finished, changedAt: 20.9, processIdentity: process, sessionID: "thread",
+            latestCompletion: completion, recentCompletions: [completion]
+        )
+        let rounded = SessionCompletion(id: "turn", completedAt: 20, exitStatus: 0)
+        let runtime = CodexSessionObservation(
+            status: .finished, changedAt: 20, processIdentity: process, sessionID: "thread",
+            latestCompletion: rounded, recentCompletions: [rounded]
+        )
+        let merged = ItermStore.mergingCodexRuntimeObservation(
+            .init(observation: runtime, sampledFrom: native), into: native
+        )
+        XCTAssertEqual(merged.latestCompletion, completion)
+        XCTAssertEqual(merged.changedAt, 20.9)
+        let acknowledgement = try XCTUnwrap(ItermStore.CodexCompletionAcknowledgement(
+            observation: native, sessionID: "pane"
+        ))
+        XCTAssertEqual(ItermStore.CodexCompletionAcknowledgement(observation: merged, sessionID: "pane"),
+                       acknowledgement)
+    }
+
+    func testCodexThreadTitleHintDecodesAndSurvivesAgentOverlay() throws {
+        let session = try JSONDecoder().decode(TerminalSessionSnapshot.self, from: Data("""
+        {"id":"pane","name":"codex","tty":"tty","isActive":true,"codexThreadIDPrefix":"12345678"}
+        """.utf8))
+        let merged = ItermStore.mergingCodexObservation(
+            .init(status: .running, changedAt: 20), into: session
+        )
+        XCTAssertEqual(merged.codexThreadIDPrefix, "12345678")
+        let windows = try JSONDecoder().decode([TerminalWindowSnapshot].self, from: Data("""
+        [{"id":"w","number":1,"isActive":true,"tabs":[
+          {"id":"t","title":"Terminal","isSelected":true,"sessions":[
+            {"id":"one","name":"codex","tty":"ambiguous","isActive":false,"codexThreadIDPrefix":"12345678"},
+            {"id":"two","name":"codex","tty":"ambiguous","isActive":false,"codexThreadIDPrefix":"87654321"},
+            {"id":"new","name":"codex","tty":"new","isActive":true,"codexThreadIDPrefix":""}]}]}]
+        """.utf8))
+        XCTAssertEqual(ItermStore.codexThreadPrefixesByTTY(in: windows), ["new": ""])
     }
 
     func testCodexOverlayCountsAsRunningAgent() {
@@ -118,6 +359,7 @@ final class ItermBridgeTests: XCTestCase {
             CodexSessionObservation(status: .finished, changedAt: 43, processIdentity: identity),
             CodexSessionObservation(status: .finished, changedAt: 42,
                                     processIdentity: .init(pid: 123, startedAt: 11)),
+            CodexSessionObservation(status: .finished, changedAt: 42, processIdentity: identity, sessionID: "new-thread"),
             CodexSessionObservation(status: .running, changedAt: 43, processIdentity: identity),
             CodexSessionObservation(status: .awaitingInput, changedAt: 42, processIdentity: identity),
             CodexSessionObservation(status: .interrupted, changedAt: 42, processIdentity: identity),
@@ -221,7 +463,7 @@ final class ItermBridgeTests: XCTestCase {
                 status: .running,
                 changedAt: 42,
                 processIdentity: identity,
-                titleExcerpt: "[user]\n刷新标题"
+                titleExcerpt: "[user]\n刷新标题", sessionID: "thread-one"
             )
         )
 
@@ -244,6 +486,36 @@ final class ItermBridgeTests: XCTestCase {
     }
 
     @MainActor
+    func testCodexTitleResultCannotPublishOrCacheAfterNativeThreadHintChanges() async throws {
+        for replacementPrefix: String? in ["new-thread-prefix", "", nil] {
+            let suite = "iTermate-title-\(UUID().uuidString)"
+            let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+            defer { defaults.removePersistentDomain(forName: suite) }
+            var pending: CheckedContinuation<String, Error>?
+            let store = ItermStore(titleDefaults: defaults, generateCodexTitle: { _ in
+                try await withCheckedThrowingContinuation { pending = $0 }
+            })
+            defer { store.stop() }
+            var session = titleFixtureSession()
+            session.codexThreadIDPrefix = "old-thread-prefix"
+            store.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
+                status: .finished, changedAt: 20, processIdentity: .init(pid: 42, startedAt: 10),
+                titleExcerpt: "old conversation", sessionID: "old-thread"
+            ))
+            store.refreshCodexTitle(session)
+            for _ in 0..<100 where pending == nil { await Task.yield() }
+            let continuation = try XCTUnwrap(pending)
+            // The accepted observation still belongs to the old scan while the Bridge has a newer hint.
+            session.codexThreadIDPrefix = replacementPrefix
+            store.replaceCodexTerminalSnapshotForTesting(session)
+            continuation.resume(returning: "旧对话标题")
+            for _ in 0..<100 where store.isRefreshingCodexTitle(session) { await Task.yield() }
+            XCTAssertNil(store.codexTitleForTesting(session))
+            XCTAssertNil(defaults.data(forKey: "codexSessionTitles"))
+        }
+    }
+
+    @MainActor
     func testCodexTitleSurvivesAppRelaunchWithBackfillDisabled() async throws {
         let suite = "iTermate-title-\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
@@ -251,7 +523,7 @@ final class ItermBridgeTests: XCTestCase {
         let session = titleFixtureSession()
         let identity = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 100)
         let observation = CodexSessionObservation(status: .finished, changedAt: 1,
-            processIdentity: identity, titleExcerpt: "[user]\n修复分页")
+            processIdentity: identity, titleExcerpt: "[user]\n修复分页", sessionID: "thread-one")
         let first = ItermStore(titleDefaults: defaults, generateCodexTitle: { _ in "修复分页" })
         first.prepareCodexTitleRefreshForTesting(session, observation: observation)
         first.refreshCodexTitle(session)
@@ -266,7 +538,7 @@ final class ItermBridgeTests: XCTestCase {
         })
         defer { reopened.stop() }
         reopened.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
-            status: .running, changedAt: 2, processIdentity: identity
+            status: .running, changedAt: 2, processIdentity: identity, sessionID: "thread-one"
         ))
         reopened.scheduleCodexTitlesForTesting()
         XCTAssertEqual(reopened.codexTitleForTesting(session), "修复分页")
@@ -280,6 +552,14 @@ final class ItermBridgeTests: XCTestCase {
         ))
         reused.scheduleCodexTitlesForTesting()
         XCTAssertNil(reused.codexTitleForTesting(session))
+
+        let switchedThread = ItermStore(titleDefaults: defaults, fillsMissingTitles: { false })
+        defer { switchedThread.stop() }
+        switchedThread.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
+            status: .running, changedAt: 2, processIdentity: identity, sessionID: "thread-two"
+        ))
+        switchedThread.scheduleCodexTitlesForTesting()
+        XCTAssertNil(switchedThread.codexTitleForTesting(session))
     }
 
     @MainActor
@@ -297,7 +577,7 @@ final class ItermBridgeTests: XCTestCase {
         let session = titleFixtureSession()
         let identity = CodexSessionMonitor.ProcessIdentity(pid: 43, startedAt: 100)
         store.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
-            status: .idle, changedAt: 1, processIdentity: identity, titleExcerpt: "[user]\n修复分页"
+            status: .idle, changedAt: 1, processIdentity: identity, titleExcerpt: "[user]\n修复分页", sessionID: "thread-one"
         ))
         store.scheduleCodexTitlesForTesting()
         XCTAssertFalse(store.isRefreshingCodexTitle(session))
@@ -308,7 +588,7 @@ final class ItermBridgeTests: XCTestCase {
         XCTAssertEqual(store.codexTitleForTesting(session), "补全标题")
         XCTAssertEqual(calls, 1)
         store.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
-            status: .idle, changedAt: 1, processIdentity: identity, titleExcerpt: "[user]\n新的对话"
+            status: .idle, changedAt: 1, processIdentity: identity, titleExcerpt: "[user]\n新的对话", sessionID: "thread-one"
         ))
         store.scheduleCodexTitlesForTesting()
         XCTAssertFalse(store.isRefreshingCodexTitle(session))
@@ -331,7 +611,7 @@ final class ItermBridgeTests: XCTestCase {
             let session = titleFixtureSession()
             store.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
                 status: status, changedAt: nil, processIdentity: .init(pid: 44, startedAt: 100),
-                titleExcerpt: "[user]\n修复分页"
+                titleExcerpt: "[user]\n修复分页", sessionID: "thread-one"
             ))
             store.scheduleCodexTitlesForTesting()
             XCTAssertFalse(store.isRefreshingCodexTitle(session))
@@ -407,48 +687,9 @@ final class ItermBridgeTests: XCTestCase {
         XCTAssertEqual(SessionAgentKind.codex.displayName, "Codex")
     }
 
-    func testAgentIdentitySurvivesFocusAndLeaseExpiryButNotDetachment() {
-        let tty = "/dev/ttys001"
-        var registry = TerminalStatusRegistry()
-        registry.reconcile(terminals: [tty: "pane"])
-        func report(_ state: TerminalStatusReport.State, _ sequence: Int, kind: SessionAgentKind) -> TerminalStatusReport {
-            TerminalStatusReport(tty: tty, source: .agent, reporterID: "reporter", sequence: sequence,
-                                 state: state, exitStatus: state == .finished ? 0 : nil, heartbeat: false,
-                                 agentKind: kind)
-        }
-        XCTAssertTrue(registry.apply(report(.finished, 1, kind: .pi), now: 10, uptime: 10))
-        XCTAssertTrue(registry.activate(tty: tty))
-        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .idle)
-        XCTAssertEqual(registry.agentKind(for: tty), .pi)
-        XCTAssertTrue(registry.apply(report(.running, 2, kind: .pi), uptime: 20))
-        XCTAssertTrue(registry.expireStaleAgentHeartbeats(uptime: 29))
-        XCTAssertNil(registry.visibleStatus(for: tty))
-        XCTAssertEqual(registry.agentKind(for: tty), .pi)
-        XCTAssertFalse(registry.apply(report(.running, 1, kind: .codex)))
-        XCTAssertEqual(registry.agentKind(for: tty), .pi)
-        XCTAssertTrue(registry.apply(report(.idle, 3, kind: .codex)))
-        XCTAssertEqual(registry.agentKind(for: tty), .codex)
-        XCTAssertTrue(registry.apply(report(.detached, 4, kind: .codex)))
-        XCTAssertNil(registry.agentKind(for: tty))
-        XCTAssertTrue(registry.apply(report(.idle, 5, kind: .pi)))
-        registry.reconcile(terminals: [tty: "replacement-pane"])
-        XCTAssertNil(registry.agentKind(for: tty))
-    }
-
-    func testAgentIdentityRequiresAgentChannel() {
-        let tty = "/dev/ttys001"
-        var registry = TerminalStatusRegistry()
-        registry.reconcile(terminals: [tty: "pane"])
-        XCTAssertFalse(registry.apply(TerminalStatusReport(
-            tty: tty, source: .command, reporterID: "shell", sequence: 1,
-            state: .running, exitStatus: nil, heartbeat: false, agentKind: .pi
-        )))
-        XCTAssertNil(registry.agentKind(for: tty))
-        XCTAssertTrue(registry.apply(TerminalStatusReport(
-            tty: tty, source: .agent, reporterID: "legacy", sequence: 1,
-            state: .idle, exitStatus: nil, heartbeat: false
-        )))
-        XCTAssertEqual(registry.agentKind(for: tty), .unknown)
+    func testOnlyRecognizesIterm2() {
+        XCTAssertEqual(TerminalApp(bundleIdentifier: "com.googlecode.iterm2"), .iTerm2)
+        XCTAssertNil(TerminalApp(bundleIdentifier: "org.example.terminal"))
     }
 
     func testDecodesSnapshotHierarchy() throws {
@@ -513,91 +754,6 @@ final class ItermBridgeTests: XCTestCase {
             message.windows?.first?.tabs.first?.sessions.first?.statusChangedAt,
             1_753_833_600
         )
-    }
-
-    func testGhosttyStatusRegistryOrdersEventsAndPrioritizesAgents() {
-        var registry = TerminalStatusRegistry()
-        let tty = "/dev/ttys001"
-        XCTAssertFalse(
-            registry.apply(
-                TerminalStatusReport(
-                    tty: tty,
-                    source: .command,
-                    reporterID: "shell",
-                    sequence: 1,
-                    state: .running,
-                    exitStatus: nil,
-                    heartbeat: false
-                )
-            )
-        )
-        registry.reconcile(terminals: [tty: "terminal"])
-
-        XCTAssertTrue(
-            registry.apply(
-                TerminalStatusReport(
-                    tty: tty,
-                    source: .command,
-                    reporterID: "shell",
-                    sequence: 2,
-                    state: .finished,
-                    exitStatus: 1,
-                    heartbeat: false
-                ),
-                now: 20,
-                uptime: 20
-            )
-        )
-        XCTAssertFalse(
-            registry.apply(
-                TerminalStatusReport(
-                    tty: tty,
-                    source: .command,
-                    reporterID: "shell",
-                    sequence: 1,
-                    state: .running,
-                    exitStatus: nil,
-                    heartbeat: false
-                )
-            )
-        )
-        XCTAssertEqual(registry.visibleStatus(for: tty)?.exitStatus, 1)
-
-        XCTAssertTrue(
-            registry.apply(
-                TerminalStatusReport(
-                    tty: tty,
-                    source: .agent,
-                    reporterID: "agent",
-                    sequence: 1,
-                    state: .running,
-                    exitStatus: nil,
-                    heartbeat: false
-                ),
-                now: 30,
-                uptime: 30
-            )
-        )
-        XCTAssertEqual(registry.visibleStatus(for: tty)?.activityKind, .agent)
-        XCTAssertTrue(registry.expireStaleAgentHeartbeats(uptime: 39))
-        XCTAssertEqual(registry.visibleStatus(for: tty)?.activityKind, .command)
-
-        XCTAssertTrue(
-            registry.apply(
-                TerminalStatusReport(
-                    tty: tty,
-                    source: .agent,
-                    reporterID: "agent",
-                    sequence: 2,
-                    state: .running,
-                    exitStatus: nil,
-                    heartbeat: true
-                ),
-                now: 40,
-                uptime: 40
-            )
-        )
-        XCTAssertEqual(registry.visibleStatus(for: tty)?.status, .running)
     }
 
     func testMapsSessionStatusAnimationsByActivityKindAndResult() {

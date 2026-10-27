@@ -36,50 +36,14 @@ enum CodingAgent: String, CaseIterable, Identifiable {
     }
 }
 
-enum ShellStatusIntegration: String, CaseIterable, Identifiable {
-    case zsh
-    case bash
-    case fish
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .zsh:
-            "zsh"
-        case .bash:
-            "Bash"
-        case .fish:
-            "fish"
-        }
-    }
-
-    var symbolName: String {
-        switch self {
-        case .zsh:
-            "z.square"
-        case .bash:
-            "b.square"
-        case .fish:
-            "fish"
-        }
-    }
-}
-
 @MainActor
 final class AgentIntegrationManager: ObservableObject {
     @Published private(set) var installedAgents: Set<CodingAgent> = []
-    @Published private(set) var installedShells: Set<ShellStatusIntegration> = []
     @Published private(set) var errors: [CodingAgent: String] = [:]
-    @Published private(set) var shellErrors: [ShellStatusIntegration: String] = [:]
 
     private let fileManager: FileManager
     private let homeDirectory: URL
     private let piResourceURL: URL?
-    private let statusResourceURL: URL?
-    private let zshResourceURL: URL?
-    private let bashResourceURL: URL?
-    private let fishResourceURL: URL?
 
     init(
         fileManager: FileManager = .default,
@@ -87,40 +51,16 @@ final class AgentIntegrationManager: ObservableObject {
         piResourceURL: URL? = Bundle.main.url(
             forResource: "iTermate-integration",
             withExtension: "ts"
-        ),
-        statusResourceURL: URL? = Bundle.main.url(
-            forResource: "iTermate-status",
-            withExtension: "py"
-        ),
-        zshResourceURL: URL? = Bundle.main.url(
-            forResource: "iTermate",
-            withExtension: "zsh"
-        ),
-        bashResourceURL: URL? = Bundle.main.url(
-            forResource: "iTermate",
-            withExtension: "bash"
-        ),
-        fishResourceURL: URL? = Bundle.main.url(
-            forResource: "iTermate",
-            withExtension: "fish"
         )
     ) {
         self.fileManager = fileManager
         self.homeDirectory = homeDirectory
         self.piResourceURL = piResourceURL
-        self.statusResourceURL = statusResourceURL
-        self.zshResourceURL = zshResourceURL
-        self.bashResourceURL = bashResourceURL
-        self.fishResourceURL = fishResourceURL
         refresh()
     }
 
     func isInstalled(_ agent: CodingAgent) -> Bool {
         installedAgents.contains(agent)
-    }
-
-    func isInstalled(_ shell: ShellStatusIntegration) -> Bool {
-        installedShells.contains(shell)
     }
 
     func setInstalled(_ installed: Bool, for agent: CodingAgent) {
@@ -144,23 +84,9 @@ final class AgentIntegrationManager: ObservableObject {
         refresh()
     }
 
-    func setInstalled(_ installed: Bool, for shell: ShellStatusIntegration) {
-        do {
-            if installed {
-                try installShell(shell)
-            } else {
-                try uninstallShell(shell)
-            }
-            shellErrors[shell] = nil
-        } catch {
-            shellErrors[shell] = error.localizedDescription
-        }
-        refresh()
-    }
-
     func updateInstalledIntegrations() {
         updateInstalledPiIntegration()
-        updateInstalledStatusResources()
+        removeLegacyCodexIntegrations()
     }
 
     private func updateInstalledPiIntegration() {
@@ -192,10 +118,8 @@ final class AgentIntegrationManager: ObservableObject {
         }
     }
 
-    private func updateInstalledStatusResources() {
-        defer {
-            refresh()
-        }
+    private func removeLegacyCodexIntegrations() {
+        defer { refresh() }
         do {
             try removeManagedCodexHooks()
         } catch {
@@ -208,28 +132,9 @@ final class AgentIntegrationManager: ObservableObject {
             try removeIfPresent(at: codexLauncherURL)
             try removeIfPresent(at: codexAgentHooksURL)
             try removeIfPresent(at: legacyCodexHookURL)
-            try removeStatusReporterIfUnused()
-            if fileManager.fileExists(atPath: statusReporterURL.path) {
-                guard let statusResourceURL else {
-                    throw IntegrationError.missingResource("status reporter")
-                }
-                try updateResourceIfNeeded(
-                    from: statusResourceURL,
-                    to: statusReporterURL,
-                    permissions: 0o700
-                )
-            }
-            for shell in installedShells {
-                let (resource, destination) = try shellResourceAndDestination(shell)
-                try updateResourceIfNeeded(
-                    from: resource,
-                    to: destination,
-                    permissions: 0o600
-                )
-            }
         } catch {
             NSLog(
-                "iTermate failed to update status integration: %@",
+                "iTermate failed to remove legacy Codex integration: %@",
                 error.localizedDescription
             )
         }
@@ -242,9 +147,6 @@ final class AgentIntegrationManager: ObservableObject {
         }
         installed.insert(.codex)
         installedAgents = installed
-        installedShells = Set(
-            ShellStatusIntegration.allCases.filter(shellIntegrationIsInstalled)
-        )
     }
 
     private var piExtensionURL: URL {
@@ -264,10 +166,6 @@ final class AgentIntegrationManager: ObservableObject {
         )
     }
 
-    private var statusReporterURL: URL {
-        integrationDirectoryURL.appendingPathComponent("iTermate-status.py")
-    }
-
     private var codexLauncherURL: URL {
         integrationDirectoryURL.appendingPathComponent("iTermate-codex.py")
     }
@@ -278,18 +176,6 @@ final class AgentIntegrationManager: ObservableObject {
 
     private var legacyCodexHookURL: URL {
         integrationDirectoryURL.appendingPathComponent("iTermate-hook.py")
-    }
-
-    private var zshHookURL: URL {
-        integrationDirectoryURL.appendingPathComponent("iTermate.zsh")
-    }
-
-    private var bashHookURL: URL {
-        integrationDirectoryURL.appendingPathComponent("iTermate.bash")
-    }
-
-    private var fishHookURL: URL {
-        homeDirectory.appendingPathComponent(".config/fish/conf.d/iTermate.fish")
     }
 
     private func installPi() throws {
@@ -318,273 +204,6 @@ final class AgentIntegrationManager: ObservableObject {
                 try writeCodexHooks(root)
             }
         }
-    }
-
-    private func installShell(_ shell: ShellStatusIntegration) throws {
-        switch shell {
-        case .zsh:
-            try validateManagedSource(in: zshConfigURL)
-        case .bash:
-            try validateManagedSource(in: bashRCURL)
-            try validateManagedSource(in: bashLoginURL)
-        case .fish:
-            try validateManagedFishHook()
-        }
-
-        try installStatusReporter()
-        let (resource, destination) = try shellResourceAndDestination(shell)
-        try installResource(from: resource, to: destination, permissions: 0o600)
-
-        switch shell {
-        case .zsh:
-            try addManagedSource(to: zshConfigURL, sourceURL: zshHookURL)
-        case .bash:
-            try addManagedSource(to: bashRCURL, sourceURL: bashHookURL)
-            let loginURL = bashLoginURL
-            try addManagedSource(
-                to: loginURL,
-                sourceURL: bashHookURL,
-                bashOnly: loginURL.lastPathComponent == ".profile"
-            )
-        case .fish:
-            break
-        }
-    }
-
-    private func uninstallShell(_ shell: ShellStatusIntegration) throws {
-        switch shell {
-        case .zsh:
-            try removeManagedSource(from: zshConfigURL)
-            try removeIfPresent(at: zshHookURL)
-        case .bash:
-            try removeManagedSource(from: bashRCURL)
-            for url in bashLoginURLs {
-                try removeManagedSource(from: url)
-            }
-            try removeIfPresent(at: bashHookURL)
-        case .fish:
-            try validateManagedFishHook()
-            try removeIfPresent(at: fishHookURL)
-        }
-        try removeStatusReporterIfUnused()
-    }
-
-    private func installStatusReporter() throws {
-        guard let statusResourceURL else {
-            throw IntegrationError.missingResource("status reporter")
-        }
-        try installResource(
-            from: statusResourceURL,
-            to: statusReporterURL,
-            permissions: 0o700
-        )
-    }
-
-    private func shellResourceAndDestination(
-        _ shell: ShellStatusIntegration
-    ) throws -> (URL, URL) {
-        switch shell {
-        case .zsh:
-            guard let zshResourceURL else {
-                throw IntegrationError.missingResource("zsh hook")
-            }
-            return (zshResourceURL, zshHookURL)
-        case .bash:
-            guard let bashResourceURL else {
-                throw IntegrationError.missingResource("Bash hook")
-            }
-            return (bashResourceURL, bashHookURL)
-        case .fish:
-            guard let fishResourceURL else {
-                throw IntegrationError.missingResource("fish hook")
-            }
-            return (fishResourceURL, fishHookURL)
-        }
-    }
-
-    private func shellIntegrationIsInstalled(
-        _ shell: ShellStatusIntegration
-    ) -> Bool {
-        guard fileManager.fileExists(atPath: statusReporterURL.path) else {
-            return false
-        }
-        switch shell {
-        case .zsh:
-            return fileManager.fileExists(atPath: zshHookURL.path)
-                && hasManagedSource(in: zshConfigURL)
-        case .bash:
-            return fileManager.fileExists(atPath: bashHookURL.path)
-                && hasManagedSource(in: bashRCURL)
-                && hasManagedSource(in: bashLoginURL)
-        case .fish:
-            return fishHookIsManaged
-        }
-    }
-
-    private func removeStatusReporterIfUnused() throws {
-        guard
-            !ShellStatusIntegration.allCases.contains(where: shellIntegrationIsInstalled)
-        else {
-            return
-        }
-        try removeIfPresent(at: statusReporterURL)
-    }
-
-    private var zshConfigURL: URL {
-        homeDirectory.appendingPathComponent(".zshrc")
-    }
-
-    private var bashRCURL: URL {
-        homeDirectory.appendingPathComponent(".bashrc")
-    }
-
-    private var bashLoginURLs: [URL] {
-        [".bash_profile", ".bash_login", ".profile"].map {
-            homeDirectory.appendingPathComponent($0)
-        }
-    }
-
-    private var bashLoginURL: URL {
-        bashLoginURLs.first(where: { fileManager.fileExists(atPath: $0.path) })
-            ?? bashLoginURLs[0]
-    }
-
-    private func validateManagedSource(in configURL: URL) throws {
-        let configURL = resolvedConfigURL(configURL)
-        guard fileManager.fileExists(atPath: configURL.path) else { return }
-        let contents = try String(contentsOf: configURL, encoding: .utf8)
-        let startCount = contents.components(separatedBy: Self.shellBlockStart).count - 1
-        let endCount = contents.components(separatedBy: Self.shellBlockEnd).count - 1
-        guard startCount == endCount, startCount <= 1 else {
-            throw IntegrationError.invalidShellConfig(configURL.lastPathComponent)
-        }
-        if startCount == 1, !hasManagedSource(in: configURL) {
-            throw IntegrationError.invalidShellConfig(configURL.lastPathComponent)
-        }
-    }
-
-    private func hasManagedSource(in configURL: URL) -> Bool {
-        let configURL = resolvedConfigURL(configURL)
-        guard
-            let contents = try? String(contentsOf: configURL, encoding: .utf8),
-            let start = contents.range(of: Self.shellBlockStart),
-            let end = contents.range(
-                of: Self.shellBlockEnd,
-                range: start.upperBound..<contents.endIndex
-            )
-        else {
-            return false
-        }
-        return start.upperBound <= end.lowerBound
-    }
-
-    private var fishHookIsManaged: Bool {
-        guard
-            let contents = try? String(contentsOf: fishHookURL, encoding: .utf8)
-        else {
-            return false
-        }
-        return contents.hasPrefix(Self.fishFileMarker)
-    }
-
-    private func validateManagedFishHook() throws {
-        guard fileManager.fileExists(atPath: fishHookURL.path) else { return }
-        guard fishHookIsManaged else {
-            throw IntegrationError.invalidShellConfig(fishHookURL.lastPathComponent)
-        }
-    }
-
-    private func addManagedSource(
-        to configURL: URL,
-        sourceURL: URL,
-        bashOnly: Bool = false
-    ) throws {
-        let configURL = resolvedConfigURL(configURL)
-        let exists = fileManager.fileExists(atPath: configURL.path)
-        var contents = exists
-            ? try String(contentsOf: configURL, encoding: .utf8)
-            : ""
-        let hasStart = contents.contains(Self.shellBlockStart)
-        let hasEnd = contents.contains(Self.shellBlockEnd)
-        guard hasStart == hasEnd else {
-            throw IntegrationError.invalidShellConfig(configURL.lastPathComponent)
-        }
-        if hasManagedSource(in: configURL) { return }
-        guard !hasStart else {
-            throw IntegrationError.invalidShellConfig(configURL.lastPathComponent)
-        }
-
-        if !contents.isEmpty, !contents.hasSuffix("\n") {
-            contents.append("\n")
-        }
-        let sourceCommand = "source \(Self.shellQuoted(sourceURL.path))"
-        contents += """
-        \(Self.shellBlockStart)
-        \(bashOnly ? "[ -n \"${BASH_VERSION:-}\" ] && \(sourceCommand)" : sourceCommand)
-        \(Self.shellBlockEnd)
-
-        """
-        try writeShellConfig(contents, to: configURL, existed: exists)
-    }
-
-    private func removeManagedSource(from configURL: URL) throws {
-        let configURL = resolvedConfigURL(configURL)
-        guard fileManager.fileExists(atPath: configURL.path) else { return }
-        var contents = try String(contentsOf: configURL, encoding: .utf8)
-        let startCount = contents.components(separatedBy: Self.shellBlockStart).count - 1
-        let endCount = contents.components(separatedBy: Self.shellBlockEnd).count - 1
-        guard startCount == endCount else {
-            throw IntegrationError.invalidShellConfig(configURL.lastPathComponent)
-        }
-        guard startCount == 1, let start = contents.range(of: Self.shellBlockStart) else {
-            if startCount == 0 { return }
-            throw IntegrationError.invalidShellConfig(configURL.lastPathComponent)
-        }
-        guard
-            let end = contents.range(
-                of: Self.shellBlockEnd,
-                range: start.upperBound..<contents.endIndex
-            ),
-            start.upperBound <= end.lowerBound
-        else {
-            throw IntegrationError.invalidShellConfig(configURL.lastPathComponent)
-        }
-
-        var lowerBound = start.lowerBound
-        var upperBound = end.upperBound
-        if upperBound < contents.endIndex, contents[upperBound] == "\n" {
-            upperBound = contents.index(after: upperBound)
-        } else if lowerBound > contents.startIndex {
-            let previous = contents.index(before: lowerBound)
-            if contents[previous] == "\n" {
-                lowerBound = previous
-            }
-        }
-        contents.removeSubrange(lowerBound..<upperBound)
-        try writeShellConfig(contents, to: configURL, existed: true)
-    }
-
-    private func writeShellConfig(
-        _ contents: String,
-        to configURL: URL,
-        existed: Bool
-    ) throws {
-        let permissions = existed
-            ? try fileManager.attributesOfItem(atPath: configURL.path)[.posixPermissions]
-            : nil
-        try fileManager.createDirectory(
-            at: configURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true
-        )
-        try contents.write(to: configURL, atomically: true, encoding: .utf8)
-        try fileManager.setAttributes(
-            [.posixPermissions: permissions ?? 0o600],
-            ofItemAtPath: configURL.path
-        )
-    }
-
-    private func resolvedConfigURL(_ url: URL) -> URL {
-        fileManager.fileExists(atPath: url.path) ? url.resolvingSymlinksInPath() : url
     }
 
     private func codexHooksRoot() throws -> [String: Any] {
@@ -637,24 +256,6 @@ final class AgentIntegrationManager: ObservableObject {
         )
     }
 
-    private func updateResourceIfNeeded(
-        from sourceURL: URL,
-        to destinationURL: URL,
-        permissions: Int
-    ) throws {
-        guard
-            try Data(contentsOf: sourceURL)
-                != Data(contentsOf: destinationURL)
-        else {
-            return
-        }
-        try installResource(
-            from: sourceURL,
-            to: destinationURL,
-            permissions: permissions
-        )
-    }
-
     private func removeIfPresent(at url: URL) throws {
         guard fileManager.fileExists(atPath: url.path) else { return }
         try fileManager.removeItem(at: url)
@@ -663,20 +264,11 @@ final class AgentIntegrationManager: ObservableObject {
     private static func isManagedEntry(_ entry: [String: Any]) -> Bool {
         entry["_iTermate"] as? Bool == true
     }
-
-    private static func shellQuoted(_ value: String) -> String {
-        "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
-    }
-
-    private static let shellBlockStart = "# >>> iTermate shell status >>>"
-    private static let shellBlockEnd = "# <<< iTermate shell status <<<"
-    private static let fishFileMarker = "# Managed by iTermate.\n"
 }
 
 private enum IntegrationError: LocalizedError {
     case missingResource(String)
     case invalidCodexHooks
-    case invalidShellConfig(String)
 
     var errorDescription: String? {
         switch self {
@@ -684,8 +276,6 @@ private enum IntegrationError: LocalizedError {
             "Missing bundled \(name)."
         case .invalidCodexHooks:
             "Codex hooks.json is not a valid hooks configuration."
-        case .invalidShellConfig(let name):
-            "\(name) has an incomplete or duplicate iTermate block."
         }
     }
 }
@@ -704,18 +294,6 @@ struct AgentSettingsView: View {
             } footer: {
                 Text(
                     "Supported agents can report working and completion status to iTermate."
-                )
-            }
-
-            Section {
-                ForEach(ShellStatusIntegration.allCases) { shell in
-                    row(for: shell)
-                }
-            } header: {
-                Text("Shell Commands")
-            } footer: {
-                Text(
-                    "Opt in to report top-level command status. Restart the shell after changing this setting."
                 )
             }
         }
@@ -750,18 +328,6 @@ struct AgentSettingsView: View {
         )
     }
 
-    private func row(for shell: ShellStatusIntegration) -> some View {
-        Toggle(
-            isOn: Binding(
-                get: { integrations.isInstalled(shell) },
-                set: { integrations.setInstalled($0, for: shell) }
-            )
-        ) {
-            Label(shell.title, systemImage: shell.symbolName)
-        }
-        .help(detail(for: shell))
-    }
-
     private func detail(for agent: CodingAgent) -> String {
         if let error = integrations.errors[agent] {
             return error
@@ -774,14 +340,4 @@ struct AgentSettingsView: View {
         }
         return "Reload existing sessions with /reload"
     }
-
-    private func detail(for shell: ShellStatusIntegration) -> String {
-        if let error = integrations.shellErrors[shell] {
-            return error
-        }
-        return integrations.isInstalled(shell)
-            ? "Restart this shell to apply changes"
-            : "Not installed"
-    }
-
 }

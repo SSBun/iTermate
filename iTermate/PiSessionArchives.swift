@@ -18,7 +18,7 @@ struct PiArchiveRecord: Codable, Identifiable, Equatable, Sendable {
     let terminal: String
     let summary: String?
 
-    var terminalApp: TerminalApp { terminal == "Ghostty" ? .ghostty : .iTerm2 }
+    var terminalApp: TerminalApp { .iTerm2 }
 }
 
 private struct LivePiSession: Decodable {
@@ -30,7 +30,6 @@ private struct LivePiSession: Decodable {
     let socketPath: String
     let terminal: String
     let terminalSessionId: String?
-    let tty: String?
     let sessionId: String
     let sessionFile: String
     let cwd: String
@@ -56,14 +55,35 @@ struct PiStatusSnapshot: Decodable {
     let exitStatus: Int?
     let hasRunningSubagents: Bool
     var completionId: String? = nil
+    var completedAt: TimeInterval? = nil
+    var latestCompletion: SessionCompletion? = nil
+    var recentCompletions: [SessionCompletion]? = nil
 
     var isValid: Bool {
-        version == 1 && UUID(uuidString: reporterId) != nil && sequence > 0
+        guard version == 1 && UUID(uuidString: reporterId) != nil && sequence > 0
             && sequence <= 9_007_199_254_740_991
             && (status == .finished ? exitStatus.map { (0...255).contains($0) } == true : exitStatus == nil)
             && (!hasRunningSubagents || status == .running || status == .awaitingInput)
             && (completionId == nil || (status == .finished
-                && completionId.flatMap(UUID.init(uuidString:)) != nil))
+                && completionId.flatMap(UUID.init(uuidString:)) != nil)) else { return false }
+        if let completedAt {
+            guard status == .finished, completionId != nil,
+                  completedAt.isFinite, completedAt > 0 else { return false }
+        }
+        if let latestCompletion {
+            guard latestCompletion.isValid, latestCompletion.exitStatus != nil,
+                  UUID(uuidString: latestCompletion.id) != nil else { return false }
+            if status == .finished {
+                guard latestCompletion.id == completionId, latestCompletion.completedAt == completedAt,
+                      latestCompletion.exitStatus == exitStatus else { return false }
+            }
+        }
+        if let recentCompletions {
+            guard recentCompletions.count <= 64,
+                  recentCompletions.allSatisfy({ $0.isValid && $0.exitStatus != nil && UUID(uuidString: $0.id) != nil }),
+                  recentCompletions.last == latestCompletion else { return false }
+        }
+        return true
     }
 }
 
@@ -91,10 +111,30 @@ final class PiSessionArchives: ObservableObject {
 
     @Published private(set) var records: [PiArchiveRecord] = []
     @Published private(set) var isBusy = false
-    @Published var error: String?
+    @Published var error: String? {
+        didSet {
+            errorDismissalTask?.cancel()
+            errorDismissalTask = nil
+            guard error != nil else {
+                return
+            }
+            errorDismissalTask = Task { @MainActor [weak self] in
+                do {
+                    try await Task.sleep(nanoseconds: 5_000_000_000)
+                } catch {
+                    return
+                }
+                guard !Task.isCancelled else {
+                    return
+                }
+                self?.error = nil
+            }
+        }
+    }
     @Published private var liveSessions: [LivePiSession] = []
     @Published private var refreshingTitleIDs: Set<String> = []
     private var timer: Timer?
+    private var errorDismissalTask: Task<Void, Never>?
     private let discoveryRoot: URL
     private let fillsMissingTitles: () -> Bool
     private var automaticTitleTasks: [String: Task<Void, Never>] = [:]
@@ -145,7 +185,7 @@ final class PiSessionArchives: ObservableObject {
         liveSessions = files.filter { $0.pathExtension == "json" }.compactMap { file in
             guard let data = try? Self.boundedData(at: file, maximum: 16384),
                   let session = try? JSONDecoder().decode(LivePiSession.self, from: data),
-                  session.version == 1, UUID(uuidString: session.id) != nil,
+                  session.version == 1, session.terminal == "iTerm2", UUID(uuidString: session.id) != nil,
                   session.pid > 1, session.parentPid > 1, kill(session.pid, 0) == 0,
                   Self.validSessionID(session.sessionId),
                   session.socketPath == discoveryRoot.appendingPathComponent(String(session.id.prefix(16)) + ".sock").path,
@@ -166,9 +206,7 @@ final class PiSessionArchives: ObservableObject {
                   live.taskSummary.map(Self.isValidTaskTitle) != true,
                   !refreshingTitleIDs.contains(live.id), automaticTitleTasks[live.id] == nil else { continue }
             let matches = liveSessions.filter { candidate in
-                candidate.terminal == live.terminal && (live.terminal == "iTerm2"
-                    ? live.terminalSessionId != nil && candidate.terminalSessionId == live.terminalSessionId
-                    : live.tty != nil && candidate.tty == live.tty)
+                candidate.terminalSessionId == live.terminalSessionId && live.terminalSessionId != nil
             }
             guard matches.count == 1 else { continue }
             let key = live.id + ":" + live.sessionId
@@ -191,8 +229,7 @@ final class PiSessionArchives: ObservableObject {
     private func descriptor(for session: TerminalSessionSnapshot, terminal: TerminalApp) -> LivePiSession? {
         let matches = liveSessions.filter { live in
             guard live.terminal == terminal.displayName else { return false }
-            return terminal == .iTerm2 ? live.terminalSessionId == session.id
-                : (session.tty != nil && live.tty == session.tty)
+            return live.terminalSessionId == session.id
         }
         return matches.count == 1 ? matches.first : nil
     }
@@ -437,7 +474,7 @@ final class PiSessionArchives: ObservableObject {
               validSessionID(record.sessionId), record.filename == "archive_\(record.sessionId).jsonl",
               record.cwd.hasPrefix("/"), !record.cwd.contains("\0"), record.cwd.utf8.count <= 4096,
               record.sha256.count == 64, record.sha256.allSatisfy({ $0.isHexDigit }),
-              record.archivedAt.isFinite, ["iTerm2", "Ghostty"].contains(record.terminal),
+              record.archivedAt.isFinite, record.terminal == "iTerm2",
               record.summary.map({ !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                   && $0.utf8.count <= 4800 }) ?? true else {
             throw PiArchiveError("Invalid archive metadata.")

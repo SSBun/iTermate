@@ -1,3 +1,4 @@
+import CoreFoundation
 import Darwin
 import Foundation
 
@@ -6,22 +7,42 @@ struct CodexSessionObservation: Equatable {
     let changedAt: TimeInterval?
     let processIdentity: CodexSessionMonitor.ProcessIdentity?
     let titleExcerpt: String?
+    let sessionID: String?
+    let latestCompletion: SessionCompletion?
+    let recentCompletions: [SessionCompletion]?
+    let completionInProgressID: String?
+    let isProcessAlive: Bool
+    /// Requests daemon state for a thread discovered without an owned rollout descriptor.
+    let requiresRuntimeStatus: Bool
 
     init(
         status: TerminalSessionStatus?,
         changedAt: TimeInterval?,
         processIdentity: CodexSessionMonitor.ProcessIdentity? = nil,
-        titleExcerpt: String? = nil
+        titleExcerpt: String? = nil,
+        sessionID: String? = nil,
+        latestCompletion: SessionCompletion? = nil,
+        recentCompletions: [SessionCompletion]? = nil,
+        completionInProgressID: String? = nil,
+        isProcessAlive: Bool = true,
+        requiresRuntimeStatus: Bool = false
     ) {
         self.status = status
         self.changedAt = changedAt
         self.processIdentity = processIdentity
         self.titleExcerpt = titleExcerpt
+        self.sessionID = sessionID
+        self.latestCompletion = latestCompletion
+        self.recentCompletions = recentCompletions
+        self.completionInProgressID = completionInProgressID
+        self.isProcessAlive = isProcessAlive
+        self.requiresRuntimeStatus = requiresRuntimeStatus
     }
 }
 
 /// Passively observes original Codex CLI sessions without hooks or command wrappers.
-final class CodexSessionMonitor {
+// All public instance operations serialize mutable state and provider calls with lock.
+final class CodexSessionMonitor: @unchecked Sendable {
     struct ProcessIdentity: Hashable {
         let pid: pid_t
         let startedAt: TimeInterval
@@ -36,11 +57,13 @@ final class CodexSessionMonitor {
 
     private struct SessionMetadata: Decodable {
         struct Payload: Decodable {
-            let cwd: String
+            let id: String
             let source: Source
+            let cli_version: String?
+            let cwd: String?
         }
 
-        enum Source: Decodable, Equatable {
+        enum Source: Decodable {
             case root
             case subagent
 
@@ -50,34 +73,179 @@ final class CodexSessionMonitor {
             }
         }
 
-        let timestamp: String?
         let type: String
+        let timestamp: String?
         let payload: Payload
     }
 
-    private let fileManager: FileManager
-    private let sessionsDirectory: URL
-    private let processProvider: ((Set<String>) -> [CodexProcess])?
-    private let lock = NSLock()
-    private var generation: UInt64 = 0
-    private var rolloutByProcess: [ProcessIdentity: URL] = [:]
-    private var resolutionAttempts: [ProcessIdentity: Int] = [:]
-    private var observationByProcess: [ProcessIdentity: CodexSessionObservation] = [:]
-    private var missedScansByProcess: [ProcessIdentity: Int] = [:]
-    private var rolloutLengthByProcess: [ProcessIdentity: UInt64] = [:]
-    private var ttyByProcess: [ProcessIdentity: String] = [:]
+    private struct FileIdentity: Hashable {
+        let device: Int32
+        let inode: UInt64
 
-    init(
-        fileManager: FileManager = .default,
-        homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
-        processProvider: ((Set<String>) -> [CodexProcess])? = nil
-    ) {
-        self.fileManager = fileManager
-        self.processProvider = processProvider
-        sessionsDirectory = homeDirectory.appendingPathComponent(".codex/sessions", isDirectory: true)
+        init(_ attributes: stat) {
+            device = attributes.st_dev
+            inode = attributes.st_ino
+        }
     }
 
-    /// Returns observations keyed by the visible terminal TTY of each original Codex CLI.
+    private struct Rollout: Hashable {
+        let url: URL
+        let identity: FileIdentity
+    }
+
+    private struct Retry {
+        let attempts: Int
+        let nextScan: UInt64
+    }
+
+    private enum MatchSource: Int {
+        case directory = 1
+        case resumeArgument = 2
+        case openFile = 3
+        case terminalTitle = 4
+    }
+
+    private struct Match {
+        let rollout: Rollout
+        let sessionID: String
+        let source: MatchSource
+        var distance: TimeInterval = 0
+        var retained = false
+        var requiresRuntimeStatus = true
+    }
+
+    private struct Parser {
+        var status: TerminalSessionStatus?
+        var changedAt: TimeInterval?
+        var sessionID: String?
+        var supportsCompletionOutcomes = false
+        var turnID: String?
+        var latestCompletion: SessionCompletion?
+        var recentCompletions: [SessionCompletion] = []
+        var messages: [(role: String, text: String)] = []
+
+        var observation: CodexSessionObservation {
+            CodexSessionObservation(
+                status: status,
+                changedAt: changedAt,
+                titleExcerpt: messages.isEmpty ? nil : messages.map { "[\($0.role)]\n\($0.text)" }
+                    .joined(separator: "\n\n"),
+                sessionID: sessionID,
+                latestCompletion: latestCompletion,
+                recentCompletions: recentCompletions,
+                completionInProgressID: sessionID.flatMap { session in
+                    turnID.map { "codex:\(session.lowercased()):\($0.lowercased())" }
+                }
+            )
+        }
+
+        mutating func consume(_ data: Data) {
+            guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let payload = root["payload"] as? [String: Any] else { return }
+            if root["type"] as? String == "session_meta", let id = payload["id"] as? String {
+                if let sessionID, sessionID != id { self = Parser() }
+                sessionID = id
+                supportsCompletionOutcomes = CodexSessionMonitor.supportsCompletionOutcomes(payload["cli_version"] as? String)
+            }
+            if root["type"] as? String == "event_msg", let event = payload["type"] as? String {
+                let timestamp = CodexSessionMonitor.timestamp(root["timestamp"] as? String)
+                switch event {
+                case "task_started", "turn_started":
+                    status = .running
+                    changedAt = timestamp
+                    turnID = payload["turn_id"] as? String
+                case "task_complete", "turn_complete":
+                    status = .finished
+                    changedAt = timestamp
+                    let failed = payload["error"] != nil && !(payload["error"] is NSNull)
+                    // Older writers can finish after an unpersisted error; absence of error alone is insufficient.
+                    let endedAt = payload["completed_at"] as? NSNumber
+                    let hasOutcome = supportsCompletionOutcomes && endedAt.map {
+                        CFGetTypeID($0) != CFBooleanGetTypeID() && $0.doubleValue.isFinite && $0.doubleValue > 0
+                    } == true
+                    if let sessionID, let timestamp, timestamp > 0 {
+                        let completionID = payload["turn_id"] as? String ?? turnID
+                            ?? root["timestamp"] as? String ?? String(timestamp)
+                        let completion = SessionCompletion(
+                            id: "codex:\(sessionID.lowercased()):\(completionID.lowercased())",
+                            completedAt: timestamp,
+                            exitStatus: failed ? 1 : hasOutcome ? 0 : nil
+                        )
+                        latestCompletion = completion
+                        if let index = recentCompletions.firstIndex(where: { $0.id == completion.id }) {
+                            recentCompletions[index] = completion
+                        } else {
+                            recentCompletions.append(completion)
+                            if recentCompletions.count > 64 { recentCompletions.removeFirst() }
+                        }
+                    }
+                    turnID = nil
+                case "turn_aborted":
+                    status = .interrupted
+                    changedAt = timestamp
+                    turnID = nil
+                default: break
+                }
+            }
+            if root["type"] as? String == "response_item",
+               payload["type"] as? String == "message",
+               let role = payload["role"] as? String, ["user", "assistant"].contains(role),
+               let message = CodexSessionMonitor.titleMessage(in: payload), !message.isEmpty {
+                messages.append((role, CodexSessionMonitor.boundedTitleMessage(message)))
+                if messages.filter({ $0.role == role }).count > 4,
+                   let first = messages.firstIndex(where: { $0.role == role }) {
+                    messages.remove(at: first)
+                }
+            }
+        }
+    }
+
+    private struct Reader {
+        var offset: UInt64
+        var pending = Data()
+        var skipsPartialLine: Bool
+        var anchor = Data()
+        var modifiedAt: timespec?
+        var parser: Parser
+    }
+
+    private static let maximumLineBytes = 8_388_608
+    private let processProvider: ((Set<String>) -> [CodexProcess])?
+    private let rolloutProvider: ((CodexProcess) -> [URL])?
+    private let sessionsDirectory: URL?
+    private let lock = NSLock()
+    private var generation: UInt64 = 0
+    private var scanNumber: UInt64 = 0
+    private var matchesByProcess: [ProcessIdentity: Match] = [:]
+    private var boundRolloutByProcess: [ProcessIdentity: Rollout] = [:]
+    private var retries: [ProcessIdentity: Retry] = [:]
+    private var readers: [Rollout: Reader] = [:]
+    private var metadataByRollout: [Rollout: SessionMetadata] = [:]
+    private var observationByProcess: [ProcessIdentity: CodexSessionObservation] = [:]
+    private var missedScansByProcess: [ProcessIdentity: Int] = [:]
+    private var ttyByProcess: [ProcessIdentity: String] = [:]
+    private var terminalTitleProcesses: Set<ProcessIdentity> = []
+    private var terminalPrefixesByProcess: [ProcessIdentity: String] = [:]
+    private var rolloutURLsForScan: [URL]?
+
+    init(
+        processProvider: ((Set<String>) -> [CodexProcess])? = nil,
+        rolloutProvider: ((CodexProcess) -> [URL])? = nil,
+        sessionsDirectory: URL? = nil
+    ) {
+        self.processProvider = processProvider
+        self.rolloutProvider = rolloutProvider
+        if let sessionsDirectory {
+            self.sessionsDirectory = sessionsDirectory
+        } else if processProvider == nil && rolloutProvider == nil {
+            let codexHome = ProcessInfo.processInfo.environment["CODEX_HOME"].map { URL(fileURLWithPath: $0) }
+                ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex", isDirectory: true)
+            self.sessionsDirectory = codexHome.appendingPathComponent("sessions", isDirectory: true)
+        } else {
+            self.sessionsDirectory = nil
+        }
+    }
+
     func scanGeneration() -> UInt64 {
         lock.lock()
         defer { lock.unlock() }
@@ -86,73 +254,62 @@ final class CodexSessionMonitor {
 
     func observations(
         in ttys: Set<String>,
-        expectedGeneration: UInt64? = nil
+        expectedGeneration: UInt64? = nil,
+        terminalThreadPrefixes: [String: String] = [:]
     ) -> [String: CodexSessionObservation] {
         lock.lock()
         defer { lock.unlock() }
         guard expectedGeneration == nil || expectedGeneration == generation else { return [:] }
+        scanNumber &+= 1
         let processes = processProvider?(ttys) ?? ttys.compactMap(codexProcess(on:))
         let identities = Set(processes.map(\.identity))
         var retainedIdentities = identities
         let previousObservations = observationByProcess
         let previousTTYs = ttyByProcess
         var observations: [String: CodexSessionObservation] = [:]
+        let resolvedMatches = resolveMatches(for: processes, terminalThreadPrefixes: terminalThreadPrefixes)
 
         for process in processes {
             missedScansByProcess[process.identity] = nil
-            var rollout = rolloutByProcess[process.identity]
-            if rollout == nil, resolutionAttempts[process.identity, default: 0] < 15 {
-                resolutionAttempts[process.identity, default: 0] += 1
-                rollout = resolveRollout(for: process)
-            }
-            if let rollout {
-                rolloutByProcess[process.identity] = rollout
-                resolutionAttempts[process.identity] = nil
-            }
-            let rolloutLength = rollout.flatMap(fileLength(at:))
-            let observation = rollout.flatMap(observation(at:))
+            let match = resolvedMatches[process.identity]
+            matchesByProcess[process.identity] = match
+            let observation = match.flatMap { self.observation(at: $0.rollout) }
                 ?? CodexSessionObservation(status: nil, changedAt: nil)
-            let resolved = Self.resolvedObservation(
-                observation,
-                previous: previousObservations[process.identity],
-                rolloutGrew: rolloutLength.map {
-                    $0 > rolloutLengthByProcess[process.identity, default: $0]
-                } ?? false
-            )
-            let identified = CodexSessionObservation(
-                status: resolved.status,
-                changedAt: resolved.changedAt,
-                processIdentity: process.identity,
-                titleExcerpt: resolved.titleExcerpt
+            let identified = Self.identifying(
+                observation, process: process.identity,
+                requiresRuntimeStatus: match?.requiresRuntimeStatus ?? false
             )
             observations[process.tty] = identified
             ttyByProcess[process.identity] = process.tty
-            rolloutLengthByProcess[process.identity] = rolloutLength
             observationByProcess[process.identity] = identified
         }
 
-        for (identity, observation) in previousObservations
-        where !identities.contains(identity) {
+        for (identity, previous) in previousObservations where !identities.contains(identity) {
             guard let tty = previousTTYs[identity], ttys.contains(tty), observations[tty] == nil else {
                 continue
             }
+            if processProvider == nil, let info = processInfo(identity.pid),
+               Self.identity(of: info) == identity, info.pbi_status == SSTOP {
+                let suspended = Self.identifying(previous, process: identity)
+                observations[tty] = suspended
+                observationByProcess[identity] = suspended
+                retainedIdentities.insert(identity)
+                missedScansByProcess[identity] = nil
+                continue
+            }
+            let final = matchesByProcess[identity].flatMap { observation(at: $0.rollout) } ?? previous
+            let identified = Self.identifying(
+                final, process: identity, isProcessAlive: false,
+                requiresRuntimeStatus: previous.requiresRuntimeStatus
+            )
             let missedScans = missedScansByProcess[identity, default: 0] + 1
             missedScansByProcess[identity] = missedScans
-            observations[tty] = Self.observationAfterMissingScan(
-                observation,
-                missedScans: missedScans
-            )
-            if missedScans <= 2 {
-                retainedIdentities.insert(identity)
-            }
+            observations[tty] = Self.observationAfterMissingScan(identified, missedScans: missedScans)
+            observationByProcess[identity] = identified
+            if missedScans <= 2 { retainedIdentities.insert(identity) }
         }
 
-        rolloutByProcess = rolloutByProcess.filter { retainedIdentities.contains($0.key) }
-        resolutionAttempts = resolutionAttempts.filter { retainedIdentities.contains($0.key) }
-        observationByProcess = observationByProcess.filter { retainedIdentities.contains($0.key) }
-        missedScansByProcess = missedScansByProcess.filter { retainedIdentities.contains($0.key) }
-        rolloutLengthByProcess = rolloutLengthByProcess.filter { retainedIdentities.contains($0.key) }
-        ttyByProcess = ttyByProcess.filter { retainedIdentities.contains($0.key) }
+        retain(identities: retainedIdentities)
         return observations
     }
 
@@ -160,22 +317,67 @@ final class CodexSessionMonitor {
         lock.lock()
         defer { lock.unlock() }
         generation &+= 1
-        guard let ttys else {
-            rolloutByProcess.removeAll()
-            resolutionAttempts.removeAll()
-            observationByProcess.removeAll()
-            missedScansByProcess.removeAll()
-            rolloutLengthByProcess.removeAll()
-            ttyByProcess.removeAll()
-            return
-        }
-        let removedIdentities = Set(ttyByProcess.compactMap { ttys.contains($0.value) ? $0.key : nil })
-        rolloutByProcess = rolloutByProcess.filter { !removedIdentities.contains($0.key) }
-        resolutionAttempts = resolutionAttempts.filter { !removedIdentities.contains($0.key) }
-        observationByProcess = observationByProcess.filter { !removedIdentities.contains($0.key) }
-        missedScansByProcess = missedScansByProcess.filter { !removedIdentities.contains($0.key) }
-        rolloutLengthByProcess = rolloutLengthByProcess.filter { !removedIdentities.contains($0.key) }
-        ttyByProcess = ttyByProcess.filter { !removedIdentities.contains($0.key) }
+        let retained = Set(ttyByProcess.compactMap { identity, tty in
+            ttys.map { $0.contains(tty) } == false ? identity : nil
+        })
+        retain(identities: retained)
+    }
+
+    /// Reads visible messages only from the daemon's path for an explicitly bound thread.
+    func titleExcerpt(at path: String, threadID: String, process: ProcessIdentity) -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        boundRolloutByProcess[process] = nil
+        guard observationByProcess[process] != nil,
+              let expectedID = UUID(uuidString: threadID),
+              path.hasPrefix("/"), !path.utf8.contains(0), path.utf8.count < Int(MAXPATHLEN) else { return nil }
+        let url = URL(fileURLWithPath: path)
+        guard url.lastPathComponent.hasPrefix("rollout-"), url.pathExtension == "jsonl" else { return nil }
+        var attributes = stat()
+        guard lstat(path, &attributes) == 0,
+              attributes.st_mode & S_IFMT == S_IFREG, attributes.st_uid == geteuid() else { return nil }
+        let rollout = Rollout(url: url, identity: FileIdentity(attributes))
+        guard let metadata = sessionMetadata(at: rollout), metadata.type == "session_meta",
+              metadata.payload.source == .root,
+              UUID(uuidString: metadata.payload.id) == expectedID else { return nil }
+        boundRolloutByProcess[process] = rollout
+        guard let observation = observation(at: rollout),
+              observation.sessionID.flatMap(UUID.init(uuidString:)) == expectedID else { return nil }
+        return observation.titleExcerpt
+    }
+
+    private func retain(identities: Set<ProcessIdentity>) {
+        matchesByProcess = matchesByProcess.filter { identities.contains($0.key) }
+        boundRolloutByProcess = boundRolloutByProcess.filter { identities.contains($0.key) }
+        retries = retries.filter { identities.contains($0.key) }
+        observationByProcess = observationByProcess.filter { identities.contains($0.key) }
+        missedScansByProcess = missedScansByProcess.filter { identities.contains($0.key) }
+        ttyByProcess = ttyByProcess.filter { identities.contains($0.key) }
+        terminalTitleProcesses.formIntersection(identities)
+        terminalPrefixesByProcess = terminalPrefixesByProcess.filter { identities.contains($0.key) }
+        let rollouts = Set(matchesByProcess.values.map(\.rollout)).union(boundRolloutByProcess.values)
+        readers = readers.filter { rollouts.contains($0.key) }
+        metadataByRollout = metadataByRollout.filter { rollouts.contains($0.key) }
+    }
+
+    private static func identifying(
+        _ observation: CodexSessionObservation,
+        process: ProcessIdentity,
+        isProcessAlive: Bool = true,
+        requiresRuntimeStatus: Bool? = nil
+    ) -> CodexSessionObservation {
+        CodexSessionObservation(
+            status: observation.status,
+            changedAt: observation.changedAt,
+            processIdentity: process,
+            titleExcerpt: observation.titleExcerpt,
+            sessionID: observation.sessionID,
+            latestCompletion: observation.latestCompletion,
+            recentCompletions: observation.recentCompletions,
+            completionInProgressID: observation.completionInProgressID,
+            isProcessAlive: isProcessAlive,
+            requiresRuntimeStatus: requiresRuntimeStatus ?? observation.requiresRuntimeStatus
+        )
     }
 
     private func codexProcess(on tty: String) -> CodexProcess? {
@@ -227,121 +429,341 @@ final class CodexSessionMonitor {
         return process
     }
 
-    private func resolveRollout(for process: CodexProcess) -> URL? {
-        if let sessionID = process.arguments.first(where: Self.isSessionID),
-           let explicit = rolloutFile(sessionID: sessionID) {
-            return explicit
+    private func resolveMatches(
+        for processes: [CodexProcess],
+        terminalThreadPrefixes: [String: String]
+    ) -> [ProcessIdentity: Match] {
+        rolloutURLsForScan = nil
+        var proposed: [ProcessIdentity: Match] = [:]
+        var attempted: Set<ProcessIdentity> = []
+        var conflicted: Set<ProcessIdentity> = []
+        for process in processes {
+            let prefix = terminalThreadPrefixes[process.tty]
+            let prefixChanged = prefix != terminalPrefixesByProcess[process.identity]
+            terminalPrefixesByProcess[process.identity] = prefix
+            if prefix != nil { terminalTitleProcesses.insert(process.identity) }
+            guard matchesByProcess[process.identity] != nil
+                || prefixChanged || scanNumber >= (retries[process.identity]?.nextScan ?? 0) else { continue }
+            attempted.insert(process.identity)
+            proposed[process.identity] = resolveMatch(for: process, terminalThreadPrefix: prefix)
         }
+        let groups = proposed.reduce(into: [String: [ProcessIdentity]]()) { groups, entry in
+            groups[entry.value.sessionID, default: []].append(entry.key)
+        }
+        for identities in groups.values where identities.count > 1 {
+            let ranked = identities.sorted {
+                guard let lhs = proposed[$0], let rhs = proposed[$1] else { return false }
+                if lhs.source != rhs.source { return lhs.source.rawValue > rhs.source.rawValue }
+                if lhs.source == .directory, lhs.retained != rhs.retained { return lhs.retained }
+                return lhs.distance < rhs.distance
+            }
+            guard let first = ranked.first, let second = ranked.dropFirst().first,
+                  let best = proposed[first], let next = proposed[second] else { continue }
+            let unambiguous = best.source.rawValue > next.source.rawValue
+                || (best.source == .directory
+                    && ((best.retained && !next.retained) || best.distance + 1 < next.distance))
+            for identity in identities where !unambiguous || identity != first {
+                proposed[identity] = nil
+                conflicted.insert(identity)
+            }
+        }
+        for identity in attempted {
+            if conflicted.contains(identity) {
+                // A backoff must not hide an existing claim and let a weaker process take its thread.
+                retries[identity] = Retry(attempts: 0, nextScan: scanNumber + 1)
+            } else if proposed[identity] == nil {
+                let attempts = min((retries[identity]?.attempts ?? 0) + 1, 4)
+                retries[identity] = Retry(attempts: attempts, nextScan: scanNumber + UInt64(1 << (attempts - 1)))
+            } else {
+                retries[identity] = nil
+            }
+        }
+        return proposed
+    }
 
-        let files = rolloutFiles(near: process.identity.startedAt)
-        let candidates = files.compactMap { url -> (URL, TimeInterval)? in
-            guard let metadata = sessionMetadata(at: url),
-                  let sessionStartedAt = Self.timestamp(metadata.timestamp),
-                  abs(sessionStartedAt - process.identity.startedAt) <= 30,
-                  metadata.payload.source == .root,
-                  metadata.payload.cwd == process.cwd else { return nil }
-            return (url, abs(sessionStartedAt - process.identity.startedAt))
-        }.sorted { $0.1 < $1.1 }
-
+    private func resolveMatch(for process: CodexProcess, terminalThreadPrefix: String?) -> Match? {
+        let rollouts: [Rollout]
+        if let rolloutProvider {
+            rollouts = rolloutProvider(process).compactMap(rollout(at:))
+        } else {
+            rollouts = openedRollouts(for: process)
+        }
+        let opened = Set(rollouts).compactMap { match(rollout: $0, source: .openFile) }
+        if let prefix = terminalThreadPrefix?.lowercased() {
+            let fullID = UUID(uuidString: prefix)?.uuidString.lowercased() == prefix
+            let shortenedID = prefix.range(
+                of: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{5}$",
+                options: .regularExpression
+            ) != nil
+            guard fullID || shortenedID else { return nil }
+            let candidates = (sessionsDirectory.map { rolloutFiles(in: $0, sessionID: prefix) } ?? rollouts)
+                .compactMap { match(rollout: $0, source: .terminalTitle) }
+                .filter { $0.sessionID.hasPrefix(prefix) }
+            guard candidates.count == 1, var resolved = candidates.first else { return nil }
+            let matchingOpened = opened.filter { $0.sessionID == resolved.sessionID }
+            if matchingOpened.count == 1, let owned = matchingOpened.first {
+                resolved = Match(rollout: owned.rollout, sessionID: owned.sessionID,
+                                 source: .terminalTitle, requiresRuntimeStatus: false)
+            }
+            return resolved
+        }
+        // The current title also constrains descriptors that may remain open after a thread switch.
+        guard !terminalTitleProcesses.contains(process.identity) else { return nil }
+        if !opened.isEmpty { return opened.count == 1 ? opened.first : nil }
+        guard let sessionsDirectory else { return nil }
+        if var previous = matchesByProcess[process.identity], previous.source != .openFile,
+           rollout(at: previous.rollout.url) == previous.rollout,
+           match(rollout: previous.rollout, source: previous.source)?.sessionID == previous.sessionID {
+            previous.retained = true
+            return previous
+        }
+        if let resumeIndex = process.arguments.firstIndex(of: "resume"),
+           let sessionID = process.arguments.dropFirst(resumeIndex + 1).compactMap(UUID.init(uuidString:)).first {
+            let candidates = rolloutFiles(in: sessionsDirectory, sessionID: sessionID.uuidString)
+                .compactMap { match(rollout: $0, source: .resumeArgument) }
+                .filter { $0.sessionID == sessionID.uuidString.lowercased() }
+            return candidates.count == 1 ? candidates.first : nil
+        }
+        // shortcut: cwd/start time is a bounded compatibility signal; replace it when Codex exposes terminal ownership.
+        let candidates = rolloutFiles(near: process.identity.startedAt, in: sessionsDirectory)
+            .compactMap { rollout -> Match? in
+                guard var candidate = match(rollout: rollout, source: .directory),
+                      let metadata = metadataByRollout[rollout], let cwd = metadata.payload.cwd,
+                      URL(fileURLWithPath: cwd).standardizedFileURL.resolvingSymlinksInPath().path
+                        == URL(fileURLWithPath: process.cwd).standardizedFileURL.resolvingSymlinksInPath().path,
+                      let startedAt = Self.timestamp(metadata.timestamp) else { return nil }
+                candidate.distance = abs(startedAt - process.identity.startedAt)
+                return candidate.distance <= 30 ? candidate : nil
+            }.sorted { $0.distance < $1.distance }
         guard let first = candidates.first,
-              candidates.count == 1 || first.1 + 1 < candidates[1].1 else { return nil }
-        return first.0
+              candidates.count == 1 || first.distance + 1 < candidates[1].distance else { return nil }
+        return first
     }
 
-    private func observation(at url: URL) -> CodexSessionObservation? {
-        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
-        defer { try? handle.close() }
-        let length = (try? handle.seekToEnd()) ?? 0
-        let tailLength = min(length, 1_048_576)
-        try? handle.seek(toOffset: length - tailLength)
-        guard let data = try? handle.readToEnd(),
-              let text = Self.decodableTail(data, wasTruncated: tailLength < length) else { return nil }
-        return Self.parseObservation(text)
+    private func match(rollout: Rollout, source: MatchSource) -> Match? {
+        guard let metadata = sessionMetadata(at: rollout),
+              metadata.type == "session_meta", metadata.payload.source == .root,
+              let sessionID = UUID(uuidString: metadata.payload.id) else { return nil }
+        metadataByRollout[rollout] = metadata
+        return Match(rollout: rollout, sessionID: sessionID.uuidString.lowercased(), source: source,
+                     requiresRuntimeStatus: source != .openFile)
     }
 
-    static func decodableTail(_ data: Data, wasTruncated: Bool) -> String? {
-        var data = data
-        if wasTruncated {
-            guard let newline = data.firstIndex(of: 0x0A) else { return nil }
-            data = Data(data[data.index(after: newline)...])
+    private func rollout(at url: URL) -> Rollout? {
+        guard url.lastPathComponent.hasPrefix("rollout-"), url.pathExtension == "jsonl" else { return nil }
+        var attributes = stat()
+        guard lstat(url.path, &attributes) == 0,
+              attributes.st_mode & S_IFMT == S_IFREG, attributes.st_uid == geteuid() else { return nil }
+        return Rollout(url: url, identity: FileIdentity(attributes))
+    }
+
+    private func rolloutFiles(near timestamp: TimeInterval, in directory: URL) -> [Rollout] {
+        let calendar = Calendar(identifier: .gregorian)
+        let date = Date(timeIntervalSince1970: timestamp)
+        return (-1...1).flatMap { offset -> [Rollout] in
+            guard let day = calendar.date(byAdding: .day, value: offset, to: date) else { return [] }
+            let components = calendar.dateComponents([.year, .month, .day], from: day)
+            guard let year = components.year, let month = components.month, let day = components.day else { return [] }
+            let dayDirectory = directory.appendingPathComponent(String(format: "%04d/%02d/%02d", year, month, day))
+            return ((try? FileManager.default.contentsOfDirectory(
+                at: dayDirectory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
+            )) ?? []).compactMap(rollout(at:))
         }
-        return String(data: data, encoding: .utf8)
+    }
+
+    private func rolloutFiles(in directory: URL, sessionID: String) -> [Rollout] {
+        if rolloutURLsForScan == nil {
+            guard let enumerator = FileManager.default.enumerator(
+                at: directory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
+            ) else { return [] }
+            rolloutURLsForScan = enumerator.compactMap { item -> URL? in
+                guard let url = item as? URL,
+                      url.lastPathComponent.hasPrefix("rollout-"), url.pathExtension == "jsonl" else { return nil }
+                return url
+            }
+        }
+        return (rolloutURLsForScan ?? []).compactMap { url -> Rollout? in
+            guard url.lastPathComponent.lowercased().contains(sessionID.lowercased()) else { return nil }
+            return rollout(at: url)
+        }
+    }
+
+    private func openedRollouts(for process: CodexProcess) -> [Rollout] {
+        let pid = process.identity.pid
+        guard let before = processInfo(pid), Self.identity(of: before) == process.identity else {
+            return []
+        }
+        let required = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, nil, 0)
+        let itemSize = MemoryLayout<proc_fdinfo>.size
+        guard required > 0, required < 1_048_576 else { return [] }
+        var descriptors = [proc_fdinfo](repeating: proc_fdinfo(), count: Int(required) / itemSize + 16)
+        let capacity = descriptors.count * itemSize
+        let bytes = descriptors.withUnsafeMutableBytes {
+            proc_pidinfo(pid, PROC_PIDLISTFDS, 0, $0.baseAddress, Int32(capacity))
+        }
+        guard bytes > 0, bytes < capacity, Int(bytes) % itemSize == 0 else { return [] }
+        var rollouts: [Rollout] = []
+        for descriptor in descriptors.prefix(Int(bytes) / itemSize)
+        where descriptor.proc_fdtype == PROX_FDTYPE_VNODE {
+            var info = vnode_fdinfowithpath()
+            let size = MemoryLayout<vnode_fdinfowithpath>.size
+            guard proc_pidfdinfo(pid, descriptor.proc_fd, PROC_PIDFDVNODEPATHINFO, &info, Int32(size)) == size,
+                  info.pfi.fi_openflags & UInt32(FWRITE) != 0 else { continue }
+            let path = withUnsafePointer(to: &info.pvip.vip_path) {
+                $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) }
+            }
+            let url = URL(fileURLWithPath: path)
+            guard url.lastPathComponent.hasPrefix("rollout-"), url.pathExtension == "jsonl" else { continue }
+            var attributes = stat()
+            guard stat(path, &attributes) == 0,
+                  attributes.st_mode & S_IFMT == S_IFREG,
+                  attributes.st_dev == info.pvip.vip_vi.vi_stat.vst_dev,
+                  attributes.st_ino == info.pvip.vip_vi.vi_stat.vst_ino else { continue }
+            rollouts.append(Rollout(url: url, identity: FileIdentity(attributes)))
+        }
+        guard let after = processInfo(pid), sameProcess(before, after) else { return [] }
+        return rollouts
+    }
+
+    private func observation(at rollout: Rollout) -> CodexSessionObservation? {
+        guard let handle = try? FileHandle(forReadingFrom: rollout.url) else { return nil }
+        defer { try? handle.close() }
+        var attributes = stat()
+        guard fstat(handle.fileDescriptor, &attributes) == 0,
+              FileIdentity(attributes) == rollout.identity, attributes.st_size >= 0 else { return nil }
+        let length = UInt64(attributes.st_size)
+        var reader = readers[rollout]
+        if let existing = reader, let metadata = metadataByRollout[rollout],
+           existing.parser.sessionID != metadata.payload.id {
+            reader = nil
+        }
+        if let existing = reader, existing.offset == length,
+           existing.modifiedAt?.tv_sec == attributes.st_mtimespec.tv_sec,
+           existing.modifiedAt?.tv_nsec == attributes.st_mtimespec.tv_nsec {
+            return existing.parser.observation
+        }
+        if let existing = reader {
+            if length < existing.offset {
+                reader = nil
+            } else if !existing.anchor.isEmpty {
+                try? handle.seek(toOffset: existing.offset - UInt64(existing.anchor.count))
+                if (try? handle.read(upToCount: existing.anchor.count)) != existing.anchor { reader = nil }
+            }
+        }
+        if reader == nil {
+            guard let metadata = sessionMetadata(at: rollout), metadata.payload.source == .root else {
+                metadataByRollout[rollout] = nil
+                return nil
+            }
+            metadataByRollout[rollout] = metadata
+            let offset = length > 1_048_576 ? length - 1_048_576 : 0
+            var skipsPartialLine = false
+            if offset > 0 {
+                try? handle.seek(toOffset: offset - 1)
+                skipsPartialLine = (try? handle.read(upToCount: 1)) != Data([0x0A])
+            }
+            reader = Reader(
+                offset: offset,
+                skipsPartialLine: skipsPartialLine,
+                parser: Parser(sessionID: metadata.payload.id,
+                               supportsCompletionOutcomes: Self.supportsCompletionOutcomes(metadata.payload.cli_version))
+            )
+        }
+        guard var current = reader else { return nil }
+        do {
+            try handle.seek(toOffset: current.offset)
+            var budget = 8_388_608
+            while current.offset < length, budget > 0 {
+                let count = min(65_536, budget, Int(min(length - current.offset, UInt64(Int.max))))
+                guard let data = try handle.read(upToCount: count), !data.isEmpty else { break }
+                current.offset += UInt64(data.count)
+                budget -= data.count
+                current.pending.append(data)
+                while let newline = current.pending.firstIndex(of: 0x0A) {
+                    let line = Data(current.pending[..<newline])
+                    current.pending.removeSubrange(...newline)
+                    if current.skipsPartialLine {
+                        current.skipsPartialLine = false
+                    } else if line.count <= Self.maximumLineBytes {
+                        current.parser.consume(line)
+                    }
+                }
+                if current.pending.count > Self.maximumLineBytes {
+                    current.pending.removeAll(keepingCapacity: false)
+                    current.skipsPartialLine = true
+                }
+            }
+            let anchorLength = Int(min(current.offset, 64))
+            try handle.seek(toOffset: current.offset - UInt64(anchorLength))
+            current.anchor = try handle.read(upToCount: anchorLength) ?? Data()
+            current.modifiedAt = attributes.st_mtimespec
+            readers[rollout] = current
+            // Do not present an intermediate historical state while catching up with a large append.
+            guard current.offset == length else {
+                return CodexSessionObservation(status: nil, changedAt: nil, sessionID: current.parser.sessionID)
+            }
+            return current.parser.observation
+        } catch {
+            return nil
+        }
+    }
+
+    private func sessionMetadata(at rollout: Rollout) -> SessionMetadata? {
+        guard let handle = try? FileHandle(forReadingFrom: rollout.url) else { return nil }
+        defer { try? handle.close() }
+        var attributes = stat()
+        guard fstat(handle.fileDescriptor, &attributes) == 0,
+              FileIdentity(attributes) == rollout.identity else { return nil }
+        var line = Data()
+        while line.count <= Self.maximumLineBytes {
+            guard let chunk = try? handle.read(upToCount: 65_536), !chunk.isEmpty else { return nil }
+            if let newline = chunk.firstIndex(of: 0x0A) {
+                line.append(contentsOf: chunk[..<newline])
+                guard line.count <= Self.maximumLineBytes else { return nil }
+                return try? JSONDecoder().decode(SessionMetadata.self, from: line)
+            }
+            line.append(chunk)
+        }
+        return nil
     }
 
     static func parseObservation(_ text: String) -> CodexSessionObservation {
-        var latestStatus: TerminalSessionStatus?
-        var latestStatusChangedAt: TimeInterval?
-        var titleParts: [String] = []
-        var titleMessageCounts = ["user": 0, "assistant": 0]
-
-        for line in text.split(separator: "\n", omittingEmptySubsequences: true).reversed() {
-            guard let data = line.data(using: .utf8),
-                  let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let payload = root["payload"] as? [String: Any] else { continue }
-            if latestStatus == nil,
-               root["type"] as? String == "event_msg",
-               let event = payload["type"] as? String {
-                switch event {
-                case "task_started": latestStatus = .running
-                case "task_complete": latestStatus = .finished
-                case "turn_aborted": latestStatus = .interrupted
-                default: break
-                }
-                if latestStatus != nil {
-                    latestStatusChangedAt = Self.timestamp(root["timestamp"] as? String)
-                }
-            }
-            if titleParts.count < 8,
-               root["type"] as? String == "response_item",
-               payload["type"] as? String == "message",
-               let role = payload["role"] as? String,
-               titleMessageCounts[role] != nil,
-               titleMessageCounts[role, default: 0] < 4,
-               let message = titleMessage(in: payload), !message.isEmpty {
-                titleParts.append("[\(role)]\n\(boundedTitleMessage(message))")
-                titleMessageCounts[role, default: 0] += 1
-            }
+        var parser = Parser()
+        for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
+            parser.consume(Data(line.utf8))
         }
-        return CodexSessionObservation(
-            status: latestStatus,
-            changedAt: latestStatusChangedAt,
-            titleExcerpt: titleParts.isEmpty ? nil : titleParts.reversed().joined(separator: "\n\n")
-        )
+        return parser.observation
     }
 
-    static func resolvedObservation(
-        _ observation: CodexSessionObservation,
-        previous: CodexSessionObservation?,
-        rolloutGrew: Bool = false
-    ) -> CodexSessionObservation {
-        let titleExcerpt = observation.titleExcerpt ?? previous?.titleExcerpt
-        if observation.status == nil, rolloutGrew {
-            return CodexSessionObservation(
-                status: .running,
-                changedAt: Date().timeIntervalSince1970,
-                processIdentity: previous?.processIdentity,
-                titleExcerpt: titleExcerpt
-            )
-        }
-        guard observation.status == nil, let previous else { return observation }
-        return CodexSessionObservation(
-            status: previous.status,
-            changedAt: previous.changedAt,
-            processIdentity: previous.processIdentity,
-            titleExcerpt: titleExcerpt
-        )
+    private static func supportsCompletionOutcomes(_ version: String?) -> Bool {
+        guard let parts = version?.split(separator: "."), parts.count >= 2,
+              let major = Int(parts[0]), let minor = Int(parts[1]) else { return false }
+        return major > 0 || (major == 0 && minor >= 163)
     }
 
     static func observationAfterMissingScan(
         _ observation: CodexSessionObservation,
         missedScans: Int
     ) -> CodexSessionObservation {
-        guard missedScans > 2, observation.status == .running else { return observation }
+        guard missedScans > 2,
+              observation.status == .running || observation.status == .awaitingInput else { return observation }
         return CodexSessionObservation(
             status: .interrupted,
             changedAt: Date().timeIntervalSince1970,
             processIdentity: observation.processIdentity,
-            titleExcerpt: observation.titleExcerpt
+            titleExcerpt: observation.titleExcerpt,
+            sessionID: observation.sessionID,
+            latestCompletion: observation.latestCompletion,
+            recentCompletions: observation.recentCompletions,
+            isProcessAlive: observation.isProcessAlive,
+            requiresRuntimeStatus: observation.requiresRuntimeStatus
+        )
+    }
+
+    private static func identity(of info: proc_bsdinfo) -> ProcessIdentity {
+        ProcessIdentity(
+            pid: pid_t(info.pbi_pid),
+            startedAt: TimeInterval(info.pbi_start_tvsec) + TimeInterval(info.pbi_start_tvusec) / 1_000_000
         )
     }
 
@@ -362,61 +784,10 @@ final class CodexSessionMonitor {
         return String(message.prefix(1_000)) + "\n[…]\n" + String(message.suffix(1_000))
     }
 
-    private func fileLength(at url: URL) -> UInt64? {
-        guard let attributes = try? fileManager.attributesOfItem(atPath: url.path) else { return nil }
-        return (attributes[.size] as? NSNumber)?.uint64Value
-    }
-
-    private func rolloutFiles(near timestamp: TimeInterval) -> [URL] {
-        let calendar = Calendar(identifier: .gregorian)
-        let date = Date(timeIntervalSince1970: timestamp)
-        return (-1...1).flatMap { offset -> [URL] in
-            guard let day = calendar.date(byAdding: .day, value: offset, to: date) else { return [] }
-            let components = calendar.dateComponents([.year, .month, .day], from: day)
-            guard let year = components.year, let month = components.month, let day = components.day else {
-                return []
-            }
-            let directory = sessionsDirectory
-                .appendingPathComponent(String(format: "%04d", year), isDirectory: true)
-                .appendingPathComponent(String(format: "%02d", month), isDirectory: true)
-                .appendingPathComponent(String(format: "%02d", day), isDirectory: true)
-            return (try? fileManager.contentsOfDirectory(
-                at: directory,
-                includingPropertiesForKeys: nil,
-                options: [.skipsHiddenFiles]
-            ))?.filter {
-                $0.lastPathComponent.hasPrefix("rollout-") && $0.pathExtension == "jsonl"
-            } ?? []
-        }
-    }
-
-    private func rolloutFile(sessionID: String) -> URL? {
-        guard let enumerator = fileManager.enumerator(
-            at: sessionsDirectory,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        ) else { return nil }
-        return enumerator.compactMap { $0 as? URL }.first {
-            $0.lastPathComponent.contains(sessionID) && $0.pathExtension == "jsonl"
-        }
-    }
-
-    private func sessionMetadata(at url: URL) -> SessionMetadata? {
-        guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
-        defer { try? handle.close() }
-        guard let data = try? handle.read(upToCount: 65_536),
-              let newline = data.firstIndex(of: 0x0A) else { return nil }
-        return try? JSONDecoder().decode(SessionMetadata.self, from: Data(data[..<newline]))
-    }
-
     private static func isCodexCLI(_ arguments: [String]) -> Bool {
         guard let executable = arguments.first,
               URL(fileURLWithPath: executable).lastPathComponent == "codex" else { return false }
         return !arguments.dropFirst().contains { ["app-server", "exec", "mcp-server"].contains($0) }
-    }
-
-    private static func isSessionID(_ value: String) -> Bool {
-        UUID(uuidString: value) != nil
     }
 
     private static func timestamp(_ value: String?) -> TimeInterval? {
@@ -428,7 +799,8 @@ final class CodexSessionMonitor {
     }
 
     private func terminalDevice(for tty: String) -> UInt32? {
-        guard TerminalStatusRegistry.normalizedTTY(tty) != nil else { return nil }
+        guard tty.count > "/dev/tty".count, tty.count <= 128,
+              tty.hasPrefix("/dev/tty"), !tty.dropFirst("/dev/".count).contains("/") else { return nil }
         var attributes = stat()
         guard stat(tty, &attributes) == 0,
               attributes.st_mode & S_IFMT == S_IFCHR else { return nil }
@@ -451,7 +823,7 @@ final class CodexSessionMonitor {
         var info = proc_bsdinfo()
         let size = MemoryLayout<proc_bsdinfo>.size
         guard proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, Int32(size)) == size,
-              info.pbi_status != SZOMB, info.pbi_status != SSTOP else { return nil }
+              info.pbi_status != SZOMB else { return nil }
         return info
     }
 

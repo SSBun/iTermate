@@ -195,10 +195,26 @@ for (const [output, expected] of [
 
 test("empty or oversized replies never invoke the classifier", async () => {
   const h = await harness();
-  for (const text of ["", " \n", "字".repeat(3001)]) {
+  for (const text of ["", " \n", "字".repeat(20000)]) {
     assert.equal(await h.api.classifyReplyWithModel(text), undefined);
   }
   assert.equal(h.requests.length, 0);
+});
+
+test("replies over 3000 characters retain the complete question context", async () => {
+  const h = await harness();
+  const text = "Work completed. ".repeat(220) + "Please confirm before I continue.";
+  assert.ok(text.length > 3000);
+  assert.equal(await h.api.classifyReplyWithModel(text), true);
+  const chat = h.requests.find(row => row.options.path === "/api/chat");
+  assert.equal(chat.body.messages[1].content, text);
+});
+
+test("cancelling classification aborts the active request without a negative decision", async () => {
+  const request = new AbortController();
+  const h = await harness({ onChat: () => request.abort() });
+  assert.equal(await h.api.classifyReplyWithModel("请确认后我再继续。", request.signal), undefined);
+  assert.equal(h.requests.filter(row => row.options.path === "/api/tags").length, 1);
 });
 
 test("missing choice keeps 2B without writing preferences", async () => {

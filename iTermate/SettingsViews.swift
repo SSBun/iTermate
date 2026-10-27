@@ -93,7 +93,6 @@ private struct AppConfig {
     var panelFontSize = PanelFontDefaults.size
     var panelBackgroundStyle: PanelBackgroundStyle = .systemBlur
     var iTerm2PanelEnabled = true
-    var ghosttyPanelEnabled = true
     var accentColorHex: String?
     var statusAnimationPreferences = Dictionary(
         uniqueKeysWithValues: SessionStatusAnimation.allCases.map {
@@ -182,12 +181,6 @@ private struct AppConfig {
                     iTerm2PanelEnabled = true
                 } else if value == "false" {
                     iTerm2PanelEnabled = false
-                }
-            case "ghostty_panel_enabled":
-                if value == "true" {
-                    ghosttyPanelEnabled = true
-                } else if value == "false" {
-                    ghosttyPanelEnabled = false
                 }
             case "accent_color":
                 if let color = Self.stringValue(String(value)) {
@@ -278,7 +271,6 @@ private struct AppConfig {
         panel_font_size = \(panelFontSize)
         panel_background_style = "\(panelBackgroundStyle.rawValue)"
         iterm2_panel_enabled = \(iTerm2PanelEnabled)
-        ghostty_panel_enabled = \(ghosttyPanelEnabled)
         accent_color = "\(accentColorHex ?? "system")"
         \(statusAnimations)
         session_list_style = \"\(sessionListStyle.rawValue)\"
@@ -323,7 +315,6 @@ final class AppSettings: ObservableObject {
     @Published private(set) var panelFontSize: CGFloat
     @Published private(set) var panelBackgroundStyle: PanelBackgroundStyle
     @Published private var iTerm2PanelEnabled: Bool
-    @Published private var ghosttyPanelEnabled: Bool
     @Published private(set) var accentColorHex: String?
     @Published private(set) var statusAnimationPreferences: [
         SessionStatusAnimation: SessionStatusAnimationPreferences
@@ -351,7 +342,6 @@ final class AppSettings: ObservableObject {
         panelFontSize = config.panelFontSize
         panelBackgroundStyle = config.panelBackgroundStyle
         iTerm2PanelEnabled = config.iTerm2PanelEnabled
-        ghosttyPanelEnabled = config.ghosttyPanelEnabled
         accentColorHex = config.accentColorHex
         statusAnimationPreferences = config.statusAnimationPreferences
         sessionListStyle = config.sessionListStyle
@@ -446,8 +436,6 @@ final class AppSettings: ObservableObject {
         switch terminalApp {
         case .iTerm2:
             iTerm2PanelEnabled
-        case .ghostty:
-            ghosttyPanelEnabled
         }
     }
 
@@ -456,9 +444,6 @@ final class AppSettings: ObservableObject {
         case .iTerm2:
             iTerm2PanelEnabled = isEnabled
             updateConfig { $0.iTerm2PanelEnabled = isEnabled }
-        case .ghostty:
-            ghosttyPanelEnabled = isEnabled
-            updateConfig { $0.ghosttyPanelEnabled = isEnabled }
         }
     }
 
@@ -886,13 +871,6 @@ private struct GeneralSettingsView: View {
                     )
                 )
 
-                Toggle(
-                    "Show Panel in Ghostty",
-                    isOn: Binding(
-                        get: { settings.isPanelEnabled(for: .ghostty) },
-                        set: { settings.setPanelEnabled($0, for: .ghostty) }
-                    )
-                )
             }
 
             Section("Panel") {

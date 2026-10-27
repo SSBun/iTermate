@@ -1,6 +1,6 @@
-# 【开发者自荐】iTermate：开源的原生 macOS 终端伴侣，让 iTerm2 / Ghostty 的活动状态实时可见
+# 【开发者自荐】iTermate：专用于 iTerm2 的原生 macOS 终端伴侣
 
-> 无需离开终端，iTerm2 与 Ghostty 的每个 Session、每条命令、每个编程 Agent 的动态，都在眼前一块实时面板里。
+> 无需离开 iTerm2，即可在旁侧面板查看 Session、命令与编程 Agent 的动态。
 
 ---
 
@@ -10,11 +10,11 @@
 
 iTermate 就是为解决这个问题而生的：它像一块「状态屏」一样贴在当前前台终端窗口旁，实时汇总你所有的 Window → Tab → Session，并把**普通 Shell 命令**与**编程 Agent（Pi / Codex）**的运行、完成、失败、等待输入状态变成一眼可读的动画图标。
 
-**它完全不需要 macOS 辅助功能（Accessibility）权限**——iTerm2 通过官方 API 与本机 Python Bridge 读取，Ghostty 使用官方 AppleScript 接口；App 由原生 SwiftUI/AppKit 编写，全程本机通信，不采集任何云端数据。
+**无需 macOS 辅助功能（Accessibility）权限**：iTerm2 通过官方 API 与本机 Python Bridge 连接；App 使用原生 SwiftUI/AppKit，终端导航与状态通信均在本机完成。
 
 **那为什么不基于 tmux / Zellij，或者干脆做一个 AI 终端？**
 
-这是被问得最多的问题。因为自从 AI 出现以后，终端工具已经变成了和 Todo、日历一样的**新手项目**——每个人都要写一个。但真正每天承载我工作、被成千上万用户打磨了十几年的，还是 iTerm2、Ghostty 这样成熟的终端，它们才是最稳定、最合适的选择。
+这是被问得最多的问题。因为自从 AI 出现以后，终端工具已经变成了和 Todo、日历一样的**新手项目**——每个人都要写一个。但真正每天承载我工作、被成千上万用户打磨了十几年的，还是 iTerm2 这样成熟的终端，因此 iTermate 专注于补充它的状态可见性。
 
 所以 iTermate 的定位很克制：**不重造终端，只做终端的「状态屏」**——在成熟终端旁边，用官方 API 补上实时状态这一块拼图。
 
@@ -28,7 +28,6 @@ iTermate 就是为解决这个问题而生的：它像一块「状态屏」一�
 - **编程 Agent 集成**：可选接入 [Pi](https://github.com/badlogic/pi-mono) 与 [Codex](https://github.com/openai/codex) 生命周期状态，Agent 等待输入时显示低干扰的静止图标。
 - **项目个性化**：固定、收藏项目目录，并可为每个项目设置专属颜色。
 - **原生 macOS 体验**：登录时启动、菜单栏控制、深浅外观、模糊背景、Sparkle 自动更新。
-- **Ghostty 支持**：除 iTerm2 外，也支持 [Ghostty](https://ghostty.org/) 终端，同一套面板体验。
 
 ## 截图
 
@@ -36,7 +35,7 @@ iTermate 就是为解决这个问题而生的：它像一块「状态屏」一�
 
 ![iTermate 应用图标](https://raw.githubusercontent.com/SSBun/iTermate/main/iTermate/Assets.xcassets/AppIcon.appiconset/icon_512x512.png)
 
-> **配图说明**：更多功能截图（状态动画设置、Project Path 分组、Agent 集成配置、Ghostty 跟随等）请从应用内截取后替换此处，建议 16:10 或 4:3 横图、浅色深色各一组。
+> **配图说明**：更多功能截图（状态动画设置、Project Path 分组、Agent 集成配置等）请从应用内截取后替换此处，建议 16:10 或 4:3 横图、浅色深色各一组。
 
 ## 价格
 
@@ -46,7 +45,7 @@ iTermate 就是为解决这个问题而生的：它像一块「状态屏」一�
 
 - 仓库地址：<https://github.com/SSBun/iTermate>
 - 下载最新版：<https://github.com/SSBun/iTermate/releases/latest>
-- 系统要求：macOS 13 Ventura 及以上，Apple Silicon（arm64），需已安装 iTerm2 或 Ghostty
+- 系统要求：macOS 13 Ventura 及以上，Apple Silicon（arm64），需已安装 iTerm2
 
 > [!IMPORTANT]
 > 当前公开构建为 ad hoc 签名、未经 Apple 公证，请核对发布页 `.sha256` 文件；若 macOS 拦截首次启动，Control 点击 App → 打开即可。
@@ -55,6 +54,6 @@ iTermate 就是为解决这个问题而生的：它像一块「状态屏」一�
 
 ## 写在最后
 
-iTermate 是我业余时间用 Swift 5 写的原生 macOS 应用，目前仍在快速迭代中（Ghostty 支持已在 v0.3.0 落地）。如果你和我一样经常开着十几个终端窗口同时跑构建和 Agent，欢迎试试它——好用的话，一个 Star 就是最大的支持 🌟
+iTermate 是我业余时间用 Swift 5 写的原生 macOS 应用，目前仍在快速迭代中，现专用于 iTerm2。如果你和我一样经常开着十几个终端窗口同时跑构建和 Agent，欢迎试试它——好用的话，一个 Star 就是最大的支持 🌟
 
 有问题或想法，直接来 <https://github.com/SSBun/iTermate/issues> 聊聊。

@@ -4,6 +4,10 @@
 
 ## [Unreleased]
 
+### Removed
+
+- 移除其他终端后端，iTermate 现专用于 iTerm2；移除专用 TTY 状态监听和独立 Shell 命令 hooks，普通命令继续通过 iTerm2 Bridge 观察。
+
 ## [0.6.0] - 2026-09-24
 
 ### Added

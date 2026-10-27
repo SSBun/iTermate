@@ -436,6 +436,9 @@ private struct PanelContent: View {
     @State private var collapsedSectionIDs: Set<String> = [PanelContent.archiveSectionID]
     @State private var hoveredSessionID: String?
     @State private var hoveredCloseButtonSessionID: String?
+    @State private var codexBindingSession: TerminalSessionSnapshot?
+    @State private var codexThreadID = ""
+    @State private var showsCodexBinding = false
 
     var body: some View {
         let terminalName = store.terminalApp?.displayName ?? "terminal"
@@ -512,6 +515,15 @@ private struct PanelContent: View {
         .environment(\.colorScheme, effectiveColorScheme)
         .onChange(of: collapsedSectionIDs.contains(Self.archiveSectionID)) { isCollapsed in
             if !isCollapsed { archives.refresh() }
+        }
+        .alert("Track Codex Conversation", isPresented: $showsCodexBinding) {
+            TextField("Thread ID from /status", text: $codexThreadID)
+            Button("Track") {
+                if let session = codexBindingSession { store.bindCodexThread(codexThreadID, to: session) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Track this conversation through the existing Codex daemon. After /new or /resume, bind the new thread ID. Binding ends when Codex or iTermate exits.")
         }
     }
 
@@ -652,7 +664,7 @@ private struct PanelContent: View {
                                                     showsWorkingDirectory: showsWorkingDirectory
                                                 )
                                                     .id(
-                                                        "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session, showsWorkingDirectory: showsWorkingDirectory)):\(item.isFocused):\(item.session.status?.rawValue ?? "idle"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.agentKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
+                                                        "\(settings.sessionListStyle.rawValue):\(item.id):\(item.session.name):\(sessionName(item.session, showsWorkingDirectory: showsWorkingDirectory)):\(item.isFocused):\(item.session.status?.rawValue ?? "unknown"):\(item.session.activityKind?.rawValue ?? "none"):\(item.session.agentKind?.rawValue ?? "none"):\(item.session.exitStatus ?? -1):\(item.session.hasRunningSubagents == true):\(store.isVenomDebugMonitoring(item.session))"
                                                     )
                                                     .padding(.leading, hasTabHeader ? 12 : 0)
                                             }
@@ -978,7 +990,9 @@ private struct PanelContent: View {
                             .accessibilityLabel("Subagents are still running")
                     }
 
-                    if item.session.status == .awaitingInput,
+                    if item.session.status == nil, item.session.environmentAgentKind != nil {
+                        AgentUnknownStatusView()
+                    } else if item.session.status == .awaitingInput,
                        item.session.activityKind == .agent {
                         AgentWaitingStatusView(
                             style: settings.statusAnimationStyle(for: .agentAwaitingInput),
@@ -1059,7 +1073,11 @@ private struct PanelContent: View {
             .accessibilityLabel(
                 "Activate \(item.session.environmentAgentKind?.displayName ?? "Shell") session \(sessionName(item.session, showsWorkingDirectory: showsWorkingDirectory))"
             )
-            .accessibilityValue(item.isFocused ? "Focused" : "")
+            .accessibilityValue([
+                item.isFocused ? "Focused" : nil,
+                item.session.status == nil && item.session.environmentAgentKind != nil
+                    ? "Agent status unavailable" : nil
+            ].compactMap { $0 }.joined(separator: ", "))
 
             Button {
                 store.close(sessionID: item.session.id)
@@ -1116,6 +1134,19 @@ private struct PanelContent: View {
                 }
             }
             .disabled(!isCodex && !archives.supportsTitleRefresh(item.session, terminal: terminal))
+
+            if isCodex {
+                Button("Bind Codex Conversation…") {
+                    codexBindingSession = item.session
+                    codexThreadID = store.boundCodexThreadID(item.session) ?? ""
+                    showsCodexBinding = true
+                }
+                if store.boundCodexThreadID(item.session) != nil {
+                    Button("Use Automatic Codex Detection") {
+                        store.bindCodexThread(nil, to: item.session)
+                    }
+                }
+            }
 
             Button("Archive Pi Session") {
                 store.archivePiSession(item.session, in: terminal)
@@ -1851,6 +1882,39 @@ private struct AgentQuestionStatusView: View {
     }
 }
 
+private struct AgentUnknownStatusView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private static let glyph = [0b111, 0b111, 0b111, 0b010, 0b010, 0b000, 0b010]
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 0.2, paused: reduceMotion)) { timeline in
+            let opacity = reduceMotion ? 1.0
+                : 0.75 + 0.25 * cos(timeline.date.timeIntervalSinceReferenceDate * .pi)
+            Canvas { context, size in
+                let origin = CGPoint(x: (size.width - 6) / 2, y: (size.height - 14) / 2)
+                for (row, bits) in Self.glyph.enumerated() {
+                    for column in 0..<3 where bits & (1 << (2 - column)) != 0 {
+                        let rect = CGRect(
+                            x: origin.x + CGFloat(column) * 2 + 0.25,
+                            y: origin.y + CGFloat(row) * 2 + 0.25,
+                            width: 1.75,
+                            height: 1.75
+                        )
+                        context.fill(
+                            Path(roundedRect: rect, cornerRadius: 0.35),
+                            with: .color(.secondary.opacity(opacity))
+                        )
+                    }
+                }
+            }
+        }
+        .frame(width: 36, height: 16)
+        .help("Agent detected; status unavailable")
+        .accessibilityLabel("Agent detected; status unavailable")
+    }
+}
+
 private struct AgentIdleStatusView: View {
     var isHighlighted = false
 
@@ -2119,17 +2183,8 @@ struct TerminalAppWindow {
             return quartzFrame
         }
 
-        let quartzFrame: CGRect?
-        switch terminalApp {
-        case .iTerm2:
-            // ponytail: the largest layer-0 window excludes iTerm modal alerts;
-            // use window IDs if multi-window precision is needed.
-            quartzFrame = largestWindowFrame(from: candidateFrames)
-        case .ghostty:
-            // CGWindowList is front-to-back, so the first Ghostty window is active.
-            quartzFrame = candidateFrames.first
-        }
-        guard let quartzFrame else { return nil }
+        // The largest layer-0 iTerm2 window excludes modal alerts.
+        guard let quartzFrame = largestWindowFrame(from: candidateFrames) else { return nil }
 
         return TerminalAppWindow(
             terminalApp: terminalApp,

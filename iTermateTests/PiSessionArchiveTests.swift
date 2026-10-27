@@ -69,7 +69,6 @@ final class PiSessionArchiveTests: XCTestCase {
                 )
                 XCTAssertEqual(archives.canRefreshTitle(terminalSession(), terminal: .iTerm2), supported == true && ready == true)
                 XCTAssertFalse(archives.canRefreshTitle(terminalSession(id: "other-pane"), terminal: .iTerm2))
-                XCTAssertFalse(archives.canRefreshTitle(terminalSession(), terminal: .ghostty))
                 XCTAssertFalse(archives.isRefreshingTitle(terminalSession(), terminal: .iTerm2))
                 try FileManager.default.removeItem(at: file)
             }
@@ -80,17 +79,15 @@ final class PiSessionArchiveTests: XCTestCase {
         XCTAssertFalse(archives.canRefreshTitle(terminalSession(), terminal: .iTerm2))
     }
 
-    func testGhosttyManualTitleRefreshUsesUniqueTTY() throws {
+    func testOtherTerminalDescriptorsAreIgnored() throws {
         let root = try liveFixture()
         defer { try? FileManager.default.removeItem(at: root) }
-        try writeLiveDescriptor(at: root, terminal: "Ghostty", supportsTitleRefresh: true, canRefreshTitle: true)
+        try writeLiveDescriptor(at: root, terminal: "OtherTerminal", supportsTitleRefresh: true, canRefreshTitle: true)
         let archives = PiSessionArchives(liveRoot: root)
         archives.refresh()
-        XCTAssertTrue(archives.canRefreshTitle(terminalSession(), terminal: .ghostty))
-        XCTAssertFalse(archives.canRefreshTitle(terminalSession(tty: nil), terminal: .ghostty))
-        try writeLiveDescriptor(at: root, terminal: "Ghostty", supportsTitleRefresh: true, canRefreshTitle: true)
-        archives.refresh()
-        XCTAssertFalse(archives.canRefreshTitle(terminalSession(), terminal: .ghostty))
+        XCTAssertFalse(archives.canRefreshTitle(terminalSession(), terminal: .iTerm2))
+        XCTAssertFalse(archives.canQueryStatus(terminalSession(), terminal: .iTerm2))
+        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "π - project (zsh)")
     }
 
     func testLiveTaskTitleUsesExactTerminalIdentityNotPathOrName() throws {
@@ -101,22 +98,7 @@ final class PiSessionArchiveTests: XCTestCase {
         archives.refresh()
         XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .iTerm2), "修复分页逻辑")
         XCTAssertEqual(archives.sessionTitle(for: terminalSession(id: "other-pane"), terminal: .iTerm2), "π - project (zsh)")
-        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .ghostty), "π - project (zsh)")
         XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: nil), "π - project (zsh)")
-    }
-
-    func testGhosttyTaskTitleRequiresUniquePiTTY() throws {
-        let root = try liveFixture()
-        defer { try? FileManager.default.removeItem(at: root) }
-        try writeLiveDescriptor(at: root, terminal: "Ghostty", pane: "inherited-iterm-pane")
-        let archives = PiSessionArchives(liveRoot: root)
-        archives.refresh()
-        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .ghostty), "修复分页逻辑")
-        XCTAssertEqual(archives.sessionTitle(for: terminalSession(tty: nil), terminal: .ghostty), "π - project (zsh)")
-        XCTAssertEqual(archives.sessionTitle(for: terminalSession(tty: "/dev/other"), terminal: .ghostty), "π - project (zsh)")
-        try writeLiveDescriptor(at: root, terminal: "Ghostty")
-        archives.refresh()
-        XCTAssertEqual(archives.sessionTitle(for: terminalSession(), terminal: .ghostty), "π - project (zsh)")
     }
 
     func testDuplicatePiDescriptorsDoNotChooseAnArbitraryTitle() throws {

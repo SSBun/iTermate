@@ -108,5 +108,30 @@
     "id": "commit-report-missing-information",
     "expected": "question",
     "text": "修复已本地提交，尚未推送。请提供目标远程分支，我才能继续推送。"
+  },
+  {
+    "id": "mr-created-qa-report",
+    "expected": "normal",
+    "text": "已提交、推送并创建 MR，均绑定任务 872958：\n\n- iOS：MR !44 · 109858d\n  目标 target_11.13.0，主工程 master-11.13.0。\n- Android：MR !129 · 5dec0058\n  目标 develop，主工程 release-11.13.0。\n\nQA：张骁玫，验收中。工作区干净；MR 未合并；未运行测试或完整构建。"
+  },
+  {
+    "id": "markdown-mr-review-report",
+    "expected": "normal",
+    "text": "已提交、推送并创建 **MR**。\n\n- iOS：[MR !44](https://example.com/ios/merge_requests/44)\n- Android：[MR !129](https://example.com/android/merge_requests/129)\n\n**状态**：等待 QA 验收和 reviewer 审查；MR 尚未合并，CI 未完成，未运行本地测试或完整构建。"
+  },
+  {
+    "id": "english-pending-review-report",
+    "expected": "normal",
+    "text": "Committed and pushed both changes. PRs are open and QA is assigned. Awaiting reviewer approval and CI results; neither PR has been merged. Tests and full builds were not run locally."
+  },
+  {
+    "id": "mr-report-merge-permission",
+    "expected": "question",
+    "text": "已提交、推送并创建 MR。QA 验收中，MR 未合并，未运行测试或完整构建。是否允许我现在合并 MR？"
+  },
+  {
+    "id": "mr-report-user-confirmation-gate",
+    "expected": "question",
+    "text": "两个 MR 均已创建，正在等待 QA 验收。合并前还需要你的确认，收到你的确认后我再继续。"
   }
 ]

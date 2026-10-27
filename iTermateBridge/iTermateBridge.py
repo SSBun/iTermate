@@ -3,6 +3,7 @@
 import asyncio
 import fcntl
 import json
+import math
 import os
 import re
 import shlex
@@ -30,6 +31,22 @@ def is_agent_command(command):
     except (IndexError, ValueError):
         return False
     return os.path.basename(executable) in {"pi", "codex"}
+
+
+def codex_thread_id_prefix(title):
+    if not isinstance(title, str) or title[:7].lower() != "codex |":
+        return None
+    if len(title) > 240:
+        return ""
+    # Codex 0.163 truncates its thread-id title item to 29 UUID characters plus "...".
+    match = re.fullmatch(
+        r"codex \| ([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-"
+        r"[0-9a-f]{4}-(?:[0-9a-f]{12}|[0-9a-f]{5}\.\.\.))"
+        r"(?: [⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏])?",
+        title,
+        re.IGNORECASE | re.ASCII,
+    )
+    return match.group(1).rstrip(".").lower() if match else ""
 
 
 def acquire_process_lock():
@@ -191,7 +208,7 @@ class Bridge:
 
         if action == "setSessionStatus":
             status = request.get("status")
-            if status not in {"idle", "running", "awaitingInput", "finished", "detached"}:
+            if status not in {None, "idle", "running", "awaitingInput", "interrupted", "finished", "detached"}:
                 await self.send_action_result(writer, request_id, False, "Invalid status")
                 return
             exit_status = request.get("exitStatus", 0)
@@ -204,7 +221,7 @@ class Bridge:
                     writer, request_id, False, "Invalid exit status"
                 )
                 return
-            if status == "awaitingInput" and request.get("exitStatus") is not None:
+            if status != "finished" and request.get("exitStatus") is not None:
                 await self.send_action_result(
                     writer, request_id, False, "Invalid exit status"
                 )
@@ -232,6 +249,9 @@ class Bridge:
                 await self.send_action_result(writer, request_id, False, "Invalid recovery")
                 return
             has_sequence = reporter_id is not None or sequence is not None or recovery
+            if status is None and (request.get("agentKind") != "pi" or not has_sequence):
+                await self.send_action_result(writer, request_id, False, "Unknown status requires a Pi observation")
+                return
             if has_sequence and (
                 not isinstance(reporter_id, str) or not 1 <= len(reporter_id) <= 128
                 or isinstance(sequence, bool) or not isinstance(sequence, int)
@@ -252,6 +272,52 @@ class Bridge:
                 if not valid_completion:
                     await self.send_action_result(writer, request_id, False, "Invalid completion ID")
                     return
+            completed_at = request.get("completedAt")
+            latest_completion = request.get("latestCompletion")
+            if completed_at is not None and (
+                status != "finished" or completion_id is None
+                or isinstance(completed_at, bool) or not isinstance(completed_at, (int, float))
+                or not 0 < completed_at < 1e12 or not math.isfinite(completed_at)
+            ):
+                await self.send_action_result(writer, request_id, False, "Invalid completion time")
+                return
+            def valid_completion_event(event):
+                if not isinstance(event, dict):
+                    return False
+                event_id = event.get("id")
+                event_time = event.get("completedAt")
+                event_exit = event.get("exitStatus")
+                try:
+                    return (
+                        request.get("agentKind") == "pi"
+                        and isinstance(event_id, str) and len(event_id) == 36
+                        and str(uuid.UUID(event_id)) == event_id.lower()
+                        and not isinstance(event_time, bool) and isinstance(event_time, (int, float))
+                        and 0 < event_time < 1e12 and math.isfinite(event_time)
+                        and not isinstance(event_exit, bool) and isinstance(event_exit, int)
+                        and 0 <= event_exit <= 255
+                    )
+                except ValueError:
+                    return False
+
+            if latest_completion is not None and (
+                not valid_completion_event(latest_completion)
+                or (status == "finished" and (
+                    latest_completion["id"] != completion_id
+                    or latest_completion["completedAt"] != completed_at
+                    or latest_completion["exitStatus"] != exit_status
+                ))
+            ):
+                await self.send_action_result(writer, request_id, False, "Invalid completion event")
+                return
+            recent_completions = request.get("recentCompletions")
+            if recent_completions is not None and (
+                not isinstance(recent_completions, list) or len(recent_completions) > 64
+                or not all(valid_completion_event(event) for event in recent_completions)
+                or (recent_completions[-1] if recent_completions else None) != latest_completion
+            ):
+                await self.send_action_result(writer, request_id, False, "Invalid completion history")
+                return
             key = (session_id, reporter_id)
             if has_sequence and sequence <= self.agent_report_sequences.get(key, 0):
                 await self.send_action_result(writer, request_id, False, "Stale report")
@@ -273,6 +339,8 @@ class Bridge:
             accepted = self.set_agent_status(
                 session_id, status, exit_status, heartbeat, has_running_subagents,
                 agent_kind=agent_kind or "unknown", completion_id=completion_id,
+                completed_at=completed_at, latest_completion=latest_completion,
+                recent_completions=recent_completions,
             )
             if accepted and has_sequence:
                 self.agent_report_sequences[key] = sequence
@@ -816,6 +884,7 @@ class Bridge:
     def set_agent_status(
         self, session_id, status, exit_status=0, heartbeat=False,
         has_running_subagents=False, agent_kind="unknown", completion_id=None,
+        completed_at=None, latest_completion=None, recent_completions=None,
     ):
         if status == "detached":
             if self.viewed_completions.pop(session_id, None) is not None:
@@ -845,6 +914,15 @@ class Bridge:
         )
         if status == "finished" and completion_id is not None:
             self.session_statuses[session_id]["completionId"] = completion_id
+            if completed_at is not None:
+                self.session_statuses[session_id]["statusChangedAt"] = completed_at
+        if recent_completions is not None:
+            self.session_statuses[session_id]["recentCompletions"] = recent_completions
+            self.session_statuses[session_id]["latestCompletion"] = (
+                recent_completions[-1] if recent_completions else None
+            )
+        elif latest_completion is not None:
+            self.session_statuses[session_id]["latestCompletion"] = latest_completion
         if has_running_subagents:
             self.session_statuses[session_id]["hasRunningSubagents"] = True
         return True
@@ -857,7 +935,11 @@ class Bridge:
             if self.session_statuses.get(session_id, {}).get("status") in {
                 "running", "awaitingInput"
             }:
-                self.session_statuses.pop(session_id, None)
+                # Keep the completion identity when the working-state lease expires.
+                if self.session_statuses[session_id].get("latestCompletion") is not None:
+                    self.set_session_status(session_id, None, activity_kind="agent")
+                else:
+                    self.session_statuses.pop(session_id, None)
 
     def set_session_status(
         self,
@@ -878,6 +960,10 @@ class Bridge:
             "exitStatus": exit_status,
             "statusChangedAt": changed_at,
         }
+        if activity_kind == "agent" and current_status is not None:
+            for field in ("latestCompletion", "recentCompletions"):
+                if field in current_status:
+                    self.session_statuses[session_id][field] = current_status[field]
 
     def current_session_ids(self):
         return {
@@ -986,6 +1072,17 @@ class Bridge:
             ),
             return_exceptions=True,
         )
+        native_titles = await asyncio.gather(
+            *(
+                session.async_get_variable("terminalWindowName")
+                for _, _, session in session_triplets
+            ),
+            return_exceptions=True,
+        )
+        codex_prefixes_by_session = {
+            session.session_id: codex_thread_id_prefix(title)
+            for (_, _, session), title in zip(session_triplets, native_titles)
+        }
         ttys_by_session = {
             session.session_id: tty
             for (_, _, session), tty in zip(session_triplets, ttys)
@@ -1048,6 +1145,9 @@ class Bridge:
                         "name": self.session_names[session.session_id],
                         "path": paths_by_session.get(session.session_id),
                         "tty": ttys_by_session.get(session.session_id),
+                        "codexThreadIDPrefix": codex_prefixes_by_session.get(
+                            session.session_id
+                        ),
                         "windowId": window.window_id,
                         "tabId": tab.tab_id,
                         "isActive": session.session_id == active_session_id,
@@ -1069,6 +1169,12 @@ class Bridge:
                         "statusChangedAt": self.session_statuses.get(
                             session.session_id, {}
                         ).get("statusChangedAt"),
+                        "latestCompletion": self.session_statuses.get(
+                            session.session_id, {}
+                        ).get("latestCompletion"),
+                        "recentCompletions": self.session_statuses.get(
+                            session.session_id, {}
+                        ).get("recentCompletions"),
                     }
                     for session in tab.all_sessions
                 ]
@@ -1117,6 +1223,25 @@ def self_test():
     assert is_agent_command("pi")
     assert is_agent_command("/usr/local/bin/codex --resume")
     assert not is_agent_command("python3 build.py")
+    thread_id = "550e8400-e29b-41d4-a716-446655440000"
+    title_prefix = thread_id[:29]
+    assert codex_thread_id_prefix("codex | " + thread_id) == thread_id
+    assert codex_thread_id_prefix("CODEX | " + thread_id.upper()) == thread_id
+    assert codex_thread_id_prefix("codex | " + thread_id + " ⠋") == thread_id
+    assert codex_thread_id_prefix("codex | " + title_prefix + "...") == title_prefix
+    for spinner in "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏":
+        assert codex_thread_id_prefix(
+            "codex | " + title_prefix + "... " + spinner
+        ) == title_prefix
+    for title in (
+        "codex |", "codex | ", "codex | " + title_prefix,
+        "codex | " + thread_id + "...", "codex | " + thread_id + "\n",
+        "codex | " + title_prefix + "…", "codex | " + thread_id + " text",
+        "codex | " + thread_id + " " * 240,
+    ):
+        assert codex_thread_id_prefix(title) == ""
+    for title in (None, RuntimeError("read failed"), thread_id, "project (codex)"):
+        assert codex_thread_id_prefix(title) is None
 
     class FakeSession:
         session_id = "session-1"
@@ -1129,8 +1254,13 @@ def self_test():
             self.command_line = "zsh --login"
             self.shell = "zsh"
             self.job_pid = 100
+            self.terminal_window_name = None
 
         async def async_get_variable(self, name):
+            if name == "terminalWindowName" and isinstance(
+                self.terminal_window_name, Exception
+            ):
+                raise self.terminal_window_name
             return {
                 "name": self.current_name,
                 "path": "/tmp",
@@ -1138,6 +1268,7 @@ def self_test():
                 "commandLine": self.command_line,
                 "shell": self.shell,
                 "jobPid": self.job_pid,
+                "terminalWindowName": self.terminal_window_name,
             }[name]
 
         async def async_close(self, force=False):
@@ -1304,6 +1435,20 @@ def self_test():
     snapshot = asyncio.run(bridge.build_snapshot())
     assert snapshot[0]["tabs"][0]["sessions"][0]["name"] == "Current title"
     assert snapshot[0]["tabs"][0]["title"] == "Current title"
+    assert snapshot[0]["tabs"][0]["sessions"][0]["codexThreadIDPrefix"] is None
+
+    session.terminal_window_name = "codex | " + title_prefix + "... ⠋"
+    snapshot = asyncio.run(bridge.build_snapshot())
+    assert snapshot[0]["tabs"][0]["sessions"][0]["codexThreadIDPrefix"] == title_prefix
+    session.terminal_window_name = "codex | unresolved"
+    snapshot = asyncio.run(bridge.build_snapshot())
+    assert snapshot[0]["tabs"][0]["sessions"][0]["codexThreadIDPrefix"] == ""
+    session.terminal_window_name = RuntimeError("Native title read failed")
+    snapshot = asyncio.run(bridge.build_snapshot())
+    assert snapshot[0]["tabs"][0]["sessions"][0]["codexThreadIDPrefix"] is None
+    session.terminal_window_name = None
+    snapshot = asyncio.run(bridge.build_snapshot())
+    assert snapshot[0]["tabs"][0]["sessions"][0]["codexThreadIDPrefix"] is None
 
     bridge.set_session_status("session-1", "running")
     snapshot = asyncio.run(bridge.build_snapshot())
@@ -1774,6 +1919,31 @@ def self_test():
     assert "session-1" in bridge.agent_managed_session_ids
     bridge.set_agent_status("session-1", "detached")
     assert "session-1" not in bridge.agent_managed_session_ids
+
+    completion_bridge = Bridge(None, app)
+    completion = {"id": str(uuid.uuid4()), "completedAt": 123.5, "exitStatus": 0}
+    completion_bridge.set_agent_status(
+        "session-1", "finished", agent_kind="pi", completion_id=completion["id"],
+        completed_at=completion["completedAt"], latest_completion=completion, recent_completions=[completion],
+    )
+    assert completion_bridge.session_statuses["session-1"]["statusChangedAt"] == 123.5
+    for status in ("running", "interrupted", None):
+        completion_bridge.set_agent_status("session-1", status, agent_kind="pi")
+        assert completion_bridge.session_statuses["session-1"]["latestCompletion"] == completion
+        assert completion_bridge.session_statuses["session-1"]["recentCompletions"] == [completion]
+        assert completion_bridge.session_statuses["session-1"]["exitStatus"] is None
+    completion_bridge.set_agent_status("session-1", "running", agent_kind="pi", heartbeat=True)
+    completion_bridge.expire_stale_agent_heartbeats(heartbeat_time() + AGENT_HEARTBEAT_TIMEOUT + 1)
+    assert completion_bridge.session_statuses["session-1"]["status"] is None
+    assert completion_bridge.session_statuses["session-1"]["latestCompletion"] == completion
+    for event in ([], {**completion, "completedAt": float("inf")}, {**completion, "exitStatus": True}):
+        writer = FakeWriter()
+        asyncio.run(completion_bridge.handle_command(writer, encode_message({
+            "type": "setSessionStatus", "requestId": "invalid-completion", "sessionId": "session-1",
+            "status": None, "agentKind": "pi", "reporterId": str(uuid.uuid4()), "sequence": 1,
+            "latestCompletion": event,
+        })))
+        assert writer.messages[0]["ok"] is False
 
     async def check_finished_navigation():
         from types import SimpleNamespace

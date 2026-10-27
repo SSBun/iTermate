@@ -1,0 +1,15 @@
+2026-10-22, existing process/daemon read-only observations; no agent or app launched.
+FD-only baseline: 0/8 mapped, all 8 native CLI recognized.
+Restored automatic mapping, native title not enabled:
+/dev/ttys002 automaticMatch=false
+/dev/ttys004 automaticMatch=false
+/dev/ttys014 automaticMatch=false
+/dev/ttys024 automaticMatch=true native=unknown runtime=running hasExcerpt=true completions=7
+/dev/ttys028 automaticMatch=true native=finished runtime=finished hasExcerpt=true completions=8
+/dev/ttys047 automaticMatch=true native=finished runtime=finished hasExcerpt=true completions=8
+/dev/ttys055 automaticMatch=false
+/dev/ttys060 automaticMatch=true native=running runtime=running hasExcerpt=true completions=6
+Daemon symlink before fix: local socket unavailable.
+After fix: readOnlyStatus=finished completionCount=8 hasRolloutPath=true.
+No conversation bodies, complete thread IDs, or credentials stored in this evidence.
+Live UI and native title forwarding not verified. Runtime values are one observation, not current guaranteed state.

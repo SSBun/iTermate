@@ -1,0 +1,988 @@
+diff --git a/iTermate/ItermBridge.swift b/iTermate/ItermBridge.swift
+index f74e8c1..83d1a1e 100644
+--- a/iTermate/ItermBridge.swift
++++ b/iTermate/ItermBridge.swift
+@@ -12,36 +12,14 @@ private let bridgeSnapshotLogger = Logger(
+ 
+ enum TerminalApp: Equatable {
+     case iTerm2
+-    case ghostty
+ 
+     init?(bundleIdentifier: String) {
+-        switch bundleIdentifier {
+-        case "com.googlecode.iterm2":
+-            self = .iTerm2
+-        case "com.mitchellh.ghostty":
+-            self = .ghostty
+-        default:
+-            return nil
+-        }
+-    }
+-
+-    var bundleIdentifier: String {
+-        switch self {
+-        case .iTerm2:
+-            "com.googlecode.iterm2"
+-        case .ghostty:
+-            "com.mitchellh.ghostty"
+-        }
++        guard bundleIdentifier == "com.googlecode.iterm2" else { return nil }
++        self = .iTerm2
+     }
+ 
+-    var displayName: String {
+-        switch self {
+-        case .iTerm2:
+-            "iTerm2"
+-        case .ghostty:
+-            "Ghostty"
+-        }
+-    }
++    var bundleIdentifier: String { "com.googlecode.iterm2" }
++    var displayName: String { "iTerm2" }
+ }
+ 
+ enum TerminalSessionStatus: String, Codable, Equatable {
+@@ -503,28 +481,13 @@ final class ItermStore: ObservableObject {
+         onMessage: { [weak self] message in self?.apply(message) },
+         onStateChange: { [weak self] state in self?.updateConnectionState(state) }
+     )
+-    private lazy var ghosttyClient = GhosttyClient(
+-        onSnapshot: { [weak self] windows in self?.applyGhosttySnapshot(windows) },
+-        onStateChange: { [weak self] state in self?.updateGhosttyConnectionState(state) },
+-        onActionError: { [weak self] error in self?.updateGhosttyActionError(error) }
+-    )
+-    private lazy var terminalStatusServer = TerminalStatusServer(
+-        onReport: { [weak self] report in self?.applyTerminalStatus(report) ?? false },
+-        onReset: { [weak self] in self?.resetTerminalStatusTransport() }
+-    )
+     private var latestSequence = 0
+     private var bridgeIsCompatible = false
+     private var lastLoggedSnapshotCounts: [Int]?
+     private var isStarted = false
+     private var iTermClientIsStarted = false
+-    private var lastGhosttyRefresh = Date.distantPast
+-    private var ghosttyRefreshIsPending = false
+     private var iTermConnectionState: BridgeConnectionState = .connecting
+     private var iTermWindows: [TerminalWindowSnapshot] = []
+-    private var ghosttyConnectionState: BridgeConnectionState = .connecting
+-    private var ghosttySourceWindows: [TerminalWindowSnapshot] = []
+-    private var ghosttyWindows: [TerminalWindowSnapshot] = []
+-    private var terminalStatusRegistry = TerminalStatusRegistry()
+     private var statusExpiryTimer: Timer?
+     private let codexSessionMonitor = CodexSessionMonitor()
+     private var codexMonitorScanID: UUID?
+@@ -539,11 +502,8 @@ final class ItermStore: ObservableObject {
+     private var venomMonitorScanID: UUID?
+     private var piRecoveryGeneration = 0
+     private var piRecoveryScheduler = PiStatusRecoveryScheduler()
+-    private var lastActiveGhosttyTerminalID: String?
+     private var iTermAgentCompletionTracker = SessionCompletionTracker()
+-    private var ghosttyAgentCompletionTracker = SessionCompletionTracker()
+     private var iTermSnapshotIsReady = false
+-    private var ghosttySnapshotIsReady = false
+     private let completionDefaults: UserDefaults
+     private var completionCountsByDay: [String: Int]
+ 
+@@ -575,10 +535,8 @@ final class ItermStore: ObservableObject {
+                 as? NSRunningApplication, let bundleID = application.bundleIdentifier else { return }
+             self?.codexFocusedSessionIDs[bundleID] = nil
+         }
+-        terminalStatusServer.start()
+         piArchives.start()
+         let statusExpiryTimer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
+-            self?.expireTerminalStatuses()
+             self?.refreshCodexMonitoring()
+             self?.refreshVenomDebugMonitoring()
+             self?.recoverUnknownPiStatuses()
+@@ -588,9 +546,6 @@ final class ItermStore: ObservableObject {
+         if Self.isRunning(.iTerm2) {
+             startClient(for: .iTerm2)
+         }
+-        if terminalApp == .ghostty {
+-            startClient(for: .ghostty)
+-        }
+     }
+ 
+     func stop() {
+@@ -613,7 +568,6 @@ final class ItermStore: ObservableObject {
+         venomMonitorScanID = nil
+         venomDebugMonitoringSessions = [:]
+         invalidatePiStatusRecovery()
+-        terminalStatusServer.stop()
+         piArchives.stop()
+         if iTermClientIsStarted {
+             iTermClient.stop()
+@@ -627,14 +581,8 @@ final class ItermStore: ObservableObject {
+             venomMonitorScanID = nil
+             venomDebugMonitoringSessions = [:]
+             actionError = nil
+-            switch terminalApp {
+-            case .iTerm2:
+-                connectionState = iTermConnectionState
+-                windows = iTermWindows
+-            case .ghostty:
+-                connectionState = ghosttyConnectionState
+-                windows = ghosttyWindows
+-            }
++            connectionState = iTermConnectionState
++            windows = mergingCodexObservations(into: iTermWindows)
+         }
+         if isStarted {
+             startClient(for: terminalApp)
+@@ -645,15 +593,9 @@ final class ItermStore: ObservableObject {
+         invalidatePiStatusRecovery()
+         venomMonitorScanID = nil
+         venomDebugMonitoringSessions = [:]
+-        if terminalStatusRegistry.clearRunning() {
+-            publishGhosttyWindows()
+-        }
+         if iTermClientIsStarted {
+             iTermClient.reconnectAfterWake()
+         }
+-        if terminalApp == .ghostty {
+-            refreshGhostty(force: true)
+-        }
+     }
+ 
+     func refreshCompletionStatistics() {
+@@ -665,9 +607,6 @@ final class ItermStore: ObservableObject {
+         if Self.isRunning(.iTerm2) {
+             startClient(for: .iTerm2)
+         }
+-        if Self.isRunning(.ghostty) {
+-            refreshGhostty(force: true)
+-        }
+         updateStatusMenuSummary()
+     }
+ 
+@@ -809,26 +748,10 @@ final class ItermStore: ObservableObject {
+     func activate(sessionID: String) {
+         let session = windows.flatMap(\.tabs).flatMap(\.sessions).first { $0.id == sessionID }
+         let completion = session.flatMap(codexCompletionAcknowledgement)
+-        let terminal = terminalApp ?? .iTerm2
+-        let activationIdentity = session?.tty.flatMap { terminalStatusRegistry.activationIdentity(for: $0) }
+-        let didActivate: (String?) -> Void = { [weak self] error in
+-            guard error == nil, let self else { return }
+-            let acknowledgedCodex = acknowledgeCodexCompletion(completion, tty: session?.tty)
+-            var acknowledgedTerminal = false
+-            if terminal == .ghostty, let tty = session?.tty, let activationIdentity,
+-               ghosttySourceWindows.flatMap(\.tabs).flatMap(\.sessions)
+-                .contains(where: { $0.id == sessionID && $0.tty == tty }) {
+-                acknowledgedTerminal = terminalStatusRegistry.activate(tty: tty, matching: activationIdentity)
+-            }
+-            guard acknowledgedCodex || acknowledgedTerminal else { return }
++        iTermClient.activate(sessionID: sessionID) { [weak self] error in
++            guard error == nil, let self,
++                  acknowledgeCodexCompletion(completion, tty: session?.tty) else { return }
+             publishItermWindows()
+-            publishGhosttyWindows()
+-        }
+-        switch terminal {
+-        case .iTerm2:
+-            iTermClient.activate(sessionID: sessionID, completion: didActivate)
+-        case .ghostty:
+-            ghosttyClient.activate(terminalID: sessionID, completion: didActivate)
+         }
+     }
+ 
+@@ -840,10 +763,7 @@ final class ItermStore: ObservableObject {
+                 let completion: (String?) -> Void = { [weak self] failure in
+                     if let failure { self?.piArchives.error = "Archive saved, but terminal close failed: \(failure)" }
+                 }
+-                switch terminal {
+-                case .iTerm2: iTermClient.closeArchivedSession(sessionID: session.id, shellPID: shellPID, completion: completion)
+-                case .ghostty: ghosttyClient.closeArchivedSession(terminalID: session.id, tty: session.tty ?? "", shellPID: shellPID, completion: completion)
+-                }
++                iTermClient.closeArchivedSession(sessionID: session.id, shellPID: shellPID, completion: completion)
+             } catch {
+                 piArchives.error = error.localizedDescription
+             }
+@@ -868,12 +788,8 @@ final class ItermStore: ObservableObject {
+                             } catch { self.piArchives.finishResume(error: error.localizedDescription) }
+                         }
+                     }
+-                    if terminal == .iTerm2 {
+-                        self.startClient(for: .iTerm2)
+-                        self.iTermClient.resumePiSession(location, completion: finish)
+-                    } else {
+-                        self.ghosttyClient.resumePiSession(location, completion: finish)
+-                    }
++                    self.startClient(for: .iTerm2)
++                    self.iTermClient.resumePiSession(location, completion: finish)
+                 }
+                 if Self.isRunning(terminal) { launch(); return }
+                 guard let applicationURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: terminal.bundleIdentifier) else {
+@@ -896,21 +812,11 @@ final class ItermStore: ObservableObject {
+     }
+ 
+     func close(sessionID: String) {
+-        switch terminalApp ?? .iTerm2 {
+-        case .iTerm2:
+-            iTermClient.close(sessionID: sessionID)
+-        case .ghostty:
+-            ghosttyClient.close(terminalID: sessionID)
+-        }
++        iTermClient.close(sessionID: sessionID)
+     }
+ 
+     func refreshSessions() {
+-        switch terminalApp ?? .iTerm2 {
+-        case .iTerm2:
+-            iTermClient.resetSessionStatuses()
+-        case .ghostty:
+-            refreshGhostty(force: true)
+-        }
++        iTermClient.resetSessionStatuses()
+     }
+ 
+     func apply(_ message: BridgeMessage) {
+@@ -919,9 +825,7 @@ final class ItermStore: ObservableObject {
+             bridgeIsCompatible = true
+             iTermConnectionState = .connected
+             updateStatusMenuSummary()
+-            if terminalApp != .ghostty {
+-                connectionState = .connected
+-            }
++            connectionState = .connected
+         case "snapshot":
+             guard
+                 bridgeIsCompatible,
+@@ -959,13 +863,11 @@ final class ItermStore: ObservableObject {
+                 lastLoggedSnapshotCounts = snapshotCounts
+             }
+             iTermConnectionState = .connected
+-            if terminalApp != .ghostty {
+-                self.windows = visibleWindows
+-                actionError = nil
+-                connectionState = .connected
+-            }
++            self.windows = visibleWindows
++            actionError = nil
++            connectionState = .connected
+         case "actionResult":
+-            if message.ok == false, terminalApp != .ghostty {
++            if message.ok == false {
+                 actionError = message.error ?? "iTerm action failed"
+             }
+         default:
+@@ -989,10 +891,8 @@ final class ItermStore: ObservableObject {
+             )
+         }
+         updateStatusMenuSummary()
+-        if terminalApp != .ghostty {
+-            connectionState = state
+-            windows = mergingCodexObservations(into: iTermWindows)
+-        }
++        connectionState = state
++        windows = mergingCodexObservations(into: iTermWindows)
+     }
+ 
+     private func recordSuccessfulAgentCompletions(
+@@ -1018,7 +918,6 @@ final class ItermStore: ObservableObject {
+     private func updateStatusMenuSummary() {
+         updateCompletionStatistics()
+         let iTermIsRunning = Self.isRunning(.iTerm2)
+-        let ghosttyIsRunning = Self.isRunning(.ghostty)
+         var sourceStates: [BridgeConnectionState] = []
+         if iTermIsRunning {
+             sourceStates.append(
+@@ -1028,14 +927,6 @@ final class ItermStore: ObservableObject {
+                 )
+             )
+         }
+-        if ghosttyIsRunning {
+-            sourceStates.append(
+-                statusMenuSourceState(
+-                    connectionState: ghosttyConnectionState,
+-                    hasSnapshot: ghosttySnapshotIsReady
+-                )
+-            )
+-        }
+ 
+         let disconnectedMessage = sourceStates.compactMap { state -> String? in
+             guard case .disconnected(let message) = state else { return nil }
+@@ -1058,7 +949,6 @@ final class ItermStore: ObservableObject {
+             newCount = (iTermIsRunning
+                 ? Self.runningAgentCount(in: mergingCodexObservations(into: iTermWindows))
+                 : 0)
+-                + (ghosttyIsRunning ? Self.runningAgentCount(in: ghosttyWindows) : 0)
+         } else {
+             newCount = nil
+         }
+@@ -1184,80 +1074,9 @@ final class ItermStore: ObservableObject {
+     }
+ 
+     private func startClient(for terminalApp: TerminalApp) {
+-        switch terminalApp {
+-        case .iTerm2 where !iTermClientIsStarted:
+-            iTermClientIsStarted = true
+-            iTermClient.start()
+-        case .ghostty:
+-            refreshGhostty(force: false)
+-        default:
+-            break
+-        }
+-    }
+-
+-    private func refreshGhostty(force: Bool) {
+-        // ponytail: poll once per second until Ghostty exposes change events.
+-        guard
+-            !ghosttyRefreshIsPending,
+-            force || Date().timeIntervalSince(lastGhosttyRefresh) >= 1
+-        else {
+-            return
+-        }
+-        lastGhosttyRefresh = Date()
+-        ghosttyRefreshIsPending = true
+-        ghosttyClient.refresh()
+-    }
+-
+-    private func applyGhosttySnapshot(_ windows: [TerminalWindowSnapshot]) {
+-        ghosttyRefreshIsPending = false
+-        ghosttySourceWindows = windows
+-        reconcileCodexObservationSessions()
+-        acknowledgeFocusedCodexCompletion(in: windows, terminal: .ghostty)
+-
+-        let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
+-        let sessionsByTTY = Dictionary(
+-            grouping: sessions.compactMap { session -> TerminalSessionSnapshot? in
+-                guard
+-                    let tty = session.tty,
+-                    TerminalStatusRegistry.normalizedTTY(tty) != nil
+-                else {
+-                    return nil
+-                }
+-                return session
+-            },
+-            by: { $0.tty ?? "" }
+-        )
+-        let terminalIDsByTTY = sessionsByTTY.compactMapValues { sessions in
+-            sessions.count == 1 ? sessions[0].id : nil
+-        }
+-        terminalStatusRegistry.reconcile(terminals: terminalIDsByTTY)
+-
+-        let activeSession = windows.first(where: \.isActive)?
+-            .tabs.first(where: \.isSelected)?
+-            .sessions.first(where: \.isActive)
+-        if
+-            let previousID = lastActiveGhosttyTerminalID,
+-            activeSession?.id != previousID,
+-            let tty = activeSession?.tty,
+-            let tty = TerminalStatusRegistry.normalizedTTY(tty)
+-        {
+-            terminalStatusRegistry.activate(tty: tty, acknowledgeAgent: false)
+-        }
+-        lastActiveGhosttyTerminalID = activeSession?.id
+-
+-        ghosttyConnectionState = .connected
+-        ghosttySnapshotIsReady = true
+-        publishGhosttyWindows()
+-        guard terminalApp == .ghostty else { return }
+-        actionError = nil
+-        connectionState = .connected
+-    }
+-
+-    /// Applies a report and confirms whether the registry accepted it.
+-    private func applyTerminalStatus(_ report: TerminalStatusReport) -> Bool {
+-        guard terminalStatusRegistry.apply(report) else { return false }
+-        publishGhosttyWindows()
+-        return true
++        guard !iTermClientIsStarted else { return }
++        iTermClientIsStarted = true
++        iTermClient.start()
+     }
+ 
+     private func invalidatePiStatusRecovery() {
+@@ -1269,7 +1088,6 @@ final class ItermStore: ObservableObject {
+         guard isStarted else { return }
+         let sources: [(TerminalApp, [TerminalWindowSnapshot])] = [
+             (.iTerm2, iTermConnectionState == .connected ? iTermWindows : []),
+-            (.ghostty, ghosttyConnectionState == .connected ? ghosttyWindows : []),
+         ]
+         let candidates = sources.flatMap { terminal, windows in
+             windows.flatMap(\.tabs).flatMap(\.sessions).compactMap { session -> (TerminalApp, TerminalSessionSnapshot)? in
+@@ -1288,24 +1106,14 @@ final class ItermStore: ObservableObject {
+                 defer { piRecoveryScheduler.complete(key) }
+                 guard isStarted, generation == piRecoveryGeneration else { return }
+                 guard let observation = try? await piArchives.queryStatus(session, terminal: terminal),
+-                      let status = observation.status,
++                      observation.status != nil,
+                       isStarted, generation == piRecoveryGeneration else { return }
+-                let currentWindows = terminal == .iTerm2 ? iTermWindows : ghosttyWindows
++                let currentWindows = iTermWindows
+                 guard let current = currentWindows.flatMap(\.tabs).flatMap(\.sessions).first(where: { $0.id == session.id }),
+                       current.tty == session.tty, current.statusChangedAt == session.statusChangedAt,
+                       current.status == session.status, current.activityKind == session.activityKind,
+                       current.activityKind != .agent || current.status == nil else { return }
+-                if terminal == .iTerm2 {
+-                    iTermClient.recoverSessionStatus(sessionID: session.id, observation: observation)
+-                } else if let tty = session.tty, let state = TerminalStatusReport.State(rawValue: status.rawValue) {
+-                    let report = TerminalStatusReport(
+-                        tty: tty, source: .agent, reporterID: observation.reporterId,
+-                        sequence: observation.sequence, state: state, exitStatus: observation.exitStatus,
+-                        heartbeat: false, hasRunningSubagents: observation.hasRunningSubagents,
+-                        agentKind: .pi, completionID: observation.completionId
+-                    )
+-                    if terminalStatusRegistry.apply(report, recovering: true) { publishGhosttyWindows() }
+-                }
++                iTermClient.recoverSessionStatus(sessionID: session.id, observation: observation)
+             }
+         }
+     }
+@@ -1346,70 +1154,6 @@ final class ItermStore: ObservableObject {
+         }
+     }
+ 
+-    private func expireTerminalStatuses() {
+-        guard terminalStatusRegistry.expireStaleAgentHeartbeats() else { return }
+-        publishGhosttyWindows()
+-    }
+-
+-    private func resetTerminalStatusTransport() {
+-        guard terminalStatusRegistry.clearRunning() else { return }
+-        publishGhosttyWindows()
+-    }
+-
+-    private func publishGhosttyWindows() {
+-        let statusWindows = ghosttySourceWindows.map { window in
+-            TerminalWindowSnapshot(
+-                id: window.id,
+-                number: window.number,
+-                isActive: window.isActive,
+-                tabs: window.tabs.map { tab in
+-                    TerminalTabSnapshot(
+-                        id: tab.id,
+-                        title: tab.title,
+-                        isSelected: tab.isSelected,
+-                        sessions: tab.sessions.map(mergingTerminalStatus)
+-                    )
+-                }
+-            )
+-        }
+-        ghosttyWindows = mergingCodexObservations(into: statusWindows)
+-        let completions = ghosttyAgentCompletionTracker.completions(
+-            in: ghosttyWindows,
+-            activityKind: .agent
+-        )
+-        recordSuccessfulAgentCompletions(completions)
+-        updateStatusMenuSummary()
+-        guard terminalApp == .ghostty else { return }
+-        windows = ghosttyWindows
+-    }
+-
+-    private func mergingTerminalStatus(
+-        into session: TerminalSessionSnapshot
+-    ) -> TerminalSessionSnapshot {
+-        guard let tty = session.tty else { return session }
+-        var session = session
+-        session.agentKind = terminalStatusRegistry.agentKind(for: tty)
+-        guard let status = terminalStatusRegistry.visibleStatus(for: tty) else {
+-            return session
+-        }
+-        return TerminalSessionSnapshot(
+-            id: session.id,
+-            name: session.name,
+-            path: session.path,
+-            tty: session.tty,
+-            windowId: session.windowId,
+-            tabId: session.tabId,
+-            isActive: session.isActive,
+-            isMinimized: session.isMinimized,
+-            status: status.status,
+-            activityKind: status.activityKind,
+-            exitStatus: status.exitStatus,
+-            statusChangedAt: status.changedAt,
+-            hasRunningSubagents: status.hasRunningSubagents,
+-            agentKind: session.agentKind
+-        )
+-    }
+-
+     private func mergingCodexObservations(
+         into windows: [TerminalWindowSnapshot]
+     ) -> [TerminalWindowSnapshot] {
+@@ -1530,9 +1274,7 @@ final class ItermStore: ObservableObject {
+ 
+     private func refreshCodexMonitoring() {
+         guard isStarted, codexMonitorScanID == nil else { return }
+-        let sessionIdentityByTTY = Self.codexSessionIdentityByTTY(
+-            in: iTermWindows + ghosttySourceWindows
+-        )
++        let sessionIdentityByTTY = Self.codexSessionIdentityByTTY(in: iTermWindows)
+         let ttys = Set(sessionIdentityByTTY.keys)
+         guard !ttys.isEmpty else {
+             codexObservations = [:]
+@@ -1556,9 +1298,7 @@ final class ItermStore: ObservableObject {
+             DispatchQueue.main.async { [weak self] in
+                 guard let self, isStarted, codexMonitorScanID == scanID else { return }
+                 codexMonitorScanID = nil
+-                let currentIdentityByTTY = Self.codexSessionIdentityByTTY(
+-                    in: iTermWindows + ghosttySourceWindows
+-                )
++                let currentIdentityByTTY = Self.codexSessionIdentityByTTY(in: iTermWindows)
+                 guard sessionIdentityByTTY == currentIdentityByTTY else {
+                     codexSessionMonitor.reset(ttys: Self.changedCodexSessionTTYs(
+                         captured: sessionIdentityByTTY,
+@@ -1590,7 +1330,6 @@ final class ItermStore: ObservableObject {
+                     )
+                 }
+                 publishItermWindows()
+-                publishGhosttyWindows()
+             }
+         }
+     }
+@@ -1780,7 +1519,6 @@ final class ItermStore: ObservableObject {
+         }
+         guard title != nil else { return }
+         publishItermWindows()
+-        publishGhosttyWindows()
+     }
+ 
+     private static func titleExcerptDigest(_ excerpt: String) -> String {
+@@ -1800,7 +1538,7 @@ final class ItermStore: ObservableObject {
+     }
+ 
+     private func reconcileCodexObservationSessions() {
+-        let current = Self.codexSessionIdentityByTTY(in: iTermWindows + ghosttySourceWindows)
++        let current = Self.codexSessionIdentityByTTY(in: iTermWindows)
+         let staleTTYs = Self.staleCodexObservationTTYs(
+             accepted: codexObservationSessionIdentityByTTY,
+             current: current
+@@ -1842,36 +1580,9 @@ final class ItermStore: ObservableObject {
+         )
+         recordSuccessfulAgentCompletions(completions)
+         updateStatusMenuSummary()
+-        guard terminalApp != .ghostty else { return }
+         windows = visibleWindows
+     }
+ 
+-    private func updateGhosttyConnectionState(_ state: BridgeConnectionState) {
+-        ghosttyRefreshIsPending = false
+-        ghosttyConnectionState = state
+-        if state != .connected {
+-            invalidatePiStatusRecovery()
+-            ghosttySourceWindows = []
+-            reconcileCodexObservationSessions()
+-            ghosttyWindows = []
+-            ghosttySnapshotIsReady = false
+-            lastActiveGhosttyTerminalID = nil
+-            terminalStatusRegistry.reconcile(terminals: [:])
+-            _ = ghosttyAgentCompletionTracker.completions(
+-                in: [],
+-                activityKind: .agent
+-            )
+-        }
+-        updateStatusMenuSummary()
+-        guard terminalApp == .ghostty else { return }
+-        connectionState = state
+-        windows = ghosttyWindows
+-    }
+-
+-    private func updateGhosttyActionError(_ error: String?) {
+-        guard terminalApp == .ghostty else { return }
+-        actionError = error
+-    }
+ }
+ 
+ final class ItermBridgeClient {
+@@ -2224,294 +1935,6 @@ final class ItermBridgeClient {
+     }
+ }
+ 
+-final class GhosttyClient {
+-    private enum Action: String {
+-        case activate = "focus"
+-        case close
+-    }
+-
+-    private let queue = DispatchQueue(label: "com.caishilin.iTermate.ghostty")
+-    private let onSnapshot: ([TerminalWindowSnapshot]) -> Void
+-    private let onStateChange: (BridgeConnectionState) -> Void
+-    private let onActionError: (String?) -> Void
+-
+-    init(
+-        onSnapshot: @escaping ([TerminalWindowSnapshot]) -> Void,
+-        onStateChange: @escaping (BridgeConnectionState) -> Void,
+-        onActionError: @escaping (String?) -> Void
+-    ) {
+-        self.onSnapshot = onSnapshot
+-        self.onStateChange = onStateChange
+-        self.onActionError = onActionError
+-    }
+-
+-    func refresh() {
+-        queue.async { [weak self] in
+-            self?.loadSnapshot()
+-        }
+-    }
+-
+-    func activate(terminalID: String, completion: @escaping (String?) -> Void) {
+-        perform(.activate, terminalID: terminalID, completion: completion)
+-    }
+-
+-    func close(terminalID: String) {
+-        perform(.close, terminalID: terminalID)
+-    }
+-
+-    func closeArchivedSession(terminalID: String, tty: String, shellPID: Int32, completion: @escaping (String?) -> Void) {
+-        queue.async {
+-            do {
+-                guard Self.isGhosttyRunning else { throw GhosttyScriptError("Ghostty is not running") }
+-                _ = try Self.runScript(script: Self.archiveCloseScript, arguments: [terminalID, tty, String(shellPID)])
+-                DispatchQueue.main.async { completion(nil) }
+-            } catch {
+-                DispatchQueue.main.async { completion(error.localizedDescription) }
+-            }
+-        }
+-    }
+-
+-    func resumePiSession(_ location: PiResumeLocation, completion: @escaping (String?) -> Void) {
+-        queue.async {
+-            do {
+-                _ = try Self.runScript(script: Self.resumeScript, arguments: [location.cwd, location.sessionID, location.directory.path])
+-                DispatchQueue.main.async { completion(nil) }
+-            } catch {
+-                DispatchQueue.main.async { completion("Could not resume Pi in Ghostty: \(error.localizedDescription)") }
+-            }
+-        }
+-    }
+-
+-    private func loadSnapshot() {
+-        do {
+-            guard Self.isGhosttyRunning else {
+-                throw GhosttyScriptError("Ghostty is not running")
+-            }
+-            let data = try Self.runScript(
+-                language: "JavaScript",
+-                script: Self.snapshotScript
+-            )
+-            let windows = try JSONDecoder().decode(
+-                [TerminalWindowSnapshot].self,
+-                from: data
+-            )
+-            DispatchQueue.main.async { [onSnapshot] in onSnapshot(windows) }
+-        } catch {
+-            publish(
+-                state: .disconnected(
+-                    "Ghostty connection failed: \(error.localizedDescription)"
+-                )
+-            )
+-        }
+-    }
+-
+-    private func perform(
+-        _ action: Action,
+-        terminalID: String,
+-        completion: ((String?) -> Void)? = nil
+-    ) {
+-        queue.async { [weak self] in
+-            guard let self else { return }
+-            do {
+-                guard Self.isGhosttyRunning else {
+-                    throw GhosttyScriptError("Ghostty is not running")
+-                }
+-                _ = try Self.runScript(
+-                    script: Self.actionScript,
+-                    arguments: [action.rawValue, terminalID]
+-                )
+-                DispatchQueue.main.async { [onActionError] in
+-                    onActionError(nil)
+-                    completion?(nil)
+-                }
+-                loadSnapshot()
+-            } catch {
+-                DispatchQueue.main.async { [onActionError] in
+-                    let message = "Ghostty action failed: \(error.localizedDescription)"
+-                    onActionError(message)
+-                    completion?(message)
+-                }
+-            }
+-        }
+-    }
+-
+-    private func publish(state: BridgeConnectionState) {
+-        DispatchQueue.main.async { [onStateChange] in onStateChange(state) }
+-    }
+-
+-    private static var isGhosttyRunning: Bool {
+-        let workspace = NSWorkspace.shared
+-        let bundleIdentifier = TerminalApp.ghostty.bundleIdentifier
+-        return workspace.frontmostApplication?.bundleIdentifier == bundleIdentifier
+-            || workspace.runningApplications.contains {
+-                $0.bundleIdentifier == bundleIdentifier && !$0.isTerminated
+-            }
+-    }
+-
+-    private static func runScript(
+-        language: String? = nil,
+-        script: String,
+-        arguments: [String] = []
+-    ) throws -> Data {
+-        let outputPipe = Pipe()
+-        let errorPipe = Pipe()
+-        let process = Process()
+-        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+-        var processArguments = language.map { ["-l", $0] } ?? []
+-        processArguments.append(contentsOf: ["-e", script])
+-        if !arguments.isEmpty {
+-            processArguments.append("--")
+-            processArguments.append(contentsOf: arguments)
+-        }
+-        process.arguments = processArguments
+-        process.standardOutput = outputPipe
+-        process.standardError = errorPipe
+-        try process.run()
+-        let output = outputPipe.fileHandleForReading.readDataToEndOfFile()
+-        let errorOutput = errorPipe.fileHandleForReading.readDataToEndOfFile()
+-        process.waitUntilExit()
+-
+-        guard process.terminationStatus == 0 else {
+-            let message = String(data: errorOutput, encoding: .utf8)?
+-                .trimmingCharacters(in: .whitespacesAndNewlines)
+-            throw GhosttyScriptError(
+-                message.flatMap { $0.isEmpty ? nil : $0 } ?? "AppleScript failed"
+-            )
+-        }
+-        return output
+-    }
+-
+-    private static let archiveCloseScript = #"""
+-    on run argv
+-        set terminalID to item 1 of argv
+-        set expectedTTY to item 2 of argv
+-        set expectedPID to (item 3 of argv) as integer
+-        tell application "Ghostty"
+-            if not (exists (first terminal whose id is terminalID)) then return
+-            set targetTerminal to first terminal whose id is terminalID
+-            if tty of targetTerminal is not expectedTTY or pid of targetTerminal is not expectedPID then
+-                error "Terminal ownership changed or the original shell is not idle; left open."
+-            end if
+-            close targetTerminal
+-        end tell
+-    end run
+-    """#
+-
+-    private static let resumeScript = #"""
+-    on run argv
+-        set cwdValue to item 1 of argv
+-        set sessionValue to item 2 of argv
+-        set directoryValue to item 3 of argv
+-        set sessionArgument to sessionValue
+-        if sessionValue ends with ".jsonl" then set sessionArgument to directoryValue & "/archive_" & sessionValue & ".jsonl"
+-        set innerCommand to "cd -- " & quoted form of cwdValue & " && pi --session " & quoted form of sessionArgument & " --session-dir " & quoted form of directoryValue
+-        set commandValue to "/bin/zsh -lic " & quoted form of innerCommand
+-        tell application "Ghostty"
+-            set config to new surface configuration from {initial working directory:cwdValue, command:commandValue}
+-            if (count of windows) > 0 then
+-                new tab in front window with configuration config
+-            else
+-                new window with configuration config
+-            end if
+-            activate
+-        end tell
+-    end run
+-    """#
+-
+-    private static let snapshotScript = #"""
+-    function optional(getter, fallback) {
+-        try {
+-            var value = getter();
+-            return value === null || value === undefined ? fallback : value;
+-        } catch (_) {
+-            return fallback;
+-        }
+-    }
+-
+-    var ghostty = Application("Ghostty");
+-    var frontWindowID = optional(function() {
+-        return String(ghostty.frontWindow().id());
+-    }, null);
+-    var result = ghostty.windows().map(function(sourceWindow, windowIndex) {
+-        var windowID = String(sourceWindow.id());
+-        var selectedTabID = optional(function() {
+-            return String(sourceWindow.selectedTab().id());
+-        }, null);
+-        var tabs = sourceWindow.tabs().map(function(sourceTab, tabIndex) {
+-            var tabID = String(sourceTab.id());
+-            var focusedTerminalID = optional(function() {
+-                return String(sourceTab.focusedTerminal().id());
+-            }, null);
+-            var sessions = sourceTab.terminals().map(function(sourceTerminal) {
+-                var terminalID = String(sourceTerminal.id());
+-                var path = String(optional(function() {
+-                    return sourceTerminal.workingDirectory();
+-                }, ""));
+-                return {
+-                    id: terminalID,
+-                    name: String(optional(function() {
+-                        return sourceTerminal.name();
+-                    }, "Terminal")),
+-                    path: path || null,
+-                    tty: optional(function() {
+-                        return String(sourceTerminal.tty());
+-                    }, null),
+-                    isActive: terminalID === focusedTerminalID
+-                };
+-            });
+-            return {
+-                id: tabID,
+-                title: String(optional(function() {
+-                    return sourceTab.name();
+-                }, "Tab " + (tabIndex + 1))),
+-                isSelected: tabID === selectedTabID,
+-                sessions: sessions
+-            };
+-        });
+-        return {
+-            id: windowID,
+-            number: windowIndex + 1,
+-            isActive: windowID === frontWindowID,
+-            tabs: tabs
+-        };
+-    });
+-
+-    JSON.stringify(result);
+-    """#
+-
+-    private static let actionScript = #"""
+-    on run argv
+-        if (count of argv) is not 2 then error "Invalid Ghostty action"
+-        set actionName to item 1 of argv
+-        set terminalID to item 2 of argv
+-
+-        tell application "Ghostty"
+-            set matchingTerminals to every terminal whose id is terminalID
+-            if (count of matchingTerminals) is 0 then error "Terminal not found"
+-            set targetTerminal to item 1 of matchingTerminals
+-
+-            if actionName is "focus" then
+-                focus targetTerminal
+-            else if actionName is "close" then
+-                close targetTerminal
+-            else
+-                error "Unsupported Ghostty action"
+-            end if
+-        end tell
+-    end run
+-    """#
+-}
+-
+-private struct GhosttyScriptError: LocalizedError {
+-    let message: String
+-
+-    init(_ message: String) {
+-        self.message = message
+-    }
+-
+-    var errorDescription: String? { message }
+-}
+-
+ private struct SessionActionRequest: Encodable {
+     let type: String
+     let requestId: String
+diff --git a/iTermate/SettingsViews.swift b/iTermate/SettingsViews.swift
+index da4cf0f..c66a496 100644
+--- a/iTermate/SettingsViews.swift
++++ b/iTermate/SettingsViews.swift
+@@ -93,7 +93,6 @@ private struct AppConfig {
+     var panelFontSize = PanelFontDefaults.size
+     var panelBackgroundStyle: PanelBackgroundStyle = .systemBlur
+     var iTerm2PanelEnabled = true
+-    var ghosttyPanelEnabled = true
+     var accentColorHex: String?
+     var statusAnimationPreferences = Dictionary(
+         uniqueKeysWithValues: SessionStatusAnimation.allCases.map {
+@@ -183,12 +182,6 @@ private struct AppConfig {
+                 } else if value == "false" {
+                     iTerm2PanelEnabled = false
+                 }
+-            case "ghostty_panel_enabled":
+-                if value == "true" {
+-                    ghosttyPanelEnabled = true
+-                } else if value == "false" {
+-                    ghosttyPanelEnabled = false
+-                }
+             case "accent_color":
+                 if let color = Self.stringValue(String(value)) {
+                     if color == "system" {
+@@ -278,7 +271,6 @@ private struct AppConfig {
+         panel_font_size = \(panelFontSize)
+         panel_background_style = "\(panelBackgroundStyle.rawValue)"
+         iterm2_panel_enabled = \(iTerm2PanelEnabled)
+-        ghostty_panel_enabled = \(ghosttyPanelEnabled)
+         accent_color = "\(accentColorHex ?? "system")"
+         \(statusAnimations)
+         session_list_style = \"\(sessionListStyle.rawValue)\"
+@@ -323,7 +315,6 @@ final class AppSettings: ObservableObject {
+     @Published private(set) var panelFontSize: CGFloat
+     @Published private(set) var panelBackgroundStyle: PanelBackgroundStyle
+     @Published private var iTerm2PanelEnabled: Bool
+-    @Published private var ghosttyPanelEnabled: Bool
+     @Published private(set) var accentColorHex: String?
+     @Published private(set) var statusAnimationPreferences: [
+         SessionStatusAnimation: SessionStatusAnimationPreferences
+@@ -351,7 +342,6 @@ final class AppSettings: ObservableObject {
+         panelFontSize = config.panelFontSize
+         panelBackgroundStyle = config.panelBackgroundStyle
+         iTerm2PanelEnabled = config.iTerm2PanelEnabled
+-        ghosttyPanelEnabled = config.ghosttyPanelEnabled
+         accentColorHex = config.accentColorHex
+         statusAnimationPreferences = config.statusAnimationPreferences
+         sessionListStyle = config.sessionListStyle
+@@ -446,8 +436,6 @@ final class AppSettings: ObservableObject {
+         switch terminalApp {
+         case .iTerm2:
+             iTerm2PanelEnabled
+-        case .ghostty:
+-            ghosttyPanelEnabled
+         }
+     }
+ 
+@@ -456,9 +444,6 @@ final class AppSettings: ObservableObject {
+         case .iTerm2:
+             iTerm2PanelEnabled = isEnabled
+             updateConfig { $0.iTerm2PanelEnabled = isEnabled }
+-        case .ghostty:
+-            ghosttyPanelEnabled = isEnabled
+-            updateConfig { $0.ghosttyPanelEnabled = isEnabled }
+         }
+     }
+ 
+@@ -886,13 +871,6 @@ private struct GeneralSettingsView: View {
+                     )
+                 )
+ 
+-                Toggle(
+-                    "Show Panel in Ghostty",
+-                    isOn: Binding(
+-                        get: { settings.isPanelEnabled(for: .ghostty) },
+-                        set: { settings.setPanelEnabled($0, for: .ghostty) }
+-                    )
+-                )
+             }
+ 
+             Section("Panel") {
+diff --git a/iTermate/iTermateApp.swift b/iTermate/iTermateApp.swift
+index 9a08da0..2e0d86f 100644
+--- a/iTermate/iTermateApp.swift
++++ b/iTermate/iTermateApp.swift
+@@ -2119,17 +2119,8 @@ struct TerminalAppWindow {
+             return quartzFrame
+         }
+ 
+-        let quartzFrame: CGRect?
+-        switch terminalApp {
+-        case .iTerm2:
+-            // ponytail: the largest layer-0 window excludes iTerm modal alerts;
+-            // use window IDs if multi-window precision is needed.
+-            quartzFrame = largestWindowFrame(from: candidateFrames)
+-        case .ghostty:
+-            // CGWindowList is front-to-back, so the first Ghostty window is active.
+-            quartzFrame = candidateFrames.first
+-        }
+-        guard let quartzFrame else { return nil }
++        // The largest layer-0 iTerm2 window excludes modal alerts.
++        guard let quartzFrame = largestWindowFrame(from: candidateFrames) else { return nil }
+ 
+         return TerminalAppWindow(
+             terminalApp: terminalApp,

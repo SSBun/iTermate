@@ -12,7 +12,7 @@ const source = stripTypeScriptTypes(await readFile(
   new URL("./iTermate-integration.ts", import.meta.url), "utf8",
 ));
 
-async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model } = {}) {
+async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model, classifier } = {}) {
   let modelEnabled = model !== undefined;
   let modelProvider = "laya";
   let modelEpoch = 0;
@@ -54,7 +54,8 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model 
   }
   const context = createContext({
     process: { pid: 123, env: { TERM_PROGRAM: terminal, ITERM_SESSION_ID: "w0:session-1" } },
-    performance: { now: () => now }, setTimeout, clearTimeout, clearInterval: clearTimeout, Buffer, URL,
+    performance: { now: () => now }, setTimeout, clearTimeout, clearInterval: clearTimeout, Buffer, URL, AbortController,
+    mockQuestion: classifier,
   });
   const unavailable = () => { throw new Error("Archive I/O is unavailable in lifecycle tests"); };
   const mocks = {
@@ -71,8 +72,8 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model 
     },
     "node:fs": {
       ...Object.fromEntries([
-        "chmodSync", "closeSync", "fsyncSync", "mkdirSync", "mkdtempSync",
-        "openSync", "renameSync", "writeFileSync",
+        "appendFileSync", "chmodSync", "closeSync", "fsyncSync", "mkdirSync", "mkdtempSync",
+        "openSync", "readdirSync", "renameSync", "statSync", "writeFileSync",
       ].map((name) => [name, unavailable])),
       readFileSync: (path) => path.endsWith("configuration.json") ? configuration() : unavailable(),
       rmSync: () => {},
@@ -124,7 +125,9 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model 
     "node:path": { join },
   };
   // These retained legacy-Decision cases are isolated from the production-disabled gate.
-  const legacySource = source.replace("const legacyDecisionsEnabled = false", "const legacyDecisionsEnabled = true");
+  const legacySource = classifier
+    ? source.replace("classifyReplyWithModel(lastAssistantText, request.signal)", "globalThis.mockQuestion(lastAssistantText, request.signal)")
+    : source.replace("const legacyDecisionsEnabled = false", "const legacyDecisionsEnabled = true");
   const module = new SourceTextModule(legacySource, { context });
   await module.link((specifier) => {
     assert.ok(mocks[specifier], `Unexpected import: ${specifier}`);
@@ -136,6 +139,7 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model 
   await module.evaluate();
   module.namespace.default({
     on: (name, handler) => handlers.set(name, handler),
+    getAllTools: () => [{ name: "subagent" }],
     events: {
       on: (name, handler) => {
         events.on(name, handler);
@@ -164,13 +168,16 @@ async function harness({ count = 2, terminal = "iTerm.app", mode = "tui", model 
     await flush();
   }
   return {
-    reports, queries, responses, modelRequests, advance, emit,
+    reports, queries, responses, modelRequests, advance, emit, flush,
+    childStatus: status => events.emit("subagent:child-status", {
+      type: "subagent.child-status", version: 1, status,
+    }),
     setModelEnabled: (enabled) => { modelEnabled = enabled; modelEpoch += 1; },
     setProvider: (provider) => { modelProvider = provider; modelEpoch += 1; },
     elapseWithoutCallbacks: (milliseconds) => { now += milliseconds; },
     setResponse: (response) => { defaultResponse = response; },
     get now() { return now; },
-    get replyListeners() { return events.eventNames().length; },
+    get replyListeners() { return events.eventNames().filter(name => String(name).startsWith("subagents:rpc:v1:reply:")).length; },
     get pendingTimers() { return timers.size; },
   };
 }
@@ -204,7 +211,7 @@ test("active children keep a settled parent running; only zero completes", async
   assert.equal(h.pendingTimers, 0);
 });
 
-test("TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged positive count", async () => {
+test("RPC spanning expiry republishes the unchanged positive count after unknown", async () => {
   const h = await settledHarness();
   // Last confirmation: 10s. Shift heartbeat cadence to 12.1/14.1/16.1s.
   await h.advance(100);
@@ -217,8 +224,8 @@ test("TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged pos
   h.elapseWithoutCallbacks(1000);
   await h.advance(0);
   assert.equal(h.queries.at(-1).at, 15800);
-  await h.advance(300); // 16.1s: heartbeat pauses while the RPC is pending.
-  assert.equal(h.reports.at(-1).at, 14100);
+  await h.advance(300); // 16.1s: the old child observation expires while the RPC is pending.
+  assert.equal(h.reports.at(-1).status, null);
   await h.advance(600); // 16.7s: unchanged positive reply must fully republish.
   assert.equal(h.reports.at(-1).at, 16700);
   assert.equal(h.reports.at(-1).heartbeat, false);
@@ -232,12 +239,12 @@ test("TR-1: RPC spanning expiry restarts the paused heartbeat with unchanged pos
   await h.emit("session_shutdown");
 });
 
-test("unavailable fleet expires child-only reporting without false completion, then recovers", async () => {
+test("unavailable fleet becomes unknown without false completion, then recovers", async () => {
   const h = await settledHarness();
   h.setResponse({ drop: true });
   await h.advance(16000);
   const pausedReports = h.reports.length;
-  assert.ok(h.now - h.reports.at(-1).at > 8000);
+  assert.equal(h.reports.at(-1).status, null);
   assert.equal(h.reports.some((report) => report.status === "finished"), false);
   h.setResponse({ count: 2 });
   await h.advance(6000);
@@ -260,7 +267,7 @@ test("explicit questions retain awaitingInput alongside child activity", async (
   await h.emit("session_shutdown");
 });
 
-for (const terminal of ["iTerm.app", "ghostty"]) {
+for (const terminal of ["iTerm.app"]) {
   test(`${terminal}: a positive participation decision retains implicit confirmation`, async () => {
     const h = await harness({ count: 0, terminal, model: { answers: {
       question: { type: "choice", choice: "question", probabilities: { normal: 0.01, question: 0.99 } },
@@ -331,7 +338,7 @@ test("negated requests and completed confirmation narratives do not retain a que
   await h.emit("session_shutdown");
 });
 
-test("unavailable selected model keeps lifecycle completion without heuristic fallback", async () => {
+test("unavailable selected model leaves completion unknown without heuristic fallback", async () => {
   const h = await harness({ count: 0, model: { statusCode: 429 } });
   await h.emit("session_start");
   await h.advance(0);
@@ -340,7 +347,8 @@ test("unavailable selected model keeps lifecycle completion without heuristic fa
     content: [{ type: "text", text: "Which option do you prefer?" }] }] });
   await h.emit("agent_settled");
   assert.equal(h.modelRequests.length, 1);
-  assert.equal(h.reports.at(-1).status, "finished");
+  assert.equal(h.reports.at(-1).status, null);
+  assert.equal(h.reports.at(-1).latestCompletion, undefined);
   await h.emit("session_shutdown");
 });
 
@@ -375,13 +383,13 @@ test("a future confirmation remains leased with model analysis disabled", async 
   await h.emit("session_shutdown");
 });
 
-test("Ghostty uses TTY and ignores inherited iTerm session identity", async () => {
-  const h = await settledHarness({ terminal: "ghostty" });
-  const report = h.reports.at(-1);
-  assert.equal(report.type, "setTerminalStatus");
-  assert.equal(report.tty, "/dev/ttys001");
-  assert.equal(report.sessionId, undefined);
-  assert.equal(report.hasRunningSubagents, true);
+test("other terminals ignore inherited iTerm session identity", async () => {
+  const h = await harness({ terminal: "other-terminal" });
+  await h.emit("session_start");
+  await h.advance(0);
+  await h.emit("agent_start");
+  assert.equal(h.reports.length, 0);
+  assert.equal(h.modelRequests.length, 0);
   await h.emit("session_shutdown");
 });
 
@@ -494,7 +502,7 @@ test("provider changes reject the old worker's late positive response", async ()
   await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text: "May I proceed?" }] }] });
   await h.emit("agent_settled");
   assert.equal(h.modelRequests.length, 1);
-  assert.equal(h.reports.at(-1).status, "finished");
+  assert.equal(h.reports.at(-1).status, null);
   await h.emit("session_shutdown");
 });
 
@@ -505,5 +513,117 @@ test("non-TUI child runtimes do not query or report parent terminal activity", a
   await h.advance(10000);
   assert.equal(h.queries.length, 0);
   assert.equal(h.reports.length, 0);
+  await h.emit("session_shutdown");
+});
+
+test("aborting a turn is interrupted and preserves only the preceding completion", async () => {
+  const h = await settledHarness({ count: 0 });
+  const previous = h.reports.at(-1).latestCompletion;
+  assert.equal(previous.exitStatus, 0);
+  assert.ok(previous.completedAt > 0);
+  await h.emit("agent_start");
+  await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "aborted", content: [] }] });
+  await h.emit("agent_settled", { aborted: true });
+  const state = h.reports.at(-1);
+  assert.equal(state.status, "interrupted");
+  assert.equal(state.exitStatus, undefined);
+  assert.equal(state.completionId, undefined);
+  assert.deepEqual(state.latestCompletion, previous);
+  assert.deepEqual(state.recentCompletions, [previous]);
+  await h.emit("session_shutdown");
+});
+
+test("failed runs have stable failed completion evidence that survives the next turn", async () => {
+  const h = await harness({ count: 0 });
+  await h.emit("session_start");
+  await h.advance(0);
+  await h.emit("agent_start");
+  await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "error", content: [] }] });
+  await h.emit("agent_settled", { aborted: false });
+  const done = h.reports.at(-1);
+  assert.equal(done.status, "finished");
+  assert.equal(done.exitStatus, 1);
+  assert.deepEqual(done.latestCompletion, { id: done.completionId, completedAt: done.completedAt, exitStatus: 1 });
+  await h.emit("agent_start");
+  assert.equal(h.reports.at(-1).status, "running");
+  assert.deepEqual(h.reports.at(-1).latestCompletion, done.latestCompletion);
+  assert.deepEqual(h.reports.at(-1).recentCompletions, [done.latestCompletion]);
+  await h.emit("session_shutdown");
+});
+
+test("completion history retains the latest 64 independent events across new turns", async () => {
+  const h = await settledHarness({ count: 0 });
+  const firstSnapshot = h.reports.at(-1);
+  const firstID = firstSnapshot.completionId;
+  for (let index = 0; index < 65; index += 1) {
+    await h.emit("agent_start");
+    await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop",
+      content: [{ type: "text", text: "Done." }] }] });
+    await h.emit("agent_settled", { aborted: false });
+  }
+  const state = h.reports.at(-1);
+  assert.equal(state.recentCompletions.length, 64);
+  assert.equal(new Set(state.recentCompletions.map(event => event.id)).size, 64);
+  assert.equal(state.recentCompletions.some(event => event.id === firstID), false);
+  assert.deepEqual(state.recentCompletions.at(-1), state.latestCompletion);
+  assert.deepEqual(firstSnapshot.recentCompletions, [firstSnapshot.latestCompletion]);
+  await h.emit("agent_start");
+  assert.deepEqual(h.reports.at(-1).recentCompletions, state.recentCompletions);
+  await h.emit("session_start");
+  await h.advance(0);
+  assert.deepEqual(h.reports.at(-1).recentCompletions, []);
+  await h.emit("session_shutdown");
+});
+
+test("settled returns while classification is pending, then publishes the decision", async () => {
+  let finish;
+  const h = await settledHarness({ count: 0, classifier: () => new Promise(resolve => { finish = resolve; }) });
+  assert.equal(h.reports.at(-1).status, null);
+  assert.equal(h.reports.at(-1).latestCompletion, undefined);
+  assert.equal(typeof finish, "function");
+  finish(true);
+  await h.flush();
+  assert.equal(h.reports.at(-1).status, "awaitingInput");
+  assert.equal(h.reports.some(state => state.status === "finished"), false);
+  await h.emit("session_shutdown");
+});
+
+test("starting a new turn aborts its predecessor's classification", async () => {
+  let finish;
+  let signal;
+  const h = await settledHarness({ count: 0, classifier: (_text, currentSignal) => {
+    signal = currentSignal;
+    return new Promise(resolve => { finish = resolve; });
+  } });
+  await h.emit("agent_start");
+  assert.equal(signal.aborted, true);
+  finish(true);
+  await h.flush();
+  assert.equal(h.reports.at(-1).status, "running");
+  assert.equal(h.reports.some(state => state.status === "awaitingInput"), false);
+  await h.emit("session_shutdown");
+});
+
+test("a stale zero cannot complete a newly started child and lifecycle hints refresh immediately", async () => {
+  const h = await harness({ count: 0 });
+  await h.emit("session_start");
+  await h.advance(0);
+  await h.emit("agent_start");
+  await h.emit("tool_execution_start", { toolName: "subagent" });
+  h.setResponse({ drop: true });
+  await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop",
+    content: [{ type: "text", text: "Delegated the remaining work." }] }] });
+  await h.emit("agent_settled", { aborted: false });
+  await h.advance(1000);
+  assert.equal(h.reports.at(-1).status, null);
+  assert.equal(h.reports.some(state => state.status === "finished"), false);
+  h.setResponse({ count: 1 });
+  h.childStatus("started");
+  await h.flush();
+  assert.equal(h.reports.at(-1).status, "running");
+  h.setResponse({ count: 0 });
+  h.childStatus("stopped");
+  await h.flush();
+  assert.equal(h.reports.at(-1).status, "finished");
   await h.emit("session_shutdown");
 });
