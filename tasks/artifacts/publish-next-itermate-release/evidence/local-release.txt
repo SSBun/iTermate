@@ -1,0 +1,19 @@
+# 本地发布核验（0.7.0 / build 14）
+
+- 目标仓库：SSBun/iTermate；origin 为 https://github.com/SSBun/iTermate.git，默认分支 main，Pages 来源 main:/docs。
+- 基线：最新稳定版 v0.6.0，build 13；本次 minor 版本 v0.7.0，build 14。远端尚无 v0.7.0。
+- 版本源为 project.yml；已执行 xcodegen generate，同步生成的 Xcode 工程。Info.plist 继续引用构建设置。
+- 构建：scripts/create-dmg.sh 0.7.0，Release BUILD SUCCEEDED；唯一已见警告为未依赖 AppIntents 时跳过元数据提取。未运行单元测试或项目测试套件。
+- 安装包：/Users/caishilin/Desktop/personal/iTermate/dist/iTermate-0.7.0_20261027-143535/iTermate-0.7.0.dmg。
+- 字节数：4603641。
+- SHA-256：ab2240d48c0809bebdea0c08c7b5924c88818f403321ed002f488113c44a375b。
+- 安装包 hdiutil verify 和附带 .sha256 校验通过；只读挂载核对 App 为 0.7.0/build14、Applications 链接、Bridge 与 Pi 资源逐字节一致。已卸载只读卷，未安装或启动 App。
+- App 架构 arm64，最低 macOS 13.0；签名为 ad hoc，无 TeamIdentifier、无 Developer ID、未公证。codesign --verify --deep --strict 通过，Sparkle.framework/Autoupdate/Updater.app/Downloader.xpc/Installer.xpc 均通过嵌套校验，未见 get-task-allow entitlement。
+- Sparkle 使用既有项目专用 Keychain account SSBun.iTermate，公钥与 App 的 SUPublicEDKey 一致：L5Q2dHra6pBCxeGReTg3uOslFt/VFO9QVbxM2aCB6XA=。未导出或显示私钥。
+- 初次 generate_appcast 与手动只读挂载重叠，hdiutil 报 Resource busy；卸载卷后成功生成，没有重新打包或修改 DMG。
+- generate_appcast --account SSBun.iTermate --download-url-prefix https://github.com/SSBun/iTermate/releases/download/v0.7.0/ --embed-release-notes --maximum-versions 0 --maximum-deltas 0 成功，仅新增一条，保留全部 11 条历史 item。
+- 新 item：0.7.0/build14、最低13.0、arm64、长度4603641，下载 URL 为 https://github.com/SSBun/iTermate/releases/download/v0.7.0/iTermate-0.7.0.dmg。
+- EdDSA：B+WiJh4iYFDC1yuHsWKDYwOCU0vtv5bEexaO6Fw3j0lLoJ2yo2jrse1byJhUhwovWewEGrWQSZrxgbe5da0jCA==；sign_update --verify 通过，xmllint 通过。
+- 更新说明明确：预先安装 Ollama/模型，Pi 更新后 reload，旧 Decision API 暂停，Codex 无身份信号时自动关联仍可能失败；不关闭或宣称完成原有 Blocked 监听任务。
+- 核验限制：未运行测试，未执行 GUI 或真实 Sparkle 两版本升级；不以构建通过替代这些检查。
+- 远程发布尚未执行。顺序必须为 tag → 稳定 Release 与资产 → 独立下载/摘要/HTTP核验 → main/Pages feed。
