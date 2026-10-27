@@ -1,6 +1,6 @@
 # 任务索引
 
-- [提交当前全部本地改动](tasks/commit-all-local-changes-20261027.md) — In Progress (2026-10-27 11:46)
+- [提交当前全部本地改动](tasks/commit-all-local-changes-20261027.md) — Completed (2026-10-27 11:47)
 
 - [启动iTermate时自动启动本地Ollama服务](tasks/auto-start-ollama-on-launch.md) — Completed (2026-10-27 11:45)
 
