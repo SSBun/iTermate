@@ -991,7 +991,8 @@ private struct PanelContent: View {
                     }
 
                     if item.session.status == nil, item.session.environmentAgentKind != nil {
-                        AgentUnknownStatusView()
+                        // Missing lifecycle evidence is neutral; it does not change the observed Agent identity.
+                        AgentIdleStatusView()
                     } else if item.session.status == .awaitingInput,
                        item.session.activityKind == .agent {
                         AgentWaitingStatusView(
@@ -1073,11 +1074,7 @@ private struct PanelContent: View {
             .accessibilityLabel(
                 "Activate \(item.session.environmentAgentKind?.displayName ?? "Shell") session \(sessionName(item.session, showsWorkingDirectory: showsWorkingDirectory))"
             )
-            .accessibilityValue([
-                item.isFocused ? "Focused" : nil,
-                item.session.status == nil && item.session.environmentAgentKind != nil
-                    ? "Agent status unavailable" : nil
-            ].compactMap { $0 }.joined(separator: ", "))
+            .accessibilityValue(item.isFocused ? "Focused" : "")
 
             Button {
                 store.close(sessionID: item.session.id)
@@ -1741,15 +1738,16 @@ private struct SessionGroupConnectors: View {
     }
 }
 
-/// A static pixel identity mark: shape identifies the environment, fill identifies focus.
+/// A pixel identity mark: shape identifies the environment, fill identifies focus.
 private struct SessionEnvironmentIcon: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let agentKind: SessionAgentKind?
     let isFocused: Bool
     let color: Color
 
     private var glyph: [String] {
         switch agentKind {
-        case .pi, .unknown:
+        case .pi:
             isFocused
                 ? ["00011000", "00011000", "00111100", "00111100", "01111110", "01111110", "11111111", "11111111"]
                 : ["00011000", "00011000", "00100100", "00100100", "01000010", "01000010", "10000001", "11111111"]
@@ -1757,6 +1755,8 @@ private struct SessionEnvironmentIcon: View {
             isFocused
                 ? ["1111111", "1111111", "1111111", "1111111", "1111111", "1111111", "1111111"]
                 : ["1111111", "1000001", "1000001", "1000001", "1000001", "1000001", "1111111"]
+        case .unknown:
+            ["0011100", "0011100", "0011100", "0001000", "0001000", "0000000", "0001000"]
         case nil:
             isFocused
                 ? ["00111100", "01111110", "11111111", "11111111", "11111111", "11111111", "01111110", "00111100"]
@@ -1769,22 +1769,26 @@ private struct SessionEnvironmentIcon: View {
     }
 
     var body: some View {
-        Canvas { context, size in
-            let rows = glyph
-            let columns = rows.first?.count ?? 8
-            let origin = CGPoint(
-                x: (size.width - CGFloat(columns)) / 2,
-                y: (size.height - CGFloat(rows.count)) / 2
-            )
-            for (row, bits) in rows.enumerated() {
-                for (column, bit) in bits.enumerated() where bit == "1" {
-                    let rect = CGRect(
-                        x: origin.x + CGFloat(column),
-                        y: origin.y + CGFloat(row),
-                        width: 1,
-                        height: 1
-                    )
-                    context.fill(Path(rect), with: .color(color))
+        TimelineView(.animation(minimumInterval: 0.2, paused: reduceMotion || agentKind != .unknown)) { timeline in
+            let opacity = reduceMotion || agentKind != .unknown ? 1.0
+                : 0.75 + 0.25 * cos(timeline.date.timeIntervalSinceReferenceDate * .pi)
+            Canvas { context, size in
+                let rows = glyph
+                let columns = rows.first?.count ?? 8
+                let origin = CGPoint(
+                    x: (size.width - CGFloat(columns)) / 2,
+                    y: (size.height - CGFloat(rows.count)) / 2
+                )
+                for (row, bits) in rows.enumerated() {
+                    for (column, bit) in bits.enumerated() where bit == "1" {
+                        let rect = CGRect(
+                            x: origin.x + CGFloat(column),
+                            y: origin.y + CGFloat(row),
+                            width: 1,
+                            height: 1
+                        )
+                        context.fill(Path(rect), with: .color(color.opacity(opacity)))
+                    }
                 }
             }
         }
@@ -1879,39 +1883,6 @@ private struct AgentQuestionStatusView: View {
                 }
             }
         }
-    }
-}
-
-private struct AgentUnknownStatusView: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    private static let glyph = [0b111, 0b111, 0b111, 0b010, 0b010, 0b000, 0b010]
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 0.2, paused: reduceMotion)) { timeline in
-            let opacity = reduceMotion ? 1.0
-                : 0.75 + 0.25 * cos(timeline.date.timeIntervalSinceReferenceDate * .pi)
-            Canvas { context, size in
-                let origin = CGPoint(x: (size.width - 6) / 2, y: (size.height - 14) / 2)
-                for (row, bits) in Self.glyph.enumerated() {
-                    for column in 0..<3 where bits & (1 << (2 - column)) != 0 {
-                        let rect = CGRect(
-                            x: origin.x + CGFloat(column) * 2 + 0.25,
-                            y: origin.y + CGFloat(row) * 2 + 0.25,
-                            width: 1.75,
-                            height: 1.75
-                        )
-                        context.fill(
-                            Path(roundedRect: rect, cornerRadius: 0.35),
-                            with: .color(.secondary.opacity(opacity))
-                        )
-                    }
-                }
-            }
-        }
-        .frame(width: 36, height: 16)
-        .help("Agent detected; status unavailable")
-        .accessibilityLabel("Agent detected; status unavailable")
     }
 }
 

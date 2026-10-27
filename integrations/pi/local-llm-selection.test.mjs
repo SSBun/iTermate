@@ -182,9 +182,10 @@ test("local commit reports and explicit push approval reach the classifier with 
 for (const [output, expected] of [
   ['{"label":"normal"}', false],
   ['{"label":"question"}', true],
-  ['{"label":"other"}', undefined],
-  ['{"label":"normal","confidence":1}', undefined],
-  ['normal', undefined],
+  ['{"label":"unknown"}', false],
+  ['{"label":"other"}', false],
+  ['{"label":"normal","confidence":1}', false],
+  ['normal', false],
 ]) {
   test(`reply classification handles ${output} without another model request`, async () => {
     const h = await harness({ questionReply: output });
@@ -196,7 +197,7 @@ for (const [output, expected] of [
 test("empty or oversized replies never invoke the classifier", async () => {
   const h = await harness();
   for (const text of ["", " \n", "字".repeat(20000)]) {
-    assert.equal(await h.api.classifyReplyWithModel(text), undefined);
+    assert.equal(await h.api.classifyReplyWithModel(text), false);
   }
   assert.equal(h.requests.length, 0);
 });
@@ -210,10 +211,10 @@ test("replies over 3000 characters retain the complete question context", async 
   assert.equal(chat.body.messages[1].content, text);
 });
 
-test("cancelling classification aborts the active request without a negative decision", async () => {
+test("cancelling classification aborts the active request and returns the reply default", async () => {
   const request = new AbortController();
   const h = await harness({ onChat: () => request.abort() });
-  assert.equal(await h.api.classifyReplyWithModel("请确认后我再继续。", request.signal), undefined);
+  assert.equal(await h.api.classifyReplyWithModel("请确认后我再继续。", request.signal), false);
   assert.equal(h.requests.filter(row => row.options.path === "/api/tags").length, 1);
 });
 
@@ -226,7 +227,7 @@ test("missing choice keeps 2B without writing preferences", async () => {
 test("unavailable 4B never falls back to installed 2B", async () => {
   const h = await harness({ inventory: [twoB] });
   await assert.rejects(title(h));
-  assert.equal(await h.api.classifyReplyWithModel("请确认"), undefined);
+  assert.equal(await h.api.classifyReplyWithModel("请确认"), false);
   assert.equal(h.requests.filter(row => row.options.path === "/api/chat").length, 0);
 });
 
@@ -244,7 +245,7 @@ test("changed selection or configuration revision invalidates in-flight replies"
       let h;
       h = await harness({ onChat: () => h.setConfiguration(selection(model, "22222222-2222-2222-2222-222222222222")) });
       if (kind === "title") await assert.rejects(title(h));
-      else assert.equal(await h.api.classifyReplyWithModel("请确认"), undefined);
+      else assert.equal(await h.api.classifyReplyWithModel("请确认"), false);
     }
   }
 });

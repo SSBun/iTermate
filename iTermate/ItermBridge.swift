@@ -92,11 +92,12 @@ enum SessionAgentKind: String, Codable, Equatable {
     /// An Agent whose integration has not supplied its identity.
     case unknown
 
-    /// The UI environment name; unidentified Agents default to Pi without changing their recorded identity.
+    /// The observed environment name, without guessing an unidentified Agent's kind.
     var displayName: String {
         switch self {
-        case .pi, .unknown: "Pi"
+        case .pi: "Pi"
         case .codex: "Codex"
+        case .unknown: "Unknown Agent"
         }
     }
 }

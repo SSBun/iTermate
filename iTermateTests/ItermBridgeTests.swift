@@ -682,7 +682,7 @@ final class ItermBridgeTests: XCTestCase {
         {"id":"pane","name":"codex","isActive":false,"activityKind":"agent","status":"idle"}
         """.utf8))
         XCTAssertEqual(legacyAgent.environmentAgentKind, .unknown)
-        XCTAssertEqual(legacyAgent.environmentAgentKind?.displayName, "Pi")
+        XCTAssertEqual(legacyAgent.environmentAgentKind?.displayName, "Unknown Agent")
         XCTAssertEqual(SessionAgentKind.pi.displayName, "Pi")
         XCTAssertEqual(SessionAgentKind.codex.displayName, "Codex")
     }

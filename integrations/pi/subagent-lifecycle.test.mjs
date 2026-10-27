@@ -338,7 +338,7 @@ test("negated requests and completed confirmation narratives do not retain a que
   await h.emit("session_shutdown");
 });
 
-test("unavailable selected model leaves completion unknown without heuristic fallback", async () => {
+test("unavailable selected model defaults a successfully settled reply without heuristic fallback", async () => {
   const h = await harness({ count: 0, model: { statusCode: 429 } });
   await h.emit("session_start");
   await h.advance(0);
@@ -347,8 +347,9 @@ test("unavailable selected model leaves completion unknown without heuristic fal
     content: [{ type: "text", text: "Which option do you prefer?" }] }] });
   await h.emit("agent_settled");
   assert.equal(h.modelRequests.length, 1);
-  assert.equal(h.reports.at(-1).status, null);
-  assert.equal(h.reports.at(-1).latestCompletion, undefined);
+  assert.equal(h.reports.at(-1).status, "finished");
+  assert.equal(h.reports.at(-1).latestCompletion.exitStatus, 0);
+  assert.equal(h.reports.some(state => state.status === "awaitingInput"), false);
   await h.emit("session_shutdown");
 });
 
@@ -502,7 +503,8 @@ test("provider changes reject the old worker's late positive response", async ()
   await h.emit("agent_end", { messages: [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text: "May I proceed?" }] }] });
   await h.emit("agent_settled");
   assert.equal(h.modelRequests.length, 1);
-  assert.equal(h.reports.at(-1).status, null);
+  assert.equal(h.reports.at(-1).status, "finished");
+  assert.equal(h.reports.some(state => state.status === "awaitingInput"), false);
   await h.emit("session_shutdown");
 });
 
@@ -575,10 +577,10 @@ test("completion history retains the latest 64 independent events across new tur
   await h.emit("session_shutdown");
 });
 
-test("settled returns while classification is pending, then publishes the decision", async () => {
+test("settled remains neutral while classification is pending, then publishes the decision", async () => {
   let finish;
   const h = await settledHarness({ count: 0, classifier: () => new Promise(resolve => { finish = resolve; }) });
-  assert.equal(h.reports.at(-1).status, null);
+  assert.equal(h.reports.at(-1).status, "idle");
   assert.equal(h.reports.at(-1).latestCompletion, undefined);
   assert.equal(typeof finish, "function");
   finish(true);
@@ -586,6 +588,37 @@ test("settled returns while classification is pending, then publishes the decisi
   assert.equal(h.reports.at(-1).status, "awaitingInput");
   assert.equal(h.reports.some(state => state.status === "finished"), false);
   await h.emit("session_shutdown");
+});
+
+test("an unavailable classification result uses the ordinary reply default", async () => {
+  const h = await settledHarness({ count: 0, classifier: async () => undefined });
+  const state = h.reports.at(-1);
+  assert.equal(state.status, "finished");
+  assert.equal(state.latestCompletion.exitStatus, 0);
+  const runningIndex = h.reports.findLastIndex(report => report.status === "running");
+  assert.equal(h.reports.slice(runningIndex + 1).some(report => report.status === null), false);
+  await h.emit("session_shutdown");
+});
+
+test("silent and whitespace-only turns stay neutral without classification or new completions", async () => {
+  for (const messages of [[],
+    [{ role: "assistant", stopReason: "stop", content: [] }],
+    [{ role: "assistant", stopReason: "stop", content: [{ type: "text", text: " \n " }] }],
+  ]) {
+    let calls = 0;
+    const h = await harness({ count: 0, classifier: async () => { calls += 1; return true; } });
+    await h.emit("session_start");
+    await h.advance(0);
+    await h.emit("agent_start");
+    await h.emit("agent_end", { messages });
+    await h.emit("agent_settled", { aborted: false });
+    const state = h.reports.at(-1);
+    assert.equal(state.status, "idle");
+    assert.equal(state.latestCompletion, undefined);
+    assert.equal(state.completionId, undefined);
+    assert.equal(calls, 0);
+    await h.emit("session_shutdown");
+  }
 });
 
 test("starting a new turn aborts its predecessor's classification", async () => {
