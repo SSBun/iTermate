@@ -22,7 +22,7 @@
 
 - [移除 Ghostty 支持，仅保留 iTerm2](tasks/remove-ghostty-support.md) — Completed (2026-10-22 17:57)
 
-- [推送当前代码并发布 iTermate 新版本](tasks/publish-next-itermate-release.md) — In Progress (2026-10-22 17:08)
+- [推送当前代码并发布 iTermate 新版本](tasks/publish-next-itermate-release.md) — Completed (2026-10-27 14:50)
 
 - [调研 Splash 与 Ollama 的差异及 iTermate 适用性](tasks/research-splash-vs-ollama.md) — Pending (2026-10-22 17:07)
 

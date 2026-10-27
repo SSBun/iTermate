@@ -1,0 +1,294 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>iTermate Updates</title>
+        <link>https://github.com/SSBun/iTermate</link>
+        <description>iTermate update feed</description>
+        <language>en</language>
+        <item>
+            <title>0.7.0</title>
+            <pubDate>Tue, 27 Oct 2026 14:36:01 +0800</pubDate>
+            <sparkle:version>14</sparkle:version>
+            <sparkle:shortVersionString>0.7.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[## 新增
+
+- Pi 会话归档摘要、从归档恢复及手动刷新任务标题，面板新增独立归档区域。
+- AI 设置支持 Qwen3.5 2B／4B，统一用于问题判断与 Pi／Codex 短标题，支持缺失标题自动补全和 Codex 标题缓存恢复。
+- 启动 iTermate 或检查模型时，自动启动已安装但未运行的 Ollama，并检查、预热所选模型；已有服务直接复用，退出 iTermate 不停止共享服务。
+- Codex 原生进程、thread 身份与现有 daemon 状态观察；无可靠状态时显示明确提示。
+
+## 改进与修复
+
+- 改进 Tab 分组、连接线和紧凑项目布局，普通命令与 Agent 会话分区展示。
+- 优化全局快捷键循环访问，避免重复停留在同一高优先级会话。
+- Pi 问句分类在后台执行并支持取消；减少普通完成报告被误判为待回复问题。
+- 改进中止、子代理活动和断线恢复状态；完成通知与计数按稳定事件身份去重。
+- 改进短标题生成、重开后的标题恢复及诊断；错误横幅在数秒后自动关闭。
+
+## 升级说明与已知限制
+
+- 本版本专用于 iTerm2，移除其他终端后端、独立 TTY 状态服务和 Shell 命令 hooks；普通命令继续通过 iTerm2 Bridge 观察。
+- 运行新版 App 并更新 Pi 集成后，已有 Pi 会话需执行 `/reload`。
+- Ollama 运行时和模型不随安装包附带，需预先安装；应用不会自动下载模型，不使用云端或其他模型作为后备。旧 Laya／Vela Decision API 暂停提供服务。
+- **Codex 自动关联仍有边界**：缺少明确 thread 身份且兼容匹配失败时显示状态不可用。准确跟随 `/new`、`/resume` 应在 Codex 已有 `[tui]` 节中设置 `terminal_title = ["app-name", "thread-id"]`；应用不自动修改该配置。本次不宣称已解决所有自动关联场景。
+- 已完成 Release 构建和安装包静态验证；**未运行单元测试或项目测试套件，未执行真实 GUI 升级验收**。
+- Apple Silicon（arm64），最低 macOS 13，版本 0.7.0（build 14）。
+- 使用 **ad hoc 签名，未经 Apple 公证（notarization）**。首次打开可能需要在系统安全设置中允许运行；请先核对随附 SHA-256 文件。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.7.0/iTermate-0.7.0.dmg" length="4603641" type="application/octet-stream" sparkle:edSignature="B+WiJh4iYFDC1yuHsWKDYwOCU0vtv5bEexaO6Fw3j0lLoJ2yo2jrse1byJhUhwovWewEGrWQSZrxgbe5da0jCA=="/>
+        </item>
+        <item>
+            <title>0.6.0</title>
+            <pubDate>Thu, 24 Sep 2026 15:32:34 +0800</pubDate>
+            <sparkle:version>13</sparkle:version>
+            <sparkle:shortVersionString>0.6.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[## 新增
+
+- **全局 Session 快捷键**：在设置中录入组合键，即可从其他 App 切换到 iTerm2 Agent Session，依次优先等待回复、已结束、运行中及空闲状态。
+- **可选本地模型**：Local Model 设置页支持下载 Laya 多语言模型、启动本地决策 API、辅助识别 Session 状态与待回复消息，并复制 Agent 连接说明。
+- **子代理运行提示**：Pi 子代理仍有工作时显示像素分支动画；主 Agent 回复结束不再代表整个 Session 已完成。需要用户回复时，问号提示仍保留。
+
+## 修复
+
+- 改进中英文确认、授权、补充信息和简短执行确认问题的保守识别。
+- 修复子代理状态查询恢复时心跳可能未恢复的问题，避免运行标识错误消失。
+
+## 升级说明与限制
+
+- 请通过 App 的现有集成入口更新 Pi 集成，并在已运行的 Pi 会话中执行 `/reload`。子代理提示需要支持 Fleet RPC 的 pi-subagents。
+- 本地模型是可选功能，不随安装包附带，不会首次启动即自动下载。需 Apple Silicon、macOS 14+、`uv`，以及约 650 MB 模型和额外依赖空间。
+- 本地推断仅作辅助，不代表生命周期事实；本地 API 凭据只应交给可信客户端，不要公开分享。
+- 安装包支持 Apple Silicon（arm64），最低 macOS 13；全局快捷键目前仅作用于 iTerm2。
+- 使用 ad hoc 签名，**未经 Apple 公证（notarization）**；首次打开可能需要通过系统安全设置允许运行。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.6.0/iTermate-0.6.0.dmg" length="4087624" type="application/octet-stream" sparkle:edSignature="SUllHatyu8KP48BDEzrj2FWgaund+rvo0HDN0SPrKjIr/EFrs8xw6QQeufkFBg/sdE1bhUasDXNlHQmBjoVzBA=="/>
+        </item>
+        <item>
+            <title>0.5.0</title>
+            <pubDate>Thu, 17 Sep 2026 15:47:36 +0800</pubDate>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>0.5.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[## 新增
+
+- Pi 明确等待确认、选择或输入时显示待回复提示；最终文字提问采用保守识别，优先避免误报。
+- 默认像素问号每四秒短暂左右摇晃；开启系统“减少动态效果”时保持静态。
+- Status Animation 新增 **Waiting for Reply**，支持问号或已有预设样式、独立颜色及恢复默认，预览与会话图标一致。
+
+## 改进
+
+- 状态报告按实际接收确认重试，减少短暂连接失败造成的状态遗漏。
+- iTerm2 与 Ghostty 的待回复状态通过续报保持有效；聚焦会话不会清除提醒，下一轮开始或会话退出时更新状态。
+- 待回复不会触发成功完成通知，也不会增加成功完成次数。
+
+## 升级说明与限制
+
+- 本次待回复识别仅支持 Pi，模糊提问可能不触发。已运行的 Pi 会话在集成更新后请执行 `/reload`。
+- 支持 Apple Silicon（arm64），最低 macOS 13。
+- 使用 ad hoc 签名，**未经 Apple 公证（notarization）**；首次打开可能需要在 Finder 中按住 Control 点击 App，再选择“打开”。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.5.0/iTermate-0.5.0.dmg" length="3963748" type="application/octet-stream" sparkle:edSignature="Q2rc9N1Dd/+n3nOB7uWF1k6Z1l5hQrM2dsTt/P/5w3avIvKLx94geoJMaATrIBI5wiFcmoELtgD15lJKWoEYAQ=="/>
+        </item>
+        <item>
+            <title>0.4.0</title>
+            <pubDate>Thu, 10 Sep 2026 11:18:03 +0800</pubDate>
+            <link>https://github.com/SSBun/iTermate</link>
+            <sparkle:version>11</sparkle:version>
+            <sparkle:shortVersionString>0.4.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[### 新增
+
+- General Settings 新增 iTerm2 与 Ghostty 独立面板开关，可分别控制面板是否在对应终端中显示，并持久化用户选择。
+
+### 已知限制
+
+- 当前 arm64 构建使用 ad hoc 签名，未经过 Apple notarization。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.4.0/iTermate-0.4.0.dmg" length="3928253" type="application/octet-stream" sparkle:edSignature="VHH1wKlfQTU2GnQEToOUz+CT9ZSiHiEFdEDcNdiOdzSCq5nN0UiBqvxFRkvMKzw8Tlq8fyJnE+Gnfn0b7wgZAg=="/>
+        </item>
+        <item>
+            <title>0.3.1</title>
+            <pubDate>Thu, 27 Aug 2026 14:40:51 +0800</pubDate>
+            <link>https://github.com/SSBun/iTermate</link>
+            <sparkle:version>10</sparkle:version>
+            <sparkle:shortVersionString>0.3.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[### 新增
+
+- Settings 新增 Statistics 标签页，以 Total、This Month、This Week、Today 汇总展示成功 Agent 完成次数，数据按本地自然日聚合并持久化。
+- 状态菜单新增 Favorite Projects 快捷入口，点击后定位已打开的项目 Session，或以该项目目录新建 Tab/窗口。
+
+### 变更
+
+- 状态菜单重设计：Today 完成次数作为大号主指标，正在运行的 Agent 数量改为次要信息，并显示实时连接状态。
+
+### 已知限制
+
+- 当前 arm64 构建使用 ad hoc 签名，未经过 Apple notarization。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.3.1/iTermate-0.3.1.dmg" length="3924394" type="application/octet-stream" sparkle:edSignature="9OozXZkVomMk1Rr9gKkZ8zzj2GxVbl9Rm6WM7beXyYKBWEeD0UrDerNUvV8wSOkunKz3zmlZU7laC95LpUKkAQ=="/>
+        </item>
+        <item>
+            <title>0.3.0</title>
+            <pubDate>Wed, 26 Aug 2026 11:27:18 +0800</pubDate>
+            <link>https://github.com/SSBun/iTermate</link>
+            <sparkle:version>9</sparkle:version>
+            <sparkle:shortVersionString>0.3.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[### 新增
+
+- 支持跟随前台 Ghostty 窗口，并展示、聚焦或关闭 Window、Tab 与 Terminal。
+- Pi 与 Codex 可按 TTY 向 Ghostty Terminal 上报实时工作、完成和空闲状态。
+- Agents 设置新增可选的 zsh、Bash 与 fish 集成，为 Ghostty 上报普通 Shell 命令状态。
+
+### 修复
+
+- Ghostty 从 iTerm2 启动时不再误用继承的旧 iTerm Session ID。
+- Pi 新一轮工作会立即显示运行状态。
+- 修复 Ghostty 已运行时偶发误报“Ghostty is not running”的问题。
+
+### 已知限制
+
+- Ghostty 实时状态图标需要其 AppleScript Terminal 暴露 `tty`；Ghostty 1.3.1 尚不具备该属性。
+- 当前 arm64 构建使用 ad hoc 签名，未经过 Apple notarization。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.3.0/iTermate-0.3.0.dmg" length="3857020" type="application/octet-stream" sparkle:edSignature="X0h3ziYSFsy89BBSPxJMAJeey88WlxbxnOfWyzPNsyhCDsP0vr1J/2goVRsg9NrYNSidYKj0VFOskXWFViUJDg=="/>
+        </item>
+        <item>
+            <title>0.2.1</title>
+            <pubDate>Fri, 21 Aug 2026 17:09:00 +0800</pubDate>
+            <link>https://github.com/SSBun/iTermate</link>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>0.2.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[### 新增
+
+- General Settings 的 Appearance 区域新增 Focused Section Opacity 控件，可按 0%–100% 调整当前聚焦 Project Path 分组的强调色背景透明度，并持久化用户选择。
+
+### 已知限制
+
+- 当前 arm64 构建使用 ad hoc 签名，未经过 Apple notarization。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.2.1/iTermate-0.2.1.dmg" length="3748924" type="application/octet-stream" sparkle:edSignature="qtJXNs0FzCPfARwX7j/BdmCLEHvNtJWH2p6S+1vfYt0l2SJ37Fv1dDCIO3ebd3NZERWbwwgsD7LL6JYP5dNxBg=="/>
+        </item>
+        <item>
+            <title>0.2.0</title>
+            <pubDate>Fri, 21 Aug 2026 14:20:50 +0800</pubDate>
+            <link>https://github.com/SSBun/iTermate</link>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>0.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[### 新增
+
+- Appearance 设置新增全局强调色选择，并支持恢复系统默认颜色。
+- Status Animation 设置可为 Agent 与普通 Shell 的各状态分别选择 Alien、Robot 或 Classic 动画及独立颜色，并显示实时预览。
+- Agent 等待用户输入时显示低干扰的静态空闲状态图标。
+
+### 变更
+
+- Project Path 模式为每个 Tab 显示缩进的子分组标题，包括仅含一个 Session 的 Tab。
+- 当前 Session 所属项目改为使用轻量整组背景，不再单独高亮项目标题。
+
+### 已知限制
+
+- 当前 arm64 构建使用 ad hoc 签名，未经过 Apple notarization。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.2.0/iTermate-0.2.0.dmg" length="3738559" type="application/octet-stream" sparkle:edSignature="sDUKifGq6IJk9UA6r5PrNV0vbv+25Jll9pEfz0tv5P0RqqQ3ehEpPRNci1+jnioL7DcnfeH2xszbfFgckMyvAw=="/>
+        </item>
+        <item>
+            <title>0.1.5</title>
+            <pubDate>Wed, 19 Aug 2026 14:35:36 +0800</pubDate>
+            <sparkle:version>6</sparkle:version>
+            <sparkle:shortVersionString>0.1.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[### 新增
+
+- General Settings 新增 Launch at Login 开关，通过系统登录项控制开机自启。
+- Project Path 分组模式下，同一 Tab 内两个及以上的 split-pane Session 会以 "Tab N" 子分组标题聚合并缩进显示；当前聚焦 Session 所属的项目组标题会以强调色高亮。
+
+### 变更
+
+- Window/Tab/Project Path 分组标题改为粗体显示。]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.1.5/iTermate-0.1.5.dmg" length="3672457" type="application/octet-stream" sparkle:edSignature="sJqJzCD2TJwSlC6vxUiJwEajtRWr8lf7d408B014jS8R50x3F8MeMSbcaiTCpcYUkpChlkiLqIQRANIhYqufDw=="/>
+        </item>
+        <item>
+            <title>0.1.4</title>
+            <pubDate>Thu, 13 Aug 2026 13:53:06 +0800</pubDate>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>0.1.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[### 新增
+
+- General Settings 新增面板默认吸附方向，可选择优先停靠在 iTerm2 左侧或右侧。
+
+### 修复
+
+- 修复调整 iTerm2 窗口大小或从睡眠唤醒后，空闲 Session 被批量误报为运行中并随后误报完成的问题。
+- 修复非激活面板左右边缘保持箭头光标的问题，并确保两侧均可可靠拖动调整宽度。
+
+### 已知限制
+
+- 当前 arm64 构建使用 ad hoc 签名，未经过 Apple notarization。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.1.4/iTermate-0.1.4.dmg" length="3662689" type="application/octet-stream" sparkle:edSignature="oqNZ23RyAtCObl1bejYd2xnhMJ1FUKohNB52Hdl0uqYH74aD5lSISk6LsWDZh+GDsL7qYC25EjYcBe7OKqxRAQ=="/>
+        </item>
+        <item>
+            <title>0.1.3</title>
+            <pubDate>Sun, 09 Aug 2026 10:23:25 +0800</pubDate>
+            <sparkle:version>4</sparkle:version>
+            <sparkle:shortVersionString>0.1.3</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[### 新增
+
+- Session 状态改用点阵动画区分 Agent 与普通命令的运行、成功、失败和未知结果。
+- Project Path 分组支持 Pin、Favorite 与自定义颜色。
+- 面板新增 System/Dark/Light 与 Blur/Opaque 六种背景样式。
+
+### 修复
+
+- 未启用 Shell Integration 时也能通过 iTerm2 前台任务变量观察普通命令状态，并避免 Agent 外层进程退出被误报为普通命令完成。
+
+### 已知限制
+
+- 当前 arm64 构建使用 ad hoc 签名，未经过 Apple notarization。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.1.3/iTermate-0.1.3.dmg" length="3640656" type="application/octet-stream" sparkle:edSignature="N4WJ4W93gcjnX0JioUx2C7mBmWkBwW/E7W3guPcWLPL36TnuXCGwn4O5c17Qg5dpVpbssGfdRFwPp+CceVANAw=="/>
+        </item>
+        <item>
+            <title>0.1.2</title>
+            <pubDate>Thu, 06 Aug 2026 10:51:42 +0800</pubDate>
+            <link>https://github.com/SSBun/iTermate</link>
+            <sparkle:version>3</sparkle:version>
+            <sparkle:shortVersionString>0.1.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description sparkle:format="markdown"><![CDATA[### 新增
+
+- 面板标题栏新增状态刷新按钮。它只重启 Bridge 以清除错误状态，不会重启 iTerm 或任何 Session；真实工作的 Pi 会由 heartbeat 自动恢复。
+
+### 变更
+
+- Pi heartbeat 过期计算改用睡眠期间持续推进的时钟，并在 macOS 唤醒后主动重连 Bridge 以重新验证状态。
+
+### 已知限制
+
+- 长时间睡眠后状态自动恢复的唯一根因仍在调查；状态刷新按钮是当前的手动兜底。
+- 当前 arm64 构建使用 ad hoc 签名，未经过 Apple notarization。
+]]></description>
+            <enclosure url="https://github.com/SSBun/iTermate/releases/download/v0.1.2/iTermate-0.1.2.dmg" length="3660249" type="application/octet-stream" sparkle:edSignature="/yNEn8ywy8updoonicv4TEe+bP57fpcM3EIvppkDnkDMlszpt54oxCNU4MCM+D372/LYlLUqSs1lkFajS+qyAg=="/>
+        </item>
+    </channel>
+</rss>
