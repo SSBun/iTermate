@@ -474,6 +474,22 @@ final class ItermStore: ObservableObject {
         let sampledFrom: CodexSessionObservation
     }
 
+    /// Pins a manual display override to one observed lifecycle and terminal identity.
+    private struct SessionStatusIdentity: Equatable {
+        let tty: String?
+        let activityKind: SessionActivityKind?
+        let agentKind: SessionAgentKind?
+        let status: TerminalSessionStatus?
+        let changedAt: TimeInterval?
+        let exitStatus: Int?
+        let hasRunningSubagents: Bool?
+        let latestCompletion: SessionCompletion?
+        let completionInProgressID: String?
+        let codexThreadIDPrefix: String?
+        let codexProcess: CodexSessionMonitor.ProcessIdentity?
+        let codexSessionID: String?
+    }
+
     private struct CodexTitleState {
         let terminalSessionID: String
         let processIdentity: CodexSessionMonitor.ProcessIdentity
@@ -502,6 +518,8 @@ final class ItermStore: ObservableObject {
     @Published private(set) var terminalApp: TerminalApp?
     @Published private(set) var connectionState: BridgeConnectionState = .connecting
     @Published private(set) var windows: [TerminalWindowSnapshot] = []
+    /// Observed lifecycle state, unaffected by manual display acknowledgements.
+    @Published private(set) var lifecycleWindows: [TerminalWindowSnapshot] = []
     @Published private(set) var actionError: String?
     @Published private(set) var statusMenuConnectionState: BridgeConnectionState = .connecting
     @Published private(set) var runningAgentSessionCount: Int?
@@ -525,6 +543,7 @@ final class ItermStore: ObservableObject {
     private var iTermClientIsStarted = false
     private var iTermConnectionState: BridgeConnectionState = .connecting
     private var iTermWindows: [TerminalWindowSnapshot] = []
+    private var manualIdleStatuses: [String: SessionStatusIdentity] = [:]
     private var statusExpiryTimer: Timer?
     private let codexSessionMonitor = CodexSessionMonitor()
     private let codexMonitorQueue = DispatchQueue(label: "com.caishilin.iTermate.codex-monitor", qos: .utility)
@@ -601,6 +620,7 @@ final class ItermStore: ObservableObject {
         codexObservationSessionIdentityByTTY = [:]
         codexAcknowledgedCompletions = [:]
         codexFocusedSessionIDs = [:]
+        manualIdleStatuses = [:]
         if let terminalDeactivationObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(terminalDeactivationObserver)
             self.terminalDeactivationObserver = nil
@@ -633,7 +653,7 @@ final class ItermStore: ObservableObject {
             venomDebugMonitoringSessions = [:]
             actionError = nil
             connectionState = iTermConnectionState
-            windows = mergingCodexObservations(into: iTermWindows)
+            publishWindows(mergingCodexObservations(into: iTermWindows))
         }
         if isStarted {
             startClient(for: terminalApp)
@@ -818,6 +838,15 @@ final class ItermStore: ObservableObject {
         }
     }
 
+    /// Acknowledges a finished or waiting observation without changing the underlying work.
+    func markSessionIdle(sessionID: String) {
+        guard let session = mergingCodexObservations(into: iTermWindows)
+            .flatMap(\.tabs).flatMap(\.sessions).first(where: { $0.id == sessionID }),
+              session.status == .finished || session.status == .awaitingInput else { return }
+        manualIdleStatuses[sessionID] = statusIdentity(for: session)
+        publishItermWindows()
+    }
+
     func archivePiSession(_ session: TerminalSessionSnapshot, in terminal: TerminalApp) {
         Task { @MainActor in
             do {
@@ -926,7 +955,7 @@ final class ItermStore: ObservableObject {
                 lastLoggedSnapshotCounts = snapshotCounts
             }
             iTermConnectionState = .connected
-            self.windows = visibleWindows
+            publishWindows(visibleWindows)
             actionError = nil
             connectionState = .connected
         case "actionResult":
@@ -955,7 +984,7 @@ final class ItermStore: ObservableObject {
         }
         updateStatusMenuSummary()
         connectionState = state
-        windows = mergingCodexObservations(into: iTermWindows)
+        publishWindows(mergingCodexObservations(into: iTermWindows))
     }
 
     private func recordSuccessfulAgentCompletions(
@@ -1965,6 +1994,80 @@ final class ItermStore: ObservableObject {
         Set(Set(captured.keys).union(current.keys).filter { captured[$0] != current[$0] })
     }
 
+    private func statusIdentity(for session: TerminalSessionSnapshot) -> SessionStatusIdentity {
+        let observation = session.agentKind == .codex
+            ? session.tty.flatMap { codexObservations[$0] } : nil
+        return SessionStatusIdentity(
+            tty: session.tty,
+            activityKind: session.activityKind,
+            agentKind: session.agentKind,
+            status: session.status,
+            changedAt: session.statusChangedAt,
+            exitStatus: session.exitStatus,
+            hasRunningSubagents: session.hasRunningSubagents,
+            latestCompletion: session.latestCompletion,
+            completionInProgressID: session.completionInProgressID,
+            codexThreadIDPrefix: session.codexThreadIDPrefix,
+            codexProcess: observation?.processIdentity,
+            codexSessionID: observation?.sessionID
+        )
+    }
+
+    /// Repeated snapshots retain the override; new lifecycle evidence releases it.
+    private func applyingManualIdleStatuses(
+        to windows: [TerminalWindowSnapshot]
+    ) -> [TerminalWindowSnapshot] {
+        let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
+        let currentIDs = Set(sessions.map(\.id))
+        manualIdleStatuses = manualIdleStatuses.filter { currentIDs.contains($0.key) }
+        return windows.map { window in
+            TerminalWindowSnapshot(
+                id: window.id,
+                number: window.number,
+                isActive: window.isActive,
+                tabs: window.tabs.map { tab in
+                    TerminalTabSnapshot(
+                        id: tab.id,
+                        title: tab.title,
+                        isSelected: tab.isSelected,
+                        sessions: tab.sessions.map { session in
+                            guard let identity = manualIdleStatuses[session.id] else { return session }
+                            guard identity == statusIdentity(for: session) else {
+                                manualIdleStatuses[session.id] = nil
+                                return session
+                            }
+                            return TerminalSessionSnapshot(
+                                id: session.id,
+                                name: session.name,
+                                path: session.path,
+                                tty: session.tty,
+                                windowId: session.windowId,
+                                tabId: session.tabId,
+                                isActive: session.isActive,
+                                isMinimized: session.isMinimized,
+                                status: .idle,
+                                activityKind: session.activityKind,
+                                exitStatus: nil,
+                                statusChangedAt: session.statusChangedAt,
+                                hasRunningSubagents: session.hasRunningSubagents,
+                                agentKind: session.agentKind,
+                                latestCompletion: session.latestCompletion,
+                                recentCompletions: session.recentCompletions,
+                                completionInProgressID: session.completionInProgressID,
+                                codexThreadIDPrefix: session.codexThreadIDPrefix
+                            )
+                        }
+                    )
+                }
+            )
+        }
+    }
+
+    private func publishWindows(_ observedWindows: [TerminalWindowSnapshot]) {
+        lifecycleWindows = observedWindows
+        windows = applyingManualIdleStatuses(to: observedWindows)
+    }
+
     private func publishItermWindows() {
         let visibleWindows = mergingCodexObservations(into: iTermWindows)
         let completions = iTermAgentCompletionTracker.completions(
@@ -1973,7 +2076,7 @@ final class ItermStore: ObservableObject {
         )
         recordSuccessfulAgentCompletions(completions)
         updateStatusMenuSummary()
-        windows = visibleWindows
+        publishWindows(visibleWindows)
     }
 
 }

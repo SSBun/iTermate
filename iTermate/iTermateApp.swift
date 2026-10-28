@@ -955,126 +955,116 @@ private struct PanelContent: View {
         showsWorkingDirectory: Bool
     ) -> some View {
         HStack(spacing: 0) {
-            Button {
-                store.activate(sessionID: item.session.id)
-            } label: {
-                HStack(spacing: 8) {
-                    SessionEnvironmentIcon(
-                        agentKind: item.session.environmentAgentKind,
-                        isFocused: item.isFocused,
-                        color: item.isFocused ? settings.accentColor : .secondary
+            HStack(spacing: 8) {
+                Button {
+                    store.activate(sessionID: item.session.id)
+                } label: {
+                    HStack(spacing: 8) {
+                        SessionEnvironmentIcon(
+                            agentKind: item.session.environmentAgentKind,
+                            isFocused: item.isFocused,
+                            color: item.isFocused ? settings.accentColor : .secondary
+                        )
+                        .anchorPreference(key: SessionIconAnchors.self, value: .bounds) {
+                            [item.id: $0]
+                        }
+
+                        Text(sessionName(
+                            item.session,
+                            showsWorkingDirectory: showsWorkingDirectory
+                        ))
+                            .font(
+                                item.session.environmentAgentKind == nil
+                                    ? panelFont()
+                                    : .system(size: settings.panelFontSize)
+                            )
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .layoutPriority(1)
+
+                        if item.session.hasRunningSubagents == true,
+                           item.session.activityKind == .agent,
+                           item.session.status == .running || item.session.status == .awaitingInput {
+                            SubagentStatusView(color: .purple)
+                                .frame(width: 16, height: 16)
+                                .help("Subagents are still running")
+                                .accessibilityLabel("Subagents are still running")
+                        }
+                    }
+                    .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .layoutPriority(1)
+                .help(sessionHelp(
+                    item.session,
+                    showsWorkingDirectory: showsWorkingDirectory
+                ))
+                .accessibilityLabel(
+                    "Activate \(item.session.environmentAgentKind?.displayName ?? "Shell") session \(sessionName(item.session, showsWorkingDirectory: showsWorkingDirectory))"
+                )
+                .accessibilityValue(item.isFocused ? "Focused" : "")
+
+                if item.session.environmentAgentKind != nil
+                    || SessionStatusAnimation(session: item.session) != nil {
+                    let canMarkIdle = item.session.status == .finished
+                        || item.session.status == .awaitingInput
+                    Button {
+                        store.markSessionIdle(sessionID: item.session.id)
+                    } label: {
+                        sessionStatusIcon(item.session)
+                            .frame(width: 36, height: 16)
+                            .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(!canMarkIdle)
+                    .help(canMarkIdle ? "Mark session idle" : "Session status")
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(
+                        canMarkIdle
+                            ? "Mark session \(item.session.name) idle"
+                            : "Status of session \(item.session.name)"
                     )
-                    .anchorPreference(key: SessionIconAnchors.self, value: .bounds) {
-                        [item.id: $0]
-                    }
+                    .accessibilityValue(item.session.status?.rawValue ?? "No confirmed activity")
+                }
 
-                    Text(sessionName(
-                        item.session,
-                        showsWorkingDirectory: showsWorkingDirectory
-                    ))
-                        .font(
-                            item.session.environmentAgentKind == nil
-                                ? panelFont()
-                                : .system(size: settings.panelFontSize)
-                        )
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .layoutPriority(1)
-
-                    if item.session.hasRunningSubagents == true,
-                       item.session.activityKind == .agent,
-                       item.session.status == .running || item.session.status == .awaitingInput {
-                        SubagentStatusView(color: .purple)
-                            .frame(width: 16, height: 16)
-                            .help("Subagents are still running")
-                            .accessibilityLabel("Subagents are still running")
-                    }
-
-                    if item.session.status == nil, item.session.environmentAgentKind != nil {
-                        // Missing lifecycle evidence is neutral; it does not change the observed Agent identity.
-                        AgentIdleStatusView()
-                    } else if item.session.status == .awaitingInput,
-                       item.session.activityKind == .agent {
-                        AgentWaitingStatusView(
-                            style: settings.statusAnimationStyle(for: .agentAwaitingInput),
-                            color: settings.statusAnimationColor(for: .agentAwaitingInput)
-                        )
-                            .frame(width: 36, height: 16)
-                            .help("Waiting for your reply")
-                            .accessibilityLabel("Waiting for your reply")
-                    } else if
-                        item.session.status == .idle || item.session.status == .finished,
-                        item.session.activityKind == .agent
-                    {
-                        AgentIdleStatusView(isHighlighted: item.session.status == .finished)
-                    } else if
-                        let status = item.session.status,
-                        let animation = SessionStatusAnimation(session: item.session)
-                    {
-                        HStack(spacing: 4) {
-                            let isMonitoring = store.isVenomDebugMonitoring(item.session)
-                            Group {
-                                if isMonitoring {
-                                    VenomDebugStatusView()
-                                } else {
-                                    SessionStatusMatrix(
-                                        animation: animation,
-                                        style: settings.statusAnimationStyle(for: animation),
-                                        customColor: settings.statusAnimationCustomColor(
-                                            for: animation
-                                        ).map { NSColor($0) }
-                                    )
-                                }
-                            }
-                            .frame(width: 36, height: 16)
-                            .help(isMonitoring ? "venom-cli debug monitoring" : animation.accessibilityLabel)
-                            .accessibilityLabel(isMonitoring ? "venom-cli debug monitoring" : animation.accessibilityLabel)
-                            .accessibilityHidden(settings.showsSessionTime && showsTime && !isMonitoring)
-
-                            if settings.showsSessionTime && showsTime {
-                                TimelineView(
-                                    .periodic(
-                                        from: .now,
-                                        by: settings.sessionTimeFormat.refreshInterval
-                                    )
-                                ) { context in
-                                    Text(
-                                        status.label(
-                                            changedAt: item.session.statusChangedAt,
-                                            now: context.date,
-                                            format: settings.sessionTimeFormat
-                                        )
-                                    )
-                                    .font(panelFont(0.85))
-                                    .foregroundStyle(.secondary)
-                                    .fixedSize()
-                                }
+                Button {
+                    store.activate(sessionID: item.session.id)
+                } label: {
+                    HStack(spacing: 4) {
+                        if settings.showsSessionTime && showsTime,
+                           let status = item.session.status,
+                           SessionStatusAnimation(session: item.session) != nil,
+                           !(item.session.activityKind == .agent
+                             && (status == .finished || status == .awaitingInput)) {
+                            TimelineView(
+                                .periodic(from: .now, by: settings.sessionTimeFormat.refreshInterval)
+                            ) { context in
+                                Text(status.label(
+                                    changedAt: item.session.statusChangedAt,
+                                    now: context.date,
+                                    format: settings.sessionTimeFormat
+                                ))
+                                .font(panelFont(0.85))
+                                .foregroundStyle(.secondary)
+                                .fixedSize()
                             }
                         }
-                        .accessibilityElement(children: .combine)
+                        if item.session.isMinimized == true {
+                            Image(systemName: "rectangle.compress.vertical")
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer(minLength: 0)
                     }
-
-                    if item.session.isMinimized == true {
-                        Image(systemName: "rectangle.compress.vertical")
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer(minLength: 0)
+                    .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
-                .padding(.leading, 8)
-                .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel("Activate session \(item.session.name)")
             }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .help(sessionHelp(
-                item.session,
-                showsWorkingDirectory: showsWorkingDirectory
-            ))
-            .accessibilityLabel(
-                "Activate \(item.session.environmentAgentKind?.displayName ?? "Shell") session \(sessionName(item.session, showsWorkingDirectory: showsWorkingDirectory))"
-            )
-            .accessibilityValue(item.isFocused ? "Focused" : "")
+            .padding(.leading, 8)
 
             Button {
                 store.close(sessionID: item.session.id)
@@ -1118,6 +1108,8 @@ private struct PanelContent: View {
         .clipShape(RoundedRectangle(cornerRadius: 7))
         .contextMenu {
             let terminal = store.terminalApp ?? .iTerm2
+            let observedSession = store.lifecycleWindows.flatMap(\.tabs).flatMap(\.sessions)
+                .first { $0.id == item.session.id }
             let isCodex = item.session.environmentAgentKind == .codex
             let isRefreshingTitle = isCodex
                 ? store.isRefreshingCodexTitle(item.session)
@@ -1146,9 +1138,11 @@ private struct PanelContent: View {
             }
 
             Button("Archive Pi Session") {
-                store.archivePiSession(item.session, in: terminal)
+                if let observedSession {
+                    store.archivePiSession(observedSession, in: terminal)
+                }
             }
-            .disabled(!archives.canArchive(item.session, terminal: terminal))
+            .disabled(observedSession.map { !archives.canArchive($0, terminal: terminal) } ?? true)
         }
         .overlay {
             ActiveHoverRegion { isHovered in
@@ -1158,6 +1152,32 @@ private struct PanelContent: View {
                     hoveredSessionID = nil
                     hoveredCloseButtonSessionID = nil
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func sessionStatusIcon(_ session: TerminalSessionSnapshot) -> some View {
+        if session.status == nil, session.environmentAgentKind != nil {
+            // Missing lifecycle evidence is neutral; it does not change the observed Agent identity.
+            AgentIdleStatusView()
+        } else if session.status == .awaitingInput, session.activityKind == .agent {
+            AgentWaitingStatusView(
+                style: settings.statusAnimationStyle(for: .agentAwaitingInput),
+                color: settings.statusAnimationColor(for: .agentAwaitingInput)
+            )
+        } else if session.status == .idle || session.status == .finished,
+                  session.environmentAgentKind != nil {
+            AgentIdleStatusView(isHighlighted: session.status == .finished)
+        } else if let animation = SessionStatusAnimation(session: session) {
+            if store.isVenomDebugMonitoring(session) {
+                VenomDebugStatusView()
+            } else {
+                SessionStatusMatrix(
+                    animation: animation,
+                    style: settings.statusAnimationStyle(for: animation),
+                    customColor: settings.statusAnimationCustomColor(for: animation).map { NSColor($0) }
+                )
             }
         }
     }

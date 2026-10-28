@@ -79,7 +79,7 @@ final class SessionNotificationController: NSObject, UNUserNotificationCenterDel
         self.notificationCenter = notificationCenter
         super.init()
         notificationCenter.delegate = self
-        windowsSubscription = store.$windows.sink { [weak self] windows in
+        windowsSubscription = store.$lifecycleWindows.sink { [weak self] windows in
             self?.handle(windows)
         }
         settings.requestCompletionNotificationAuthorization(using: notificationCenter)

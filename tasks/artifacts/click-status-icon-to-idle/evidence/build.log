@@ -1,0 +1,22 @@
+检查时间：2026-10-27 16:27（本机时间）；并发 Context 更新后重新核对。
+
+$ xcrun swiftc -parse iTermate/ItermBridge.swift iTermate/iTermateApp.swift iTermate/SessionNotifications.swift
+退出码：0；无诊断。
+
+$ git diff --check
+退出码：0；无诊断。
+
+$ xcodebuild -project iTermate.xcodeproj -scheme iTermate -configuration Debug -destination 'platform=macOS' -derivedDataPath /tmp/itermate-click-status-build build
+warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+** BUILD SUCCEEDED ** [6.710 sec]
+退出码：0。
+
+以下进程观测采集于16:21；16:27复查未运行任何启动/重启命令。
+$ ps -axo pid,lstart,command
+70525 Tue Oct 27 15:00:50 2026 /Applications/iTermate.app/Contents/MacOS/iTermate
+70546 Tue Oct 27 15:00:50 2026 /bin/bash /Applications/iTerm.app/Contents/Resources/it2_api_wrapper.sh …/iTermateBridge.py
+70547 Tue Oct 27 15:00:50 2026 …/python …/iTermateBridge.py
+与编辑前相同；未主动启动、重启或替换 App/Bridge。
+
+Context validate：valid=true；既有“工程与组件”未索引警告仍保留，未迁移该段。
+未运行单元测试或项目测试；未启动本次产物，未验证真实窗口点击、焦点和布局。
