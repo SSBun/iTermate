@@ -1009,16 +1009,24 @@ private struct PanelContent: View {
                     || SessionStatusAnimation(session: item.session) != nil {
                     let canMarkIdle = item.session.status == .finished
                         || item.session.status == .awaitingInput
-                    Button {
-                        store.markSessionIdle(sessionID: item.session.id)
-                    } label: {
-                        sessionStatusIcon(item.session)
-                            .frame(width: 36, height: 16)
-                            .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
-                            .contentShape(Rectangle())
+                    Group {
+                        if canMarkIdle {
+                            Button {
+                                store.markSessionIdle(sessionID: item.session.id)
+                            } label: {
+                                sessionStatusIcon(item.session)
+                                    .frame(width: 36, height: 16)
+                                    .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            // Disabled buttons dim status pixels even though they remain informative.
+                            sessionStatusIcon(item.session)
+                                .frame(width: 36, height: 16)
+                                .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
+                        }
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!canMarkIdle)
                     .help(canMarkIdle ? "Mark session idle" : "Session status")
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(
