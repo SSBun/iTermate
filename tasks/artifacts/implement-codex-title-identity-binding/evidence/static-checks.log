@@ -1,0 +1,30 @@
+检查：Swift解析（生产源码与三个受影响验证源码文件）
+解析退出码：0
+检查：git diff --check
+差异空白检查退出码：0
+检查：Context验证
+{
+  "schema": "csl-context.validation/v1",
+  "valid": true,
+  "errors": [],
+  "warnings": [
+    {
+      "code": "unindexed-context-section",
+      "message": "section `## 工程与组件` is not indexed; only Project Core and CTX-* sections are loaded",
+      "line": 114,
+      "section": "工程与组件"
+    }
+  ]
+}
+检查：本次只读RPC调用清单
+322:            try sendRequest("initialize", method: "initialize", parameters: [
+375:            try sendJSON(["method": "initialized", "params": [:]])
+424:                try sendRequest("turns", method: "thread/turns/list", parameters: [
+444:        try sendRequest("loaded", method: "thread/loaded/list", parameters: parameters)
+448:        try sendRequest(id, method: "thread/read", parameters: ["threadId": threadID, "includeTurns": false])
+检查：并行源文件SHA256（与启动时一致）
+49b1c135e95be27fdc90b178e5368441d4c80ea48e3210c2701454bbbe07e2a5  iTermate/SessionNotifications.swift
+fce612ff3d1604a5664e1b7b760b710091e5223d639c2e4b51f1ea306d8508de  iTermate/iTermateApp.swift
+检查：iTermate原进程PID及启动时间（与启动时一致）
+70525 Tue Oct 27 15:00:50 2026     /Applications/iTermate.app/Contents/MacOS/iTermate
+未运行单元测试；未启动新版App；未执行真实共享服务API实验。

@@ -1,0 +1,1179 @@
+diff --git a/docs/codex-monitoring.md b/docs/codex-monitoring.md
+index c56bfcf..2c15d6a 100644
+--- a/docs/codex-monitoring.md
++++ b/docs/codex-monitoring.md
+@@ -8,7 +8,7 @@ iTermate 被动观察直接运行的原始 `codex` 命令，不需要 `codexm`
+ 2. 在 iTerm2 中直接运行 `codex`。
+ 3. iTermate 自动关联对应对话并显示状态；生命周期证据不足时保留 Codex 方框身份和中性活动图标，不推断正在工作或已经成功完成。
+ 
+-Settings → Agents 中 Codex 显示为 **Automatic**。升级时，iTermate 会从 `~/.codex/hooks.json` 删除自己过去写入、带 `_iTermate` 标记的条目，并保留其他工具的 hooks；旧包装器和标记文件也会被移除。
++Settings → Agents 中 Codex 显示为 **Automatic**，展开 **Precise Conversation Binding** 可查看并复制所需原生标题配置，手动合并到已有 `[tui]` 节；此入口不写入配置，不覆盖无关设置。升级时，iTermate 会从 `~/.codex/hooks.json` 删除自己过去写入、带 `_iTermate` 标记的条目，并保留其他工具的 hooks；旧包装器和标记文件也会被移除。
+ 
+ ## 自动匹配与对话切换
+ 
+@@ -19,11 +19,11 @@ Settings → Agents 中 Codex 显示为 **Automatic**。升级时，iTermate 会
+ terminal_title = ["app-name", "thread-id"]
+ ```
+ 
+-这会改变 iTerm2 原生终端标题；iTermate 不自动修改用户的 Codex 配置。新启动或重新加载配置后的 Codex 会通过原生终端标题输出当前 thread ID，`/new`、`/resume` 配置好新会话后会更新。Bridge 每次快照读取原始 `terminalWindowName`，仅传递官方格式中的完整 UUID 或 29 字符前缀，不使用装饰过的 Session 名称推断身份。短前缀必须唯一匹配经过根会话 metadata 核验的完整 UUID；冲突、子代理或无效信号保持未知，不沿用旧对话。
++这会改变 iTerm2 原生终端标题；iTermate 不自动修改用户的 Codex 配置。本次只面向未来新开的 Codex，不补救已打开的旧进程。不要用 `-c tui.terminal_title=…` 代替配置文件：固定版本中该覆盖可能触发 embedded 降级，不代表共享 daemon 方案。新启动 Codex 会通过标题输出当前 thread ID，`/new`、`/resume` 选定对话后更新。Bridge 周期读取原始 `terminalWindowName`，仅传递官方格式中的完整 UUID 或 29 字符前缀，不使用装饰过的 Session 名称推断身份。
+ 
+-没有这项信号时，仍兼容唯一的 CLI 可写 rollout、启动命令中的明确 resume UUID、相同工作目录且创建时间距进程启动不超过 30 秒的根会话。目录/时间匹配有歧义和跨终端冲突检测，但不能可靠感知同一进程中的后续对话切换；需要准确跟随切换时应启用上述原生信号。曾提供原生信号的进程随后丢失信号时，不回退到陈旧的启动参数。
++每次自动查询先通过共享 daemon 的 `thread/loaded/list` 读取完整分页，以标题前缀唯一扩展完整 UUID，再读取并校验根会话来源、精确 ID 与状态。列表只表示已加载，不代表运行中。空白新会话即使尚无 rollout 文件也可建立身份。零匹配、多匹配、无效响应、重复游标、缺页、预算用尽或请求失败均保持未绑定；完整 UUID 也需经过 loaded 列表确认。不根据目录、启动时间、resume 启动参数或残留文件描述符猜测当前对话。
+ 
+-自动关联使用与下述应急绑定相同的 daemon 只读通路。daemon 请求失败或未知时保留已核实的 rollout 状态和标题输入；迟到响应不能覆盖新对话或更新后的生命周期。官方 control socket 的同用户符号链接受支持，最终目标必须为同用户 Unix socket。
++身份绑定覆盖终端 Session ID、TTY、进程 PID／启动时间和当前标题前缀。同一 thread 被多个终端认领时，自动关联保留未知。标题变化、终端复用或进程退出后丢弃旧异步结果；应用活跃结果前重新核对真实前台进程。每轮自动观察重新做完整列表查询，不缓存目录到 thread 的映射。查询失败时撤销自动绑定与 overlay，不复用旧 API 身份；文件仅在已验证 thread 下提供可选的生命周期和标题证据。官方 control socket 的同用户符号链接受支持，最终目标必须为同用户 Unix socket。
+ 
+ ## 应急手动绑定
+ 
+@@ -31,18 +31,18 @@ terminal_title = ["app-name", "thread-id"]
+ 
+ 绑定仅在本次 App 运行期间保留，并同时绑定终端 Session、TTY、Codex PID 和进程启动时间；进程退出、终端身份变化或 App 停止会清除绑定。它不是对话切换命令，也不会恢复、启动、订阅或推进 Codex 对话。
+ 
+-自动关联或应急绑定后，App 只连接当前用户已经运行的 Codex daemon 的本地 control socket，使用 `thread/read` 和有界的最近 turn 列表 `thread/turns/list` 读取状态，并在返回前再次读取 thread 状态。`waitingOnApproval`、`waitingOnUserInput` 显示为 `awaitingInput`；其他已知活动状态、完成和中止按下表展示。每次请求有三秒总截止；缺少 socket、返回的 thread ID 与请求不匹配、请求失败或未知状态时，不启动 daemon、不把其他对话套到该终端。请求不批准工具、不提交输入；响应中的预览等对话字段不用于标题、不保留或记录。最终 `thread/read` 若提供该 thread 的 rollout 路径，App 会在后台核对本用户所有的普通文件、设备号/inode、根会话 metadata 与精确 thread UUID，再复用有界增量读取器提取可见消息用于标题。路径缺失、格式变化或校验失败不影响已成功读取的状态。
++自动关联或应急绑定后，App 只连接当前用户已经运行的 Codex daemon 的本地 control socket，使用 `thread/read` 和有界的最近 turn 列表 `thread/turns/list` 读取状态，并在返回前再次读取 thread 状态。`waitingOnApproval`、`waitingOnUserInput` 显示为 `awaitingInput`；其他已知活动状态、完成和中止按下表展示。每次请求有三秒总截止；loaded 列表每页最多 100 项、最多 32 页，触及预算仍有后续页则失败而不是采用部分结果；缺少 socket、返回的 thread ID 与请求不匹配、请求失败或未知状态时，不启动 daemon、不把其他对话套到该终端。请求不批准工具、不提交输入；响应中的预览等对话字段不用于标题、不保留或记录。最终 `thread/read` 若提供该 thread 的 rollout 路径，App 会在后台核对本用户所有的普通文件、设备号/inode、根会话 metadata 与精确 thread UUID，再复用有界增量读取器提取可见消息用于标题。路径缺失、格式变化或校验失败不影响已成功读取的状态。
+ 
+ ## 数据来源与状态映射
+ 
+ iTermate 每两秒进行一次只读观察：
+ 
+ - 使用 macOS 进程 API 确认终端前台进程树中的原生 Codex CLI；
+-- 使用上述自动关联信号，只接受 `rollout-*.jsonl` 根会话；核对文件设备号、inode、首行 Session 身份和 `source`，并复核进程身份。当前原生 thread 信号约束文件匹配，避免切换后旧文件描述符继续主导结果；
++- 自动身份以原生标题与共享服务完整列表为准；可选 `rollout-*.jsonl` 仅在精确 thread ID 一致时提供证据，核对文件设备号、inode、首行根 Session 身份和 `source`；
+ - 首次映射从最多 1 MiB 的尾部建立状态，随后保存读取位置并解析新增的完整 JSONL 行；每轮最多读取 8 MiB，长追加尚未追上时保持中性显示，内部生命周期为空，后续轮询继续追赶。截断、文件替换和已读取边界变化会重建读取状态；生命周期事件的类型和时间戳才决定运行／完成，文件变大本身不是运行证据；
+ - 在初始尾部和后续增量中保留最近四条用户消息和四条助手消息，每条最多 2,000 个字符；根据下述补全／更新规则，交给 Settings 中已选择的本地 Ollama 模型生成短标题。开发者消息、思考和工具记录不会进入标题输入，数据不会发送到云端。
+ 
+-尚未找到唯一 rollout 时，映射按 1、2、4、8 个扫描周期逐步退避，此后保持每八轮重试，直到进程离开观察范围；原生 thread 信号变化会立即绕过退避重查。已映射进程每次扫描重新核验文件及当前原生信号；只有兼容匹配可用时，保留已关联的文件而不追逐最新文件。
++可选 rollout 查找按 1、2、4、8 个扫描周期退避，此后每八轮重试；标题变化立即重查。这不阻止每轮直接通过 daemon 识别没有文件的空白会话。已有文件仍需重新核验当前信号，不追逐最近修改的文件。
+ 
+ 标题与 Pi 一样只覆盖 iTermate 面板中的 Session 显示名，不改写 iTerm2 的真实 Session 标题。生成结果会再次校验 Codex 进程、TTY、终端 Session ID 与 Codex thread ID；终端复用或 Session 切换后，旧请求不能写入新行。失败时最多自动重试一次，原终端标题保持不变。
+ 
+@@ -64,7 +64,7 @@ Codex 标题每次模型调用最多生成 1,024 tokens，上下文为 16,384 to
+ | rollout 增长但没有新的已识别生命周期事件 | 保留已确认状态；没有时保留内部空值并中性显示 |
+ | 自动关联或应急绑定的 daemon `waitingOnApproval` / `waitingOnUserInput` | awaitingInput |
+ | 增量读取未追上文件末尾、映射失败且无可确认状态 | 生命周期为空，中性显示，不改变 Codex 身份 |
+-| daemon 观测失败 | 保留已确认的 rollout 状态；没有时保留内部空值 |
++| daemon 自动身份查询失败 | 撤销自动绑定与 overlay，生命周期为空；应急手动绑定仍只使用其明确指定的身份 |
+ | 尚无可确认的生命周期事件 | 显示 Codex 身份与中性活动图标，不猜测状态 |
+ | running 中的 Codex 进程消失 | interrupted |
+ | 其他状态下 Codex 进程退出 | 不再标记为 Codex |
+@@ -90,10 +90,10 @@ Codex 标题自动生成、手动刷新失败以及手动刷新缺少可用会
+ - rollout 没有稳定的通用“等待用户输入”事件，不凭助手文本或工具名称猜测 `awaitingInput`；自动关联或应急绑定的 daemon 返回明确等待标记时才显示。
+ - 首次 1 MiB 尾部之前的事件与消息不会被追溯；初始状态可能未知。后续增量保留已观察状态，单次读取 8 MiB、单行 8 MiB 的预算限制仍可能造成延迟或跳过超长行，不能保证所有上游记录均被识别。
+ - 面板左侧方框表示已识别的 Codex Agent，三角表示 Pi，圆圈表示普通命令；只有 Agent 身份无法判断为 Pi 或 Codex 时，左侧显示呼吸像素感叹号并标注“Unknown Agent”，减少动态效果时静止。已识别 Agent 缺少生命周期数据时，右侧仅作中性显示，内部仍保留空值，不新增运行、待回复或成功完成证据。unknown 是身份类型，不是第三种回复类型。
+-- 共享 daemon 持有 rollout 时，CLI 本身可能没有文件描述符；原生 thread 标题用于准确关联当前对话，兼容启动匹配只能覆盖部分场景。原生标题尚未更新或转发失败时，识别会延迟；没有 thread 身份信号且兼容匹配失败时保留 Codex 身份与中性活动图标。
++- 共享 daemon 持有 rollout 时，CLI 本身可能没有文件描述符；身份由原生标题与只读 loaded 列表建立，不依赖文件存在。标题尚未更新、转发失败或服务不可读时，保留 Codex 身份与中性活动图标，不启动新的 daemon。
+ - 自动标题受初始尾部与已追上的增量范围限制；没有可用的可见用户／助手消息时保留原终端标题。缺少生命周期事件本身不阻止已识别 thread 的标题补全；没有匹配的 rollout 摘录时不根据项目名或 daemon 预览猜测标题。
+ - 已确认的 Codex 进程允许连续两次进程扫描暂时缺失；第三次仍缺失才中断并清理状态，避免短暂的 macOS 进程 API 竞态把界面切回普通命令。
+ - 已接受的 Codex 状态同时绑定可见 TTY 与终端 Session ID；同一 TTY 被新 Session 复用时会先移除旧 overlay，再重新观察。
+-- 同目录并行会话不按最近修改时间抢占映射；强身份优先，重复的同等级精确认领保持未知。启动参数与目录/时间是有限兼容证据，不等于当前显示对话的证明。
++- 同目录并行会话不共享目录级身份缓存，不按文件时间、启动参数或启动时间认领 thread；重复认领同一完整身份保持未知。
+ - 监测要求 Codex 位于面板可见终端的前台进程树中；`kiro-cli-term` 等创建的嵌套 PTY 会沿真实父子关系映射回外层 Session。后台 app-server、无可见终端祖先的进程和子代理 rollout 不会被当作独立终端 Session。
+ - 该方案依赖 Codex 本机 Session 文件中的生命周期事件格式；若上游格式变化，iTermate 会退化为只识别 Codex 身份，而不会解析终端屏幕作为补偿。
+diff --git a/iTermate/AgentIntegrations.swift b/iTermate/AgentIntegrations.swift
+index adfad21..5f043e2 100644
+--- a/iTermate/AgentIntegrations.swift
++++ b/iTermate/AgentIntegrations.swift
+@@ -305,13 +305,25 @@ struct AgentSettingsView: View {
+     private func row(for agent: CodingAgent) -> some View {
+         if agent == .codex {
+             return AnyView(
+-                LabeledContent {
+-                    Text("Automatic")
+-                        .foregroundStyle(.secondary)
+-                } label: {
+-                    Label(agent.rawValue, systemImage: agent.symbolName)
++                VStack(alignment: .leading, spacing: 8) {
++                    LabeledContent {
++                        Text("Automatic")
++                            .foregroundStyle(.secondary)
++                    } label: {
++                        Label(agent.rawValue, systemImage: agent.symbolName)
++                    }
++                    DisclosureGroup("Precise Conversation Binding") {
++                        VStack(alignment: .leading, spacing: 8) {
++                            Text("Merge this setting into the existing [tui] section of your Codex configuration, preserving other settings. iTermate does not edit the configuration.")
++                            Text("[tui]\nterminal_title = [\"app-name\", \"thread-id\"]")
++                                .font(.system(.body, design: .monospaced))
++                                .textSelection(.enabled)
++                            Text("Applies to newly opened Codex sessions. Use the configuration file, not a -c override, to keep the shared daemon. Without a unique native title identity, the session stays unbound.")
++                                .foregroundStyle(.secondary)
++                        }
++                    }
+                 }
+-                .help("Monitored automatically when you run the original codex command")
++                .help("Uses the original codex command and its native thread title; no hooks or launcher required")
+             )
+         }
+         return AnyView(Toggle(
+diff --git a/iTermate/CodexAppServerClient.swift b/iTermate/CodexAppServerClient.swift
+index 3a45dee..adc2060 100644
+--- a/iTermate/CodexAppServerClient.swift
++++ b/iTermate/CodexAppServerClient.swift
+@@ -25,15 +25,19 @@ struct CodexAppServerClient {
+         let id: String
+         let status: Status
+         let path: String?
++        let source: String?
++        let hasParentThread: Bool
+ 
+         init(id: String, status: Status, path: String? = nil) {
+             self.id = id
+             self.status = status
+             self.path = path
++            source = nil
++            hasParentThread = false
+         }
+ 
+         private enum CodingKeys: String, CodingKey {
+-            case id, status, path
++            case id, status, path, source, parentThreadId
+         }
+ 
+         init(from decoder: Decoder) throws {
+@@ -42,6 +46,9 @@ struct CodexAppServerClient {
+             status = try container.decode(Status.self, forKey: .status)
+             // The upstream path is optional and unstable; its format must not break status reads.
+             path = try? container.decode(String.self, forKey: .path)
++            source = try? container.decode(String.self, forKey: .source)
++            hasParentThread = try container.contains(.parentThreadId)
++                && container.decodeNil(forKey: .parentThreadId) == false
+         }
+     }
+ 
+@@ -67,16 +74,39 @@ struct CodexAppServerClient {
+ 
+     /// Queries metadata and recent turn outcomes, without resuming or subscribing to the thread.
+     func observation(threadID: String, includeUnloadedHistory: Bool = false) async throws -> RuntimeObservation {
+-        let deadline = DispatchTime.now() + 3
+         guard let identifier = UUID(uuidString: threadID), threadID.utf8.count == 36 else {
+             throw CodexStatusError("Enter a complete Codex thread UUID.")
+         }
++        return try await request(threadID: identifier.uuidString.lowercased(), includeUnloadedHistory: includeUnloadedHistory)
++    }
++
++    /// Resolves a native title only after every loaded-thread page has been read successfully.
++    func observation(threadPrefix: String) async throws -> RuntimeObservation {
++        guard Self.isValidThreadPrefix(threadPrefix) else {
++            throw CodexStatusError("Invalid native Codex thread prefix.")
++        }
++        return try await request(threadPrefix: threadPrefix)
++    }
++
++    /// Accepts only the two identity formats emitted by the native Codex title.
++    static func isValidThreadPrefix(_ prefix: String) -> Bool {
++        (prefix.utf8.count == 36 && UUID(uuidString: prefix)?.uuidString.lowercased() == prefix)
++            || (prefix.utf8.count == 29 && prefix.range(
++                of: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{5}$",
++                options: .regularExpression
++            ) != nil)
++    }
++
++    private func request(
++        threadID: String = "", threadPrefix: String? = nil, includeUnloadedHistory: Bool = false
++    ) async throws -> RuntimeObservation {
++        let deadline = DispatchTime.now() + 3
+         guard let resolvedSocketPath = Self.resolvedSocketPath(socketPath) else {
+             throw CodexStatusError("The local Codex daemon socket is unavailable.")
+         }
+         let request = CodexStatusRequest(
+-            socketPath: resolvedSocketPath, threadID: identifier.uuidString.lowercased(), deadline: deadline,
+-            includeUnloadedHistory: includeUnloadedHistory
++            socketPath: resolvedSocketPath, threadID: threadID, threadPrefix: threadPrefix,
++            deadline: deadline, includeUnloadedHistory: includeUnloadedHistory
+         )
+         return try await withTaskCancellationHandler {
+             try await withCheckedThrowingContinuation { request.start(continuation: $0) }
+@@ -193,7 +223,11 @@ private final class CodexStatusRequest: @unchecked Sendable {
+     }
+ 
+     private let connection: NWConnection
+-    private let threadID: String
++    private var threadID: String
++    private let threadPrefix: String?
++    private var loadedThreadIDs: Set<String> = []
++    private var loadedCursors: Set<String> = []
++    private var loadedPageCount = 0
+     private let deadline: DispatchTime
+     private let includeUnloadedHistory: Bool
+     private let queue = DispatchQueue(label: "com.caishilin.iTermate.codex-status")
+@@ -209,9 +243,13 @@ private final class CodexStatusRequest: @unchecked Sendable {
+     private var expectedID = "initialize"
+     private var turns: [CodexAppServerClient.Turn] = []
+ 
+-    init(socketPath: String, threadID: String, deadline: DispatchTime, includeUnloadedHistory: Bool) {
++    init(
++        socketPath: String, threadID: String, threadPrefix: String?,
++        deadline: DispatchTime, includeUnloadedHistory: Bool
++    ) {
+         connection = NWConnection(to: .unix(path: socketPath), using: .tcp)
+         self.threadID = threadID
++        self.threadPrefix = threadPrefix
+         self.deadline = deadline
+         self.includeUnloadedHistory = includeUnloadedHistory
+     }
+@@ -335,12 +373,46 @@ private final class CodexStatusRequest: @unchecked Sendable {
+         switch expectedID {
+         case "initialize":
+             try sendJSON(["method": "initialized", "params": [:]])
+-            try readThread(id: "thread")
++            if threadPrefix != nil { try readLoadedThreads() }
++            else { try readThread(id: "thread") }
++        case "loaded":
++            guard let ids = result["data"] as? [String], ids.count <= 100,
++                  let cursorValue = result["nextCursor"],
++                  cursorValue is NSNull || cursorValue is String else {
++                throw CodexStatusError("Codex returned an incomplete loaded-thread page.")
++            }
++            for id in ids {
++                guard id.utf8.count == 36, let identifier = UUID(uuidString: id) else {
++                    throw CodexStatusError("Codex returned an invalid loaded-thread ID.")
++                }
++                loadedThreadIDs.insert(identifier.uuidString.lowercased())
++            }
++            if let cursor = cursorValue as? String {
++                guard !cursor.isEmpty, loadedCursors.insert(cursor).inserted else {
++                    throw CodexStatusError("Codex repeated a loaded-thread cursor.")
++                }
++                try readLoadedThreads(cursor: cursor)
++            } else {
++                let matches = loadedThreadIDs.filter { $0.hasPrefix(threadPrefix ?? "") }
++                guard matches.count == 1, let id = matches.first else {
++                    throw CodexStatusError("The native Codex title does not identify one loaded thread.")
++                }
++                threadID = id
++                try readThread(id: "thread")
++            }
+         case "thread", "finalThread":
+             // Preview and other conversation fields are never retained or logged.
+             let thread = try JSONDecoder().decode(ThreadResult.self, from: resultData).thread
+-            guard UUID(uuidString: thread.id) == UUID(uuidString: threadID) else {
+-                throw CodexStatusError("Codex returned a different thread.")
++            guard thread.id.utf8.count == 36,
++                  UUID(uuidString: thread.id) == UUID(uuidString: threadID),
++                  let source = thread.source, ["cli", "vscode", "exec", "appServer"].contains(source),
++                  !thread.hasParentThread,
++                  ["active", "idle", "notLoaded", "systemError"].contains(thread.status.type),
++                  thread.status.type != "active" || thread.status.activeFlags.map({ flags in
++                      flags.allSatisfy { ["waitingOnApproval", "waitingOnUserInput"].contains($0) }
++                  }) == true,
++                  threadPrefix == nil || ["active", "idle", "systemError"].contains(thread.status.type) else {
++                throw CodexStatusError("Codex returned an invalid root thread identity or state.")
+             }
+             let canReadHistory = ["idle", "active"].contains(thread.status.type)
+                 || (includeUnloadedHistory && thread.status.type == "notLoaded")
+@@ -362,6 +434,16 @@ private final class CodexStatusRequest: @unchecked Sendable {
+         }
+     }
+ 
++    private func readLoadedThreads(cursor: String? = nil) throws {
++        loadedPageCount += 1
++        guard loadedPageCount <= 32 else {
++            throw CodexStatusError("Codex exceeded the loaded-thread page limit.")
++        }
++        var parameters: [String: Any] = ["limit": 100]
++        if let cursor { parameters["cursor"] = cursor }
++        try sendRequest("loaded", method: "thread/loaded/list", parameters: parameters)
++    }
++
+     private func readThread(id: String) throws {
+         try sendRequest(id, method: "thread/read", parameters: ["threadId": threadID, "includeTurns": false])
+     }
+diff --git a/iTermate/CodexSessionMonitor.swift b/iTermate/CodexSessionMonitor.swift
+index 7ebdf70..4ef7c24 100644
+--- a/iTermate/CodexSessionMonitor.swift
++++ b/iTermate/CodexSessionMonitor.swift
+@@ -98,20 +98,10 @@ final class CodexSessionMonitor: @unchecked Sendable {
+         let nextScan: UInt64
+     }
+ 
+-    private enum MatchSource: Int {
+-        case directory = 1
+-        case resumeArgument = 2
+-        case openFile = 3
+-        case terminalTitle = 4
+-    }
+-
+     private struct Match {
+         let rollout: Rollout
+         let sessionID: String
+-        let source: MatchSource
+-        var distance: TimeInterval = 0
+-        var retained = false
+-        var requiresRuntimeStatus = true
++        let requiresRuntimeStatus = true
+     }
+ 
+     private struct Parser {
+@@ -224,7 +214,6 @@ final class CodexSessionMonitor: @unchecked Sendable {
+     private var observationByProcess: [ProcessIdentity: CodexSessionObservation] = [:]
+     private var missedScansByProcess: [ProcessIdentity: Int] = [:]
+     private var ttyByProcess: [ProcessIdentity: String] = [:]
+-    private var terminalTitleProcesses: Set<ProcessIdentity> = []
+     private var terminalPrefixesByProcess: [ProcessIdentity: String] = [:]
+     private var rolloutURLsForScan: [URL]?
+ 
+@@ -323,6 +312,14 @@ final class CodexSessionMonitor: @unchecked Sendable {
+         retain(identities: retained)
+     }
+ 
++    /// Rechecks the foreground CLI generation before applying an asynchronous daemon result.
++    func isCurrentProcess(_ identity: ProcessIdentity, on tty: String) -> Bool {
++        lock.lock()
++        defer { lock.unlock() }
++        let processes = processProvider?([tty]) ?? codexProcess(on: tty).map { [$0] } ?? []
++        return processes.contains { $0.tty == tty && $0.identity == identity }
++    }
++
+     /// Reads visible messages only from the daemon's path for an explicitly bound thread.
+     func titleExcerpt(at path: String, threadID: String, process: ProcessIdentity) -> String? {
+         lock.lock()
+@@ -353,7 +350,6 @@ final class CodexSessionMonitor: @unchecked Sendable {
+         observationByProcess = observationByProcess.filter { identities.contains($0.key) }
+         missedScansByProcess = missedScansByProcess.filter { identities.contains($0.key) }
+         ttyByProcess = ttyByProcess.filter { identities.contains($0.key) }
+-        terminalTitleProcesses.formIntersection(identities)
+         terminalPrefixesByProcess = terminalPrefixesByProcess.filter { identities.contains($0.key) }
+         let rollouts = Set(matchesByProcess.values.map(\.rollout)).union(boundRolloutByProcess.values)
+         readers = readers.filter { rollouts.contains($0.key) }
+@@ -441,7 +437,6 @@ final class CodexSessionMonitor: @unchecked Sendable {
+             let prefix = terminalThreadPrefixes[process.tty]
+             let prefixChanged = prefix != terminalPrefixesByProcess[process.identity]
+             terminalPrefixesByProcess[process.identity] = prefix
+-            if prefix != nil { terminalTitleProcesses.insert(process.identity) }
+             guard matchesByProcess[process.identity] != nil
+                 || prefixChanged || scanNumber >= (retries[process.identity]?.nextScan ?? 0) else { continue }
+             attempted.insert(process.identity)
+@@ -451,18 +446,7 @@ final class CodexSessionMonitor: @unchecked Sendable {
+             groups[entry.value.sessionID, default: []].append(entry.key)
+         }
+         for identities in groups.values where identities.count > 1 {
+-            let ranked = identities.sorted {
+-                guard let lhs = proposed[$0], let rhs = proposed[$1] else { return false }
+-                if lhs.source != rhs.source { return lhs.source.rawValue > rhs.source.rawValue }
+-                if lhs.source == .directory, lhs.retained != rhs.retained { return lhs.retained }
+-                return lhs.distance < rhs.distance
+-            }
+-            guard let first = ranked.first, let second = ranked.dropFirst().first,
+-                  let best = proposed[first], let next = proposed[second] else { continue }
+-            let unambiguous = best.source.rawValue > next.source.rawValue
+-                || (best.source == .directory
+-                    && ((best.retained && !next.retained) || best.distance + 1 < next.distance))
+-            for identity in identities where !unambiguous || identity != first {
++            for identity in identities {
+                 proposed[identity] = nil
+                 conflicted.insert(identity)
+             }
+@@ -482,71 +466,21 @@ final class CodexSessionMonitor: @unchecked Sendable {
+     }
+ 
+     private func resolveMatch(for process: CodexProcess, terminalThreadPrefix: String?) -> Match? {
+-        let rollouts: [Rollout]
+-        if let rolloutProvider {
+-            rollouts = rolloutProvider(process).compactMap(rollout(at:))
+-        } else {
+-            rollouts = openedRollouts(for: process)
+-        }
+-        let opened = Set(rollouts).compactMap { match(rollout: $0, source: .openFile) }
+-        if let prefix = terminalThreadPrefix?.lowercased() {
+-            let fullID = UUID(uuidString: prefix)?.uuidString.lowercased() == prefix
+-            let shortenedID = prefix.range(
+-                of: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{5}$",
+-                options: .regularExpression
+-            ) != nil
+-            guard fullID || shortenedID else { return nil }
+-            let candidates = (sessionsDirectory.map { rolloutFiles(in: $0, sessionID: prefix) } ?? rollouts)
+-                .compactMap { match(rollout: $0, source: .terminalTitle) }
+-                .filter { $0.sessionID.hasPrefix(prefix) }
+-            guard candidates.count == 1, var resolved = candidates.first else { return nil }
+-            let matchingOpened = opened.filter { $0.sessionID == resolved.sessionID }
+-            if matchingOpened.count == 1, let owned = matchingOpened.first {
+-                resolved = Match(rollout: owned.rollout, sessionID: owned.sessionID,
+-                                 source: .terminalTitle, requiresRuntimeStatus: false)
+-            }
+-            return resolved
+-        }
+-        // The current title also constrains descriptors that may remain open after a thread switch.
+-        guard !terminalTitleProcesses.contains(process.identity) else { return nil }
+-        if !opened.isEmpty { return opened.count == 1 ? opened.first : nil }
+-        guard let sessionsDirectory else { return nil }
+-        if var previous = matchesByProcess[process.identity], previous.source != .openFile,
+-           rollout(at: previous.rollout.url) == previous.rollout,
+-           match(rollout: previous.rollout, source: previous.source)?.sessionID == previous.sessionID {
+-            previous.retained = true
+-            return previous
+-        }
+-        if let resumeIndex = process.arguments.firstIndex(of: "resume"),
+-           let sessionID = process.arguments.dropFirst(resumeIndex + 1).compactMap(UUID.init(uuidString:)).first {
+-            let candidates = rolloutFiles(in: sessionsDirectory, sessionID: sessionID.uuidString)
+-                .compactMap { match(rollout: $0, source: .resumeArgument) }
+-                .filter { $0.sessionID == sessionID.uuidString.lowercased() }
+-            return candidates.count == 1 ? candidates.first : nil
+-        }
+-        // shortcut: cwd/start time is a bounded compatibility signal; replace it when Codex exposes terminal ownership.
+-        let candidates = rolloutFiles(near: process.identity.startedAt, in: sessionsDirectory)
+-            .compactMap { rollout -> Match? in
+-                guard var candidate = match(rollout: rollout, source: .directory),
+-                      let metadata = metadataByRollout[rollout], let cwd = metadata.payload.cwd,
+-                      URL(fileURLWithPath: cwd).standardizedFileURL.resolvingSymlinksInPath().path
+-                        == URL(fileURLWithPath: process.cwd).standardizedFileURL.resolvingSymlinksInPath().path,
+-                      let startedAt = Self.timestamp(metadata.timestamp) else { return nil }
+-                candidate.distance = abs(startedAt - process.identity.startedAt)
+-                return candidate.distance <= 30 ? candidate : nil
+-            }.sorted { $0.distance < $1.distance }
+-        guard let first = candidates.first,
+-              candidates.count == 1 || first.distance + 1 < candidates[1].distance else { return nil }
+-        return first
+-    }
+-
+-    private func match(rollout: Rollout, source: MatchSource) -> Match? {
++        guard let prefix = terminalThreadPrefix, CodexAppServerClient.isValidThreadPrefix(prefix) else { return nil }
++        // Files provide optional lifecycle/title evidence, never the authority for automatic identity.
++        let rollouts = sessionsDirectory.map { rolloutFiles(in: $0, sessionID: prefix) }
++            ?? (rolloutProvider?(process) ?? []).compactMap(rollout(at:))
++        let candidates = Set(rollouts).compactMap { match(rollout: $0) }
++            .filter { $0.sessionID.hasPrefix(prefix) }
++        return candidates.count == 1 ? candidates.first : nil
++    }
++
++    private func match(rollout: Rollout) -> Match? {
+         guard let metadata = sessionMetadata(at: rollout),
+               metadata.type == "session_meta", metadata.payload.source == .root,
+               let sessionID = UUID(uuidString: metadata.payload.id) else { return nil }
+         metadataByRollout[rollout] = metadata
+-        return Match(rollout: rollout, sessionID: sessionID.uuidString.lowercased(), source: source,
+-                     requiresRuntimeStatus: source != .openFile)
++        return Match(rollout: rollout, sessionID: sessionID.uuidString.lowercased())
+     }
+ 
+     private func rollout(at url: URL) -> Rollout? {
+@@ -557,20 +491,6 @@ final class CodexSessionMonitor: @unchecked Sendable {
+         return Rollout(url: url, identity: FileIdentity(attributes))
+     }
+ 
+-    private func rolloutFiles(near timestamp: TimeInterval, in directory: URL) -> [Rollout] {
+-        let calendar = Calendar(identifier: .gregorian)
+-        let date = Date(timeIntervalSince1970: timestamp)
+-        return (-1...1).flatMap { offset -> [Rollout] in
+-            guard let day = calendar.date(byAdding: .day, value: offset, to: date) else { return [] }
+-            let components = calendar.dateComponents([.year, .month, .day], from: day)
+-            guard let year = components.year, let month = components.month, let day = components.day else { return [] }
+-            let dayDirectory = directory.appendingPathComponent(String(format: "%04d/%02d/%02d", year, month, day))
+-            return ((try? FileManager.default.contentsOfDirectory(
+-                at: dayDirectory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
+-            )) ?? []).compactMap(rollout(at:))
+-        }
+-    }
+-
+     private func rolloutFiles(in directory: URL, sessionID: String) -> [Rollout] {
+         if rolloutURLsForScan == nil {
+             guard let enumerator = FileManager.default.enumerator(
+@@ -588,43 +508,6 @@ final class CodexSessionMonitor: @unchecked Sendable {
+         }
+     }
+ 
+-    private func openedRollouts(for process: CodexProcess) -> [Rollout] {
+-        let pid = process.identity.pid
+-        guard let before = processInfo(pid), Self.identity(of: before) == process.identity else {
+-            return []
+-        }
+-        let required = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, nil, 0)
+-        let itemSize = MemoryLayout<proc_fdinfo>.size
+-        guard required > 0, required < 1_048_576 else { return [] }
+-        var descriptors = [proc_fdinfo](repeating: proc_fdinfo(), count: Int(required) / itemSize + 16)
+-        let capacity = descriptors.count * itemSize
+-        let bytes = descriptors.withUnsafeMutableBytes {
+-            proc_pidinfo(pid, PROC_PIDLISTFDS, 0, $0.baseAddress, Int32(capacity))
+-        }
+-        guard bytes > 0, bytes < capacity, Int(bytes) % itemSize == 0 else { return [] }
+-        var rollouts: [Rollout] = []
+-        for descriptor in descriptors.prefix(Int(bytes) / itemSize)
+-        where descriptor.proc_fdtype == PROX_FDTYPE_VNODE {
+-            var info = vnode_fdinfowithpath()
+-            let size = MemoryLayout<vnode_fdinfowithpath>.size
+-            guard proc_pidfdinfo(pid, descriptor.proc_fd, PROC_PIDFDVNODEPATHINFO, &info, Int32(size)) == size,
+-                  info.pfi.fi_openflags & UInt32(FWRITE) != 0 else { continue }
+-            let path = withUnsafePointer(to: &info.pvip.vip_path) {
+-                $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) }
+-            }
+-            let url = URL(fileURLWithPath: path)
+-            guard url.lastPathComponent.hasPrefix("rollout-"), url.pathExtension == "jsonl" else { continue }
+-            var attributes = stat()
+-            guard stat(path, &attributes) == 0,
+-                  attributes.st_mode & S_IFMT == S_IFREG,
+-                  attributes.st_dev == info.pvip.vip_vi.vi_stat.vst_dev,
+-                  attributes.st_ino == info.pvip.vip_vi.vi_stat.vst_ino else { continue }
+-            rollouts.append(Rollout(url: url, identity: FileIdentity(attributes)))
+-        }
+-        guard let after = processInfo(pid), sameProcess(before, after) else { return [] }
+-        return rollouts
+-    }
+-
+     private func observation(at rollout: Rollout) -> CodexSessionObservation? {
+         guard let handle = try? FileHandle(forReadingFrom: rollout.url) else { return nil }
+         defer { try? handle.close() }
+diff --git a/iTermate/ItermBridge.swift b/iTermate/ItermBridge.swift
+index 9e66d30..365f3c0 100644
+--- a/iTermate/ItermBridge.swift
++++ b/iTermate/ItermBridge.swift
+@@ -1444,25 +1444,19 @@ final class ItermStore: ObservableObject {
+         refreshCodexMonitoring()
+     }
+ 
+-    /// Keeps manual choices and derives unambiguous daemon queries from automatic rollout matches.
++    /// Retains only terminal-scoped bindings; automatic identities must come from the daemon lookup.
+     static func reconciledCodexBindings(
+         _ existing: [String: CodexThreadBinding],
+-        observations: [String: CodexSessionObservation], identities: [String: String]
++        observations: [String: CodexSessionObservation], identities: [String: String],
++        terminalThreadPrefixes: [String: String] = [:]
+     ) -> [String: CodexThreadBinding] {
+-        var bindings = existing.filter { tty, binding in
++        let bindings = existing.filter { tty, binding in
+             guard identities[tty] == binding.terminalSessionID,
+                   let observation = observations[tty],
+                   observation.processIdentity == binding.processIdentity else { return false }
+-            return binding.isManual || (observation.requiresRuntimeStatus
+-                && observation.sessionID?.lowercased() == binding.threadID)
+-        }
+-        for (tty, observation) in observations where bindings[tty] == nil && observation.isProcessAlive {
+-            guard observation.requiresRuntimeStatus, let terminalID = identities[tty],
+-                  let process = observation.processIdentity, let sessionID = observation.sessionID,
+-                  let threadID = UUID(uuidString: sessionID)?.uuidString.lowercased() else { continue }
+-            bindings[tty] = CodexThreadBinding(
+-                terminalSessionID: terminalID, processIdentity: process, threadID: threadID, isManual: false
+-            )
++            return binding.isManual || terminalThreadPrefixes[tty].map {
++                CodexAppServerClient.isValidThreadPrefix($0) && binding.threadID.hasPrefix($0)
++            } == true
+         }
+         let counts = Dictionary(grouping: bindings.values, by: \.threadID).mapValues(\.count)
+         return bindings.filter { _, binding in binding.isManual || counts[binding.threadID] == 1 }
+@@ -1472,7 +1466,8 @@ final class ItermStore: ObservableObject {
+         observations: [String: CodexSessionObservation], identities: [String: String]
+     ) {
+         let bindings = Self.reconciledCodexBindings(
+-            codexThreadBindings, observations: observations, identities: identities
++            codexThreadBindings, observations: observations, identities: identities,
++            terminalThreadPrefixes: codexNativeThreadPrefixes
+         )
+         for (tty, binding) in codexThreadBindings where bindings[tty] != binding {
+             codexRuntimeTasks.removeValue(forKey: tty)?.cancel()
+@@ -1561,9 +1556,15 @@ final class ItermStore: ObservableObject {
+     }
+ 
+     private func mergingCodexRuntimeObservations() -> [String: CodexSessionObservation] {
+-        var observations = codexNativeObservations
++        // A matching file is optional evidence, not an accepted automatic thread identity.
++        var observations = codexNativeObservations.mapValues {
++            CodexSessionObservation(
++                status: nil, changedAt: nil, processIdentity: $0.processIdentity,
++                isProcessAlive: $0.isProcessAlive
++            )
++        }
+         for (tty, binding) in codexThreadBindings {
+-            guard let native = observations[tty] else { continue }
++            guard let native = codexNativeObservations[tty] else { continue }
+             let baseline = Self.codexRuntimeBaseline(native, binding: binding)
+             observations[tty] = codexRuntimeObservations[tty].map {
+                 Self.mergingCodexRuntimeObservation($0, into: baseline)
+@@ -1573,43 +1574,91 @@ final class ItermStore: ObservableObject {
+     }
+ 
+     private func refreshBoundCodexThreads() {
+-        for (tty, binding) in codexThreadBindings where codexRuntimeTasks[tty] == nil {
++        for (tty, native) in codexNativeObservations where codexRuntimeTasks[tty] == nil {
++            let previousBinding = codexThreadBindings[tty]
+             let isFinal = codexFinalReadTTYs.contains(tty)
+-            guard let native = codexNativeObservations[tty],
+-                  !isFinal || codexRuntimeObservations[tty] == nil else { continue }
+-            let baseline = Self.codexRuntimeBaseline(native, binding: binding)
+             let terminalThreadPrefix = codexNativeThreadPrefixes[tty]
++            guard let process = native.processIdentity,
++                  let terminalID = codexObservationSessionIdentityByTTY[tty],
++                  !isFinal || codexRuntimeObservations[tty] == nil else { continue }
++            let readsExactID = previousBinding?.isManual == true || isFinal
++            guard readsExactID ? previousBinding != nil : native.isProcessAlive
++                && terminalThreadPrefix.map(CodexAppServerClient.isValidThreadPrefix) == true else { continue }
+             codexRuntimeTasks[tty] = Task { @MainActor [weak self] in
+-                let runtime = try? await CodexAppServerClient().observation(
+-                    threadID: binding.threadID, includeUnloadedHistory: isFinal
+-                )
++                let runtime: CodexAppServerClient.RuntimeObservation?
++                if readsExactID, let previousBinding {
++                    runtime = try? await CodexAppServerClient().observation(
++                        threadID: previousBinding.threadID, includeUnloadedHistory: isFinal
++                    )
++                } else if let terminalThreadPrefix {
++                    runtime = try? await CodexAppServerClient().observation(threadPrefix: terminalThreadPrefix)
++                } else {
++                    runtime = nil
++                }
++                guard let self, !Task.isCancelled else { return }
+                 let excerpt: String?
+-                if let path = runtime?.rolloutPath, let self, !Task.isCancelled {
++                if let path = runtime?.rolloutPath, let threadID = runtime?.sessionID, !isFinal {
+                     excerpt = await withCheckedContinuation { continuation in
+                         self.codexMonitorQueue.async { [codexSessionMonitor = self.codexSessionMonitor] in
+                             continuation.resume(returning: codexSessionMonitor.titleExcerpt(
+-                                at: path, threadID: binding.threadID, process: binding.processIdentity
++                                at: path, threadID: threadID, process: process
+                             ))
+                         }
+                     }
+                 } else {
+                     excerpt = nil
+                 }
+-                guard let self, !Task.isCancelled, codexThreadBindings[tty] == binding else { return }
++                // Re-observe the foreground process, not merely the last two-second scan cache.
++                let currentProcess = await withCheckedContinuation { continuation in
++                    self.codexMonitorQueue.async { [codexSessionMonitor = self.codexSessionMonitor] in
++                        continuation.resume(returning: codexSessionMonitor.isCurrentProcess(process, on: tty))
++                    }
++                }
++                guard !Task.isCancelled else { return }
+                 codexRuntimeTasks[tty] = nil
+-                guard isStarted, codexNativeObservations[tty]?.processIdentity == binding.processIdentity,
+-                      Self.codexSessionIdentityByTTY(in: iTermWindows)[tty] == binding.terminalSessionID,
+-                      Self.codexThreadPrefixesByTTY(in: iTermWindows)[tty] == terminalThreadPrefix else { return }
+-                let status = runtime?.status
++                guard isStarted, codexThreadBindings[tty] == previousBinding,
++                      codexNativeObservations[tty]?.processIdentity == process,
++                      codexNativeObservations[tty]?.isProcessAlive == native.isProcessAlive,
++                      Self.codexSessionIdentityByTTY(in: iTermWindows)[tty] == terminalID,
++                      Self.codexThreadPrefixesByTTY(in: iTermWindows)[tty] == terminalThreadPrefix,
++                      isFinal ? !currentProcess : currentProcess else { return }
++                guard let runtime else {
++                    codexRuntimeObservations[tty] = nil
++                    if previousBinding?.isManual != true { codexThreadBindings[tty] = nil }
++                    acceptCodexObservations(mergingCodexRuntimeObservations(), identities: codexObservationSessionIdentityByTTY)
++                    return
++                }
++                let binding = CodexThreadBinding(
++                    terminalSessionID: terminalID, processIdentity: process, threadID: runtime.sessionID,
++                    isManual: previousBinding?.isManual == true
++                )
++                if !binding.isManual && !isFinal {
++                    // Even identical titles in two panes cannot claim the same automatic identity.
++                    let conflictingTTYs = codexNativeThreadPrefixes.keys.filter { otherTTY in
++                        guard otherTTY != tty, self.codexNativeObservations[otherTTY]?.isProcessAlive == true,
++                              let prefix = self.codexNativeThreadPrefixes[otherTTY] else { return false }
++                        return CodexAppServerClient.isValidThreadPrefix(prefix) && runtime.sessionID.hasPrefix(prefix)
++                    }
++                    guard conflictingTTYs.isEmpty,
++                          !codexThreadBindings.contains(where: { $0.key != tty && $0.value.threadID == runtime.sessionID }) else {
++                        codexThreadBindings[tty] = nil
++                        codexRuntimeObservations[tty] = nil
++                        for otherTTY in conflictingTTYs where codexThreadBindings[otherTTY]?.isManual == false {
++                            codexThreadBindings[otherTTY] = nil
++                            codexRuntimeObservations[otherTTY] = nil
++                        }
++                        acceptCodexObservations(mergingCodexRuntimeObservations(), identities: codexObservationSessionIdentityByTTY)
++                        return
++                    }
++                }
++                let baseline = Self.codexRuntimeBaseline(native, binding: binding)
++                codexThreadBindings[tty] = binding
+                 let observation = CodexSessionObservation(
+-                    status: isFinal && (status == .running || status == .awaitingInput) ? nil : status,
+-                    changedAt: runtime?.changedAt,
+-                    processIdentity: binding.processIdentity,
+-                    titleExcerpt: excerpt,
+-                    sessionID: binding.threadID,
+-                    latestCompletion: runtime?.latestCompletion,
+-                    recentCompletions: runtime?.recentCompletions,
+-                    completionInProgressID: isFinal ? nil : runtime?.completionInProgressID,
++                    status: isFinal && (runtime.status == .running || runtime.status == .awaitingInput) ? nil : runtime.status,
++                    changedAt: runtime.changedAt, processIdentity: process, titleExcerpt: excerpt,
++                    sessionID: runtime.sessionID, latestCompletion: runtime.latestCompletion,
++                    recentCompletions: runtime.recentCompletions,
++                    completionInProgressID: isFinal ? nil : runtime.completionInProgressID,
+                     isProcessAlive: !isFinal
+                 )
+                 codexRuntimeObservations[tty] = CodexRuntimeOverlay(observation: observation, sampledFrom: baseline)
+diff --git a/iTermateTests/CodexAppServerClientTests.swift b/iTermateTests/CodexAppServerClientTests.swift
+index f535571..a96bbea 100644
+--- a/iTermateTests/CodexAppServerClientTests.swift
++++ b/iTermateTests/CodexAppServerClientTests.swift
+@@ -7,6 +7,32 @@ final class CodexAppServerClientTests: XCTestCase {
+     private let threadID = "019a1145-8980-7123-8abc-0123456789ab"
+     private let turnID = "019a1145-8981-7123-8abc-0123456789ab"
+ 
++    func testNativeTitlePrefixAcceptsOnlyExactUpstreamFormats() {
++        XCTAssertTrue(CodexAppServerClient.isValidThreadPrefix(threadID))
++        XCTAssertTrue(CodexAppServerClient.isValidThreadPrefix(String(threadID.prefix(29))))
++        for invalid in ["", String(threadID.prefix(28)), String(threadID.prefix(30)),
++                        threadID.uppercased(), threadID + "\n", String(threadID.prefix(29)) + "..."] {
++            XCTAssertFalse(CodexAppServerClient.isValidThreadPrefix(invalid))
++        }
++    }
++
++    func testThreadDecoderKeepsSourceAndParentSeparateFromOptionalRolloutPath() throws {
++        for source: Any in ["cli", ["subAgent": ["parentThreadId": threadID]], NSNull()] {
++            let data = try JSONSerialization.data(withJSONObject: [
++                "id": threadID, "status": ["type": "idle"], "source": source,
++                "parentThreadId": NSNull(), "path": NSNull()
++            ])
++            let thread = try JSONDecoder().decode(CodexAppServerClient.ThreadState.self, from: data)
++            XCTAssertEqual(thread.source, source as? String)
++            XCTAssertFalse(thread.hasParentThread)
++            XCTAssertNil(thread.path)
++        }
++        let parented = try JSONSerialization.data(withJSONObject: [
++            "id": threadID, "status": ["type": "idle"], "source": "cli", "parentThreadId": turnID
++        ])
++        XCTAssertTrue(try JSONDecoder().decode(CodexAppServerClient.ThreadState.self, from: parented).hasParentThread)
++    }
++
+     func testOfficialControlSocketSymlinkResolvesButRegularFilesDoNot() throws {
+         let directory = URL(fileURLWithPath: "/tmp").appendingPathComponent("itermate-socket-\(UUID().uuidString)")
+         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
+diff --git a/iTermateTests/CodexSessionMonitorTests.swift b/iTermateTests/CodexSessionMonitorTests.swift
+index 52732b7..2468197 100644
+--- a/iTermateTests/CodexSessionMonitorTests.swift
++++ b/iTermateTests/CodexSessionMonitorTests.swift
+@@ -66,7 +66,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+         return file
+     }
+ 
+-    func testSharedDaemonSessionAutomaticallyMatchesDirectoryAndStartupTime() throws {
++    func testDirectoryAndStartupTimeCannotEstablishCurrentIdentity() throws {
+         let directory = try temporaryDirectory()
+         let file = try discoverableRollout(in: directory, id: sessionID)
+         let message = "{\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"user\",\"content\":\"Recover automatic titles\"}}\n"
+@@ -76,13 +76,13 @@ final class CodexSessionMonitorTests: XCTestCase {
+             processProvider: { _ in [process] }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
+         )
+         let observation = monitor.observations(in: [tty])[tty]
+-        XCTAssertEqual(observation?.sessionID, sessionID)
+-        XCTAssertEqual(observation?.status, .running)
+-        XCTAssertEqual(observation?.titleExcerpt, "[user]\nRecover automatic titles")
+-        XCTAssertEqual(observation?.requiresRuntimeStatus, true)
++        XCTAssertNil(observation?.sessionID)
++        XCTAssertNil(observation?.status)
++        XCTAssertNil(observation?.titleExcerpt)
++        XCTAssertEqual(observation?.isProcessAlive, true)
+     }
+ 
+-    func testResumeArgumentAutomaticallyMatchesOlderSessionInDifferentDirectory() throws {
++    func testResumeArgumentCannotEstablishCurrentIdentity() throws {
+         let directory = try temporaryDirectory()
+         _ = try discoverableRollout(in: directory, id: sessionID, startedAt: 1_790_000_000, cwd: "/old/project")
+         _ = try discoverableRollout(in: directory, id: secondSessionID)
+@@ -91,11 +91,11 @@ final class CodexSessionMonitorTests: XCTestCase {
+             processProvider: { _ in [process] }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
+         )
+         let observation = monitor.observations(in: [tty])[tty]
+-        XCTAssertEqual(observation?.sessionID, sessionID)
+-        XCTAssertEqual(observation?.requiresRuntimeStatus, true)
++        XCTAssertNil(observation?.sessionID)
++        XCTAssertNil(observation?.status)
+     }
+ 
+-    func testOwnedFileOverridesAutomaticAssociationAndStartupResumeArgument() throws {
++    func testOwnedFileAndStartupArgumentRequireCurrentNativeTitle() throws {
+         let directory = try temporaryDirectory()
+         _ = try discoverableRollout(in: directory, id: sessionID)
+         let next = try discoverableRollout(in: directory, id: secondSessionID, startedAt: 1_792_544_500)
+@@ -104,23 +104,24 @@ final class CodexSessionMonitorTests: XCTestCase {
+         let monitor = CodexSessionMonitor(
+             processProvider: { _ in [process] }, rolloutProvider: { _ in opened }, sessionsDirectory: directory
+         )
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.sessionID, sessionID)
++        XCTAssertNil(monitor.observations(in: [tty])[tty]?.sessionID)
+         opened = [next]
+-        let observation = monitor.observations(in: [tty])[tty]
++        XCTAssertNil(monitor.observations(in: [tty])[tty]?.sessionID)
++        let observation = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: secondSessionID])[tty]
+         XCTAssertEqual(observation?.sessionID, secondSessionID)
+-        XCTAssertEqual(observation?.requiresRuntimeStatus, false)
++        XCTAssertEqual(observation?.requiresRuntimeStatus, true)
+     }
+ 
+-    func testAutomaticAssociationDoesNotFollowANewerSameDirectoryFile() throws {
++    func testNativeEvidenceDoesNotFollowANewerSameDirectoryFile() throws {
+         let directory = try temporaryDirectory()
+         _ = try discoverableRollout(in: directory, id: sessionID, startedAt: 1_792_544_405)
+         let process = automaticProcess()
+         let monitor = CodexSessionMonitor(
+             processProvider: { _ in [process] }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
+         )
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.sessionID, sessionID)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.sessionID, sessionID)
+         _ = try discoverableRollout(in: directory, id: secondSessionID)
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.sessionID, sessionID)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.sessionID, sessionID)
+     }
+ 
+     func testAmbiguousDirectoryCandidatesRemainUnknown() throws {
+@@ -147,7 +148,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+         }
+     }
+ 
+-    func testCloserProcessWinsGlobalDirectoryConflictIndependentOfOrder() throws {
++    func testCloserProcessCannotWinDirectoryIdentityIndependentOfOrder() throws {
+         let directory = try temporaryDirectory()
+         _ = try discoverableRollout(in: directory, id: sessionID)
+         let first = automaticProcess()
+@@ -157,7 +158,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+                 processProvider: { _ in processes }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
+             )
+             let observations = monitor.observations(in: [first.tty, second.tty])
+-            XCTAssertEqual(observations[first.tty]?.sessionID, sessionID)
++            XCTAssertNil(observations[first.tty]?.sessionID)
+             XCTAssertNil(observations[second.tty]?.sessionID)
+         }
+     }
+@@ -174,7 +175,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+         XCTAssertTrue(monitor.observations(in: Set(processes.map(\.tty))).values.allSatisfy { $0.sessionID == nil })
+     }
+ 
+-    func testStrongEvidenceWinsOverAnotherProcessesDirectoryCandidate() throws {
++    func testNativeTitleProvidesEvidenceWithoutGuessingOtherProcessesDirectory() throws {
+         let directory = try temporaryDirectory()
+         let file = try discoverableRollout(in: directory, id: sessionID)
+         let first = automaticProcess(startedAt: 1_792_544_410, arguments: ["codex", "resume", sessionID])
+@@ -185,7 +186,9 @@ final class CodexSessionMonitorTests: XCTestCase {
+                 rolloutProvider: { opened && $0.identity == first.identity ? [file] : [] },
+                 sessionsDirectory: directory
+             )
+-            let observations = monitor.observations(in: [first.tty, second.tty])
++            let observations = monitor.observations(
++                in: [first.tty, second.tty], terminalThreadPrefixes: [first.tty: sessionID]
++            )
+             XCTAssertEqual(observations[first.tty]?.sessionID, sessionID)
+             XCTAssertNil(observations[second.tty]?.sessionID)
+         }
+@@ -204,7 +207,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+         XCTAssertTrue(monitor.observations(in: Set(processes.map(\.tty))).values.allSatisfy { $0.sessionID == nil })
+     }
+ 
+-    func testAutomaticDiscoveryRejectsWrongDirectoryAndOldStartupThenKeepsRetrying() throws {
++    func testNativeEvidenceCanRecoverWithoutDirectoryOrStartupFallback() throws {
+         let directory = try temporaryDirectory()
+         _ = try discoverableRollout(in: directory, id: sessionID, cwd: "/other/project")
+         _ = try discoverableRollout(in: directory, id: secondSessionID, startedAt: 1_792_544_300)
+@@ -215,7 +218,9 @@ final class CodexSessionMonitorTests: XCTestCase {
+         for _ in 0..<40 { XCTAssertNil(monitor.observations(in: [tty])[tty]?.sessionID) }
+         _ = try discoverableRollout(in: directory, id: sessionID)
+         var recovered: CodexSessionObservation?
+-        for _ in 0..<8 { recovered = monitor.observations(in: [tty])[tty] }
++        for _ in 0..<8 {
++            recovered = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
++        }
+         XCTAssertEqual(recovered?.sessionID, sessionID)
+         XCTAssertEqual(recovered?.requiresRuntimeStatus, true)
+     }
+@@ -228,7 +233,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+         let monitor = CodexSessionMonitor(
+             processProvider: { _ in alive ? [process] : [] }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
+         )
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.requiresRuntimeStatus, true)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.requiresRuntimeStatus, true)
+         alive = false
+         for _ in 0..<3 {
+             let observation = monitor.observations(in: [tty])[tty]
+@@ -248,7 +253,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+         let monitor = CodexSessionMonitor(
+             processProvider: { _ in [process] }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
+         )
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.sessionID, sessionID)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.sessionID, sessionID)
+         let switched = monitor.observations(
+             in: [tty], terminalThreadPrefixes: [tty: String(secondSessionID.prefix(29))]
+         )[tty]
+@@ -363,7 +368,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+         for _ in 0..<10 { XCTAssertNil(monitor.observations(in: [tty])[tty]?.sessionID) }
+     }
+ 
+-    func testNativeTitleUsesMatchingOwnedFileWithoutRequiringDaemon() throws {
++    func testNativeTitleFileEvidenceStillRequiresDaemonIdentity() throws {
+         let directory = try temporaryDirectory()
+         let first = try discoverableRollout(in: directory, id: sessionID)
+         let process = automaticProcess()
+@@ -374,7 +379,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+             in: [tty], terminalThreadPrefixes: [tty: String(sessionID.prefix(29))]
+         )[tty]
+         XCTAssertEqual(observation?.sessionID, sessionID)
+-        XCTAssertEqual(observation?.requiresRuntimeStatus, false)
++        XCTAssertEqual(observation?.requiresRuntimeStatus, true)
+     }
+ 
+     func testNativeTitleDisambiguatesOwnedFilesRetainedAcrossAThreadSwitch() throws {
+@@ -463,20 +468,20 @@ final class CodexSessionMonitorTests: XCTestCase {
+         try write(metadata(sessionID) + event("task_started"), to: rollout)
+         let process = process()
+         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [rollout] })
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.recentCompletions, [])
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.recentCompletions, [])
+         let events = event("task_complete", second: 2)
+             + event("task_started", turn: "turn-2", second: 3)
+             + event("task_complete", turn: "turn-2", second: 4)
+             + event("task_started", turn: "turn-3", second: 5)
+         try append(Data(events.utf8), to: rollout)
+-        let observed = monitor.observations(in: [tty])[tty]
++        let observed = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
+         XCTAssertEqual(observed?.status, .running)
+         XCTAssertEqual(observed?.completionInProgressID, "codex:\(sessionID):turn-3")
+         XCTAssertEqual(observed?.recentCompletions?.map(\.id), [
+             "codex:\(sessionID):turn-1", "codex:\(sessionID):turn-2"
+         ])
+         XCTAssertEqual(observed?.latestCompletion, observed?.recentCompletions?.last)
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.recentCompletions, observed?.recentCompletions)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.recentCompletions, observed?.recentCompletions)
+         XCTAssertEqual(
+             CodexSessionMonitor.observationAfterMissingScan(
+                 try XCTUnwrap(observed), missedScans: 3
+@@ -540,7 +545,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+             processProvider: { _ in [first, second] },
+             rolloutProvider: { $0.identity == first.identity ? [rollout] : [] }
+         )
+-        let observations = monitor.observations(in: [first.tty, second.tty])
++        let observations = monitor.observations(in: [first.tty, second.tty], terminalThreadPrefixes: [first.tty: sessionID])
+         XCTAssertEqual(observations[first.tty]?.sessionID, sessionID)
+         XCTAssertEqual(observations[first.tty]?.isProcessAlive, true)
+         XCTAssertNil(observations[second.tty]?.status)
+@@ -572,9 +577,9 @@ final class CodexSessionMonitorTests: XCTestCase {
+         let process = process()
+         var current = first
+         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [current] })
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .finished)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .finished)
+         current = second
+-        let switched = monitor.observations(in: [tty])[tty]
++        let switched = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: secondSessionID])[tty]
+         XCTAssertEqual(switched?.status, .running)
+         XCTAssertEqual(switched?.sessionID, secondSessionID)
+         XCTAssertNil(switched?.latestCompletion)
+@@ -587,10 +592,14 @@ final class CodexSessionMonitorTests: XCTestCase {
+         let process = process()
+         var available = false
+         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in available ? [rollout] : [] })
+-        for _ in 0..<40 { XCTAssertNil(monitor.observations(in: [tty])[tty]?.status) }
++        for _ in 0..<40 {
++            XCTAssertNil(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status)
++        }
+         available = true
+         var resolved: CodexSessionObservation?
+-        for _ in 0..<8 { resolved = monitor.observations(in: [tty])[tty] }
++        for _ in 0..<8 {
++            resolved = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
++        }
+         XCTAssertEqual(resolved?.status, .running)
+         XCTAssertEqual(resolved?.sessionID, sessionID)
+     }
+@@ -600,18 +609,18 @@ final class CodexSessionMonitorTests: XCTestCase {
+         try write(metadata(sessionID) + event("task_started"), to: rollout)
+         let process = process()
+         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [rollout] })
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .running)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .running)
+         let line = Data("{\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"assistant\",\"content\":\"中\"}}\n".utf8)
+         let split = try XCTUnwrap(line.firstIndex(of: 0xE4)) + 1
+         try append(Data(line[..<split]), to: rollout)
+-        XCTAssertNil(monitor.observations(in: [tty])[tty]?.titleExcerpt)
++        XCTAssertNil(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.titleExcerpt)
+         try append(Data(line[split...]), to: rollout)
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.titleExcerpt, "[assistant]\n中")
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.titleExcerpt, "[assistant]\n中")
+         let completion = Data(event("task_complete", second: 2).utf8)
+         try append(Data(completion.dropLast()), to: rollout)
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .running)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .running)
+         try append(Data([0x0A]), to: rollout)
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .finished)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .finished)
+     }
+ 
+     func testUnchangedFileRetainsStableObservation() throws {
+@@ -619,8 +628,9 @@ final class CodexSessionMonitorTests: XCTestCase {
+         try write(metadata(sessionID) + event("task_complete"), to: rollout)
+         let process = process()
+         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [rollout] })
+-        let first = monitor.observations(in: [tty])[tty]
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty], first)
++        let first = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
++        XCTAssertEqual(first?.status, .finished)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty], first)
+     }
+ 
+     func testTruncationAndAtomicReplacementResetReader() throws {
+@@ -628,14 +638,14 @@ final class CodexSessionMonitorTests: XCTestCase {
+         try write(metadata(sessionID) + event("task_started") + event("task_complete", second: 2), to: rollout)
+         let process = process()
+         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [rollout] })
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .finished)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .finished)
+         try write(metadata(secondSessionID) + event("task_started"), to: rollout)
+-        let truncated = monitor.observations(in: [tty])[tty]
++        let truncated = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: secondSessionID])[tty]
+         XCTAssertEqual(truncated?.sessionID, secondSessionID)
+         XCTAssertEqual(truncated?.status, .running)
+         XCTAssertNil(truncated?.latestCompletion)
+         try Data((metadata(sessionID) + event("turn_aborted")).utf8).write(to: rollout, options: .atomic)
+-        let replaced = monitor.observations(in: [tty])[tty]
++        let replaced = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
+         XCTAssertEqual(replaced?.sessionID, sessionID)
+         XCTAssertEqual(replaced?.status, .interrupted)
+     }
+@@ -646,7 +656,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+         let process = process()
+         var alive = true
+         let monitor = CodexSessionMonitor(processProvider: { _ in alive ? [process] : [] }, rolloutProvider: { _ in [rollout] })
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .running)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .running)
+         try append(Data(event("task_complete", second: 2).utf8), to: rollout)
+         alive = false
+         for _ in 0..<3 {
+@@ -666,7 +676,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+         var scans = [[process], [], [process], [], [], [], []]
+         let monitor = CodexSessionMonitor(processProvider: { _ in scans.removeFirst() }, rolloutProvider: { _ in [rollout] })
+         for expectedAlive in [true, false, true, false, false] {
+-            let observation = monitor.observations(in: [tty])[tty]
++            let observation = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
+             XCTAssertEqual(observation?.status, .running)
+             XCTAssertEqual(observation?.isProcessAlive, expectedAlive)
+         }
+@@ -682,7 +692,7 @@ final class CodexSessionMonitorTests: XCTestCase {
+         let process = process()
+         var calls = 0
+         let monitor = CodexSessionMonitor(processProvider: { _ in calls += 1; return calls == 1 ? [process] : [] }, rolloutProvider: { _ in [rollout] })
+-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .running)
++        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .running)
+         let generation = monitor.scanGeneration()
+         monitor.reset(ttys: ["/dev/ttys099"])
+         XCTAssertTrue(monitor.observations(in: [tty], expectedGeneration: generation).isEmpty)
+@@ -692,13 +702,25 @@ final class CodexSessionMonitorTests: XCTestCase {
+         XCTAssertNil(monitor.observations(in: [tty])[tty])
+     }
+ 
++    func testCurrentForegroundProcessRechecksGenerationAndExit() {
++        let original = process()
++        var current = [original]
++        let monitor = CodexSessionMonitor(processProvider: { _ in current })
++        XCTAssertTrue(monitor.isCurrentProcess(original.identity, on: tty))
++        current = [.init(identity: .init(pid: original.identity.pid, startedAt: 43),
++                         tty: tty, cwd: original.cwd, arguments: original.arguments)]
++        XCTAssertFalse(monitor.isCurrentProcess(original.identity, on: tty))
++        current = []
++        XCTAssertFalse(monitor.isCurrentProcess(original.identity, on: tty))
++    }
++
+     func testFileGrowthWithoutLifecycleRemainsUnknown() throws {
+         let rollout = try temporaryDirectory().appendingPathComponent("rollout-unknown.jsonl")
+         try write(metadata(sessionID), to: rollout)
+         let process = process()
+         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [rollout] })
+-        XCTAssertNil(monitor.observations(in: [tty])[tty]?.status)
++        XCTAssertNil(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status)
+         try append(Data("{\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"assistant\",\"content\":\"output\"}}\n".utf8), to: rollout)
+-        XCTAssertNil(monitor.observations(in: [tty])[tty]?.status)
++        XCTAssertNil(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status)
+     }
+ }
+diff --git a/iTermateTests/ItermBridgeTests.swift b/iTermateTests/ItermBridgeTests.swift
+index fc0db07..2c63458 100644
+--- a/iTermateTests/ItermBridgeTests.swift
++++ b/iTermateTests/ItermBridgeTests.swift
+@@ -69,7 +69,7 @@ final class ItermBridgeTests: XCTestCase {
+         )
+     }
+ 
+-    func testAutomaticCodexBindingRequiresAnUnambiguousSharedDaemonThread() {
++    func testRolloutCannotCreateAutomaticCodexBindingBeforeDaemonLookup() {
+         let thread = "11111111-2222-3333-4444-555555555555"
+         let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
+         let shared = CodexSessionObservation(
+@@ -87,11 +87,19 @@ final class ItermBridgeTests: XCTestCase {
+             [:], observations: ["auto": shared, "file": exact, "invalid": invalid, "detached": shared],
+             identities: ["auto": "pane", "file": "file-pane", "invalid": "invalid-pane"]
+         )
+-        XCTAssertEqual(bindings.count, 1)
+-        XCTAssertEqual(bindings["auto"]?.threadID, thread)
+-        XCTAssertEqual(bindings["auto"]?.terminalSessionID, "pane")
+-        XCTAssertEqual(bindings["auto"]?.processIdentity, process)
+-        XCTAssertEqual(bindings["auto"]?.isManual, false)
++        XCTAssertTrue(bindings.isEmpty)
++        let verified = ItermStore.CodexThreadBinding(
++            terminalSessionID: "pane", processIdentity: process, threadID: thread, isManual: false
++        )
++        let blank = CodexSessionObservation(status: nil, changedAt: nil, processIdentity: process)
++        XCTAssertEqual(ItermStore.reconciledCodexBindings(
++            ["auto": verified], observations: ["auto": blank], identities: ["auto": "pane"],
++            terminalThreadPrefixes: ["auto": String(thread.prefix(29))]
++        )["auto"], verified)
++        XCTAssertTrue(ItermStore.reconciledCodexBindings(
++            ["auto": verified], observations: ["auto": blank], identities: ["auto": "pane"],
++            terminalThreadPrefixes: ["auto": ""]
++        ).isEmpty)
+         XCTAssertTrue(ItermStore.reconciledCodexBindings(
+             [:], observations: ["one": shared, "two": shared], identities: ["one": "one", "two": "two"]
+         ).isEmpty)
+@@ -109,13 +117,10 @@ final class ItermBridgeTests: XCTestCase {
+             processIdentity: .init(pid: 42, startedAt: 11),
+             sessionID: replacement, requiresRuntimeStatus: true
+         )
+-        let updated = try XCTUnwrap(ItermStore.reconciledCodexBindings(
+-            ["tty": old], observations: ["tty": observation], identities: ["tty": "new-pane"]
+-        )["tty"])
+-        XCTAssertNotEqual(updated, old)
+-        XCTAssertEqual(updated.threadID, replacement)
+-        XCTAssertEqual(updated.terminalSessionID, "new-pane")
+-        XCTAssertEqual(updated.processIdentity.startedAt, 11)
++        XCTAssertTrue(ItermStore.reconciledCodexBindings(
++            ["tty": old], observations: ["tty": observation], identities: ["tty": "new-pane"],
++            terminalThreadPrefixes: ["tty": replacement]
++        ).isEmpty)
+         XCTAssertTrue(ItermStore.reconciledCodexBindings(
+             ["tty": old], observations: ["tty": observation], identities: [:]
+         ).isEmpty)
+@@ -144,7 +149,8 @@ final class ItermBridgeTests: XCTestCase {
+             sessionID: thread, isProcessAlive: false, requiresRuntimeStatus: true
+         )
+         XCTAssertEqual(ItermStore.reconciledCodexBindings(
+-            ["tty": automatic], observations: ["tty": stopped], identities: ["tty": "pane"]
++            ["tty": automatic], observations: ["tty": stopped], identities: ["tty": "pane"],
++            terminalThreadPrefixes: ["tty": thread]
+         )["tty"], automatic)
+         XCTAssertTrue(ItermStore.reconciledCodexBindings(
+             [:], observations: ["tty": stopped], identities: ["tty": "pane"]
+diff --git a/tasks/context.md b/tasks/context.md
+index 8cfdfdb..023f6e3 100644
+--- a/tasks/context.md
++++ b/tasks/context.md
+@@ -58,7 +58,7 @@
+ - Paths: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/ItermBridge.swift`, `iTermate/VenomDebugMonitor.swift`, `iTermate/CodexSessionMonitor.swift`, `iTermate/CodexAppServerClient.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`
+ - Keywords: iTerm2, Bridge, TerminalApp, frontmost, panel setting, snapshot, tty, telemetry, shell hook, focus, close, open project, favorite project, agent summary, completion count, session status, venom-cli, debug monitoring, radar
+ - Authority: `iTermate/iTermateApp.swift`, `iTermate/SettingsViews.swift`, `iTermate/FinishedSessionShortcut.swift`, `iTermate/ItermBridge.swift`, `iTermate/VenomDebugMonitor.swift`, `iTermate/CodexSessionMonitor.swift`, `iTermate/CodexAppServerClient.swift`, `iTermate/AgentIntegrations.swift`, `iTermateBridge/iTermateBridge.py`, `integrations/`, `project.yml`
+-- Recheck: iTerm2身份识别、面板启用偏好、快照、Integration安装、前台窗口选择、Agent统计、venom-cli调试子进程结构或Bridge操作路由发生变化时复查。
++- Recheck: iTerm2身份识别、面板启用偏好、快照、Integration安装、前台窗口选择、Agent统计、Codex TUI当前thread信号或rollout文件持有策略、venom-cli调试子进程结构或Bridge操作路由发生变化时复查。
+ 
+ ### Purpose and Boundaries
+ - 已识别Agent但status为nil时，Session行保留Pi/Codex身份并显示未高亮的中性Agent图标，不显示unknown身份提示；底层生命周期仍为空，不参与运行、待回复或完成计数。unknown身份只出现在左侧环境标记，不作为第三种回复分类；显式行ID仍区分空状态与idle。权威为`iTermate/iTermateApp.swift`。
+@@ -71,7 +71,7 @@
+ - Pi待回复仅在交互TUI上报：confirm/select/input/editor事件为明确等待，custom UI不默认视为提问；正常agent_settled后台调用所选本地Ollama模型，不等待模型才返回hook，也不再执行旧Laya/Vela或文本启发式。回复分类只有question与默认normal：只有明确question才awaitingInput，超时、不可用或无效结果默认normal，不回退其他模型或启发式。分类进行中为中性idle，不提前记完成；空白/无正文轮次直接idle，不分类也不新增完成证据。非空回复正常settled且无未决活动后可finished，完成依据仍是生命周期而非分类器可用性。aborted为interrupted，不新增完成证据；明确error保留失败结果。整条分类链十秒截止，新turn、分支/Session切换和退出取消；已确认等待由有限租约续报，不因聚焦清除，心跳不调用模型。权威为integrations/pi/iTermate-integration.ts及Python Bridge。
+ - App启动时仅在iTerm2已运行时启动其Bridge client；否则在iTerm2首次成为前台终端时启动。
+ - Pi只有在`TERM_PROGRAM=iTerm.app`且有明确iTerm Session ID时才启用状态报告、发现端点及自动标题生成；其他终端继承的Session ID不可信。普通Shell命令由iTerm2 Bridge原生观察，不需安装独立hook。
+-- Codex由App每两秒确认可见终端前台进程树中的原生CLI。Bridge读取原始terminalWindowName传递官方当前thread UUID或29字符前缀；只有唯一根metadata匹配才成立，且约束旧FD，信号失效不复活旧启动关联。未启用原生thread标题时兼容唯一可写FD、明确resume UUID及同cwd/启动±30秒匹配，做跨进程冲突检测；后两者无法可靠跟随同进程切换。未映射按1/2/4/8轮持续重试，原生信号改变立即重查。首次1 MiB尾部、后续每轮最多8 MiB增量解析，未追上时生命周期为空并中性显示；状态由完整生命周期事件决定，不由文件增长决定。非FD自动关联接入现有daemon只读thread/read与最近turns，官方同用户socket符号链接可用；请求失败保留rollout证据，迟到结果不得覆盖新生命周期。手动绑定仅为应急覆盖，不是自动路径前提。权威为iTermate/CodexSessionMonitor.swift、iTermate/CodexAppServerClient.swift、iTermate/ItermBridge.swift、iTermateBridge/iTermateBridge.py及docs/codex-monitoring.md。
++- Codex由App每两秒确认可见终端前台进程树中的原生CLI。Bridge读取原始terminalWindowName传递官方完整thread UUID或29字符前缀；自动身份必须先由现有共享daemon的thread/loaded/list完整分页唯一扩展，再以thread/read校验精确ID、根source与状态。空白会话不依赖rollout；loaded不代表running。无信号、零匹配、歧义、缺页或请求失败均未绑定，不按cwd、时间、argv resume或旧FD猜测。每轮重新查询，不缓存目录级身份；失败撤销自动绑定与overlay。应用异步结果前复核终端Session ID、TTY、PID／启动时间、真实前台进程与当前前缀，切换取消旧结果；多终端重复认领同一ID拒绝自动绑定。可选根rollout只在已核实ID下提供生命周期和标题证据，首次1 MiB尾部、后续每轮8 MiB有界读取，未追上不推断状态。官方同用户socket符号链接可用，不启动daemon；手动绑定仅为应急覆盖。Agents中提供可选择复制的[tui] terminal_title说明，不写配置；仅新开Codex生效，不使用-c冒充共享服务。权威为iTermate/CodexSessionMonitor.swift、iTermate/CodexAppServerClient.swift、iTermate/ItermBridge.swift、iTermate/AgentIntegrations.swift、iTermateBridge/iTermateBridge.py及docs/codex-monitoring.md。
+ - Codex完成查看确认保存在Swift Store展示层，不写回rollout或Bridge生命周期；前台Window/Tab/Session焦点变化、切回终端和面板激活成功后可确认。确认绑定TTY、终端Session ID、进程身份、Codex thread ID及完成ID/时间；相同事件保持idle，新一轮或thread变化不能复用旧确认。latestCompletion与显示状态分离，供完成通知/统计去重；中止不产生成功完成。权威为iTermate/ItermBridge.swift、iTermate/SessionNotifications.swift、iTermateTests/ItermBridgeTests.swift与docs/codex-monitoring.md。
+ - 标题栏刷新按钮只重启iTerm2 Bridge并重建状态，不重启App或用户的终端Session。
+ - General 中的全局快捷键由 `FinishedSessionShortcut` 使用系统热键 API 注册，配置由 `AppSettings` 持久化；动作固定路由 iTerm2 Bridge，不依赖当前前台终端或面板分组顺序。App 将与面板同源、已通过 TTY/Session 身份校验的 Codex 状态作为 `codexStatuses` 随单次导航请求传入，包括表示未知状态的 null；Bridge 仅在当前真实 Session 中使用该覆盖，不将其写入生命周期或清理底层 Shell 状态。Bridge 以真实 Session ID 记录本轮已访问项，每次按实时状态过滤候选，只选 `activityKind=agent`；本轮先访问尚未访问的 finished（未查看的已完成结果，包括失败），再访问尚未访问的 awaitingInput（问号）与 idle（后两者同级），同级按实际 Window/Tab/Session 顺序从当前项之后选择；本轮全部候选走完才清空访问记录并重新循环。保留现有完成确认路径；已完成转 idle 后按普通空闲候选参与后续轮次，不在同轮重复抢占，已关闭 Session 从记录移除。running、普通命令、当前项、未知及独立模型推测均不参与。待回复及空闲目标不执行完成状态清理，聚焦不会清除问号。
+@@ -94,7 +94,7 @@
+ - 问题判断仅由Pi agent_settled触发后台分析最后一条完整助手可见回复；回复中面向当前用户的回答、确认、选择、授权或必要信息请求才是question；隐式确认门也须将助手下一步与用户回复相连。单纯交付报告与操作说明是normal，等待QA/CI/reviewer、MR未合并或未测试只属状态事实，不以问号或任务未完成代替判定（权威：`integrations/pi/iTermate-integration.ts`的`classifyReplyWithModel`提示词）。回复分类仅有question与默认normal，严格二分类JSON之外及请求失败使用normal默认值；取消/旧轮次结果仍由会话与请求身份丢弃。分类进行中保持中性idle、不提前记完成，空白/无正文结束不分类、不新增完成；非空回复的完成依据是成功settled及无未决活动，明确运行、UI等待、失败和aborted仍由生命周期决定。整条库存→生成→库存复核共用十秒总预算并支持turn/导航/退出取消。系统prompt与全文UTF-8字节+1024保守余量须≤16384；不再使用3000字符限制，超预算不截断、不发起推理，使用normal默认值。心跳与只读状态查询不再次推理，不回退旧模型/规则/云端，不扫描屏幕。
+ - 实时标题不使用当前Pi模型；Pi集成与原生Codex的生成提示词分别位于TS的summarizeTask和Swift的LocalLLMService，两处保持核心目标概括规则与对照示例：提炼最近用户的单一目标，不摘录Markdown任务目标或助手进度，简短确认沿用相关目标，明确目标切换后忽略旧任务。两条链路的最终标题均要求非空、不含任何换行且最多80个Unicode标量；首轮为空、多行或过长时最多再调用一次本地模型，以原对话和草稿重新概括，第二轮仍无效则失败，不发布草稿或机械改写。Codex每次最多生成1024 tokens，Pi保留64输出token和60秒总截止；两条链路首轮length响应都仅作提炼草稿，最终必须完整stop。两轮绑定同一配置和库存身份并检查取消，不改变外层两次尝试预算。Swift共享校验也用于Pi显示与Codex缓存恢复；空格、标点、数字仍不作额外过滤。通信、响应有效性、身份或取消失败仍保留旧有效标题。仅归档时的多句摘要继续使用原有Pi模型路径。
+ - Pi实时标题生成失败会把脱敏的失败类别写入`~/Library/Logs/iTermate`中由进程唯一拥有、单文件1 MiB轮转的JSONL日志对；不写入对话、模型输出、路径或凭据，写入失败不改变标题回退。写入时清理已退出PID的旧日志对，About设置页提供打开该目录的入口。
+-- 原生Codex标题由App的LocalLLMService生成；标题与摘录哈希绑定TTY、终端Session ID、PID、启动时间和thread ID持久化，不保存对话原文。原生thread信号改变即取消旧请求和缓存写入；恢复不受缺失补全开关影响，补全要求已关联thread及核实的可见消息，已有标题只在finished更新。自动关联及应急绑定都可使用最终thread/read的path，经本用户普通文件、inode、根metadata及完整UUID核验后复用增量读取器；也可复用相同thread的rollout摘录，不用daemon预览生成标题。共享daemon无CLI文件FD时可通过原生thread标题或兼容启动匹配恢复输入；配置原生信号是准确跟随切换的边界。CodexTitleDiagnostics只记录脱敏失败、取消和过期丢弃；日志轮转与隐私边界不变。权威为iTermate/ItermBridge.swift、iTermate/CodexSessionMonitor.swift、iTermate/CodexAppServerClient.swift及docs/codex-monitoring.md。
++- 原生Codex标题由App的LocalLLMService生成；标题与摘录哈希绑定TTY、终端Session ID、PID、启动时间和thread ID持久化，不保存对话原文。原生thread信号改变即取消旧请求和缓存写入；恢复不受缺失补全开关影响，补全要求已关联thread及核实的可见消息，已有标题只在finished更新。自动关联及应急绑定都可使用最终thread/read的path，经本用户普通文件、inode、根metadata及完整UUID核验后复用增量读取器；也可复用相同thread的rollout摘录，不用daemon预览生成标题。共享daemon无CLI文件FD时通过原生thread标题与完整loaded列表识别身份，再由最终thread/read路径读取输入；配置原生信号是自动绑定的前提，rollout只是标题与生命周期的可选证据。CodexTitleDiagnostics只记录脱敏失败、取消和过期丢弃；日志轮转与隐私边界不变。权威为iTermate/ItermBridge.swift、iTermate/CodexSessionMonitor.swift、iTermate/CodexAppServerClient.swift及docs/codex-monitoring.md。
+ - 源码和构建通过不代表新App或Pi集成已运行；需用户自行运行App并安装或reload集成，旧进程不会因源码改动自动停用。
+ 
+ ## CTX-pi-status-recovery — Pi 状态主动恢复
+@@ -126,7 +126,7 @@
+ - 应用 shell 使用 SwiftUI `App`；`MenuBarExtra(.window)` 提供 iTerm2 的 Agent Running 与今日成功完成摘要、收藏项目快捷入口及 Settings/Quit，浮动面板左下角的齿轮入口和 `Settings` scene 提供 General、Agents、Status Animation、Statistics、About 设置页面；`AppDelegate` 启动共享 Store、浮动面板与完成通知控制器。面板和菜单栏 Settings 入口在 macOS 14+ 共用 `OpenSettingsButton`，先激活后台 App 再调用 SwiftUI `openSettings` 环境动作；macOS 13 保留 `showSettingsWindow:` fallback，不设置持续浮动层级。——权威来源：[`iTermateApp.swift`](../iTermate/iTermateApp.swift)、[`ItermBridge.swift`](../iTermate/ItermBridge.swift)、[`SettingsViews.swift`](../iTermate/SettingsViews.swift)、[`SessionNotifications.swift`](../iTermate/SessionNotifications.swift) 与 [`iTermateBridge.py`](../iTermateBridge/iTermateBridge.py)
+ - 窗口几何与 iTerm 语义分层：`PanelFollower` 在 Swift 侧通过 Core Graphics 以 30Hz 跟随 active iTerm 的可见窗口；`ItermWindow.frontmost()` 要求 iTerm 为系统前台应用，并从可见 layer-0 候选中选择最大窗口，以排除 Close Tab 等模态提示框。iTerm 失去焦点或没有可见窗口时面板隐藏。Window/Tab/Session 层级及操作由 Python Bridge 提供，因此当前无需 Accessibility 权限；若需要多个主 iTerm 窗口的精确前台识别，应改用窗口 ID/Accessibility 并复查。——权威来源：[`iTermateApp.swift`](../iTermate/iTermateApp.swift)、[`PanelLayoutTests.swift`](../iTermateTests/PanelLayoutTests.swift) 与 [`ItermBridge.swift`](../iTermate/ItermBridge.swift)
+ - Bridge 作为 App resource 安装到 iTerm2 AutoLaunch，使用文件锁保证单实例，并通过用户私有目录中的 Unix Socket 与 App 交换 JSON Lines；App 启动流程负责替换并重启 Bridge，因此 App↔Bridge 不做运行时协议版本校验。独立安装的 integration 可继续携带版本元数据，Bridge 只校验当前操作所需字段和值，不按版本号拒绝请求。——权威来源：[`iTermateBridge.py`](../iTermateBridge/iTermateBridge.py)、[`ItermBridge.swift`](../iTermate/ItermBridge.swift)、[`integrations`](../integrations) 与 [`project.yml`](../project.yml)
+-- Bridge同步全量Window/Tab/Session快照、命令状态与转换时间；标题和路径每两秒读取。Pi由生命周期集成主动上报并支持认证补查；Codex自动路径核验前台CLI实际打开的唯一可写根rollout FD，不按cwd/时间/argv resume猜测；首次1 MiB尾部、后续每轮最多8 MiB增量，生命周期事件驱动状态，不以文件增长判断running。手动Bind Codex Conversation固定thread后只读现有daemon状态，明确等待标记可显示awaitingInput；无socket、ID不匹配或未知状态保留unknown，不启动daemon。绑定随App运行期、终端及进程身份有效，/new或/resume后须重绑。——权威来源：`iTermateBridge/iTermateBridge.py`、`integrations/pi/iTermate-integration.ts`、`iTermate/CodexSessionMonitor.swift`、`iTermate/CodexAppServerClient.swift`与`iTermate/ItermBridge.swift`
++- Bridge同步全量Window/Tab/Session快照、命令状态与转换时间；标题和路径每两秒读取。Pi由生命周期集成主动上报并支持认证补查；Codex自动路径用原生标题前缀与现有daemon完整loaded列表唯一匹配，再读取精确根thread；空白会话不依赖rollout，不按cwd/时间/argv resume或残留FD猜测；首次1 MiB尾部、后续每轮最多8 MiB增量，生命周期事件驱动状态，不以文件增长判断running。手动Bind Codex Conversation固定thread后只读现有daemon状态，明确等待标记可显示awaitingInput；无socket、ID不匹配或未知状态保留unknown，不启动daemon。绑定随App运行期、终端及进程身份有效，/new或/resume后须重绑。——权威来源：`iTermateBridge/iTermateBridge.py`、`integrations/pi/iTermate-integration.ts`、`iTermate/CodexSessionMonitor.swift`、`iTermate/CodexAppServerClient.swift`与`iTermate/ItermBridge.swift`
+ - `SessionNotificationController` 对Pi/Codex优先消费recentCompletions中最近最多64条完成证据并按稳定ID去重，latestCompletion单条兼容，旧集成/普通Shell使用`running → finished`转换兜底；首次观察的历史完成只建基线，重复结果不通知，超过来源/留存窗口的历史不保证补齐；全局开关默认关闭，开启时请求 macOS 通知权限，后续启动也会重新确认当前 App bundle 的授权，并对普通 shell 与 agent 完成都发送带 Session 名称和结果的原生通知。初始 finished 快照与重复 finished 快照不会通知；通知携带 Session ID，用户点击后复用 Bridge 激活请求选择对应 Session 并将 iTerm 置前；系统明确拒绝授权会阻止通知投递并写入日志，但不会覆盖 `~/.iTermate/config.toml` 中持久化的用户开关；只有无技术错误且未获授权时，General Settings 才使用标准 SwiftUI Alert 引导至 macOS Notifications 设置页。通知运行验证必须使用代码签名 identifier 与 `CFBundleIdentifier` 一致的单一 App 实例；`CODE_SIGNING_ALLOWED=NO` 产物即使复用 bundle ID，也不代表系统设置中的已授权 App 身份。——权威来源：[`SessionNotifications.swift`](../iTermate/SessionNotifications.swift)、[`SettingsViews.swift`](../iTermate/SettingsViews.swift)、[`iTermateApp.swift`](../iTermate/iTermateApp.swift) 与 [`iTermateBridge.py`](../iTermateBridge/iTermateBridge.py)
+ - Agents Settings 列出 Claude Code、Codex、OpenCode、Cursor CLI、Kimi Code、Pi 与 omp；Pi 开关管理 `~/.pi/agent/extensions/iTermate-integration.ts`，Codex 显示 Automatic 且无需安装资源。App 启动时会从 `~/.codex/hooks.json` 删除带 `_iTermate` 标记的旧 entries，保留第三方 hooks，并清理旧包装器与标记；不再提供独立Shell状态资源或安装入口。Pi 更新后已有 Session 需 `/reload`，Codex 直接运行原始命令即可。——权威来源：[`AgentIntegrations.swift`](../iTermate/AgentIntegrations.swift)、[`CodexSessionMonitor.swift`](../iTermate/CodexSessionMonitor.swift)、[`Pi integration`](../integrations/pi/iTermate-integration.ts) 与 [`project.yml`](../project.yml)
+ - `AppSettings` 是面板宽度、字体、背景样式、Session 列表样式、Project Path section title 样式、Tab 标题、时间显示开关及格式、完成通知开关，以及按精确项目路径保存 Pin、Favorite 与颜色的共享权威状态：全部配置从用户 `~/.iTermate/config.toml` 读取并写回，不使用 `UserDefaults` 或旧配置迁移；初始化已有文件时只读取而不重写，每次修改会重新读取磁盘当前配置并只合并目标字段，避免多个 Debug App 或设置实例用陈旧内存值覆盖其他设置；面板字体默认系统 13pt，General Settings 通过标准 SwiftUI `Picker` 选择 `NSFontManager.availableFonts` 提供的任一本机已安装字形，并用数字 `TextField` 输入字号，保存其 PostScript 名称与字号，字体不可用时回退到同字号系统字体；Background Style 提供 System/Dark/Light 与 Blur/Opaque 的六种预设，默认 System Blur：Blur 使用系统 `.regularMaterial`，Opaque 使用语义窗口背景，Dark/Light 同步覆盖整个面板的文字、图标和控件配色，System 跟随 macOS 外观；Project Path section title 可选择完整路径或最后一级文件夹名，默认完整路径；项目文件夹标题的上下文菜单可切换并持久化 Pin、Favorite 与系统颜色选择器的自定义颜色，Pin 文件夹优先排序，Favorite 显示星标，颜色同时着色文件夹图标与标题，Unknown Path 不提供这些操作；面板仍可通过原生边缘拖拽在 180–600pt 之间调整，左右边缘通过带 `.activeAlways` 的 `NSTrackingArea` 显示水平调整光标；默认宽度为 260pt。面板高度始终匹配 iTerm，与 iTerm 间隔 8pt，优先放右侧，空间不足放左侧，再不足则覆盖在可见屏幕内。——权威来源：[`SettingsViews.swift`](../iTermate/SettingsViews.swift)、[`iTermateApp.swift`](../iTermate/iTermateApp.swift)、[`PanelLayout.swift`](../iTermate/PanelLayout.swift) 与 [`PanelLayoutTests.swift`](../iTermateTests/PanelLayoutTests.swift)
