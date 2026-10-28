@@ -1,5 +1,33 @@
 # 任务索引
 
+- [按独立功能拆分提交全部本地改动](tasks/commit-local-changes-by-concern-20261028.md) — Completed (2026-10-28 14:50)
+
+- [修复激活会话后完成状态未转为空闲](tasks/clear-finished-status-on-activation.md) — Completed (2026-10-28 11:49)
+
+- [修复手动空闲状态在重启后丢失](tasks/persist-manual-idle-on-restart.md) — Completed (2026-10-28 11:37)
+
+- [提高运行中像素状态图标亮度](tasks/brighten-running-status-icon.md) — Completed (2026-10-28 11:22)
+
+- [提交Codex精准身份绑定修复](tasks/commit-codex-title-identity-fix.md) — Completed (2026-10-28 11:23)
+
+- [启用Codex原生thread标题配置](tasks/enable-codex-native-thread-title.md) — Completed (2026-10-27 20:31)
+
+- [实现Codex原生标题精准会话绑定](tasks/implement-codex-title-identity-binding.md) — Completed (2026-10-27 19:30)
+
+- [搜索并实测Codex精准身份关联替代方案](tasks/research-test-codex-identity-solutions.md) — In Progress (2026-10-27 18:19)
+
+- [实测Codex独立模式的精准绑定能力](tasks/test-codex-no-daemon-binding.md) — Completed (2026-10-27 18:12)
+
+- [提交默认普通回复与未知身份分离优化](tasks/commit-default-reply-optimization.md) — Completed (2026-10-27 16:53)
+
+- [默认普通回复并分离未知会话身份语义](tasks/default-reply-separate-agent-unknown.md) — Completed (2026-10-27 16:32)
+
+- [排查 Pi 会话状态显示不正确](tasks/diagnose-pi-session-status-display.md) — Completed (2026-10-27 16:15)
+
+- [点击状态图标将会话标为空闲](tasks/click-status-icon-to-idle.md) — Completed (2026-10-27 20:31)
+
+- [修复新启动 Codex 被识别为普通终端的问题](tasks/fix-new-codex-agent-detection.md) — In Progress (2026-10-27 17:50)
+
 - [提交当前全部本地改动](tasks/commit-all-local-changes-20261027.md) — Completed (2026-10-27 11:47)
 
 - [启动iTermate时自动启动本地Ollama服务](tasks/auto-start-ollama-on-launch.md) — Completed (2026-10-27 11:45)
