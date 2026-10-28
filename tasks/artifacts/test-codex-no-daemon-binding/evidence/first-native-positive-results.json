@@ -1,0 +1,66 @@
+[
+  {
+    "at": "2026-10-27T18:02:51.899705+08:00",
+    "event": "launched",
+    "name": "A",
+    "pid": 58680,
+    "tty": "/dev/ttys036",
+    "independent_mode": true,
+    "sandbox": "read-only"
+  },
+  {
+    "at": "2026-10-27T18:02:58.115193+08:00",
+    "event": "status_identity",
+    "name": "A",
+    "has_explicit_identity": true,
+    "thread_hash": "c6346b60bab845d1",
+    "login_prompt": false,
+    "trust_prompt": false,
+    "output_chars": 776
+  },
+  {
+    "at": "2026-10-27T18:02:58.121937+08:00",
+    "event": "monitor_observation",
+    "case": "A_before_first_prompt",
+    "observations": [
+      {
+        "detected": true,
+        "hasThread": false,
+        "hasTitleExcerpt": false,
+        "isAlive": true,
+        "matchesExpected": false,
+        "pid": 58680,
+        "requiresRuntimeStatus": false,
+        "status": null,
+        "threadHash": null,
+        "tty": "/dev/ttys036"
+      }
+    ]
+  },
+  {
+    "at": "2026-10-27T18:02:59.821684+08:00",
+    "event": "owned_rollout",
+    "name": "A",
+    "thread_hash": "c6346b60bab845d1",
+    "metadata_timestamp": "2026-10-27T10:02:58.838Z"
+  },
+  {
+    "at": "2026-10-27T18:03:00.332082+08:00",
+    "event": "monitor_observation",
+    "case": "A_with_owned_rollout",
+    "observations": [
+      {
+        "detected": true,
+        "hasThread": true,
+        "hasTitleExcerpt": false,
+        "isAlive": true,
+        "matchesExpected": true,
+        "pid": 58680,
+        "requiresRuntimeStatus": false,
+        "status": "running",
+        "threadHash": "c6346b60bab845d1",
+        "tty": "/dev/ttys036"
+      }
+    ]
+  }
+]

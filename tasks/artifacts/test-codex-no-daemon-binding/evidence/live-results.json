@@ -1,0 +1,153 @@
+[
+  {
+    "at": "2026-10-27T18:08:04.381818+08:00",
+    "event": "launched",
+    "name": "A",
+    "pid": 81588,
+    "tty": "/dev/ttys004",
+    "independent_mode": true,
+    "sandbox": "read-only"
+  },
+  {
+    "at": "2026-10-27T18:08:10.596210+08:00",
+    "event": "status_identity",
+    "name": "A",
+    "has_explicit_identity": true,
+    "thread_hash": "4e6ea01e2cfdc8cd",
+    "login_prompt": false,
+    "trust_prompt": false,
+    "output_chars": 776
+  },
+  {
+    "at": "2026-10-27T18:08:10.601770+08:00",
+    "event": "monitor_observation",
+    "case": "A_before_first_prompt",
+    "observations": [
+      {
+        "detected": true,
+        "hasThread": false,
+        "hasTitleExcerpt": false,
+        "isAlive": true,
+        "matchesExpected": false,
+        "pid": 81588,
+        "requiresRuntimeStatus": false,
+        "status": null,
+        "threadHash": null,
+        "tty": "/dev/ttys004"
+      }
+    ]
+  },
+  {
+    "at": "2026-10-27T18:08:12.287513+08:00",
+    "event": "owned_rollout",
+    "name": "A",
+    "thread_hash": "4e6ea01e2cfdc8cd",
+    "metadata_timestamp": "2026-10-27T10:08:11.336Z"
+  },
+  {
+    "at": "2026-10-27T18:08:12.792999+08:00",
+    "event": "monitor_observation",
+    "case": "A_with_owned_rollout",
+    "observations": [
+      {
+        "detected": true,
+        "hasThread": true,
+        "hasTitleExcerpt": false,
+        "isAlive": true,
+        "matchesExpected": true,
+        "pid": 81588,
+        "requiresRuntimeStatus": false,
+        "status": "running",
+        "threadHash": "4e6ea01e2cfdc8cd",
+        "tty": "/dev/ttys004"
+      }
+    ]
+  },
+  {
+    "at": "2026-10-27T18:08:19.514597+08:00",
+    "event": "status_identity",
+    "name": "A",
+    "has_explicit_identity": true,
+    "thread_hash": "98bdfefc27ef7b66",
+    "login_prompt": false,
+    "trust_prompt": false,
+    "output_chars": 1214
+  },
+  {
+    "at": "2026-10-27T18:08:19.587388+08:00",
+    "event": "new_conversation_distinct",
+    "explicit_identity_available": true,
+    "different_from_A": true,
+    "own_rollout_count": 1
+  },
+  {
+    "at": "2026-10-27T18:08:19.589478+08:00",
+    "event": "monitor_observation",
+    "case": "after_new_before_first_prompt",
+    "observations": [
+      {
+        "detected": true,
+        "hasThread": true,
+        "hasTitleExcerpt": true,
+        "isAlive": true,
+        "matchesExpected": false,
+        "pid": 81588,
+        "requiresRuntimeStatus": false,
+        "status": "interrupted",
+        "threadHash": "4e6ea01e2cfdc8cd",
+        "tty": "/dev/ttys004"
+      }
+    ]
+  },
+  {
+    "at": "2026-10-27T18:08:21.269469+08:00",
+    "event": "new_conversation_materialized",
+    "own_rollout_count": 2,
+    "thread_hash": "98bdfefc27ef7b66"
+  },
+  {
+    "at": "2026-10-27T18:08:21.270534+08:00",
+    "event": "monitor_observation",
+    "case": "after_new_first_prompt",
+    "observations": [
+      {
+        "detected": true,
+        "hasThread": false,
+        "hasTitleExcerpt": false,
+        "isAlive": true,
+        "matchesExpected": false,
+        "pid": 81588,
+        "requiresRuntimeStatus": false,
+        "status": null,
+        "threadHash": null,
+        "tty": "/dev/ttys004"
+      }
+    ]
+  },
+  {
+    "at": "2026-10-27T18:08:21.270688+08:00",
+    "event": "stopping_test_process",
+    "name": "A",
+    "pid": 81588
+  },
+  {
+    "at": "2026-10-27T18:08:21.275457+08:00",
+    "event": "cleaned_test_process",
+    "name": "A",
+    "pid": 81588
+  },
+  {
+    "at": "2026-10-27T18:08:21.277597+08:00",
+    "event": "protected_files_unchanged",
+    "checks": {
+      "CodexSessionMonitor.swift": true,
+      "config.toml": true,
+      "hooks.json": true
+    }
+  },
+  {
+    "at": "2026-10-27T18:08:21.295408+08:00",
+    "event": "isolated_test_home_removed",
+    "removed": true
+  }
+]

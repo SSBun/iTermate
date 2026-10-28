@@ -1,0 +1,77 @@
+[
+  {
+    "at": "2026-10-27T18:01:04.934610+08:00",
+    "event": "launched",
+    "name": "A",
+    "pid": 51300,
+    "tty": "/dev/ttys034",
+    "independent_mode": true,
+    "sandbox": "read-only"
+  },
+  {
+    "at": "2026-10-27T18:01:10.245654+08:00",
+    "event": "status_identity",
+    "name": "A",
+    "has_explicit_identity": false,
+    "thread_hash": null,
+    "login_prompt": false,
+    "trust_prompt": false,
+    "output_chars": 829
+  },
+  {
+    "at": "2026-10-27T18:01:10.251573+08:00",
+    "event": "monitor_observation",
+    "case": "A_before_first_prompt",
+    "observations": [
+      {
+        "detected": true,
+        "hasThread": false,
+        "hasTitleExcerpt": false,
+        "isAlive": true,
+        "matchesExpected": true,
+        "pid": 51300,
+        "requiresRuntimeStatus": false,
+        "status": null,
+        "threadHash": null,
+        "tty": "/dev/ttys034"
+      }
+    ]
+  },
+  {
+    "at": "2026-10-27T18:01:45.992545+08:00",
+    "event": "first_rollout_unavailable",
+    "output_chars": 970,
+    "trust_prompt": false,
+    "login_prompt": false,
+    "contains_probe_prompt": true,
+    "contains_error": false
+  },
+  {
+    "at": "2026-10-27T18:01:45.993067+08:00",
+    "event": "test_stopped",
+    "reason": "测试进程未在截止时间内产生可核验的自有rollout，后续真实对话场景未执行",
+    "errno": null,
+    "os_reason": null,
+    "startup_errors": []
+  },
+  {
+    "at": "2026-10-27T18:01:46.095282+08:00",
+    "event": "cleaned_test_process",
+    "name": "A",
+    "pid": 51300
+  },
+  {
+    "at": "2026-10-27T18:01:46.097578+08:00",
+    "event": "protected_files_unchanged",
+    "checks": {
+      "CodexSessionMonitor.swift": true,
+      "config.toml": true,
+      "hooks.json": true
+    }
+  },
+  {
+    "at": "2026-10-27T18:01:46.135710+08:00",
+    "event": "isolated_test_home_removed",
+    "removed": true
+  }
+]
