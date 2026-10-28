@@ -607,9 +607,39 @@ class Bridge:
     async def monitor_focus(self):
         async with iterm2.FocusMonitor(self.connection) as monitor:
             while True:
-                await monitor.async_get_next_update()
-                self.clear_finished_status(self.current_active_session_id(), acknowledge_agent=False)
+                update = await monitor.async_get_next_update()
+                statuses_before_focus = dict(self.session_statuses)
+                await self.app.async_refresh_focus()
+                session_id = self.activated_session_id(update)
+                if session_id in statuses_before_focus:
+                    self.clear_finished_status(
+                        session_id, expected_status=statuses_before_focus[session_id]
+                    )
                 await self.publish_snapshot()
+
+    def activated_session_id(self, update):
+        # Losing focus or changing a background tab is not evidence of reading a result.
+        window = self.app.current_window
+        if not self.app.app_active or window is None or window.current_tab is None:
+            return None
+        session_id = self.current_active_session_id()
+        if update.application_active is not None:
+            # Preferences can activate iTerm2 without focusing a terminal window.
+            return None
+        if update.window_changed is not None:
+            change = update.window_changed
+            if (
+                change.window_id == window.window_id
+                and change.event == iterm2.FocusUpdateWindowChanged.Reason.TERMINAL_WINDOW_BECAME_KEY
+            ):
+                return session_id
+        if update.selected_tab_changed is not None:
+            if update.selected_tab_changed.tab_id == window.current_tab.tab_id:
+                return session_id
+        if update.active_session_changed is not None:
+            if update.active_session_changed.session_id == session_id:
+                return session_id
+        return None
 
     async def monitor_commands(self):
         while True:
