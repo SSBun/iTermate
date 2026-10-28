@@ -1,0 +1,932 @@
+Command line invocation:
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/xcodebuild -project /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj -scheme iTermate -configuration Debug -destination platform=macOS -derivedDataPath /tmp/itermate-default-reply-index-F5SViF/.build -clonedSourcePackagesDirPath /Users/caishilin/Desktop/personal/iTermate/.build/default-reply-packages -disableAutomaticPackageResolution build-for-testing
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  Sparkle: https://github.com/sparkle-project/Sparkle @ 2.9.4
+
+2026-10-27 16:51:41.432 xcodebuild[10349:1138173] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:macOS, arch:arm64, id:00008132-0016511C0CD9801C, name:My Mac }
+{ platform:macOS, arch:x86_64, id:00008132-0016511C0CD9801C, name:My Mac }
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (3 targets)
+    Target 'iTermateTests' in project 'iTermate'
+        ➜ Explicit dependency on target 'iTermate' in project 'iTermate'
+    Target 'iTermate' in project 'iTermate'
+        ➜ Explicit dependency on target 'Sparkle' in project 'Sparkle'
+    Target 'Sparkle' in project 'Sparkle' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: fccb1e557e3a7fc010c71654080b92fd
+Build description path: /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/XCBuildData/fccb1e557e3a7fc010c71654080b92fd.xcbuilddata
+ClangStatCache /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk /tmp/itermate-default-reply-index-F5SViF/.build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+    cd /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -o /tmp/itermate-default-reply-index-F5SViF/.build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache
+
+CreateBuildDirectory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products
+    cd /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products
+
+CreateBuildDirectory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex
+    cd /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex
+
+CreateBuildDirectory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug
+    cd /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug
+
+CreateBuildDirectory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+    cd /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate-0c11025b443859bc9d9b166c9f525db8-VFS/all-product-headers.yaml
+    cd /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate-0c11025b443859bc9d9b166c9f525db8-VFS/all-product-headers.yaml
+
+CreateBuildDirectory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/ExplicitPrecompiledModules
+    cd /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/ExplicitPrecompiledModules
+
+CreateBuildDirectory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug
+    cd /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug
+
+CreateBuildDirectory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/PackageFrameworks
+    cd /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj
+    builtin-create-build-directory /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/PackageFrameworks
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-own-target-headers.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-own-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-project-headers.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-project-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-target-headers.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyMetadataFileList (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyMetadataFileList
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-generated-files.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-generated-files.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyStaticMetadataFileList (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/empty-iTermateTests.plist (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/empty-iTermateTests.plist
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-non-framework-target-headers.hmap (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_const_extract_protocols.json (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_const_extract_protocols.json
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftConstValuesFileList (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.LinkFileList (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.LinkFileList
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-OutputFileMap.json (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-OutputFileMap.json
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest
+
+ProcessXCFramework /Users/caishilin/Desktop/personal/iTermate/.build/default-reply-packages/artifacts/sparkle/Sparkle/Sparkle.xcframework /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/Sparkle.framework macos
+    cd /tmp/itermate-default-reply-index-F5SViF/iTermate.xcodeproj
+    builtin-process-xcframework --xcframework /Users/caishilin/Desktop/personal/iTermate/.build/default-reply-packages/artifacts/sparkle/Sparkle/Sparkle.xcframework --platform macos --target-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-non-framework-target-headers.hmap (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-non-framework-target-headers.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyStaticMetadataFileList (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyStaticMetadataFileList
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.hmap (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.hmap
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibPath-normal-arm64.txt (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibPath-normal-arm64.txt
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyMetadataFileList (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyMetadataFileList
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibInstallName-normal-arm64.txt (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibInstallName-normal-arm64.txt
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftConstValuesFileList (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftConstValuesFileList
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.LinkFileList (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.LinkFileList
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json
+
+WriteAuxiliaryFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/Entitlements.plist (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    write-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/Entitlements.plist
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app
+
+ProcessProductPackaging "" /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Entitlements:
+    
+    {
+    "com.apple.security.get-task-allow" = 1;
+}
+    
+    builtin-productPackagingUtility -entitlements -format xml -o /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent
+
+ProcessProductPackagingDER /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent.der (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /usr/bin/derq query -f xml -i /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent -o /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent.der --raw
+
+Ld /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib normal (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -dynamiclib -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -F/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -install_name @rpath/iTermate.debug.dylib -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat -Xlinker -no_adhoc_codesign -o /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/unthinned (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/unthinned
+
+MkDir /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /bin/mkdir -p /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned
+
+CpResource /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermateBridge.py /tmp/itermate-default-reply-index-F5SViF/iTermateBridge/iTermateBridge.py (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /tmp/itermate-default-reply-index-F5SViF/iTermateBridge/iTermateBridge.py /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate-laya.py /tmp/itermate-default-reply-index-F5SViF/integrations/laya/iTermate-laya.py (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /tmp/itermate-default-reply-index-F5SViF/integrations/laya/iTermate-laya.py /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+GenerateAssetSymbols /tmp/itermate-default-reply-index-F5SViF/iTermate/Assets.xcassets (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/actool /tmp/itermate-default-reply-index-F5SViF/iTermate/Assets.xcassets --compile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources --output-format human-readable-text --notices --warnings --export-dependency-info /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies --output-partial-info-plist /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist --app-icon AppIcon --enable-on-demand-resources NO --development-region en --target-device mac --minimum-deployment-target 13.0 --platform macosx --bundle-identifier com.caishilin.iTermate --generate-swift-asset-symbol-extensions NO --generate-swift-asset-symbols /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift --generate-objc-asset-symbols /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.h --generate-asset-symbol-index /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/* com.apple.actool.compilation-results */
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols-Index.plist
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.h
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift
+
+
+CpResource /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources/iTermate-integration.ts /tmp/itermate-default-reply-index-F5SViF/integrations/pi/iTermate-integration.ts (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /tmp/itermate-default-reply-index-F5SViF/integrations/pi/iTermate-integration.ts /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+CpResource /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources/agent-connection-prompt.md /tmp/itermate-default-reply-index-F5SViF/integrations/laya/agent-connection-prompt.md (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks /tmp/itermate-default-reply-index-F5SViF/integrations/laya/agent-connection-prompt.md /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestSwiftSupport.dylib /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestBundleInject.dylib /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libXCTestBundleInject.dylib (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libXCTestBundleInject.dylib /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUnit.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCUnit.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCUnit.framework /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUIAutomation.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/XCUIAutomation.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/XCUIAutomation.framework /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestSupport.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTestSupport.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTestSupport.framework /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestCore.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTestCore.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTestCore.framework /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTest.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/XCTest.framework /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTAutomationSupport.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks/XCTAutomationSupport.framework /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Testing.framework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/Testing.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks/Testing.framework /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework /Users/caishilin/Desktop/personal/iTermate/.build/default-reply-packages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -exclude Headers -exclude PrivateHeaders -exclude Modules -exclude \*.tbd -resolve-src-symlinks -remove-static-executable /Users/caishilin/Desktop/personal/iTermate/.build/default-reply-packages/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks
+
+CompileAssetCatalogVariant thinned /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources /tmp/itermate-default-reply-index-F5SViF/iTermate/Assets.xcassets (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /Applications/Xcode-26.2.0.app/Contents/Developer/usr/bin/actool /tmp/itermate-default-reply-index-F5SViF/iTermate/Assets.xcassets --compile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned --output-format human-readable-text --notices --warnings --export-dependency-info /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies_thinned --output-partial-info-plist /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_thinned --app-icon AppIcon --enable-on-demand-resources NO --development-region en --target-device mac --minimum-deployment-target 13.0 --platform macosx
+/* com.apple.actool.compilation-results */
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_thinned
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned/AppIcon.icns
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned/Assets.car
+
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestSwiftSupport.dylib (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestSwiftSupport.dylib
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestSwiftSupport.dylib: replacing existing signature
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestBundleInject.dylib (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestBundleInject.dylib
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/libXCTestBundleInject.dylib: replacing existing signature
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUnit.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUnit.framework
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUnit.framework: replacing existing signature
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestSupport.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestSupport.framework
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestSupport.framework: replacing existing signature
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUIAutomation.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUIAutomation.framework
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCUIAutomation.framework: replacing existing signature
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestCore.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestCore.framework
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTestCore.framework: replacing existing signature
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTest.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTest.framework
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTest.framework: replacing existing signature
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTAutomationSupport.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTAutomationSupport.framework
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/XCTAutomationSupport.framework: replacing existing signature
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Testing.framework (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Testing.framework
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Testing.framework: replacing existing signature
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework/Versions/B (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --preserve-metadata\=identifier,entitlements,flags --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework/Versions/B
+/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework/Versions/B: replacing existing signature
+
+LinkAssetCatalog /tmp/itermate-default-reply-index-F5SViF/iTermate/Assets.xcassets (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-linkAssetCatalog --thinned /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/thinned --thinned-dependencies /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_thinned --unthinned /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_output/unthinned --unthinned-dependencies /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist_unthinned --output /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources --plist-output /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist
+note: Emplaced /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources/AppIcon.icns (in target 'iTermate' from project 'iTermate')
+note: Emplaced /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources/Assets.car (in target 'iTermate' from project 'iTermate')
+
+ProcessInfoPlistFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Info.plist /tmp/itermate-default-reply-index-F5SViF/iTermate/Info.plist (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-infoPlistUtility /tmp/itermate-default-reply-index-F5SViF/iTermate/Info.plist -producttype com.apple.product-type.application -genpkginfo /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PkgInfo -expandbuildsettings -platform macosx -additionalcontentfile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/assetcatalog_generated_info.plist -scanforprivacyfile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks/Sparkle.framework -o /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Info.plist
+
+SwiftDriver iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-SwiftDriver -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-default-reply-index-F5SViF/.build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -F /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/include -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /tmp/itermate-default-reply-index-F5SViF -experimental-emit-module-separately -disable-cmo
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_SwiftConcurrencyShims-3TBMHD1MHTMOIZZBU1974YUQ8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/DeveloperToolsSupport-E8WOTYRTJPVV3D7QK3D3479QW.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_Builtin_float-BCR6XS8LHBK3NAML51Q8ZVDK5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/SwiftShims-75539W1R8Z8EY9IUQW1TQN5BM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/ptrauth-A7UX8B2Q3HKF91IJ0FFAFPJ7T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/ptrcheck-DC552HM2RJ2F7XKS1F5A6GUPV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_Builtin_stdarg-E6S0S5LNT4BF0DMHZ2CIA8SVV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_AvailabilityInternal-EW479PAPRSUQ5K80VVB0OUWJI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_Builtin_stddef-3H9I7MNQZ0ZWWYA738TQZIV3X.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_Builtin_stdbool-CDOIVFT5C8Y188TB0GED7NVAJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_DarwinFoundation1-4ZB0WE4IC79BTW8WFHU47K04E.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_DarwinFoundation2-C9P6K2JDPMZZ64IT5VE1AQ96I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_Builtin_limits-46EEW6IT1EDXZL8SPZ6RF66DK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_Builtin_stdint-ACAGTYILMOPR7I2L5NGWRQ00K.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/sys_types-5OEZ37JDZ5K2OLRNIM7KVQHM1.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_Builtin_tgmath-DA427LRPN8QPSU2OS2UUZDQ2T.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_Builtin_intrinsics-AWG7N7LXAJ5KXUCAT1PLYKFFP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/libDER-20YOAYYS35CHBBP7264CA1TXA.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_DarwinFoundation3-B6NPWRA66NRSY5VOUIH2CW3EE.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/OpenGL-3AAUQSOD6VB54BOWGDVAB0C5O.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_Builtin_stdatomic-CU1EM3EU8ZII93TKYVBV7L3W2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/_Builtin_inttypes-3D7V9YTD8DITJ4NEW56FEGXW8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Darwin-1SSSGST3PHKUYOYYA3BEPOHRF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/simd-4DGFUA6QDAZKJ9XQQT63GZO1I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/libkern-1KW51P7NTYXADWG6IH7JYQKLB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/CUPS-59KITN812NU9ZQZEA1FB553TX.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/launch-931KMFUEHQ346OAJLMEHYO658.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/MachO-5NMDBJEJ39S2HSSY7GF10AWAD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/ObjectiveC-99HU4NL1X1GQWW062OFWI0BRB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Spatial-E6MUZFPGRPQ7OLTLHBKKSK3AR.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/os_object-81USW71ROXMSBCKANAOIMAG5M.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/os_workgroup-224EL5KT70LWL0UF0WXEYL29W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Dispatch-7539I8NUWE6DJ56PUR5CAVU6G.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/XPC-AI3V40TAXUOFIMJ16TH7NFBNP.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/dnssd-67K1EPY4PS6E3B8EYTHQEVW6L.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/CoreFoundation-EGZ06JNDD02T269YT9MR88F0W.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/os-4XUKXMS1M7AT9G8WIS55PTR5G.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/IOKit-C8L6L11AH9V10MAELVLO667WH.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Security-4NK0TAM93CGLK1E303VLTTIKK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/CFNetwork-DOV6809LVI1U4K6ZAKXQQ2I7G.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/ColorSync-E6XPY0BBHWX0EV3NLN4IJI1G5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/DiskArbitration-3U5L62E7WQLBKMEQ05FVCWAD.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/CoreGraphics-6YNKPNGP02KKOP7G3HSCNP8G5.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/CoreServices-5DCQFMXRN0DFGOB3IXCKR1N6K.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/ImageIO-3OSH9566VR9UM149X5ZYLYFP4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/CoreText-24ZPB206QTHK5CPPS7I5WS9ZB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Foundation-1ZGDTOPEX20D9XBOAP5O5B2YV.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/DataDetection-3I53BRS1DRVOT5NHQXHZNGCU7.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/UniformTypeIdentifiers-DD2WRDTTWJFXUZA8DTMQH08FM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/LocalAuthentication-2H7LM7Z6GMJ9OSAO4QXQ4ZY7F.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/IOSurface-4CCAQ9Q48PNWP42A80UELCDJM.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/CoreTransferable-BXCXAU52VJ258JIBIZ8C5GFIF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/OSLog-2XA89C0MI615FE5FPZB0MV1AF.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Network-8SUZ67J7QQ41Y7GDAEMVW4897.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/ApplicationServices-EWARVWG0EBSEGCL6EGSA1YEHI.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/ServiceManagement-EZH99T1SMIPRQRCHHTBQHV3Q2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/UserNotifications-A8N2Q6JIP4IAYG8Q2JQ20OQMY.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/CoreData-5JT5UB308HM5CQO8J7QK8ZG8H.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/Sparkle-F417JV4OU8GHQIMXR06WOKSX4.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Symbols-5PZGGUKZK4TKBOTNDMR5S9TGJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Accessibility-1MNJ18J88FACGS8Z4H16FLHRT.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Metal-312FI4IT37L9AGVBBRA9TDIK.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Carbon-6PF2K24DM2FSMVTNM6S6MEOUB.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/CoreVideo-9OYU4TVJSEJLP7NPYWHOPN6O2.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/CoreImage-77QUZ8TDYRUAOC8TWN2GCPGY8.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/QuartzCore-ASJUFC5HBELO20E7YII98NWPO.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/SwiftUICore-AOOTHR5U0HF0AC39BW1H6RLWJ.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/AppKit-91DCB1NVF7DUCVH6BHQ5VX46I.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/SwiftUI-5S44EXA5I9WSUNP1GGT2GNDT1.pcm
+
+SwiftCompile normal arm64 Compiling\ iTermateApp.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ iTermate (in target 'iTermate' from project 'iTermate')
+
+EmitSwiftModule normal arm64 (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ PiSessionArchives.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ CodexSessionMonitor.swift,\ CodexTitleDiagnostics.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/CodexSessionMonitor.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/CodexTitleDiagnostics.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/CodexSessionMonitor.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/CodexTitleDiagnostics.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ LocalModelService.swift,\ PanelLayout.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/LocalModelService.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/PanelLayout.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/LocalModelService.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/PanelLayout.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ VenomDebugMonitor.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/VenomDebugMonitor.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/VenomDebugMonitor.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ GeneratedAssetSymbols.swift /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ SettingsViews.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ FinishedSessionShortcut.swift,\ ItermBridge.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/FinishedSessionShortcut.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/ItermBridge.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/FinishedSessionShortcut.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/ItermBridge.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ SessionNotifications.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ AgentIntegrations.swift,\ CodexAppServerClient.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/AgentIntegrations.swift /tmp/itermate-default-reply-index-F5SViF/iTermate/CodexAppServerClient.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/AgentIntegrations.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermate/CodexAppServerClient.swift (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for iTermate (in target 'iTermate' from project 'iTermate')
+
+SwiftDriver\ Compilation\ Requirements iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-default-reply-index-F5SViF/.build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -F /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/include -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /tmp/itermate-default-reply-index-F5SViF -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling VenomDebugMonitor.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftMergeGeneratedHeaders /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/iTermate-Swift.h /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-swiftHeaderTool -arch arm64 /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -o /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/iTermate-Swift.h
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftmodule /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftmodule
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftdoc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftdoc (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftdoc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.swiftdoc
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.abi.json /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.abi.json (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.abi.json /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.swiftmodule/arm64-apple-macos.abi.json
+
+SwiftDriverJobDiscovery normal arm64 Compiling CodexSessionMonitor.swift, CodexTitleDiagnostics.swift (in target 'iTermate' from project 'iTermate')
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftsourceinfo (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftsourceinfo /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo
+
+SwiftDriver iTermateTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-SwiftDriver -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermateTests -Onone -enforce-exclusivity\=checked @/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList -DDEBUG -plugin-path /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-default-reply-index-F5SViF/.build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -Isystem /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib -F /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -F /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-generated-files.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-own-target-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-project-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/include -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-Swift.h -working-directory /tmp/itermate-default-reply-index-F5SViF -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling SessionNotifications.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCUIAutomation-1UZ8FFCWJEOEK923ONSO6XW5Q.pcm
+
+SwiftExplicitDependencyGeneratePcm arm64 /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCTest-C7H3FLVB0PZGNCWTCKCAOQMCZ.pcm
+
+SwiftExplicitDependencyCompileModuleFromInterface arm64 /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCUIAutomation-2OM1KQABSFFNF.swiftmodule
+
+SwiftExplicitDependencyCompileModuleFromInterface arm64 /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules/XCTest-1DVXWIS8OU837.swiftmodule
+
+SwiftCompile normal arm64 Compiling\ PanelLayoutTests.swift /tmp/itermate-default-reply-index-F5SViF/iTermateTests/PanelLayoutTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermateTests/PanelLayoutTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ PiStatusRecoveryTests.swift /tmp/itermate-default-reply-index-F5SViF/iTermateTests/PiStatusRecoveryTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermateTests/PiStatusRecoveryTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ iTermateTests (in target 'iTermateTests' from project 'iTermate')
+
+EmitSwiftModule normal arm64 (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ CodexSessionMonitorTests.swift /tmp/itermate-default-reply-index-F5SViF/iTermateTests/CodexSessionMonitorTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermateTests/CodexSessionMonitorTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling AgentIntegrations.swift, CodexAppServerClient.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 Compiling\ FinishedSessionShortcutTests.swift /tmp/itermate-default-reply-index-F5SViF/iTermateTests/FinishedSessionShortcutTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermateTests/FinishedSessionShortcutTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftDriverJobDiscovery normal arm64 Emitting module for iTermateTests (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriver\ Compilation\ Requirements iTermateTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-Swift-Compilation-Requirements -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermateTests -Onone -enforce-exclusivity\=checked @/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList -DDEBUG -plugin-path /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-default-reply-index-F5SViF/.build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -Isystem /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib -F /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -F /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-generated-files.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-own-target-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-project-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/include -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-Swift.h -working-directory /tmp/itermate-default-reply-index-F5SViF -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling GeneratedAssetSymbols.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftCompile normal arm64 Compiling\ AgentIntegrationManagerTests.swift /tmp/itermate-default-reply-index-F5SViF/iTermateTests/AgentIntegrationManagerTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermateTests/AgentIntegrationManagerTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling LocalModelService.swift, PanelLayout.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftMergeGeneratedHeaders /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources/iTermateTests-Swift.h /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-Swift.h (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-swiftHeaderTool -arch arm64 /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-Swift.h -o /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources/iTermateTests-Swift.h
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.swiftmodule /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.swiftmodule
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.swiftdoc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftdoc (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftdoc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.swiftdoc
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.abi.json /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.abi.json (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.abi.json /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermateTests.swiftmodule/arm64-apple-macos.abi.json
+
+Copy /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermateTests.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftsourceinfo (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-copy -exclude .DS_Store -exclude CVS -exclude .svn -exclude .git -exclude .hg -resolve-src-symlinks -rename /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftsourceinfo /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermateTests.swiftmodule/Project/arm64-apple-macos.swiftsourceinfo
+
+SwiftCompile normal arm64 Compiling\ LocalModelExitBarrierTests.swift /tmp/itermate-default-reply-index-F5SViF/iTermateTests/LocalModelExitBarrierTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermateTests/LocalModelExitBarrierTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ CodexAppServerClientTests.swift /tmp/itermate-default-reply-index-F5SViF/iTermateTests/CodexAppServerClientTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermateTests/CodexAppServerClientTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling PiStatusRecoveryTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 Compiling\ PiSessionArchiveTests.swift /tmp/itermate-default-reply-index-F5SViF/iTermateTests/PiSessionArchiveTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermateTests/PiSessionArchiveTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling FinishedSessionShortcutTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling AgentIntegrationManagerTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 Compiling\ ItermBridgeTests.swift /tmp/itermate-default-reply-index-F5SViF/iTermateTests/ItermBridgeTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermateTests/ItermBridgeTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftCompile normal arm64 Compiling\ SessionNotificationTests.swift /tmp/itermate-default-reply-index-F5SViF/iTermateTests/SessionNotificationTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftCompile normal arm64 /tmp/itermate-default-reply-index-F5SViF/iTermateTests/SessionNotificationTests.swift (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling LocalModelExitBarrierTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling PanelLayoutTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling SessionNotificationTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling CodexAppServerClientTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling PiSessionArchiveTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling PiSessionArchives.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling SettingsViews.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling CodexSessionMonitorTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling FinishedSessionShortcut.swift, ItermBridge.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriverJobDiscovery normal arm64 Compiling ItermBridgeTests.swift (in target 'iTermateTests' from project 'iTermate')
+
+SwiftDriver\ Compilation iTermateTests normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-Swift-Compilation -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermateTests -Onone -enforce-exclusivity\=checked @/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList -DDEBUG -plugin-path /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-default-reply-index-F5SViF/.build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -Isystem /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib -F /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -F /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-generated-files.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-own-target-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests-project-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/include -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-Swift.h -working-directory /tmp/itermate-default-reply-index-F5SViF -experimental-emit-module-separately -disable-cmo
+
+SwiftDriverJobDiscovery normal arm64 Compiling iTermateApp.swift (in target 'iTermate' from project 'iTermate')
+
+SwiftDriver\ Compilation iTermate normal arm64 com.apple.xcode.tools.swift.compiler (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-Swift-Compilation -- /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name iTermate -Onone -enforce-exclusivity\=checked @/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList -DDEBUG -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -target arm64-apple-macos13.0 -g -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -profile-coverage-mapping -profile-generate -enable-testing -index-store-path /tmp/itermate-default-reply-index-F5SViF/.build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -F /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -c -j10 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/SDKStatCaches.noindex/macosx26.2-25C57-8e261bc56bcf93cdf4ad792911627a89.sdkstatcache -output-file-map /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -sdk-module-cache-path /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/itermate-default-reply-index-F5SViF/.build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-generated-files.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-own-target-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-all-target-headers.hmap -Xcc -iquote -Xcc /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-project-headers.hmap -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/include -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources-normal/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources/arm64 -Xcc -I/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-Swift.h -working-directory /tmp/itermate-default-reply-index-F5SViF -experimental-emit-module-separately -disable-cmo
+
+Ld /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib normal (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -dynamiclib -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -L/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -F/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -F/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -filelist /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.LinkFileList -install_name @rpath/iTermate.debug.dylib -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @executable_path/../Frameworks -Xlinker -object_path_lto -Xlinker /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat -fobjc-link-runtime -fprofile-instr-generate -L/Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.swiftmodule @/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate-linker-args.resp -Xlinker -alias -Xlinker _main -Xlinker ___debug_main_executable_dylib_entry_point -framework Sparkle -Xlinker -no_adhoc_codesign -o /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib
+
+ConstructStubExecutorLinkFileList /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    construct-stub-executor-link-file-list /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libPreviewsJITStubExecutor_no_swift_entry_point.a /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libPreviewsJITStubExecutor.a --output /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt
+note: Using stub executor library with Swift entry point. (in target 'iTermate' from project 'iTermate')
+
+Ld /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate normal (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -F/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -Xlinker -rpath -Xlinker @executable_path -Xlinker -rpath -Xlinker @executable_path/../Frameworks -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -e ___debug_blank_executor_main -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_dylib -Xlinker /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibPath-normal-arm64.txt -Xlinker -sectcreate -Xlinker __TEXT -Xlinker __debug_instlnm -Xlinker /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-DebugDylibInstallName-normal-arm64.txt -Xlinker -filelist -Xlinker /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate-ExecutorLinkFileList-normal-arm64.txt /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib -Xlinker -no_adhoc_codesign -o /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate
+
+CopySwiftLibs /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib --scan-folder /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks --scan-folder /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns --scan-folder /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Library/SystemExtensions --scan-folder /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Extensions --platform macosx --toolchain /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+
+ExtractAppIntentsMetadata (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name iTermate --sdk-root /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk --xcode-version 17C52 --platform-family macOS --deployment-target 13.0 --bundle-identifier com.caishilin.iTermate --output /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/Resources --target-triple arm64-apple-macos13.0 --binary-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate --dependency-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate_dependency_info.dat --stringsdata-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftFileList --metadata-file-list /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyMetadataFileList --static-metadata-file-list /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/Objects-normal/arm64/iTermate.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-27 16:51:56.697 appintentsmetadataprocessor[11261:1140191] Starting appintentsmetadataprocessor export
+2026-10-27 16:51:56.699 appintentsmetadataprocessor[11261:1140191] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+ProcessInfoPlistFile /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Info.plist /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/empty-iTermateTests.plist (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-infoPlistUtility /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/empty-iTermateTests.plist -producttype com.apple.product-type.bundle.unit-test -expandbuildsettings -platform macosx -o /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Info.plist
+
+Ld /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS/iTermateTests normal (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -Xlinker -reproducible -target arm64-apple-macos13.0 -bundle -isysroot /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk -O0 -L/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -L/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -L/Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib -F/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/EagerLinkingTBDs/Debug -F/tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug -iframework /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks -filelist /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.LinkFileList -Xlinker -rpath -Xlinker /usr/lib/swift -Xlinker -rpath -Xlinker @loader_path/../Frameworks -Xlinker -rpath -Xlinker @executable_path/../Frameworks -bundle_loader /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate -Xlinker -object_path_lto -Xlinker /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_lto.o -rdynamic -Xlinker -no_deduplicate -Xlinker -debug_variant -Xlinker -dependency_info -Xlinker /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_dependency_info.dat -fobjc-link-runtime -fprofile-instr-generate -L/Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx -L/usr/lib/swift -Xlinker -add_ast_path -Xlinker /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.swiftmodule @/tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests-linker-args.resp -Xlinker -needed_framework -Xlinker XCTest -framework XCTest -Xlinker -needed-lXCTestSwiftSupport -lXCTestSwiftSupport /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib -Xlinker -no_adhoc_codesign -o /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS/iTermateTests
+ld: warning: building for macOS-13.0, but linking with dylib '@rpath/XCTest.framework/Versions/A/XCTest' which was built for newer version 14.0
+ld: warning: building for macOS-13.0, but linking with dylib '@rpath/libXCTestSwiftSupport.dylib' which was built for newer version 14.0
+
+CopySwiftLibs /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS/iTermateTests --scan-folder /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Frameworks --scan-folder /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/PlugIns --scan-folder /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Library/SystemExtensions --scan-folder /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Extensions --platform macosx --toolchain /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Frameworks --strip-bitcode --scan-executable /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib/libXCTestSwiftSupport.dylib --strip-bitcode-tool /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+
+ExtractAppIntentsMetadata (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsmetadataprocessor --toolchain-dir /Applications/Xcode-26.2.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --module-name iTermateTests --sdk-root /Applications/Xcode-26.2.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk --xcode-version 17C52 --platform-family macOS --deployment-target 13.0 --bundle-identifier com.caishilin.iTermateTests --output /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/Resources --target-triple arm64-apple-macos13.0 --binary-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest/Contents/MacOS/iTermateTests --dependency-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests_dependency_info.dat --stringsdata-file /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/ExtractedAppShortcutsMetadata.stringsdata --source-file-list /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftFileList --metadata-file-list /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyMetadataFileList --static-metadata-file-list /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/iTermateTests.DependencyStaticMetadataFileList --swift-const-vals-list /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermateTests.build/Objects-normal/arm64/iTermateTests.SwiftConstValuesFileList --compile-time-extraction --deployment-aware-processing --validate-assistant-intents --no-app-shortcuts-localization
+2026-10-27 16:51:56.992 appintentsmetadataprocessor[11280:1140227] Starting appintentsmetadataprocessor export
+2026-10-27 16:51:56.993 appintentsmetadataprocessor[11280:1140227] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest
+
+RegisterExecutionPolicyException /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-RegisterExecutionPolicyException /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest
+
+Touch /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest (in target 'iTermateTests' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /usr/bin/touch -c /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/PlugIns/iTermateTests.xctest
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/iTermate.debug.dylib
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --timestamp\=none --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app/Contents/MacOS/__preview.dylib
+
+CodeSign /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    
+    Signing Identity:     "Sign to Run Locally"
+    
+    /usr/bin/codesign --force --sign - --entitlements /tmp/itermate-default-reply-index-F5SViF/.build/Build/Intermediates.noindex/iTermate.build/Debug/iTermate.build/iTermate.app.xcent --timestamp\=none --generate-entitlement-der /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app
+
+RegisterExecutionPolicyException /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-RegisterExecutionPolicyException /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app
+
+Validate /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    builtin-validationUtility /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app -no-validate-extension -infoplist-subpath Contents/Info.plist
+
+Touch /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /usr/bin/touch -c /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app
+
+RegisterWithLaunchServices /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app (in target 'iTermate' from project 'iTermate')
+    cd /tmp/itermate-default-reply-index-F5SViF
+    /System/Library/Frameworks/CoreServices.framework/Versions/Current/Frameworks/LaunchServices.framework/Versions/Current/Support/lsregister -f -R -trusted /tmp/itermate-default-reply-index-F5SViF/.build/Build/Products/Debug/iTermate.app
+
+** TEST BUILD SUCCEEDED ** [15.849 sec]
+
