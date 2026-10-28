@@ -98,20 +98,10 @@ final class CodexSessionMonitor: @unchecked Sendable {
         let nextScan: UInt64
     }
 
-    private enum MatchSource: Int {
-        case directory = 1
-        case resumeArgument = 2
-        case openFile = 3
-        case terminalTitle = 4
-    }
-
     private struct Match {
         let rollout: Rollout
         let sessionID: String
-        let source: MatchSource
-        var distance: TimeInterval = 0
-        var retained = false
-        var requiresRuntimeStatus = true
+        let requiresRuntimeStatus = true
     }
 
     private struct Parser {
@@ -224,7 +214,6 @@ final class CodexSessionMonitor: @unchecked Sendable {
     private var observationByProcess: [ProcessIdentity: CodexSessionObservation] = [:]
     private var missedScansByProcess: [ProcessIdentity: Int] = [:]
     private var ttyByProcess: [ProcessIdentity: String] = [:]
-    private var terminalTitleProcesses: Set<ProcessIdentity> = []
     private var terminalPrefixesByProcess: [ProcessIdentity: String] = [:]
     private var rolloutURLsForScan: [URL]?
 
@@ -323,6 +312,14 @@ final class CodexSessionMonitor: @unchecked Sendable {
         retain(identities: retained)
     }
 
+    /// Rechecks the foreground CLI generation before applying an asynchronous daemon result.
+    func isCurrentProcess(_ identity: ProcessIdentity, on tty: String) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        let processes = processProvider?([tty]) ?? codexProcess(on: tty).map { [$0] } ?? []
+        return processes.contains { $0.tty == tty && $0.identity == identity }
+    }
+
     /// Reads visible messages only from the daemon's path for an explicitly bound thread.
     func titleExcerpt(at path: String, threadID: String, process: ProcessIdentity) -> String? {
         lock.lock()
@@ -353,7 +350,6 @@ final class CodexSessionMonitor: @unchecked Sendable {
         observationByProcess = observationByProcess.filter { identities.contains($0.key) }
         missedScansByProcess = missedScansByProcess.filter { identities.contains($0.key) }
         ttyByProcess = ttyByProcess.filter { identities.contains($0.key) }
-        terminalTitleProcesses.formIntersection(identities)
         terminalPrefixesByProcess = terminalPrefixesByProcess.filter { identities.contains($0.key) }
         let rollouts = Set(matchesByProcess.values.map(\.rollout)).union(boundRolloutByProcess.values)
         readers = readers.filter { rollouts.contains($0.key) }
@@ -441,7 +437,6 @@ final class CodexSessionMonitor: @unchecked Sendable {
             let prefix = terminalThreadPrefixes[process.tty]
             let prefixChanged = prefix != terminalPrefixesByProcess[process.identity]
             terminalPrefixesByProcess[process.identity] = prefix
-            if prefix != nil { terminalTitleProcesses.insert(process.identity) }
             guard matchesByProcess[process.identity] != nil
                 || prefixChanged || scanNumber >= (retries[process.identity]?.nextScan ?? 0) else { continue }
             attempted.insert(process.identity)
@@ -451,18 +446,7 @@ final class CodexSessionMonitor: @unchecked Sendable {
             groups[entry.value.sessionID, default: []].append(entry.key)
         }
         for identities in groups.values where identities.count > 1 {
-            let ranked = identities.sorted {
-                guard let lhs = proposed[$0], let rhs = proposed[$1] else { return false }
-                if lhs.source != rhs.source { return lhs.source.rawValue > rhs.source.rawValue }
-                if lhs.source == .directory, lhs.retained != rhs.retained { return lhs.retained }
-                return lhs.distance < rhs.distance
-            }
-            guard let first = ranked.first, let second = ranked.dropFirst().first,
-                  let best = proposed[first], let next = proposed[second] else { continue }
-            let unambiguous = best.source.rawValue > next.source.rawValue
-                || (best.source == .directory
-                    && ((best.retained && !next.retained) || best.distance + 1 < next.distance))
-            for identity in identities where !unambiguous || identity != first {
+            for identity in identities {
                 proposed[identity] = nil
                 conflicted.insert(identity)
             }
@@ -482,71 +466,21 @@ final class CodexSessionMonitor: @unchecked Sendable {
     }
 
     private func resolveMatch(for process: CodexProcess, terminalThreadPrefix: String?) -> Match? {
-        let rollouts: [Rollout]
-        if let rolloutProvider {
-            rollouts = rolloutProvider(process).compactMap(rollout(at:))
-        } else {
-            rollouts = openedRollouts(for: process)
-        }
-        let opened = Set(rollouts).compactMap { match(rollout: $0, source: .openFile) }
-        if let prefix = terminalThreadPrefix?.lowercased() {
-            let fullID = UUID(uuidString: prefix)?.uuidString.lowercased() == prefix
-            let shortenedID = prefix.range(
-                of: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{5}$",
-                options: .regularExpression
-            ) != nil
-            guard fullID || shortenedID else { return nil }
-            let candidates = (sessionsDirectory.map { rolloutFiles(in: $0, sessionID: prefix) } ?? rollouts)
-                .compactMap { match(rollout: $0, source: .terminalTitle) }
-                .filter { $0.sessionID.hasPrefix(prefix) }
-            guard candidates.count == 1, var resolved = candidates.first else { return nil }
-            let matchingOpened = opened.filter { $0.sessionID == resolved.sessionID }
-            if matchingOpened.count == 1, let owned = matchingOpened.first {
-                resolved = Match(rollout: owned.rollout, sessionID: owned.sessionID,
-                                 source: .terminalTitle, requiresRuntimeStatus: false)
-            }
-            return resolved
-        }
-        // The current title also constrains descriptors that may remain open after a thread switch.
-        guard !terminalTitleProcesses.contains(process.identity) else { return nil }
-        if !opened.isEmpty { return opened.count == 1 ? opened.first : nil }
-        guard let sessionsDirectory else { return nil }
-        if var previous = matchesByProcess[process.identity], previous.source != .openFile,
-           rollout(at: previous.rollout.url) == previous.rollout,
-           match(rollout: previous.rollout, source: previous.source)?.sessionID == previous.sessionID {
-            previous.retained = true
-            return previous
-        }
-        if let resumeIndex = process.arguments.firstIndex(of: "resume"),
-           let sessionID = process.arguments.dropFirst(resumeIndex + 1).compactMap(UUID.init(uuidString:)).first {
-            let candidates = rolloutFiles(in: sessionsDirectory, sessionID: sessionID.uuidString)
-                .compactMap { match(rollout: $0, source: .resumeArgument) }
-                .filter { $0.sessionID == sessionID.uuidString.lowercased() }
-            return candidates.count == 1 ? candidates.first : nil
-        }
-        // shortcut: cwd/start time is a bounded compatibility signal; replace it when Codex exposes terminal ownership.
-        let candidates = rolloutFiles(near: process.identity.startedAt, in: sessionsDirectory)
-            .compactMap { rollout -> Match? in
-                guard var candidate = match(rollout: rollout, source: .directory),
-                      let metadata = metadataByRollout[rollout], let cwd = metadata.payload.cwd,
-                      URL(fileURLWithPath: cwd).standardizedFileURL.resolvingSymlinksInPath().path
-                        == URL(fileURLWithPath: process.cwd).standardizedFileURL.resolvingSymlinksInPath().path,
-                      let startedAt = Self.timestamp(metadata.timestamp) else { return nil }
-                candidate.distance = abs(startedAt - process.identity.startedAt)
-                return candidate.distance <= 30 ? candidate : nil
-            }.sorted { $0.distance < $1.distance }
-        guard let first = candidates.first,
-              candidates.count == 1 || first.distance + 1 < candidates[1].distance else { return nil }
-        return first
+        guard let prefix = terminalThreadPrefix, CodexAppServerClient.isValidThreadPrefix(prefix) else { return nil }
+        // Files provide optional lifecycle/title evidence, never the authority for automatic identity.
+        let rollouts = sessionsDirectory.map { rolloutFiles(in: $0, sessionID: prefix) }
+            ?? (rolloutProvider?(process) ?? []).compactMap(rollout(at:))
+        let candidates = Set(rollouts).compactMap { match(rollout: $0) }
+            .filter { $0.sessionID.hasPrefix(prefix) }
+        return candidates.count == 1 ? candidates.first : nil
     }
 
-    private func match(rollout: Rollout, source: MatchSource) -> Match? {
+    private func match(rollout: Rollout) -> Match? {
         guard let metadata = sessionMetadata(at: rollout),
               metadata.type == "session_meta", metadata.payload.source == .root,
               let sessionID = UUID(uuidString: metadata.payload.id) else { return nil }
         metadataByRollout[rollout] = metadata
-        return Match(rollout: rollout, sessionID: sessionID.uuidString.lowercased(), source: source,
-                     requiresRuntimeStatus: source != .openFile)
+        return Match(rollout: rollout, sessionID: sessionID.uuidString.lowercased())
     }
 
     private func rollout(at url: URL) -> Rollout? {
@@ -555,20 +489,6 @@ final class CodexSessionMonitor: @unchecked Sendable {
         guard lstat(url.path, &attributes) == 0,
               attributes.st_mode & S_IFMT == S_IFREG, attributes.st_uid == geteuid() else { return nil }
         return Rollout(url: url, identity: FileIdentity(attributes))
-    }
-
-    private func rolloutFiles(near timestamp: TimeInterval, in directory: URL) -> [Rollout] {
-        let calendar = Calendar(identifier: .gregorian)
-        let date = Date(timeIntervalSince1970: timestamp)
-        return (-1...1).flatMap { offset -> [Rollout] in
-            guard let day = calendar.date(byAdding: .day, value: offset, to: date) else { return [] }
-            let components = calendar.dateComponents([.year, .month, .day], from: day)
-            guard let year = components.year, let month = components.month, let day = components.day else { return [] }
-            let dayDirectory = directory.appendingPathComponent(String(format: "%04d/%02d/%02d", year, month, day))
-            return ((try? FileManager.default.contentsOfDirectory(
-                at: dayDirectory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]
-            )) ?? []).compactMap(rollout(at:))
-        }
     }
 
     private func rolloutFiles(in directory: URL, sessionID: String) -> [Rollout] {
@@ -586,43 +506,6 @@ final class CodexSessionMonitor: @unchecked Sendable {
             guard url.lastPathComponent.lowercased().contains(sessionID.lowercased()) else { return nil }
             return rollout(at: url)
         }
-    }
-
-    private func openedRollouts(for process: CodexProcess) -> [Rollout] {
-        let pid = process.identity.pid
-        guard let before = processInfo(pid), Self.identity(of: before) == process.identity else {
-            return []
-        }
-        let required = proc_pidinfo(pid, PROC_PIDLISTFDS, 0, nil, 0)
-        let itemSize = MemoryLayout<proc_fdinfo>.size
-        guard required > 0, required < 1_048_576 else { return [] }
-        var descriptors = [proc_fdinfo](repeating: proc_fdinfo(), count: Int(required) / itemSize + 16)
-        let capacity = descriptors.count * itemSize
-        let bytes = descriptors.withUnsafeMutableBytes {
-            proc_pidinfo(pid, PROC_PIDLISTFDS, 0, $0.baseAddress, Int32(capacity))
-        }
-        guard bytes > 0, bytes < capacity, Int(bytes) % itemSize == 0 else { return [] }
-        var rollouts: [Rollout] = []
-        for descriptor in descriptors.prefix(Int(bytes) / itemSize)
-        where descriptor.proc_fdtype == PROX_FDTYPE_VNODE {
-            var info = vnode_fdinfowithpath()
-            let size = MemoryLayout<vnode_fdinfowithpath>.size
-            guard proc_pidfdinfo(pid, descriptor.proc_fd, PROC_PIDFDVNODEPATHINFO, &info, Int32(size)) == size,
-                  info.pfi.fi_openflags & UInt32(FWRITE) != 0 else { continue }
-            let path = withUnsafePointer(to: &info.pvip.vip_path) {
-                $0.withMemoryRebound(to: CChar.self, capacity: Int(MAXPATHLEN)) { String(cString: $0) }
-            }
-            let url = URL(fileURLWithPath: path)
-            guard url.lastPathComponent.hasPrefix("rollout-"), url.pathExtension == "jsonl" else { continue }
-            var attributes = stat()
-            guard stat(path, &attributes) == 0,
-                  attributes.st_mode & S_IFMT == S_IFREG,
-                  attributes.st_dev == info.pvip.vip_vi.vi_stat.vst_dev,
-                  attributes.st_ino == info.pvip.vip_vi.vi_stat.vst_ino else { continue }
-            rollouts.append(Rollout(url: url, identity: FileIdentity(attributes)))
-        }
-        guard let after = processInfo(pid), sameProcess(before, after) else { return [] }
-        return rollouts
     }
 
     private func observation(at rollout: Rollout) -> CodexSessionObservation? {

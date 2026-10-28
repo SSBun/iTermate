@@ -305,13 +305,25 @@ struct AgentSettingsView: View {
     private func row(for agent: CodingAgent) -> some View {
         if agent == .codex {
             return AnyView(
-                LabeledContent {
-                    Text("Automatic")
-                        .foregroundStyle(.secondary)
-                } label: {
-                    Label(agent.rawValue, systemImage: agent.symbolName)
+                VStack(alignment: .leading, spacing: 8) {
+                    LabeledContent {
+                        Text("Automatic")
+                            .foregroundStyle(.secondary)
+                    } label: {
+                        Label(agent.rawValue, systemImage: agent.symbolName)
+                    }
+                    DisclosureGroup("Precise Conversation Binding") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Merge this setting into the existing [tui] section of your Codex configuration, preserving other settings. iTermate does not edit the configuration.")
+                            Text("[tui]\nterminal_title = [\"app-name\", \"thread-id\"]")
+                                .font(.system(.body, design: .monospaced))
+                                .textSelection(.enabled)
+                            Text("Applies to newly opened Codex sessions. Use the configuration file, not a -c override, to keep the shared daemon. Without a unique native title identity, the session stays unbound.")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
-                .help("Monitored automatically when you run the original codex command")
+                .help("Uses the original codex command and its native thread title; no hooks or launcher required")
             )
         }
         return AnyView(Toggle(

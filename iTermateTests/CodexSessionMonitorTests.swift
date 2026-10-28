@@ -66,7 +66,7 @@ final class CodexSessionMonitorTests: XCTestCase {
         return file
     }
 
-    func testSharedDaemonSessionAutomaticallyMatchesDirectoryAndStartupTime() throws {
+    func testDirectoryAndStartupTimeCannotEstablishCurrentIdentity() throws {
         let directory = try temporaryDirectory()
         let file = try discoverableRollout(in: directory, id: sessionID)
         let message = "{\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"user\",\"content\":\"Recover automatic titles\"}}\n"
@@ -76,13 +76,13 @@ final class CodexSessionMonitorTests: XCTestCase {
             processProvider: { _ in [process] }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
         )
         let observation = monitor.observations(in: [tty])[tty]
-        XCTAssertEqual(observation?.sessionID, sessionID)
-        XCTAssertEqual(observation?.status, .running)
-        XCTAssertEqual(observation?.titleExcerpt, "[user]\nRecover automatic titles")
-        XCTAssertEqual(observation?.requiresRuntimeStatus, true)
+        XCTAssertNil(observation?.sessionID)
+        XCTAssertNil(observation?.status)
+        XCTAssertNil(observation?.titleExcerpt)
+        XCTAssertEqual(observation?.isProcessAlive, true)
     }
 
-    func testResumeArgumentAutomaticallyMatchesOlderSessionInDifferentDirectory() throws {
+    func testResumeArgumentCannotEstablishCurrentIdentity() throws {
         let directory = try temporaryDirectory()
         _ = try discoverableRollout(in: directory, id: sessionID, startedAt: 1_790_000_000, cwd: "/old/project")
         _ = try discoverableRollout(in: directory, id: secondSessionID)
@@ -91,11 +91,11 @@ final class CodexSessionMonitorTests: XCTestCase {
             processProvider: { _ in [process] }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
         )
         let observation = monitor.observations(in: [tty])[tty]
-        XCTAssertEqual(observation?.sessionID, sessionID)
-        XCTAssertEqual(observation?.requiresRuntimeStatus, true)
+        XCTAssertNil(observation?.sessionID)
+        XCTAssertNil(observation?.status)
     }
 
-    func testOwnedFileOverridesAutomaticAssociationAndStartupResumeArgument() throws {
+    func testOwnedFileAndStartupArgumentRequireCurrentNativeTitle() throws {
         let directory = try temporaryDirectory()
         _ = try discoverableRollout(in: directory, id: sessionID)
         let next = try discoverableRollout(in: directory, id: secondSessionID, startedAt: 1_792_544_500)
@@ -104,23 +104,24 @@ final class CodexSessionMonitorTests: XCTestCase {
         let monitor = CodexSessionMonitor(
             processProvider: { _ in [process] }, rolloutProvider: { _ in opened }, sessionsDirectory: directory
         )
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.sessionID, sessionID)
+        XCTAssertNil(monitor.observations(in: [tty])[tty]?.sessionID)
         opened = [next]
-        let observation = monitor.observations(in: [tty])[tty]
+        XCTAssertNil(monitor.observations(in: [tty])[tty]?.sessionID)
+        let observation = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: secondSessionID])[tty]
         XCTAssertEqual(observation?.sessionID, secondSessionID)
-        XCTAssertEqual(observation?.requiresRuntimeStatus, false)
+        XCTAssertEqual(observation?.requiresRuntimeStatus, true)
     }
 
-    func testAutomaticAssociationDoesNotFollowANewerSameDirectoryFile() throws {
+    func testNativeEvidenceDoesNotFollowANewerSameDirectoryFile() throws {
         let directory = try temporaryDirectory()
         _ = try discoverableRollout(in: directory, id: sessionID, startedAt: 1_792_544_405)
         let process = automaticProcess()
         let monitor = CodexSessionMonitor(
             processProvider: { _ in [process] }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
         )
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.sessionID, sessionID)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.sessionID, sessionID)
         _ = try discoverableRollout(in: directory, id: secondSessionID)
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.sessionID, sessionID)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.sessionID, sessionID)
     }
 
     func testAmbiguousDirectoryCandidatesRemainUnknown() throws {
@@ -147,7 +148,7 @@ final class CodexSessionMonitorTests: XCTestCase {
         }
     }
 
-    func testCloserProcessWinsGlobalDirectoryConflictIndependentOfOrder() throws {
+    func testCloserProcessCannotWinDirectoryIdentityIndependentOfOrder() throws {
         let directory = try temporaryDirectory()
         _ = try discoverableRollout(in: directory, id: sessionID)
         let first = automaticProcess()
@@ -157,7 +158,7 @@ final class CodexSessionMonitorTests: XCTestCase {
                 processProvider: { _ in processes }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
             )
             let observations = monitor.observations(in: [first.tty, second.tty])
-            XCTAssertEqual(observations[first.tty]?.sessionID, sessionID)
+            XCTAssertNil(observations[first.tty]?.sessionID)
             XCTAssertNil(observations[second.tty]?.sessionID)
         }
     }
@@ -174,7 +175,7 @@ final class CodexSessionMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.observations(in: Set(processes.map(\.tty))).values.allSatisfy { $0.sessionID == nil })
     }
 
-    func testStrongEvidenceWinsOverAnotherProcessesDirectoryCandidate() throws {
+    func testNativeTitleProvidesEvidenceWithoutGuessingOtherProcessesDirectory() throws {
         let directory = try temporaryDirectory()
         let file = try discoverableRollout(in: directory, id: sessionID)
         let first = automaticProcess(startedAt: 1_792_544_410, arguments: ["codex", "resume", sessionID])
@@ -185,7 +186,9 @@ final class CodexSessionMonitorTests: XCTestCase {
                 rolloutProvider: { opened && $0.identity == first.identity ? [file] : [] },
                 sessionsDirectory: directory
             )
-            let observations = monitor.observations(in: [first.tty, second.tty])
+            let observations = monitor.observations(
+                in: [first.tty, second.tty], terminalThreadPrefixes: [first.tty: sessionID]
+            )
             XCTAssertEqual(observations[first.tty]?.sessionID, sessionID)
             XCTAssertNil(observations[second.tty]?.sessionID)
         }
@@ -204,7 +207,7 @@ final class CodexSessionMonitorTests: XCTestCase {
         XCTAssertTrue(monitor.observations(in: Set(processes.map(\.tty))).values.allSatisfy { $0.sessionID == nil })
     }
 
-    func testAutomaticDiscoveryRejectsWrongDirectoryAndOldStartupThenKeepsRetrying() throws {
+    func testNativeEvidenceCanRecoverWithoutDirectoryOrStartupFallback() throws {
         let directory = try temporaryDirectory()
         _ = try discoverableRollout(in: directory, id: sessionID, cwd: "/other/project")
         _ = try discoverableRollout(in: directory, id: secondSessionID, startedAt: 1_792_544_300)
@@ -215,7 +218,9 @@ final class CodexSessionMonitorTests: XCTestCase {
         for _ in 0..<40 { XCTAssertNil(monitor.observations(in: [tty])[tty]?.sessionID) }
         _ = try discoverableRollout(in: directory, id: sessionID)
         var recovered: CodexSessionObservation?
-        for _ in 0..<8 { recovered = monitor.observations(in: [tty])[tty] }
+        for _ in 0..<8 {
+            recovered = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
+        }
         XCTAssertEqual(recovered?.sessionID, sessionID)
         XCTAssertEqual(recovered?.requiresRuntimeStatus, true)
     }
@@ -228,7 +233,7 @@ final class CodexSessionMonitorTests: XCTestCase {
         let monitor = CodexSessionMonitor(
             processProvider: { _ in alive ? [process] : [] }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
         )
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.requiresRuntimeStatus, true)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.requiresRuntimeStatus, true)
         alive = false
         for _ in 0..<3 {
             let observation = monitor.observations(in: [tty])[tty]
@@ -248,7 +253,7 @@ final class CodexSessionMonitorTests: XCTestCase {
         let monitor = CodexSessionMonitor(
             processProvider: { _ in [process] }, rolloutProvider: { _ in [] }, sessionsDirectory: directory
         )
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.sessionID, sessionID)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.sessionID, sessionID)
         let switched = monitor.observations(
             in: [tty], terminalThreadPrefixes: [tty: String(secondSessionID.prefix(29))]
         )[tty]
@@ -363,7 +368,7 @@ final class CodexSessionMonitorTests: XCTestCase {
         for _ in 0..<10 { XCTAssertNil(monitor.observations(in: [tty])[tty]?.sessionID) }
     }
 
-    func testNativeTitleUsesMatchingOwnedFileWithoutRequiringDaemon() throws {
+    func testNativeTitleFileEvidenceStillRequiresDaemonIdentity() throws {
         let directory = try temporaryDirectory()
         let first = try discoverableRollout(in: directory, id: sessionID)
         let process = automaticProcess()
@@ -374,7 +379,7 @@ final class CodexSessionMonitorTests: XCTestCase {
             in: [tty], terminalThreadPrefixes: [tty: String(sessionID.prefix(29))]
         )[tty]
         XCTAssertEqual(observation?.sessionID, sessionID)
-        XCTAssertEqual(observation?.requiresRuntimeStatus, false)
+        XCTAssertEqual(observation?.requiresRuntimeStatus, true)
     }
 
     func testNativeTitleDisambiguatesOwnedFilesRetainedAcrossAThreadSwitch() throws {
@@ -463,20 +468,20 @@ final class CodexSessionMonitorTests: XCTestCase {
         try write(metadata(sessionID) + event("task_started"), to: rollout)
         let process = process()
         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [rollout] })
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.recentCompletions, [])
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.recentCompletions, [])
         let events = event("task_complete", second: 2)
             + event("task_started", turn: "turn-2", second: 3)
             + event("task_complete", turn: "turn-2", second: 4)
             + event("task_started", turn: "turn-3", second: 5)
         try append(Data(events.utf8), to: rollout)
-        let observed = monitor.observations(in: [tty])[tty]
+        let observed = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
         XCTAssertEqual(observed?.status, .running)
         XCTAssertEqual(observed?.completionInProgressID, "codex:\(sessionID):turn-3")
         XCTAssertEqual(observed?.recentCompletions?.map(\.id), [
             "codex:\(sessionID):turn-1", "codex:\(sessionID):turn-2"
         ])
         XCTAssertEqual(observed?.latestCompletion, observed?.recentCompletions?.last)
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.recentCompletions, observed?.recentCompletions)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.recentCompletions, observed?.recentCompletions)
         XCTAssertEqual(
             CodexSessionMonitor.observationAfterMissingScan(
                 try XCTUnwrap(observed), missedScans: 3
@@ -540,7 +545,7 @@ final class CodexSessionMonitorTests: XCTestCase {
             processProvider: { _ in [first, second] },
             rolloutProvider: { $0.identity == first.identity ? [rollout] : [] }
         )
-        let observations = monitor.observations(in: [first.tty, second.tty])
+        let observations = monitor.observations(in: [first.tty, second.tty], terminalThreadPrefixes: [first.tty: sessionID])
         XCTAssertEqual(observations[first.tty]?.sessionID, sessionID)
         XCTAssertEqual(observations[first.tty]?.isProcessAlive, true)
         XCTAssertNil(observations[second.tty]?.status)
@@ -572,9 +577,9 @@ final class CodexSessionMonitorTests: XCTestCase {
         let process = process()
         var current = first
         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [current] })
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .finished)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .finished)
         current = second
-        let switched = monitor.observations(in: [tty])[tty]
+        let switched = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: secondSessionID])[tty]
         XCTAssertEqual(switched?.status, .running)
         XCTAssertEqual(switched?.sessionID, secondSessionID)
         XCTAssertNil(switched?.latestCompletion)
@@ -587,10 +592,14 @@ final class CodexSessionMonitorTests: XCTestCase {
         let process = process()
         var available = false
         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in available ? [rollout] : [] })
-        for _ in 0..<40 { XCTAssertNil(monitor.observations(in: [tty])[tty]?.status) }
+        for _ in 0..<40 {
+            XCTAssertNil(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status)
+        }
         available = true
         var resolved: CodexSessionObservation?
-        for _ in 0..<8 { resolved = monitor.observations(in: [tty])[tty] }
+        for _ in 0..<8 {
+            resolved = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
+        }
         XCTAssertEqual(resolved?.status, .running)
         XCTAssertEqual(resolved?.sessionID, sessionID)
     }
@@ -600,18 +609,18 @@ final class CodexSessionMonitorTests: XCTestCase {
         try write(metadata(sessionID) + event("task_started"), to: rollout)
         let process = process()
         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [rollout] })
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .running)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .running)
         let line = Data("{\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"assistant\",\"content\":\"中\"}}\n".utf8)
         let split = try XCTUnwrap(line.firstIndex(of: 0xE4)) + 1
         try append(Data(line[..<split]), to: rollout)
-        XCTAssertNil(monitor.observations(in: [tty])[tty]?.titleExcerpt)
+        XCTAssertNil(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.titleExcerpt)
         try append(Data(line[split...]), to: rollout)
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.titleExcerpt, "[assistant]\n中")
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.titleExcerpt, "[assistant]\n中")
         let completion = Data(event("task_complete", second: 2).utf8)
         try append(Data(completion.dropLast()), to: rollout)
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .running)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .running)
         try append(Data([0x0A]), to: rollout)
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .finished)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .finished)
     }
 
     func testUnchangedFileRetainsStableObservation() throws {
@@ -619,8 +628,9 @@ final class CodexSessionMonitorTests: XCTestCase {
         try write(metadata(sessionID) + event("task_complete"), to: rollout)
         let process = process()
         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [rollout] })
-        let first = monitor.observations(in: [tty])[tty]
-        XCTAssertEqual(monitor.observations(in: [tty])[tty], first)
+        let first = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
+        XCTAssertEqual(first?.status, .finished)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty], first)
     }
 
     func testTruncationAndAtomicReplacementResetReader() throws {
@@ -628,14 +638,14 @@ final class CodexSessionMonitorTests: XCTestCase {
         try write(metadata(sessionID) + event("task_started") + event("task_complete", second: 2), to: rollout)
         let process = process()
         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [rollout] })
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .finished)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .finished)
         try write(metadata(secondSessionID) + event("task_started"), to: rollout)
-        let truncated = monitor.observations(in: [tty])[tty]
+        let truncated = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: secondSessionID])[tty]
         XCTAssertEqual(truncated?.sessionID, secondSessionID)
         XCTAssertEqual(truncated?.status, .running)
         XCTAssertNil(truncated?.latestCompletion)
         try Data((metadata(sessionID) + event("turn_aborted")).utf8).write(to: rollout, options: .atomic)
-        let replaced = monitor.observations(in: [tty])[tty]
+        let replaced = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
         XCTAssertEqual(replaced?.sessionID, sessionID)
         XCTAssertEqual(replaced?.status, .interrupted)
     }
@@ -646,7 +656,7 @@ final class CodexSessionMonitorTests: XCTestCase {
         let process = process()
         var alive = true
         let monitor = CodexSessionMonitor(processProvider: { _ in alive ? [process] : [] }, rolloutProvider: { _ in [rollout] })
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .running)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .running)
         try append(Data(event("task_complete", second: 2).utf8), to: rollout)
         alive = false
         for _ in 0..<3 {
@@ -666,7 +676,7 @@ final class CodexSessionMonitorTests: XCTestCase {
         var scans = [[process], [], [process], [], [], [], []]
         let monitor = CodexSessionMonitor(processProvider: { _ in scans.removeFirst() }, rolloutProvider: { _ in [rollout] })
         for expectedAlive in [true, false, true, false, false] {
-            let observation = monitor.observations(in: [tty])[tty]
+            let observation = monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]
             XCTAssertEqual(observation?.status, .running)
             XCTAssertEqual(observation?.isProcessAlive, expectedAlive)
         }
@@ -682,7 +692,7 @@ final class CodexSessionMonitorTests: XCTestCase {
         let process = process()
         var calls = 0
         let monitor = CodexSessionMonitor(processProvider: { _ in calls += 1; return calls == 1 ? [process] : [] }, rolloutProvider: { _ in [rollout] })
-        XCTAssertEqual(monitor.observations(in: [tty])[tty]?.status, .running)
+        XCTAssertEqual(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status, .running)
         let generation = monitor.scanGeneration()
         monitor.reset(ttys: ["/dev/ttys099"])
         XCTAssertTrue(monitor.observations(in: [tty], expectedGeneration: generation).isEmpty)
@@ -692,13 +702,25 @@ final class CodexSessionMonitorTests: XCTestCase {
         XCTAssertNil(monitor.observations(in: [tty])[tty])
     }
 
+    func testCurrentForegroundProcessRechecksGenerationAndExit() {
+        let original = process()
+        var current = [original]
+        let monitor = CodexSessionMonitor(processProvider: { _ in current })
+        XCTAssertTrue(monitor.isCurrentProcess(original.identity, on: tty))
+        current = [.init(identity: .init(pid: original.identity.pid, startedAt: 43),
+                         tty: tty, cwd: original.cwd, arguments: original.arguments)]
+        XCTAssertFalse(monitor.isCurrentProcess(original.identity, on: tty))
+        current = []
+        XCTAssertFalse(monitor.isCurrentProcess(original.identity, on: tty))
+    }
+
     func testFileGrowthWithoutLifecycleRemainsUnknown() throws {
         let rollout = try temporaryDirectory().appendingPathComponent("rollout-unknown.jsonl")
         try write(metadata(sessionID), to: rollout)
         let process = process()
         let monitor = CodexSessionMonitor(processProvider: { _ in [process] }, rolloutProvider: { _ in [rollout] })
-        XCTAssertNil(monitor.observations(in: [tty])[tty]?.status)
+        XCTAssertNil(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status)
         try append(Data("{\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"assistant\",\"content\":\"output\"}}\n".utf8), to: rollout)
-        XCTAssertNil(monitor.observations(in: [tty])[tty]?.status)
+        XCTAssertNil(monitor.observations(in: [tty], terminalThreadPrefixes: [tty: sessionID])[tty]?.status)
     }
 }

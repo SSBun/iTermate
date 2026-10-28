@@ -1444,25 +1444,19 @@ final class ItermStore: ObservableObject {
         refreshCodexMonitoring()
     }
 
-    /// Keeps manual choices and derives unambiguous daemon queries from automatic rollout matches.
+    /// Retains only terminal-scoped bindings; automatic identities must come from the daemon lookup.
     static func reconciledCodexBindings(
         _ existing: [String: CodexThreadBinding],
-        observations: [String: CodexSessionObservation], identities: [String: String]
+        observations: [String: CodexSessionObservation], identities: [String: String],
+        terminalThreadPrefixes: [String: String] = [:]
     ) -> [String: CodexThreadBinding] {
-        var bindings = existing.filter { tty, binding in
+        let bindings = existing.filter { tty, binding in
             guard identities[tty] == binding.terminalSessionID,
                   let observation = observations[tty],
                   observation.processIdentity == binding.processIdentity else { return false }
-            return binding.isManual || (observation.requiresRuntimeStatus
-                && observation.sessionID?.lowercased() == binding.threadID)
-        }
-        for (tty, observation) in observations where bindings[tty] == nil && observation.isProcessAlive {
-            guard observation.requiresRuntimeStatus, let terminalID = identities[tty],
-                  let process = observation.processIdentity, let sessionID = observation.sessionID,
-                  let threadID = UUID(uuidString: sessionID)?.uuidString.lowercased() else { continue }
-            bindings[tty] = CodexThreadBinding(
-                terminalSessionID: terminalID, processIdentity: process, threadID: threadID, isManual: false
-            )
+            return binding.isManual || terminalThreadPrefixes[tty].map {
+                CodexAppServerClient.isValidThreadPrefix($0) && binding.threadID.hasPrefix($0)
+            } == true
         }
         let counts = Dictionary(grouping: bindings.values, by: \.threadID).mapValues(\.count)
         return bindings.filter { _, binding in binding.isManual || counts[binding.threadID] == 1 }
@@ -1472,7 +1466,8 @@ final class ItermStore: ObservableObject {
         observations: [String: CodexSessionObservation], identities: [String: String]
     ) {
         let bindings = Self.reconciledCodexBindings(
-            codexThreadBindings, observations: observations, identities: identities
+            codexThreadBindings, observations: observations, identities: identities,
+            terminalThreadPrefixes: codexNativeThreadPrefixes
         )
         for (tty, binding) in codexThreadBindings where bindings[tty] != binding {
             codexRuntimeTasks.removeValue(forKey: tty)?.cancel()
@@ -1561,9 +1556,15 @@ final class ItermStore: ObservableObject {
     }
 
     private func mergingCodexRuntimeObservations() -> [String: CodexSessionObservation] {
-        var observations = codexNativeObservations
+        // A matching file is optional evidence, not an accepted automatic thread identity.
+        var observations = codexNativeObservations.mapValues {
+            CodexSessionObservation(
+                status: nil, changedAt: nil, processIdentity: $0.processIdentity,
+                isProcessAlive: $0.isProcessAlive
+            )
+        }
         for (tty, binding) in codexThreadBindings {
-            guard let native = observations[tty] else { continue }
+            guard let native = codexNativeObservations[tty] else { continue }
             let baseline = Self.codexRuntimeBaseline(native, binding: binding)
             observations[tty] = codexRuntimeObservations[tty].map {
                 Self.mergingCodexRuntimeObservation($0, into: baseline)
@@ -1573,43 +1574,91 @@ final class ItermStore: ObservableObject {
     }
 
     private func refreshBoundCodexThreads() {
-        for (tty, binding) in codexThreadBindings where codexRuntimeTasks[tty] == nil {
+        for (tty, native) in codexNativeObservations where codexRuntimeTasks[tty] == nil {
+            let previousBinding = codexThreadBindings[tty]
             let isFinal = codexFinalReadTTYs.contains(tty)
-            guard let native = codexNativeObservations[tty],
-                  !isFinal || codexRuntimeObservations[tty] == nil else { continue }
-            let baseline = Self.codexRuntimeBaseline(native, binding: binding)
             let terminalThreadPrefix = codexNativeThreadPrefixes[tty]
+            guard let process = native.processIdentity,
+                  let terminalID = codexObservationSessionIdentityByTTY[tty],
+                  !isFinal || codexRuntimeObservations[tty] == nil else { continue }
+            let readsExactID = previousBinding?.isManual == true || isFinal
+            guard readsExactID ? previousBinding != nil : native.isProcessAlive
+                && terminalThreadPrefix.map(CodexAppServerClient.isValidThreadPrefix) == true else { continue }
             codexRuntimeTasks[tty] = Task { @MainActor [weak self] in
-                let runtime = try? await CodexAppServerClient().observation(
-                    threadID: binding.threadID, includeUnloadedHistory: isFinal
-                )
+                let runtime: CodexAppServerClient.RuntimeObservation?
+                if readsExactID, let previousBinding {
+                    runtime = try? await CodexAppServerClient().observation(
+                        threadID: previousBinding.threadID, includeUnloadedHistory: isFinal
+                    )
+                } else if let terminalThreadPrefix {
+                    runtime = try? await CodexAppServerClient().observation(threadPrefix: terminalThreadPrefix)
+                } else {
+                    runtime = nil
+                }
+                guard let self, !Task.isCancelled else { return }
                 let excerpt: String?
-                if let path = runtime?.rolloutPath, let self, !Task.isCancelled {
+                if let path = runtime?.rolloutPath, let threadID = runtime?.sessionID, !isFinal {
                     excerpt = await withCheckedContinuation { continuation in
                         self.codexMonitorQueue.async { [codexSessionMonitor = self.codexSessionMonitor] in
                             continuation.resume(returning: codexSessionMonitor.titleExcerpt(
-                                at: path, threadID: binding.threadID, process: binding.processIdentity
+                                at: path, threadID: threadID, process: process
                             ))
                         }
                     }
                 } else {
                     excerpt = nil
                 }
-                guard let self, !Task.isCancelled, codexThreadBindings[tty] == binding else { return }
+                // Re-observe the foreground process, not merely the last two-second scan cache.
+                let currentProcess = await withCheckedContinuation { continuation in
+                    self.codexMonitorQueue.async { [codexSessionMonitor = self.codexSessionMonitor] in
+                        continuation.resume(returning: codexSessionMonitor.isCurrentProcess(process, on: tty))
+                    }
+                }
+                guard !Task.isCancelled else { return }
                 codexRuntimeTasks[tty] = nil
-                guard isStarted, codexNativeObservations[tty]?.processIdentity == binding.processIdentity,
-                      Self.codexSessionIdentityByTTY(in: iTermWindows)[tty] == binding.terminalSessionID,
-                      Self.codexThreadPrefixesByTTY(in: iTermWindows)[tty] == terminalThreadPrefix else { return }
-                let status = runtime?.status
+                guard isStarted, codexThreadBindings[tty] == previousBinding,
+                      codexNativeObservations[tty]?.processIdentity == process,
+                      codexNativeObservations[tty]?.isProcessAlive == native.isProcessAlive,
+                      Self.codexSessionIdentityByTTY(in: iTermWindows)[tty] == terminalID,
+                      Self.codexThreadPrefixesByTTY(in: iTermWindows)[tty] == terminalThreadPrefix,
+                      isFinal ? !currentProcess : currentProcess else { return }
+                guard let runtime else {
+                    codexRuntimeObservations[tty] = nil
+                    if previousBinding?.isManual != true { codexThreadBindings[tty] = nil }
+                    acceptCodexObservations(mergingCodexRuntimeObservations(), identities: codexObservationSessionIdentityByTTY)
+                    return
+                }
+                let binding = CodexThreadBinding(
+                    terminalSessionID: terminalID, processIdentity: process, threadID: runtime.sessionID,
+                    isManual: previousBinding?.isManual == true
+                )
+                if !binding.isManual && !isFinal {
+                    // Even identical titles in two panes cannot claim the same automatic identity.
+                    let conflictingTTYs = codexNativeThreadPrefixes.keys.filter { otherTTY in
+                        guard otherTTY != tty, self.codexNativeObservations[otherTTY]?.isProcessAlive == true,
+                              let prefix = self.codexNativeThreadPrefixes[otherTTY] else { return false }
+                        return CodexAppServerClient.isValidThreadPrefix(prefix) && runtime.sessionID.hasPrefix(prefix)
+                    }
+                    guard conflictingTTYs.isEmpty,
+                          !codexThreadBindings.contains(where: { $0.key != tty && $0.value.threadID == runtime.sessionID }) else {
+                        codexThreadBindings[tty] = nil
+                        codexRuntimeObservations[tty] = nil
+                        for otherTTY in conflictingTTYs where codexThreadBindings[otherTTY]?.isManual == false {
+                            codexThreadBindings[otherTTY] = nil
+                            codexRuntimeObservations[otherTTY] = nil
+                        }
+                        acceptCodexObservations(mergingCodexRuntimeObservations(), identities: codexObservationSessionIdentityByTTY)
+                        return
+                    }
+                }
+                let baseline = Self.codexRuntimeBaseline(native, binding: binding)
+                codexThreadBindings[tty] = binding
                 let observation = CodexSessionObservation(
-                    status: isFinal && (status == .running || status == .awaitingInput) ? nil : status,
-                    changedAt: runtime?.changedAt,
-                    processIdentity: binding.processIdentity,
-                    titleExcerpt: excerpt,
-                    sessionID: binding.threadID,
-                    latestCompletion: runtime?.latestCompletion,
-                    recentCompletions: runtime?.recentCompletions,
-                    completionInProgressID: isFinal ? nil : runtime?.completionInProgressID,
+                    status: isFinal && (runtime.status == .running || runtime.status == .awaitingInput) ? nil : runtime.status,
+                    changedAt: runtime.changedAt, processIdentity: process, titleExcerpt: excerpt,
+                    sessionID: runtime.sessionID, latestCompletion: runtime.latestCompletion,
+                    recentCompletions: runtime.recentCompletions,
+                    completionInProgressID: isFinal ? nil : runtime.completionInProgressID,
                     isProcessAlive: !isFinal
                 )
                 codexRuntimeObservations[tty] = CodexRuntimeOverlay(observation: observation, sampledFrom: baseline)

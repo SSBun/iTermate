@@ -25,15 +25,19 @@ struct CodexAppServerClient {
         let id: String
         let status: Status
         let path: String?
+        let source: String?
+        let hasParentThread: Bool
 
         init(id: String, status: Status, path: String? = nil) {
             self.id = id
             self.status = status
             self.path = path
+            source = nil
+            hasParentThread = false
         }
 
         private enum CodingKeys: String, CodingKey {
-            case id, status, path
+            case id, status, path, source, parentThreadId
         }
 
         init(from decoder: Decoder) throws {
@@ -42,6 +46,9 @@ struct CodexAppServerClient {
             status = try container.decode(Status.self, forKey: .status)
             // The upstream path is optional and unstable; its format must not break status reads.
             path = try? container.decode(String.self, forKey: .path)
+            source = try? container.decode(String.self, forKey: .source)
+            hasParentThread = try container.contains(.parentThreadId)
+                && container.decodeNil(forKey: .parentThreadId) == false
         }
     }
 
@@ -67,16 +74,39 @@ struct CodexAppServerClient {
 
     /// Queries metadata and recent turn outcomes, without resuming or subscribing to the thread.
     func observation(threadID: String, includeUnloadedHistory: Bool = false) async throws -> RuntimeObservation {
-        let deadline = DispatchTime.now() + 3
         guard let identifier = UUID(uuidString: threadID), threadID.utf8.count == 36 else {
             throw CodexStatusError("Enter a complete Codex thread UUID.")
         }
+        return try await request(threadID: identifier.uuidString.lowercased(), includeUnloadedHistory: includeUnloadedHistory)
+    }
+
+    /// Resolves a native title only after every loaded-thread page has been read successfully.
+    func observation(threadPrefix: String) async throws -> RuntimeObservation {
+        guard Self.isValidThreadPrefix(threadPrefix) else {
+            throw CodexStatusError("Invalid native Codex thread prefix.")
+        }
+        return try await request(threadPrefix: threadPrefix)
+    }
+
+    /// Accepts only the two identity formats emitted by the native Codex title.
+    static func isValidThreadPrefix(_ prefix: String) -> Bool {
+        (prefix.utf8.count == 36 && UUID(uuidString: prefix)?.uuidString.lowercased() == prefix)
+            || (prefix.utf8.count == 29 && prefix.range(
+                of: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{5}$",
+                options: .regularExpression
+            ) != nil)
+    }
+
+    private func request(
+        threadID: String = "", threadPrefix: String? = nil, includeUnloadedHistory: Bool = false
+    ) async throws -> RuntimeObservation {
+        let deadline = DispatchTime.now() + 3
         guard let resolvedSocketPath = Self.resolvedSocketPath(socketPath) else {
             throw CodexStatusError("The local Codex daemon socket is unavailable.")
         }
         let request = CodexStatusRequest(
-            socketPath: resolvedSocketPath, threadID: identifier.uuidString.lowercased(), deadline: deadline,
-            includeUnloadedHistory: includeUnloadedHistory
+            socketPath: resolvedSocketPath, threadID: threadID, threadPrefix: threadPrefix,
+            deadline: deadline, includeUnloadedHistory: includeUnloadedHistory
         )
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { request.start(continuation: $0) }
@@ -193,7 +223,11 @@ private final class CodexStatusRequest: @unchecked Sendable {
     }
 
     private let connection: NWConnection
-    private let threadID: String
+    private var threadID: String
+    private let threadPrefix: String?
+    private var loadedThreadIDs: Set<String> = []
+    private var loadedCursors: Set<String> = []
+    private var loadedPageCount = 0
     private let deadline: DispatchTime
     private let includeUnloadedHistory: Bool
     private let queue = DispatchQueue(label: "com.caishilin.iTermate.codex-status")
@@ -209,9 +243,13 @@ private final class CodexStatusRequest: @unchecked Sendable {
     private var expectedID = "initialize"
     private var turns: [CodexAppServerClient.Turn] = []
 
-    init(socketPath: String, threadID: String, deadline: DispatchTime, includeUnloadedHistory: Bool) {
+    init(
+        socketPath: String, threadID: String, threadPrefix: String?,
+        deadline: DispatchTime, includeUnloadedHistory: Bool
+    ) {
         connection = NWConnection(to: .unix(path: socketPath), using: .tcp)
         self.threadID = threadID
+        self.threadPrefix = threadPrefix
         self.deadline = deadline
         self.includeUnloadedHistory = includeUnloadedHistory
     }
@@ -335,12 +373,46 @@ private final class CodexStatusRequest: @unchecked Sendable {
         switch expectedID {
         case "initialize":
             try sendJSON(["method": "initialized", "params": [:]])
-            try readThread(id: "thread")
+            if threadPrefix != nil { try readLoadedThreads() }
+            else { try readThread(id: "thread") }
+        case "loaded":
+            guard let ids = result["data"] as? [String], ids.count <= 100,
+                  let cursorValue = result["nextCursor"],
+                  cursorValue is NSNull || cursorValue is String else {
+                throw CodexStatusError("Codex returned an incomplete loaded-thread page.")
+            }
+            for id in ids {
+                guard id.utf8.count == 36, let identifier = UUID(uuidString: id) else {
+                    throw CodexStatusError("Codex returned an invalid loaded-thread ID.")
+                }
+                loadedThreadIDs.insert(identifier.uuidString.lowercased())
+            }
+            if let cursor = cursorValue as? String {
+                guard !cursor.isEmpty, loadedCursors.insert(cursor).inserted else {
+                    throw CodexStatusError("Codex repeated a loaded-thread cursor.")
+                }
+                try readLoadedThreads(cursor: cursor)
+            } else {
+                let matches = loadedThreadIDs.filter { $0.hasPrefix(threadPrefix ?? "") }
+                guard matches.count == 1, let id = matches.first else {
+                    throw CodexStatusError("The native Codex title does not identify one loaded thread.")
+                }
+                threadID = id
+                try readThread(id: "thread")
+            }
         case "thread", "finalThread":
             // Preview and other conversation fields are never retained or logged.
             let thread = try JSONDecoder().decode(ThreadResult.self, from: resultData).thread
-            guard UUID(uuidString: thread.id) == UUID(uuidString: threadID) else {
-                throw CodexStatusError("Codex returned a different thread.")
+            guard thread.id.utf8.count == 36,
+                  UUID(uuidString: thread.id) == UUID(uuidString: threadID),
+                  let source = thread.source, ["cli", "vscode", "exec", "appServer"].contains(source),
+                  !thread.hasParentThread,
+                  ["active", "idle", "notLoaded", "systemError"].contains(thread.status.type),
+                  thread.status.type != "active" || thread.status.activeFlags.map({ flags in
+                      flags.allSatisfy { ["waitingOnApproval", "waitingOnUserInput"].contains($0) }
+                  }) == true,
+                  threadPrefix == nil || ["active", "idle", "systemError"].contains(thread.status.type) else {
+                throw CodexStatusError("Codex returned an invalid root thread identity or state.")
             }
             let canReadHistory = ["idle", "active"].contains(thread.status.type)
                 || (includeUnloadedHistory && thread.status.type == "notLoaded")
@@ -360,6 +432,16 @@ private final class CodexStatusRequest: @unchecked Sendable {
             try readThread(id: "finalThread")
         default: throw CodexStatusError("Unexpected Codex status response.")
         }
+    }
+
+    private func readLoadedThreads(cursor: String? = nil) throws {
+        loadedPageCount += 1
+        guard loadedPageCount <= 32 else {
+            throw CodexStatusError("Codex exceeded the loaded-thread page limit.")
+        }
+        var parameters: [String: Any] = ["limit": 100]
+        if let cursor { parameters["cursor"] = cursor }
+        try sendRequest("loaded", method: "thread/loaded/list", parameters: parameters)
     }
 
     private func readThread(id: String) throws {

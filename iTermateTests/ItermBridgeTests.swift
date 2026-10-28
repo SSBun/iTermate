@@ -69,7 +69,7 @@ final class ItermBridgeTests: XCTestCase {
         )
     }
 
-    func testAutomaticCodexBindingRequiresAnUnambiguousSharedDaemonThread() {
+    func testRolloutCannotCreateAutomaticCodexBindingBeforeDaemonLookup() {
         let thread = "11111111-2222-3333-4444-555555555555"
         let process = CodexSessionMonitor.ProcessIdentity(pid: 42, startedAt: 10)
         let shared = CodexSessionObservation(
@@ -87,11 +87,19 @@ final class ItermBridgeTests: XCTestCase {
             [:], observations: ["auto": shared, "file": exact, "invalid": invalid, "detached": shared],
             identities: ["auto": "pane", "file": "file-pane", "invalid": "invalid-pane"]
         )
-        XCTAssertEqual(bindings.count, 1)
-        XCTAssertEqual(bindings["auto"]?.threadID, thread)
-        XCTAssertEqual(bindings["auto"]?.terminalSessionID, "pane")
-        XCTAssertEqual(bindings["auto"]?.processIdentity, process)
-        XCTAssertEqual(bindings["auto"]?.isManual, false)
+        XCTAssertTrue(bindings.isEmpty)
+        let verified = ItermStore.CodexThreadBinding(
+            terminalSessionID: "pane", processIdentity: process, threadID: thread, isManual: false
+        )
+        let blank = CodexSessionObservation(status: nil, changedAt: nil, processIdentity: process)
+        XCTAssertEqual(ItermStore.reconciledCodexBindings(
+            ["auto": verified], observations: ["auto": blank], identities: ["auto": "pane"],
+            terminalThreadPrefixes: ["auto": String(thread.prefix(29))]
+        )["auto"], verified)
+        XCTAssertTrue(ItermStore.reconciledCodexBindings(
+            ["auto": verified], observations: ["auto": blank], identities: ["auto": "pane"],
+            terminalThreadPrefixes: ["auto": ""]
+        ).isEmpty)
         XCTAssertTrue(ItermStore.reconciledCodexBindings(
             [:], observations: ["one": shared, "two": shared], identities: ["one": "one", "two": "two"]
         ).isEmpty)
@@ -109,13 +117,10 @@ final class ItermBridgeTests: XCTestCase {
             processIdentity: .init(pid: 42, startedAt: 11),
             sessionID: replacement, requiresRuntimeStatus: true
         )
-        let updated = try XCTUnwrap(ItermStore.reconciledCodexBindings(
-            ["tty": old], observations: ["tty": observation], identities: ["tty": "new-pane"]
-        )["tty"])
-        XCTAssertNotEqual(updated, old)
-        XCTAssertEqual(updated.threadID, replacement)
-        XCTAssertEqual(updated.terminalSessionID, "new-pane")
-        XCTAssertEqual(updated.processIdentity.startedAt, 11)
+        XCTAssertTrue(ItermStore.reconciledCodexBindings(
+            ["tty": old], observations: ["tty": observation], identities: ["tty": "new-pane"],
+            terminalThreadPrefixes: ["tty": replacement]
+        ).isEmpty)
         XCTAssertTrue(ItermStore.reconciledCodexBindings(
             ["tty": old], observations: ["tty": observation], identities: [:]
         ).isEmpty)
@@ -144,7 +149,8 @@ final class ItermBridgeTests: XCTestCase {
             sessionID: thread, isProcessAlive: false, requiresRuntimeStatus: true
         )
         XCTAssertEqual(ItermStore.reconciledCodexBindings(
-            ["tty": automatic], observations: ["tty": stopped], identities: ["tty": "pane"]
+            ["tty": automatic], observations: ["tty": stopped], identities: ["tty": "pane"],
+            terminalThreadPrefixes: ["tty": thread]
         )["tty"], automatic)
         XCTAssertTrue(ItermStore.reconciledCodexBindings(
             [:], observations: ["tty": stopped], identities: ["tty": "pane"]

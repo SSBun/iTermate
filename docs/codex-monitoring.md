@@ -8,7 +8,7 @@ iTermate 被动观察直接运行的原始 `codex` 命令，不需要 `codexm`�
 2. 在 iTerm2 中直接运行 `codex`。
 3. iTermate 自动关联对应对话并显示状态；生命周期证据不足时保留 Codex 方框身份和中性活动图标，不推断正在工作或已经成功完成。
 
-Settings → Agents 中 Codex 显示为 **Automatic**。升级时，iTermate 会从 `~/.codex/hooks.json` 删除自己过去写入、带 `_iTermate` 标记的条目，并保留其他工具的 hooks；旧包装器和标记文件也会被移除。
+Settings → Agents 中 Codex 显示为 **Automatic**，展开 **Precise Conversation Binding** 可查看并复制所需原生标题配置，手动合并到已有 `[tui]` 节；此入口不写入配置，不覆盖无关设置。升级时，iTermate 会从 `~/.codex/hooks.json` 删除自己过去写入、带 `_iTermate` 标记的条目，并保留其他工具的 hooks；旧包装器和标记文件也会被移除。
 
 ## 自动匹配与对话切换
 
@@ -19,11 +19,11 @@ Settings → Agents 中 Codex 显示为 **Automatic**。升级时，iTermate 会
 terminal_title = ["app-name", "thread-id"]
 ```
 
-这会改变 iTerm2 原生终端标题；iTermate 不自动修改用户的 Codex 配置。新启动或重新加载配置后的 Codex 会通过原生终端标题输出当前 thread ID，`/new`、`/resume` 配置好新会话后会更新。Bridge 每次快照读取原始 `terminalWindowName`，仅传递官方格式中的完整 UUID 或 29 字符前缀，不使用装饰过的 Session 名称推断身份。短前缀必须唯一匹配经过根会话 metadata 核验的完整 UUID；冲突、子代理或无效信号保持未知，不沿用旧对话。
+这会改变 iTerm2 原生终端标题；iTermate 不自动修改用户的 Codex 配置。本次只面向未来新开的 Codex，不补救已打开的旧进程。不要用 `-c tui.terminal_title=…` 代替配置文件：固定版本中该覆盖可能触发 embedded 降级，不代表共享 daemon 方案。新启动 Codex 会通过标题输出当前 thread ID，`/new`、`/resume` 选定对话后更新。Bridge 周期读取原始 `terminalWindowName`，仅传递官方格式中的完整 UUID 或 29 字符前缀，不使用装饰过的 Session 名称推断身份。
 
-没有这项信号时，仍兼容唯一的 CLI 可写 rollout、启动命令中的明确 resume UUID、相同工作目录且创建时间距进程启动不超过 30 秒的根会话。目录/时间匹配有歧义和跨终端冲突检测，但不能可靠感知同一进程中的后续对话切换；需要准确跟随切换时应启用上述原生信号。曾提供原生信号的进程随后丢失信号时，不回退到陈旧的启动参数。
+每次自动查询先通过共享 daemon 的 `thread/loaded/list` 读取完整分页，以标题前缀唯一扩展完整 UUID，再读取并校验根会话来源、精确 ID 与状态。列表只表示已加载，不代表运行中。空白新会话即使尚无 rollout 文件也可建立身份。零匹配、多匹配、无效响应、重复游标、缺页、预算用尽或请求失败均保持未绑定；完整 UUID 也需经过 loaded 列表确认。不根据目录、启动时间、resume 启动参数或残留文件描述符猜测当前对话。
 
-自动关联使用与下述应急绑定相同的 daemon 只读通路。daemon 请求失败或未知时保留已核实的 rollout 状态和标题输入；迟到响应不能覆盖新对话或更新后的生命周期。官方 control socket 的同用户符号链接受支持，最终目标必须为同用户 Unix socket。
+身份绑定覆盖终端 Session ID、TTY、进程 PID／启动时间和当前标题前缀。同一 thread 被多个终端认领时，自动关联保留未知。标题变化、终端复用或进程退出后丢弃旧异步结果；应用活跃结果前重新核对真实前台进程。每轮自动观察重新做完整列表查询，不缓存目录到 thread 的映射。查询失败时撤销自动绑定与 overlay，不复用旧 API 身份；文件仅在已验证 thread 下提供可选的生命周期和标题证据。官方 control socket 的同用户符号链接受支持，最终目标必须为同用户 Unix socket。
 
 ## 应急手动绑定
 
@@ -31,18 +31,18 @@ terminal_title = ["app-name", "thread-id"]
 
 绑定仅在本次 App 运行期间保留，并同时绑定终端 Session、TTY、Codex PID 和进程启动时间；进程退出、终端身份变化或 App 停止会清除绑定。它不是对话切换命令，也不会恢复、启动、订阅或推进 Codex 对话。
 
-自动关联或应急绑定后，App 只连接当前用户已经运行的 Codex daemon 的本地 control socket，使用 `thread/read` 和有界的最近 turn 列表 `thread/turns/list` 读取状态，并在返回前再次读取 thread 状态。`waitingOnApproval`、`waitingOnUserInput` 显示为 `awaitingInput`；其他已知活动状态、完成和中止按下表展示。每次请求有三秒总截止；缺少 socket、返回的 thread ID 与请求不匹配、请求失败或未知状态时，不启动 daemon、不把其他对话套到该终端。请求不批准工具、不提交输入；响应中的预览等对话字段不用于标题、不保留或记录。最终 `thread/read` 若提供该 thread 的 rollout 路径，App 会在后台核对本用户所有的普通文件、设备号/inode、根会话 metadata 与精确 thread UUID，再复用有界增量读取器提取可见消息用于标题。路径缺失、格式变化或校验失败不影响已成功读取的状态。
+自动关联或应急绑定后，App 只连接当前用户已经运行的 Codex daemon 的本地 control socket，使用 `thread/read` 和有界的最近 turn 列表 `thread/turns/list` 读取状态，并在返回前再次读取 thread 状态。`waitingOnApproval`、`waitingOnUserInput` 显示为 `awaitingInput`；其他已知活动状态、完成和中止按下表展示。每次请求有三秒总截止；loaded 列表每页最多 100 项、最多 32 页，触及预算仍有后续页则失败而不是采用部分结果；缺少 socket、返回的 thread ID 与请求不匹配、请求失败或未知状态时，不启动 daemon、不把其他对话套到该终端。请求不批准工具、不提交输入；响应中的预览等对话字段不用于标题、不保留或记录。最终 `thread/read` 若提供该 thread 的 rollout 路径，App 会在后台核对本用户所有的普通文件、设备号/inode、根会话 metadata 与精确 thread UUID，再复用有界增量读取器提取可见消息用于标题。路径缺失、格式变化或校验失败不影响已成功读取的状态。
 
 ## 数据来源与状态映射
 
 iTermate 每两秒进行一次只读观察：
 
 - 使用 macOS 进程 API 确认终端前台进程树中的原生 Codex CLI；
-- 使用上述自动关联信号，只接受 `rollout-*.jsonl` 根会话；核对文件设备号、inode、首行 Session 身份和 `source`，并复核进程身份。当前原生 thread 信号约束文件匹配，避免切换后旧文件描述符继续主导结果；
+- 自动身份以原生标题与共享服务完整列表为准；可选 `rollout-*.jsonl` 仅在精确 thread ID 一致时提供证据，核对文件设备号、inode、首行根 Session 身份和 `source`；
 - 首次映射从最多 1 MiB 的尾部建立状态，随后保存读取位置并解析新增的完整 JSONL 行；每轮最多读取 8 MiB，长追加尚未追上时保持中性显示，内部生命周期为空，后续轮询继续追赶。截断、文件替换和已读取边界变化会重建读取状态；生命周期事件的类型和时间戳才决定运行／完成，文件变大本身不是运行证据；
 - 在初始尾部和后续增量中保留最近四条用户消息和四条助手消息，每条最多 2,000 个字符；根据下述补全／更新规则，交给 Settings 中已选择的本地 Ollama 模型生成短标题。开发者消息、思考和工具记录不会进入标题输入，数据不会发送到云端。
 
-尚未找到唯一 rollout 时，映射按 1、2、4、8 个扫描周期逐步退避，此后保持每八轮重试，直到进程离开观察范围；原生 thread 信号变化会立即绕过退避重查。已映射进程每次扫描重新核验文件及当前原生信号；只有兼容匹配可用时，保留已关联的文件而不追逐最新文件。
+可选 rollout 查找按 1、2、4、8 个扫描周期退避，此后每八轮重试；标题变化立即重查。这不阻止每轮直接通过 daemon 识别没有文件的空白会话。已有文件仍需重新核验当前信号，不追逐最近修改的文件。
 
 标题与 Pi 一样只覆盖 iTermate 面板中的 Session 显示名，不改写 iTerm2 的真实 Session 标题。生成结果会再次校验 Codex 进程、TTY、终端 Session ID 与 Codex thread ID；终端复用或 Session 切换后，旧请求不能写入新行。失败时最多自动重试一次，原终端标题保持不变。
 
@@ -64,7 +64,7 @@ Codex 标题每次模型调用最多生成 1,024 tokens，上下文为 16,384 to
 | rollout 增长但没有新的已识别生命周期事件 | 保留已确认状态；没有时保留内部空值并中性显示 |
 | 自动关联或应急绑定的 daemon `waitingOnApproval` / `waitingOnUserInput` | awaitingInput |
 | 增量读取未追上文件末尾、映射失败且无可确认状态 | 生命周期为空，中性显示，不改变 Codex 身份 |
-| daemon 观测失败 | 保留已确认的 rollout 状态；没有时保留内部空值 |
+| daemon 自动身份查询失败 | 撤销自动绑定与 overlay，生命周期为空；应急手动绑定仍只使用其明确指定的身份 |
 | 尚无可确认的生命周期事件 | 显示 Codex 身份与中性活动图标，不猜测状态 |
 | running 中的 Codex 进程消失 | interrupted |
 | 其他状态下 Codex 进程退出 | 不再标记为 Codex |
@@ -90,10 +90,10 @@ Codex 标题自动生成、手动刷新失败以及手动刷新缺少可用会�
 - rollout 没有稳定的通用“等待用户输入”事件，不凭助手文本或工具名称猜测 `awaitingInput`；自动关联或应急绑定的 daemon 返回明确等待标记时才显示。
 - 首次 1 MiB 尾部之前的事件与消息不会被追溯；初始状态可能未知。后续增量保留已观察状态，单次读取 8 MiB、单行 8 MiB 的预算限制仍可能造成延迟或跳过超长行，不能保证所有上游记录均被识别。
 - 面板左侧方框表示已识别的 Codex Agent，三角表示 Pi，圆圈表示普通命令；只有 Agent 身份无法判断为 Pi 或 Codex 时，左侧显示呼吸像素感叹号并标注“Unknown Agent”，减少动态效果时静止。已识别 Agent 缺少生命周期数据时，右侧仅作中性显示，内部仍保留空值，不新增运行、待回复或成功完成证据。unknown 是身份类型，不是第三种回复类型。
-- 共享 daemon 持有 rollout 时，CLI 本身可能没有文件描述符；原生 thread 标题用于准确关联当前对话，兼容启动匹配只能覆盖部分场景。原生标题尚未更新或转发失败时，识别会延迟；没有 thread 身份信号且兼容匹配失败时保留 Codex 身份与中性活动图标。
+- 共享 daemon 持有 rollout 时，CLI 本身可能没有文件描述符；身份由原生标题与只读 loaded 列表建立，不依赖文件存在。标题尚未更新、转发失败或服务不可读时，保留 Codex 身份与中性活动图标，不启动新的 daemon。
 - 自动标题受初始尾部与已追上的增量范围限制；没有可用的可见用户／助手消息时保留原终端标题。缺少生命周期事件本身不阻止已识别 thread 的标题补全；没有匹配的 rollout 摘录时不根据项目名或 daemon 预览猜测标题。
 - 已确认的 Codex 进程允许连续两次进程扫描暂时缺失；第三次仍缺失才中断并清理状态，避免短暂的 macOS 进程 API 竞态把界面切回普通命令。
 - 已接受的 Codex 状态同时绑定可见 TTY 与终端 Session ID；同一 TTY 被新 Session 复用时会先移除旧 overlay，再重新观察。
-- 同目录并行会话不按最近修改时间抢占映射；强身份优先，重复的同等级精确认领保持未知。启动参数与目录/时间是有限兼容证据，不等于当前显示对话的证明。
+- 同目录并行会话不共享目录级身份缓存，不按文件时间、启动参数或启动时间认领 thread；重复认领同一完整身份保持未知。
 - 监测要求 Codex 位于面板可见终端的前台进程树中；`kiro-cli-term` 等创建的嵌套 PTY 会沿真实父子关系映射回外层 Session。后台 app-server、无可见终端祖先的进程和子代理 rollout 不会被当作独立终端 Session。
 - 该方案依赖 Codex 本机 Session 文件中的生命周期事件格式；若上游格式变化，iTermate 会退化为只识别 Codex 身份，而不会解析终端屏幕作为补偿。

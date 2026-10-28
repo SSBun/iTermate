@@ -7,6 +7,32 @@ final class CodexAppServerClientTests: XCTestCase {
     private let threadID = "019a1145-8980-7123-8abc-0123456789ab"
     private let turnID = "019a1145-8981-7123-8abc-0123456789ab"
 
+    func testNativeTitlePrefixAcceptsOnlyExactUpstreamFormats() {
+        XCTAssertTrue(CodexAppServerClient.isValidThreadPrefix(threadID))
+        XCTAssertTrue(CodexAppServerClient.isValidThreadPrefix(String(threadID.prefix(29))))
+        for invalid in ["", String(threadID.prefix(28)), String(threadID.prefix(30)),
+                        threadID.uppercased(), threadID + "\n", String(threadID.prefix(29)) + "..."] {
+            XCTAssertFalse(CodexAppServerClient.isValidThreadPrefix(invalid))
+        }
+    }
+
+    func testThreadDecoderKeepsSourceAndParentSeparateFromOptionalRolloutPath() throws {
+        for source: Any in ["cli", ["subAgent": ["parentThreadId": threadID]], NSNull()] {
+            let data = try JSONSerialization.data(withJSONObject: [
+                "id": threadID, "status": ["type": "idle"], "source": source,
+                "parentThreadId": NSNull(), "path": NSNull()
+            ])
+            let thread = try JSONDecoder().decode(CodexAppServerClient.ThreadState.self, from: data)
+            XCTAssertEqual(thread.source, source as? String)
+            XCTAssertFalse(thread.hasParentThread)
+            XCTAssertNil(thread.path)
+        }
+        let parented = try JSONSerialization.data(withJSONObject: [
+            "id": threadID, "status": ["type": "idle"], "source": "cli", "parentThreadId": turnID
+        ])
+        XCTAssertTrue(try JSONDecoder().decode(CodexAppServerClient.ThreadState.self, from: parented).hasParentThread)
+    }
+
     func testOfficialControlSocketSymlinkResolvesButRegularFilesDoNot() throws {
         let directory = URL(fileURLWithPath: "/tmp").appendingPathComponent("itermate-socket-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
