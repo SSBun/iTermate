@@ -43,7 +43,7 @@ struct CodexSessionObservation: Equatable {
 /// Passively observes original Codex CLI sessions without hooks or command wrappers.
 // All public instance operations serialize mutable state and provider calls with lock.
 final class CodexSessionMonitor: @unchecked Sendable {
-    struct ProcessIdentity: Hashable {
+    struct ProcessIdentity: Codable, Hashable {
         let pid: pid_t
         let startedAt: TimeInterval
     }

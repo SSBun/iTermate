@@ -58,6 +58,8 @@ struct PiStatusSnapshot: Decodable {
     var completedAt: TimeInterval? = nil
     var latestCompletion: SessionCompletion? = nil
     var recentCompletions: [SessionCompletion]? = nil
+    /// Agent-owned event time, stable across Bridge reconstruction.
+    var statusChangedAt: TimeInterval? = nil
 
     var isValid: Bool {
         guard version == 1 && UUID(uuidString: reporterId) != nil && sequence > 0
@@ -66,6 +68,9 @@ struct PiStatusSnapshot: Decodable {
             && (!hasRunningSubagents || status == .running || status == .awaitingInput)
             && (completionId == nil || (status == .finished
                 && completionId.flatMap(UUID.init(uuidString:)) != nil)) else { return false }
+        if let statusChangedAt {
+            guard statusChangedAt.isFinite, statusChangedAt > 0, statusChangedAt < 1e12 else { return false }
+        }
         if let completedAt {
             guard status == .finished, completionId != nil,
                   completedAt.isFinite, completedAt > 0 else { return false }

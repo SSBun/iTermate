@@ -475,7 +475,7 @@ final class ItermStore: ObservableObject {
     }
 
     /// Pins a manual display override to one observed lifecycle and terminal identity.
-    private struct SessionStatusIdentity: Equatable {
+    private struct SessionStatusIdentity: Codable, Equatable {
         let tty: String?
         let activityKind: SessionActivityKind?
         let agentKind: SessionAgentKind?
@@ -543,7 +543,9 @@ final class ItermStore: ObservableObject {
     private var iTermClientIsStarted = false
     private var iTermConnectionState: BridgeConnectionState = .connecting
     private var iTermWindows: [TerminalWindowSnapshot] = []
-    private var manualIdleStatuses: [String: SessionStatusIdentity] = [:]
+    private static let manualIdleStatusesKey = "manualIdleStatuses"
+    private let statusDefaults: UserDefaults
+    private var manualIdleStatuses: [String: SessionStatusIdentity]
     private var statusExpiryTimer: Timer?
     private let codexSessionMonitor = CodexSessionMonitor()
     private let codexMonitorQueue = DispatchQueue(label: "com.caishilin.iTermate.codex-monitor", qos: .utility)
@@ -573,12 +575,17 @@ final class ItermStore: ObservableObject {
     init(
         titleDefaults: UserDefaults = .standard,
         fillsMissingTitles: @escaping () -> Bool = { LocalLLMService.fillsMissingTitles() },
-        generateCodexTitle: (@MainActor (String) async throws -> String)? = nil
+        generateCodexTitle: (@MainActor (String) async throws -> String)? = nil,
+        statusDefaults: UserDefaults = .standard
     ) {
         let defaults = UserDefaults.standard
         let counts = Self.loadCompletionCounts(from: defaults)
         self.generateCodexTitle = generateCodexTitle
         self.titleDefaults = titleDefaults
+        self.statusDefaults = statusDefaults
+        manualIdleStatuses = statusDefaults.data(forKey: Self.manualIdleStatusesKey).flatMap {
+            try? JSONDecoder().decode([String: SessionStatusIdentity].self, from: $0)
+        } ?? [:]
         self.fillsMissingTitles = fillsMissingTitles
         completionDefaults = defaults
         completionCountsByDay = counts
@@ -620,7 +627,6 @@ final class ItermStore: ObservableObject {
         codexObservationSessionIdentityByTTY = [:]
         codexAcknowledgedCompletions = [:]
         codexFocusedSessionIDs = [:]
-        manualIdleStatuses = [:]
         if let terminalDeactivationObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(terminalDeactivationObserver)
             self.terminalDeactivationObserver = nil
@@ -844,6 +850,7 @@ final class ItermStore: ObservableObject {
             .flatMap(\.tabs).flatMap(\.sessions).first(where: { $0.id == sessionID }),
               session.status == .finished || session.status == .awaitingInput else { return }
         manualIdleStatuses[sessionID] = statusIdentity(for: session)
+        saveManualIdleStatuses()
         publishItermWindows()
     }
 
@@ -1997,6 +2004,8 @@ final class ItermStore: ObservableObject {
     private func statusIdentity(for session: TerminalSessionSnapshot) -> SessionStatusIdentity {
         let observation = session.agentKind == .codex
             ? session.tty.flatMap { codexObservations[$0] } : nil
+        // Focus acknowledgements are display-only too; compare the raw Codex event.
+        let session = observation.map { Self.mergingCodexObservation($0, into: session) } ?? session
         return SessionStatusIdentity(
             tty: session.tty,
             activityKind: session.activityKind,
@@ -2013,10 +2022,22 @@ final class ItermStore: ObservableObject {
         )
     }
 
+    /// Saves only this Store-owned preference, not a snapshot of unrelated settings.
+    private func saveManualIdleStatuses() {
+        guard let data = try? JSONEncoder().encode(manualIdleStatuses) else { return }
+        statusDefaults.set(data, forKey: Self.manualIdleStatusesKey)
+    }
+
     /// Repeated snapshots retain the override; new lifecycle evidence releases it.
     private func applyingManualIdleStatuses(
         to windows: [TerminalWindowSnapshot]
     ) -> [TerminalWindowSnapshot] {
+        // An empty local view before the first snapshot or during reconnect is not a deletion.
+        guard iTermSnapshotIsReady else { return windows }
+        let previous = manualIdleStatuses
+        defer {
+            if manualIdleStatuses != previous { saveManualIdleStatuses() }
+        }
         let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
         let currentIDs = Set(sessions.map(\.id))
         manualIdleStatuses = manualIdleStatuses.filter { currentIDs.contains($0.key) }
@@ -2032,7 +2053,17 @@ final class ItermStore: ObservableObject {
                         isSelected: tab.isSelected,
                         sessions: tab.sessions.map { session in
                             guard let identity = manualIdleStatuses[session.id] else { return session }
-                            guard identity == statusIdentity(for: session) else {
+                            let current = statusIdentity(for: session)
+                            guard identity.tty == current.tty else {
+                                manualIdleStatuses[session.id] = nil
+                                return session
+                            }
+                            // Missing Agent/monitor evidence during startup is not a new event.
+                            if identity.codexProcess != nil && current.codexProcess == nil { return session }
+                            if identity.agentKind != nil && current.agentKind == nil { return session }
+                            if current.status == nil { return session }
+                            if identity.codexProcess != nil && current.codexSessionID == nil { return session }
+                            guard identity == current else {
                                 manualIdleStatuses[session.id] = nil
                                 return session
                             }
@@ -2211,13 +2242,15 @@ final class ItermBridgeClient {
             let completedAt: TimeInterval?
             let latestCompletion: SessionCompletion?
             let recentCompletions: [SessionCompletion]?
+            let statusChangedAt: TimeInterval?
         }
         let request = Request(sessionId: sessionID, status: observation.status,
                               reporterId: observation.reporterId, sequence: observation.sequence,
                               exitStatus: observation.exitStatus, hasRunningSubagents: observation.hasRunningSubagents,
                               completionId: observation.completionId, completedAt: observation.completedAt,
                               latestCompletion: observation.latestCompletion,
-                              recentCompletions: observation.recentCompletions)
+                              recentCompletions: observation.recentCompletions,
+                              statusChangedAt: observation.statusChangedAt)
         // Recovery observations must not be queued across a disconnect.
         queue.async { [weak self] in _ = self?.send(request) }
     }

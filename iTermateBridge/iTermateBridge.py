@@ -272,6 +272,13 @@ class Bridge:
                 if not valid_completion:
                     await self.send_action_result(writer, request_id, False, "Invalid completion ID")
                     return
+            status_changed_at = request.get("statusChangedAt")
+            if status_changed_at is not None and (
+                isinstance(status_changed_at, bool) or not isinstance(status_changed_at, (int, float))
+                or not 0 < status_changed_at < 1e12 or not math.isfinite(status_changed_at)
+            ):
+                await self.send_action_result(writer, request_id, False, "Invalid status time")
+                return
             completed_at = request.get("completedAt")
             latest_completion = request.get("latestCompletion")
             if completed_at is not None and (
@@ -340,7 +347,7 @@ class Bridge:
                 session_id, status, exit_status, heartbeat, has_running_subagents,
                 agent_kind=agent_kind or "unknown", completion_id=completion_id,
                 completed_at=completed_at, latest_completion=latest_completion,
-                recent_completions=recent_completions,
+                recent_completions=recent_completions, status_changed_at=status_changed_at,
             )
             if accepted and has_sequence:
                 self.agent_report_sequences[key] = sequence
@@ -884,7 +891,7 @@ class Bridge:
     def set_agent_status(
         self, session_id, status, exit_status=0, heartbeat=False,
         has_running_subagents=False, agent_kind="unknown", completion_id=None,
-        completed_at=None, latest_completion=None, recent_completions=None,
+        completed_at=None, latest_completion=None, recent_completions=None, status_changed_at=None,
     ):
         if status == "detached":
             if self.viewed_completions.pop(session_id, None) is not None:
@@ -912,6 +919,8 @@ class Bridge:
             exit_status if status == "finished" else None,
             activity_kind="agent",
         )
+        if status_changed_at is not None:
+            self.session_statuses[session_id]["statusChangedAt"] = status_changed_at
         if status == "finished" and completion_id is not None:
             self.session_statuses[session_id]["completionId"] = completion_id
             if completed_at is not None:

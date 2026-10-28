@@ -194,6 +194,25 @@ async function settledHarness(options) {
   return h;
 }
 
+test("waiting event time survives heartbeats but changes for a new turn", async () => {
+  const h = await harness({ count: 0 });
+  await h.emit("session_start");
+  await h.advance(0);
+  await h.emit("agent_start");
+  await h.emit("ui_prompt_start", { kind: "confirm" });
+  const waiting = h.reports.at(-1);
+  assert.equal(waiting.status, "awaitingInput");
+  assert.ok(Number.isFinite(waiting.statusChangedAt) && waiting.statusChangedAt > 0);
+  await h.advance(8000);
+  assert.equal(h.reports.at(-1).statusChangedAt, waiting.statusChangedAt);
+  await h.emit("ui_prompt_end");
+  await h.emit("agent_start");
+  await h.emit("ui_prompt_start", { kind: "confirm" });
+  assert.equal(h.reports.at(-1).status, "awaitingInput");
+  assert.ok(h.reports.at(-1).statusChangedAt > waiting.statusChangedAt);
+  await h.emit("session_shutdown");
+});
+
 test("active children keep a settled parent running; only zero completes", async () => {
   const h = await settledHarness();
   assert.equal(h.reports.at(-1).status, "running");

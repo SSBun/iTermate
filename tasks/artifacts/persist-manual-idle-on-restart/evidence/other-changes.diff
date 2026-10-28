@@ -1,0 +1,274 @@
+diff --git a/iTermate/CodexSessionMonitor.swift b/iTermate/CodexSessionMonitor.swift
+index 4ef7c24..b777ab3 100644
+--- a/iTermate/CodexSessionMonitor.swift
++++ b/iTermate/CodexSessionMonitor.swift
+@@ -43,7 +43,7 @@ struct CodexSessionObservation: Equatable {
+ /// Passively observes original Codex CLI sessions without hooks or command wrappers.
+ // All public instance operations serialize mutable state and provider calls with lock.
+ final class CodexSessionMonitor: @unchecked Sendable {
+-    struct ProcessIdentity: Hashable {
++    struct ProcessIdentity: Codable, Hashable {
+         let pid: pid_t
+         let startedAt: TimeInterval
+     }
+diff --git a/iTermate/PiSessionArchives.swift b/iTermate/PiSessionArchives.swift
+index c02f692..174c123 100644
+--- a/iTermate/PiSessionArchives.swift
++++ b/iTermate/PiSessionArchives.swift
+@@ -58,6 +58,8 @@ struct PiStatusSnapshot: Decodable {
+     var completedAt: TimeInterval? = nil
+     var latestCompletion: SessionCompletion? = nil
+     var recentCompletions: [SessionCompletion]? = nil
++    /// Agent-owned event time, stable across Bridge reconstruction.
++    var statusChangedAt: TimeInterval? = nil
+ 
+     var isValid: Bool {
+         guard version == 1 && UUID(uuidString: reporterId) != nil && sequence > 0
+@@ -66,6 +68,9 @@ struct PiStatusSnapshot: Decodable {
+             && (!hasRunningSubagents || status == .running || status == .awaitingInput)
+             && (completionId == nil || (status == .finished
+                 && completionId.flatMap(UUID.init(uuidString:)) != nil)) else { return false }
++        if let statusChangedAt {
++            guard statusChangedAt.isFinite, statusChangedAt > 0, statusChangedAt < 1e12 else { return false }
++        }
+         if let completedAt {
+             guard status == .finished, completionId != nil,
+                   completedAt.isFinite, completedAt > 0 else { return false }
+diff --git a/iTermateBridge/iTermateBridge.py b/iTermateBridge/iTermateBridge.py
+index 66f5fef..9d4e8da 100644
+--- a/iTermateBridge/iTermateBridge.py
++++ b/iTermateBridge/iTermateBridge.py
+@@ -272,6 +272,13 @@ class Bridge:
+                 if not valid_completion:
+                     await self.send_action_result(writer, request_id, False, "Invalid completion ID")
+                     return
++            status_changed_at = request.get("statusChangedAt")
++            if status_changed_at is not None and (
++                isinstance(status_changed_at, bool) or not isinstance(status_changed_at, (int, float))
++                or not 0 < status_changed_at < 1e12 or not math.isfinite(status_changed_at)
++            ):
++                await self.send_action_result(writer, request_id, False, "Invalid status time")
++                return
+             completed_at = request.get("completedAt")
+             latest_completion = request.get("latestCompletion")
+             if completed_at is not None and (
+@@ -340,7 +347,7 @@ class Bridge:
+                 session_id, status, exit_status, heartbeat, has_running_subagents,
+                 agent_kind=agent_kind or "unknown", completion_id=completion_id,
+                 completed_at=completed_at, latest_completion=latest_completion,
+-                recent_completions=recent_completions,
++                recent_completions=recent_completions, status_changed_at=status_changed_at,
+             )
+             if accepted and has_sequence:
+                 self.agent_report_sequences[key] = sequence
+@@ -884,7 +891,7 @@ class Bridge:
+     def set_agent_status(
+         self, session_id, status, exit_status=0, heartbeat=False,
+         has_running_subagents=False, agent_kind="unknown", completion_id=None,
+-        completed_at=None, latest_completion=None, recent_completions=None,
++        completed_at=None, latest_completion=None, recent_completions=None, status_changed_at=None,
+     ):
+         if status == "detached":
+             if self.viewed_completions.pop(session_id, None) is not None:
+@@ -912,6 +919,8 @@ class Bridge:
+             exit_status if status == "finished" else None,
+             activity_kind="agent",
+         )
++        if status_changed_at is not None:
++            self.session_statuses[session_id]["statusChangedAt"] = status_changed_at
+         if status == "finished" and completion_id is not None:
+             self.session_statuses[session_id]["completionId"] = completion_id
+             if completed_at is not None:
+diff --git a/iTermateTests/ItermBridgeTests.swift b/iTermateTests/ItermBridgeTests.swift
+index 2c63458..876b1fa 100644
+--- a/iTermateTests/ItermBridgeTests.swift
++++ b/iTermateTests/ItermBridgeTests.swift
+@@ -1219,6 +1219,121 @@ final class ItermBridgeTests: XCTestCase {
+         )
+     }
+ 
++    func testManualIdleSurvivesStoreRecreationAndStartupGaps() throws {
++        let suite = "iTermateTests.manualIdle.\(UUID().uuidString)"
++        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let first = ItermStore(statusDefaults: defaults)
++        first.apply(try hello())
++        first.apply(try manualIdleSnapshot(sequence: 1, status: .awaitingInput))
++        first.markSessionIdle(sessionID: "pane")
++        XCTAssertEqual(first.windows.first?.tabs.first?.sessions.first?.status, .idle)
++        XCTAssertEqual(first.lifecycleWindows.first?.tabs.first?.sessions.first?.status, .awaitingInput)
++        first.stop()
++
++        let reopened = ItermStore(statusDefaults: defaults)
++        reopened.setActiveTerminalApp(.iTerm2)
++        reopened.updateConnectionState(.connecting)
++        reopened.apply(try hello())
++        reopened.apply(try manualIdleSnapshot(sequence: 1, status: nil))
++        XCTAssertNil(reopened.windows.first?.tabs.first?.sessions.first?.status)
++        reopened.apply(try manualIdleSnapshot(sequence: 2, status: .awaitingInput))
++        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .idle)
++        XCTAssertEqual(reopened.lifecycleWindows.first?.tabs.first?.sessions.first?.status, .awaitingInput)
++    }
++
++    func testManualIdleReleasesForNewActivityAndPersistsRemoval() throws {
++        let suite = "iTermateTests.manualIdle.\(UUID().uuidString)"
++        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let store = ItermStore(statusDefaults: defaults)
++        store.apply(try hello())
++        store.apply(try manualIdleSnapshot(sequence: 1, status: .finished))
++        store.markSessionIdle(sessionID: "pane")
++        store.apply(try manualIdleSnapshot(sequence: 2, status: .running, changedAt: 21))
++        XCTAssertEqual(store.windows.first?.tabs.first?.sessions.first?.status, .running)
++        store.markSessionIdle(sessionID: "pane")
++        XCTAssertEqual(store.windows.first?.tabs.first?.sessions.first?.status, .running)
++
++        let reopened = ItermStore(statusDefaults: defaults)
++        reopened.apply(try hello())
++        reopened.apply(try manualIdleSnapshot(sequence: 1, status: .finished))
++        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .finished)
++    }
++
++    func testManualIdleRejectsNewWaitingEventAndRemovedSession() throws {
++        let suite = "iTermateTests.manualIdle.\(UUID().uuidString)"
++        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let store = ItermStore(statusDefaults: defaults)
++        store.apply(try hello())
++        store.apply(try manualIdleSnapshot(sequence: 1, status: .awaitingInput))
++        store.markSessionIdle(sessionID: "pane")
++        store.apply(try manualIdleSnapshot(sequence: 2, status: .awaitingInput, changedAt: 21))
++        XCTAssertEqual(store.windows.first?.tabs.first?.sessions.first?.status, .awaitingInput)
++        store.markSessionIdle(sessionID: "pane")
++        store.apply(try snapshot(sequence: 3, title: "Empty"))
++        let reopened = ItermStore(statusDefaults: defaults)
++        reopened.apply(try hello())
++        reopened.apply(try manualIdleSnapshot(sequence: 1, status: .awaitingInput, changedAt: 21))
++        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .awaitingInput)
++    }
++
++    func testCodexManualIdleWaitsForMonitorAndRejectsReplacementProcess() throws {
++        let suite = "iTermateTests.manualIdle.\(UUID().uuidString)"
++        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
++        defer { defaults.removePersistentDomain(forName: suite) }
++        let raw = try manualIdleSnapshot(sequence: 1, status: .running, agentKind: nil)
++        let session = try XCTUnwrap(raw.windows?.first?.tabs.first?.sessions.first)
++        let observed = CodexSessionObservation(
++            status: .awaitingInput, changedAt: 20,
++            processIdentity: .init(pid: 42, startedAt: 10), sessionID: "thread"
++        )
++        let first = ItermStore(statusDefaults: defaults)
++        first.apply(try hello())
++        first.apply(raw)
++        first.prepareCodexTitleRefreshForTesting(session, observation: observed)
++        first.markSessionIdle(sessionID: "pane")
++        XCTAssertEqual(first.windows.first?.tabs.first?.sessions.first?.status, .idle)
++
++        let reopened = ItermStore(statusDefaults: defaults)
++        reopened.updateConnectionState(.connecting)
++        reopened.apply(try hello())
++        reopened.apply(raw)
++        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .running)
++        reopened.prepareCodexTitleRefreshForTesting(session, observation: observed)
++        reopened.apply(try manualIdleSnapshot(sequence: 2, status: .running, agentKind: nil))
++        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .idle)
++        reopened.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
++            status: .awaitingInput, changedAt: 20,
++            processIdentity: .init(pid: 42, startedAt: 11), sessionID: "thread"
++        ))
++        reopened.apply(try manualIdleSnapshot(sequence: 3, status: .running, agentKind: nil))
++        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .awaitingInput)
++    }
++
++    private func manualIdleSnapshot(
++        sequence: Int,
++        status: TerminalSessionStatus?,
++        changedAt: TimeInterval = 20,
++        agentKind: SessionAgentKind? = .pi
++    ) throws -> BridgeMessage {
++        let session = TerminalSessionSnapshot(
++            id: "pane", name: "Pi", path: nil, tty: "/dev/ttys001", windowId: "window", tabId: "tab",
++            isActive: false, isMinimized: false, status: status, activityKind: agentKind == nil ? .command : .agent,
++            exitStatus: status == .finished ? 0 : nil, statusChangedAt: status == nil ? nil : changedAt,
++            hasRunningSubagents: false, agentKind: agentKind
++        )
++        let windows = [TerminalWindowSnapshot(
++            id: "window", number: 1, isActive: false,
++            tabs: [TerminalTabSnapshot(id: "tab", title: "Pi", isSelected: false, sessions: [session])]
++        )]
++        let encoded = String(decoding: try JSONEncoder().encode(windows), as: UTF8.self)
++        return try JSONDecoder().decode(BridgeMessage.self, from: Data("""
++        {"type":"snapshot","sequence":\(sequence),"windows":\(encoded)}
++        """.utf8))
++    }
++
+     func testStoreIgnoresOlderSnapshots() throws {
+         let store = ItermStore()
+         store.apply(try hello())
+diff --git a/integrations/pi/iTermate-integration.ts b/integrations/pi/iTermate-integration.ts
+index 0020d32..0011f10 100644
+--- a/integrations/pi/iTermate-integration.ts
++++ b/integrations/pi/iTermate-integration.ts
+@@ -38,6 +38,7 @@ type Status = "idle" | "running" | "awaitingInput" | "finished" | "interrupted"
+ type Completion = { id: string; completedAt: number; exitStatus: number };
+ type StatusSnapshot = {
+   status: Status | null;
++  statusChangedAt?: number;
+   exitStatus?: number;
+   hasRunningSubagents: boolean;
+   completionId?: string;
+@@ -943,6 +944,8 @@ export default function (pi: ExtensionAPI): void {
+   let reportQueue = Promise.resolve(true);
+   let hasRunningSubagents = false;
+   let reportedState: StatusSnapshot | undefined;
++  let statusEventKey: string | undefined;
++  let statusChangedAt = 0;
+   let fleetObservedAt = 0;
+   let fleetGeneration = 0;
+   let fleetTimer: ReturnType<typeof setTimeout> | undefined;
+@@ -1093,8 +1096,15 @@ export default function (pi: ExtensionAPI): void {
+       : agentRunning || (context && !context.isIdle()) ? "running"
+       : childrenUnknown ? null
+       : fleetIsFresh && hasRunningSubagents ? "running" : baseStatus;
++    // Keep the event time in the Agent, so Bridge/App restarts do not invent a new event.
++    const eventKey = JSON.stringify([status, completionId]);
++    if (statusEventKey !== eventKey) {
++      statusEventKey = eventKey;
++      statusChangedAt = Math.max(Date.now() / 1000, statusChangedAt + 0.000001);
++    }
+     return {
+       status,
++      statusChangedAt: status === "finished" ? completedAt ?? statusChangedAt : statusChangedAt,
+       completionId: status === "finished" ? completionId : undefined,
+       completedAt: status === "finished" ? completedAt : undefined,
+       exitStatus: status === "finished" ? (agentFailed ? 1 : 0) : undefined,
+diff --git a/integrations/pi/subagent-lifecycle.test.mjs b/integrations/pi/subagent-lifecycle.test.mjs
+index 0f3b81b..f795538 100644
+--- a/integrations/pi/subagent-lifecycle.test.mjs
++++ b/integrations/pi/subagent-lifecycle.test.mjs
+@@ -194,6 +194,25 @@ async function settledHarness(options) {
+   return h;
+ }
+ 
++test("waiting event time survives heartbeats but changes for a new turn", async () => {
++  const h = await harness({ count: 0 });
++  await h.emit("session_start");
++  await h.advance(0);
++  await h.emit("agent_start");
++  await h.emit("ui_prompt_start", { kind: "confirm" });
++  const waiting = h.reports.at(-1);
++  assert.equal(waiting.status, "awaitingInput");
++  assert.ok(Number.isFinite(waiting.statusChangedAt) && waiting.statusChangedAt > 0);
++  await h.advance(8000);
++  assert.equal(h.reports.at(-1).statusChangedAt, waiting.statusChangedAt);
++  await h.emit("ui_prompt_end");
++  await h.emit("agent_start");
++  await h.emit("ui_prompt_start", { kind: "confirm" });
++  assert.equal(h.reports.at(-1).status, "awaitingInput");
++  assert.ok(h.reports.at(-1).statusChangedAt > waiting.statusChangedAt);
++  await h.emit("session_shutdown");
++});
++
+ test("active children keep a settled parent running; only zero completes", async () => {
+   const h = await settledHarness();
+   assert.equal(h.reports.at(-1).status, "running");

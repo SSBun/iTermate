@@ -38,6 +38,7 @@ type Status = "idle" | "running" | "awaitingInput" | "finished" | "interrupted" 
 type Completion = { id: string; completedAt: number; exitStatus: number };
 type StatusSnapshot = {
   status: Status | null;
+  statusChangedAt?: number;
   exitStatus?: number;
   hasRunningSubagents: boolean;
   completionId?: string;
@@ -943,6 +944,8 @@ export default function (pi: ExtensionAPI): void {
   let reportQueue = Promise.resolve(true);
   let hasRunningSubagents = false;
   let reportedState: StatusSnapshot | undefined;
+  let statusEventKey: string | undefined;
+  let statusChangedAt = 0;
   let fleetObservedAt = 0;
   let fleetGeneration = 0;
   let fleetTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1093,8 +1096,15 @@ export default function (pi: ExtensionAPI): void {
       : agentRunning || (context && !context.isIdle()) ? "running"
       : childrenUnknown ? null
       : fleetIsFresh && hasRunningSubagents ? "running" : baseStatus;
+    // Keep the event time in the Agent, so Bridge/App restarts do not invent a new event.
+    const eventKey = JSON.stringify([status, completionId]);
+    if (statusEventKey !== eventKey) {
+      statusEventKey = eventKey;
+      statusChangedAt = Math.max(Date.now() / 1000, statusChangedAt + 0.000001);
+    }
     return {
       status,
+      statusChangedAt: status === "finished" ? completedAt ?? statusChangedAt : statusChangedAt,
       completionId: status === "finished" ? completionId : undefined,
       completedAt: status === "finished" ? completedAt : undefined,
       exitStatus: status === "finished" ? (agentFailed ? 1 : 0) : undefined,

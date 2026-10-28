@@ -1219,6 +1219,121 @@ final class ItermBridgeTests: XCTestCase {
         )
     }
 
+    func testManualIdleSurvivesStoreRecreationAndStartupGaps() throws {
+        let suite = "iTermateTests.manualIdle.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let first = ItermStore(statusDefaults: defaults)
+        first.apply(try hello())
+        first.apply(try manualIdleSnapshot(sequence: 1, status: .awaitingInput))
+        first.markSessionIdle(sessionID: "pane")
+        XCTAssertEqual(first.windows.first?.tabs.first?.sessions.first?.status, .idle)
+        XCTAssertEqual(first.lifecycleWindows.first?.tabs.first?.sessions.first?.status, .awaitingInput)
+        first.stop()
+
+        let reopened = ItermStore(statusDefaults: defaults)
+        reopened.setActiveTerminalApp(.iTerm2)
+        reopened.updateConnectionState(.connecting)
+        reopened.apply(try hello())
+        reopened.apply(try manualIdleSnapshot(sequence: 1, status: nil))
+        XCTAssertNil(reopened.windows.first?.tabs.first?.sessions.first?.status)
+        reopened.apply(try manualIdleSnapshot(sequence: 2, status: .awaitingInput))
+        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .idle)
+        XCTAssertEqual(reopened.lifecycleWindows.first?.tabs.first?.sessions.first?.status, .awaitingInput)
+    }
+
+    func testManualIdleReleasesForNewActivityAndPersistsRemoval() throws {
+        let suite = "iTermateTests.manualIdle.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = ItermStore(statusDefaults: defaults)
+        store.apply(try hello())
+        store.apply(try manualIdleSnapshot(sequence: 1, status: .finished))
+        store.markSessionIdle(sessionID: "pane")
+        store.apply(try manualIdleSnapshot(sequence: 2, status: .running, changedAt: 21))
+        XCTAssertEqual(store.windows.first?.tabs.first?.sessions.first?.status, .running)
+        store.markSessionIdle(sessionID: "pane")
+        XCTAssertEqual(store.windows.first?.tabs.first?.sessions.first?.status, .running)
+
+        let reopened = ItermStore(statusDefaults: defaults)
+        reopened.apply(try hello())
+        reopened.apply(try manualIdleSnapshot(sequence: 1, status: .finished))
+        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .finished)
+    }
+
+    func testManualIdleRejectsNewWaitingEventAndRemovedSession() throws {
+        let suite = "iTermateTests.manualIdle.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let store = ItermStore(statusDefaults: defaults)
+        store.apply(try hello())
+        store.apply(try manualIdleSnapshot(sequence: 1, status: .awaitingInput))
+        store.markSessionIdle(sessionID: "pane")
+        store.apply(try manualIdleSnapshot(sequence: 2, status: .awaitingInput, changedAt: 21))
+        XCTAssertEqual(store.windows.first?.tabs.first?.sessions.first?.status, .awaitingInput)
+        store.markSessionIdle(sessionID: "pane")
+        store.apply(try snapshot(sequence: 3, title: "Empty"))
+        let reopened = ItermStore(statusDefaults: defaults)
+        reopened.apply(try hello())
+        reopened.apply(try manualIdleSnapshot(sequence: 1, status: .awaitingInput, changedAt: 21))
+        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .awaitingInput)
+    }
+
+    func testCodexManualIdleWaitsForMonitorAndRejectsReplacementProcess() throws {
+        let suite = "iTermateTests.manualIdle.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let raw = try manualIdleSnapshot(sequence: 1, status: .running, agentKind: nil)
+        let session = try XCTUnwrap(raw.windows?.first?.tabs.first?.sessions.first)
+        let observed = CodexSessionObservation(
+            status: .awaitingInput, changedAt: 20,
+            processIdentity: .init(pid: 42, startedAt: 10), sessionID: "thread"
+        )
+        let first = ItermStore(statusDefaults: defaults)
+        first.apply(try hello())
+        first.apply(raw)
+        first.prepareCodexTitleRefreshForTesting(session, observation: observed)
+        first.markSessionIdle(sessionID: "pane")
+        XCTAssertEqual(first.windows.first?.tabs.first?.sessions.first?.status, .idle)
+
+        let reopened = ItermStore(statusDefaults: defaults)
+        reopened.updateConnectionState(.connecting)
+        reopened.apply(try hello())
+        reopened.apply(raw)
+        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .running)
+        reopened.prepareCodexTitleRefreshForTesting(session, observation: observed)
+        reopened.apply(try manualIdleSnapshot(sequence: 2, status: .running, agentKind: nil))
+        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .idle)
+        reopened.prepareCodexTitleRefreshForTesting(session, observation: CodexSessionObservation(
+            status: .awaitingInput, changedAt: 20,
+            processIdentity: .init(pid: 42, startedAt: 11), sessionID: "thread"
+        ))
+        reopened.apply(try manualIdleSnapshot(sequence: 3, status: .running, agentKind: nil))
+        XCTAssertEqual(reopened.windows.first?.tabs.first?.sessions.first?.status, .awaitingInput)
+    }
+
+    private func manualIdleSnapshot(
+        sequence: Int,
+        status: TerminalSessionStatus?,
+        changedAt: TimeInterval = 20,
+        agentKind: SessionAgentKind? = .pi
+    ) throws -> BridgeMessage {
+        let session = TerminalSessionSnapshot(
+            id: "pane", name: "Pi", path: nil, tty: "/dev/ttys001", windowId: "window", tabId: "tab",
+            isActive: false, isMinimized: false, status: status, activityKind: agentKind == nil ? .command : .agent,
+            exitStatus: status == .finished ? 0 : nil, statusChangedAt: status == nil ? nil : changedAt,
+            hasRunningSubagents: false, agentKind: agentKind
+        )
+        let windows = [TerminalWindowSnapshot(
+            id: "window", number: 1, isActive: false,
+            tabs: [TerminalTabSnapshot(id: "tab", title: "Pi", isSelected: false, sessions: [session])]
+        )]
+        let encoded = String(decoding: try JSONEncoder().encode(windows), as: UTF8.self)
+        return try JSONDecoder().decode(BridgeMessage.self, from: Data("""
+        {"type":"snapshot","sequence":\(sequence),"windows":\(encoded)}
+        """.utf8))
+    }
+
     func testStoreIgnoresOlderSnapshots() throws {
         let store = ItermStore()
         store.apply(try hello())
