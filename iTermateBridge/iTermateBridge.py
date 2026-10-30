@@ -608,6 +608,13 @@ class Bridge:
         async with iterm2.FocusMonitor(self.connection) as monitor:
             while True:
                 update = await monitor.async_get_next_update()
+                if (
+                    update.application_active is not None
+                    and not update.application_active.application_active
+                ):
+                    async with self.finished_navigation_lock:
+                        self.finished_navigation_visited.clear()
+                        self.finished_navigation_last_press = None
                 statuses_before_focus = dict(self.session_statuses)
                 await self.app.async_refresh_focus()
                 session_id = self.activated_session_id(update)
@@ -2317,6 +2324,51 @@ def self_test():
         assert activated[-1] == "waiting-a"
 
     asyncio.run(check_navigation_rounds())
+
+    async def check_navigation_focus_reset():
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock, patch
+
+        navigation = Bridge(None, SimpleNamespace(async_refresh_focus=AsyncMock()))
+        navigation.publish_snapshot = AsyncMock()
+        navigation.activated_session_id = lambda update: None
+        navigation.session_statuses["waiting"] = {"status": "awaitingInput", "activityKind": "agent"}
+        lifecycle_before = {key: dict(value) for key, value in navigation.session_statuses.items()}
+
+        class FocusMonitor:
+            def __init__(self, update):
+                self.updates = iter([update])
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *args):
+                return False
+
+            async def async_get_next_update(self):
+                update = next(self.updates, None)
+                if update is None:
+                    raise StopAsyncIteration
+                return update
+
+        # App activation and intra-app focus changes preserve the current round.
+        for active in (None, True, False):
+            navigation.finished_navigation_visited = {"visited"}
+            navigation.finished_navigation_last_press = 100
+            update = SimpleNamespace(application_active=(
+                None if active is None else SimpleNamespace(application_active=active)
+            ))
+            sdk = SimpleNamespace(FocusMonitor=lambda connection: FocusMonitor(update))
+            with patch.dict(globals(), {"iterm2": sdk}):
+                try:
+                    await navigation.monitor_focus()
+                except StopAsyncIteration:
+                    pass
+            assert navigation.finished_navigation_visited == (set() if active is False else {"visited"})
+            assert navigation.finished_navigation_last_press == (None if active is False else 100)
+            assert navigation.session_statuses == lifecycle_before
+
+    asyncio.run(check_navigation_focus_reset())
 
 
 if __name__ == "__main__":
