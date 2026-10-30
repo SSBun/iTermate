@@ -1165,9 +1165,8 @@ struct StatusMenuView: View {
                     .font(.headline)
                 Spacer()
                 HStack(spacing: 5) {
-                    Circle()
-                        .fill(statusColor)
-                        .frame(width: 7, height: 7)
+                    StatusMenuPixelIcon(kind: connectionIcon, color: statusColor)
+                        .frame(width: 12, height: 12)
                     Text(statusTitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -1181,20 +1180,30 @@ struct StatusMenuView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            VStack(spacing: 5) {
-                Text(store.completedAgentTurnsToday.formatted())
-                    .font(.system(size: 40, weight: .semibold, design: .rounded))
-                    .foregroundStyle(completionCountColor)
-                Text("COMPLETED TODAY")
-                    .font(.caption2.weight(.semibold))
-                    .tracking(0.8)
-                    .foregroundStyle(.secondary)
-                Label(runningAgentSummary, systemImage: "bolt.fill")
-                    .font(.subheadline)
+            Divider()
+
+            HStack(spacing: 12) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(store.completedAgentTurnsToday.formatted())
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .foregroundStyle(completionCountColor)
+                    Text("turns today")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .help("Successful Agent turns completed today, not the number of sessions.")
+                Spacer(minLength: 4)
+                StatusMenuPixelIcon(kind: .running, color: settings.accentColor)
+                    .frame(width: 16, height: 16)
+                Text(runningAgentSummary)
+                    .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity)
             .padding(.vertical, 2)
+
+            Divider()
+
+            StatusMenuSessionsView(store: store, archives: store.piArchives)
 
             Divider()
 
@@ -1222,9 +1231,9 @@ struct StatusMenuView: View {
                 }
             }
         }
-        .padding(14)
+        .padding(16)
         .tint(settings.accentColor)
-        .frame(width: 340)
+        .frame(width: 440)
         .onAppear {
             projectActionError = nil
             store.refreshStatusMenu()
@@ -1242,11 +1251,11 @@ struct StatusMenuView: View {
                     .foregroundStyle(.tertiary)
             }
             .padding(.vertical, 4)
-        } else if favoriteProjectPaths.count > 5 {
+        } else if favoriteProjectPaths.count > 3 {
             ScrollView {
                 favoriteProjectRows
             }
-            .frame(height: 160)
+            .frame(height: 96)
         } else {
             favoriteProjectRows
         }
@@ -1317,6 +1326,17 @@ struct StatusMenuView: View {
         }
     }
 
+    private var connectionIcon: StatusMenuPixelIcon.Kind {
+        switch store.statusMenuConnectionState {
+        case .connecting:
+            .running
+        case .disconnected:
+            .failed
+        case .connected:
+            .connected
+        }
+    }
+
     private var statusColor: Color {
         switch store.statusMenuConnectionState {
         case .connecting:
@@ -1357,10 +1377,10 @@ struct StatusMenuView: View {
     private var settingsControl: some View {
         if #available(macOS 14.0, *) {
             OpenSettingsButton {
-                Text("Settings…")
+                Text("Settings")
             }
         } else {
-            Button("Settings…") {
+            Button("Settings") {
                 NSApplication.shared.sendAction(
                     Selector(("showSettingsWindow:")),
                     to: nil,

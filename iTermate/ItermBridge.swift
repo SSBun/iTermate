@@ -475,7 +475,7 @@ final class ItermStore: ObservableObject {
     }
 
     /// Pins a manual display override to one observed lifecycle and terminal identity.
-    private struct SessionStatusIdentity: Codable, Equatable {
+    fileprivate struct SessionStatusIdentity: Codable, Equatable {
         let tty: String?
         let activityKind: SessionActivityKind?
         let agentKind: SessionAgentKind?
@@ -488,6 +488,22 @@ final class ItermStore: ObservableObject {
         let codexThreadIDPrefix: String?
         let codexProcess: CodexSessionMonitor.ProcessIdentity?
         let codexSessionID: String?
+    }
+
+    /// One live Agent pane projected for the menu, not a completion-history record.
+    struct MenuSession: Identifiable, Equatable {
+        let session: TerminalSessionSnapshot
+        let status: TerminalSessionStatus
+        let exitStatus: Int?
+        let changedAt: TimeInterval?
+        let isUnread: Bool
+        fileprivate let identity: SessionStatusIdentity
+
+        var id: String { session.id }
+
+        var isFailure: Bool {
+            status == .interrupted || (status == .finished && exitStatus.map { $0 != 0 } == true)
+        }
     }
 
     private struct CodexTitleState {
@@ -522,6 +538,10 @@ final class ItermStore: ObservableObject {
     @Published private(set) var lifecycleWindows: [TerminalWindowSnapshot] = []
     @Published private(set) var actionError: String?
     @Published private(set) var statusMenuConnectionState: BridgeConnectionState = .connecting
+    @Published private(set) var statusMenuSessions: [MenuSession] = []
+    private var menuReadCompletions: [String: SessionStatusIdentity] = [:]
+    private var menuActivationSessionID: String?
+    private var menuActivationIsPending = false
     @Published private(set) var runningAgentSessionCount: Int?
     @Published private(set) var agentCompletionStatistics: AgentCompletionStatistics
     @Published private var venomDebugMonitoringSessions: [String: TerminalSessionSnapshot] = [:]
@@ -604,6 +624,10 @@ final class ItermStore: ObservableObject {
             guard let application = notification.userInfo?[NSWorkspace.applicationUserInfoKey]
                 as? NSRunningApplication, let bundleID = application.bundleIdentifier else { return }
             self?.codexFocusedSessionIDs[bundleID] = nil
+            if bundleID == TerminalApp.iTerm2.bundleIdentifier, self?.menuActivationIsPending == false,
+               NSWorkspace.shared.frontmostApplication?.bundleIdentifier != bundleID {
+                self?.menuActivationSessionID = nil
+            }
         }
         piArchives.start()
         let statusExpiryTimer = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
@@ -855,6 +879,44 @@ final class ItermStore: ObservableObject {
                   acknowledgeCodexCompletion(completion, tty: session?.tty) else { return }
             publishItermWindows()
         }
+    }
+
+    /// Activates only the observation selected in the menu; late replies cannot read a new turn.
+    func activateMenuSession(_ entry: MenuSession, completion: @escaping (String?) -> Void) {
+        guard !menuActivationIsPending, iTermSnapshotIsReady, iTermConnectionState == .connected,
+              let current = statusMenuSessions.first(where: { $0.id == entry.id }),
+              current.identity == entry.identity else {
+            completion("This session changed. Please select it again.")
+            return
+        }
+        let acknowledgement = codexCompletionAcknowledgement(for: entry.session)
+        menuActivationSessionID = entry.id
+        menuActivationIsPending = true
+        iTermClient.activateMenuSession(sessionID: entry.id) { [weak self] error in
+            if let self {
+                menuActivationIsPending = false
+                if error == nil, entry.isUnread,
+                   let current = statusMenuSessions.first(where: { $0.id == entry.id }),
+                   current.identity == entry.identity {
+                    // Only this captured result is read; Bridge and automatic focus do not acknowledge.
+                    menuReadCompletions[entry.id] = entry.identity
+                    _ = acknowledgeCodexCompletion(acknowledgement, tty: entry.session.tty)
+                    publishItermWindows()
+                }
+            }
+            completion(error)
+        }
+    }
+
+    /// Marks only current successful/unspecified completions read, without lifecycle writes.
+    func markMenuCompletionsRead() {
+        guard iTermSnapshotIsReady, iTermConnectionState == .connected else {
+            return
+        }
+        for entry in statusMenuSessions where entry.isUnread && !entry.isFailure {
+            menuReadCompletions[entry.id] = entry.identity
+        }
+        publishItermWindows()
     }
 
     /// Acknowledges a finished or waiting observation without changing the underlying work.
@@ -1389,7 +1451,12 @@ final class ItermStore: ObservableObject {
         )
         let previousID = codexFocusedSessionIDs[terminal.bundleIdentifier]
         codexFocusedSessionIDs[terminal.bundleIdentifier] = session?.id
-        guard let session, session.id != previousID else { return }
+        guard let session else { return }
+        if menuActivationIsPending || menuActivationSessionID == session.id {
+            return
+        }
+        menuActivationSessionID = nil
+        guard session.id != previousID else { return }
         _ = acknowledgeCodexCompletion(codexCompletionAcknowledgement(for: session), tty: session.tty)
     }
 
@@ -2110,6 +2177,68 @@ final class ItermStore: ObservableObject {
     private func publishWindows(_ observedWindows: [TerminalWindowSnapshot]) {
         lifecycleWindows = observedWindows
         windows = applyingManualIdleStatuses(to: observedWindows)
+        updateMenuSessions(from: observedWindows)
+    }
+
+    /// Uses observed states; manual waiting overrides must not hide a request in this menu.
+    private func updateMenuSessions(from windows: [TerminalWindowSnapshot]) {
+        guard iTermSnapshotIsReady, iTermConnectionState == .connected else {
+            statusMenuSessions = []
+            return
+        }
+        let sessions = windows.flatMap(\.tabs).flatMap(\.sessions)
+        let liveIDs = Set(sessions.map(\.id))
+        menuReadCompletions = menuReadCompletions.filter { liveIDs.contains($0.key) }
+        let previous = Dictionary(statusMenuSessions.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let entries = sessions.compactMap { session -> MenuSession? in
+            guard session.environmentAgentKind != nil, let observedStatus = session.status,
+                  observedStatus != .running,
+                  observedStatus == .awaitingInput || session.hasRunningSubagents != true else {
+                return nil
+            }
+            let identity = statusIdentity(for: session)
+            var status = identity.status ?? observedStatus
+            var exitStatus = identity.exitStatus
+            var changedAt = identity.changedAt
+
+            if status == .idle, let completion = session.latestCompletion,
+               completion.isValid, completion.completedAt == session.statusChangedAt {
+                status = .finished
+                exitStatus = completion.exitStatus
+                changedAt = completion.completedAt
+            }
+
+            // Pi acknowledges focus in the Bridge; Codex's raw identity already retains finished.
+            // Retain only the same completion after its immediate transition to idle, not history
+            // from a session that has since started running, waiting, or lost its observation.
+            if status == .idle, let prior = previous[session.id], prior.status == .finished,
+               let completion = session.latestCompletion, completion.isValid,
+               prior.identity.latestCompletion == completion,
+               prior.identity.tty == identity.tty,
+               prior.identity.agentKind == identity.agentKind,
+               prior.identity.codexProcess == identity.codexProcess,
+               prior.identity.codexSessionID == identity.codexSessionID,
+               prior.identity.codexThreadIDPrefix == identity.codexThreadIDPrefix {
+                status = .finished
+                exitStatus = prior.exitStatus
+                changedAt = prior.changedAt
+            }
+            let failed = exitStatus.map { $0 != 0 } == true
+            let isUnread = status == .finished && !failed && observedStatus == .finished
+                && menuReadCompletions[session.id] != identity
+                && manualIdleStatuses[session.id] != identity
+            return MenuSession(
+                session: session,
+                status: status,
+                exitStatus: exitStatus,
+                changedAt: changedAt,
+                isUnread: isUnread,
+                identity: identity
+            )
+        }
+        if statusMenuSessions != entries {
+            statusMenuSessions = entries
+        }
     }
 
     private func publishItermWindows() {
@@ -2188,6 +2317,14 @@ final class ItermBridgeClient {
     func activate(sessionID: String, completion: @escaping (String?) -> Void) {
         perform(SessionActionRequest(type: "activateSession", requestId: UUID().uuidString,
                                      sessionId: sessionID), completion: completion)
+    }
+
+    /// Focuses a pane without consuming the Bridge's current completion.
+    func activateMenuSession(sessionID: String, completion: @escaping (String?) -> Void) {
+        perform(
+            SessionActionRequest(type: "activateMenuSession", requestId: UUID().uuidString, sessionId: sessionID),
+            completion: completion
+        )
     }
 
     func close(sessionID: String) {

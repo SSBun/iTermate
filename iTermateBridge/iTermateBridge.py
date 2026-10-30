@@ -77,6 +77,7 @@ class Bridge:
         self.finished_navigation_lock = asyncio.Lock()
         self.finished_navigation_visited = set()
         self.finished_navigation_last_press = None
+        self.menu_activation_guard = None
         self.command_monitor_tasks = {}
         self.command_monitor_unavailable = set()
         self.agent_managed_session_ids = set()
@@ -362,7 +363,7 @@ class Bridge:
             await self.publish_snapshot()
             return
 
-        if action not in {"activateSession", "closeSession", "closeArchivedSession"}:
+        if action not in {"activateSession", "activateMenuSession", "closeSession", "closeArchivedSession"}:
             await self.send_action_result(writer, request_id, False, "Unknown action")
             return
 
@@ -374,6 +375,12 @@ class Bridge:
             )
             return
 
+        menu_guard = None
+        if action == "activateMenuSession":
+            # A menu row refers to an App-observed event, not the current Bridge completion.
+            # Never acknowledge implicitly, including delayed FocusMonitor updates.
+            menu_guard = {"sessionId": session_id, "pending": True}
+            self.menu_activation_guard = menu_guard
         try:
             if action == "closeArchivedSession":
                 expected_pid = request.get("expectedShellPID")
@@ -410,6 +417,10 @@ class Bridge:
         except Exception as error:
             await self.send_action_result(writer, request_id, False, str(error))
             return
+
+        finally:
+            if menu_guard is not None:
+                menu_guard["pending"] = False
 
         if action == "activateSession":
             self.clear_finished_status(session_id, expected_status=status_before_activation)
@@ -629,11 +640,24 @@ class Bridge:
                 statuses_before_focus = dict(self.session_statuses)
                 await self.app.async_refresh_focus()
                 session_id = self.activated_session_id(update)
-                if session_id in statuses_before_focus:
+                if self.should_acknowledge_focus(session_id) and session_id in statuses_before_focus:
                     self.clear_finished_status(
                         session_id, expected_status=statuses_before_focus[session_id]
                     )
                 await self.publish_snapshot()
+
+    def should_acknowledge_focus(self, session_id):
+        guard = self.menu_activation_guard
+        if guard is None:
+            return True
+        if guard["pending"]:
+            return False
+        # Keep protecting the pane after the action reply: focus events may arrive later.
+        # Only a real focus departure releases it; an unrelated/empty focus update does not.
+        if not self.app.app_active or (session_id is not None and session_id != guard["sessionId"]):
+            self.menu_activation_guard = None
+            return True
+        return False
 
     def activated_session_id(self, update):
         # Losing focus or changing a background tab is not evidence of reading a result.
@@ -1481,6 +1505,45 @@ def self_test():
         for entry in ("session", "navigation", "project"):
             for behavior in ("new", "same", "failed"):
                 asyncio.run(check_delayed_activation(entry, behavior))
+
+        async def check_menu_activation(new_completion_before_request):
+            completion_a = str(uuid.uuid4())
+            completion_b = str(uuid.uuid4())
+
+            class MenuSession(FakeSession):
+                async def async_activate(self):
+                    assert not receiver.should_acknowledge_focus("session-1")
+                    if not new_completion_before_request:
+                        receiver.set_agent_status("session-1", "finished", agent_kind="pi", completion_id=completion_b)
+                    await asyncio.sleep(0)
+
+            target = MenuSession()
+            target_app = FakeApp(FakeWindow(FakeTab(target)), target)
+            target_app.app_active = True
+            path = os.path.join(directory, "menu-" + str(new_completion_before_request) + ".json")
+            receiver = Bridge(None, target_app, path)
+            receiver.set_agent_status("session-1", "finished", agent_kind="pi", completion_id=completion_a)
+            # Swift still displays A. B may already be in Bridge, or arrive during activation.
+            if new_completion_before_request:
+                receiver.set_agent_status("session-1", "finished", agent_kind="pi", completion_id=completion_b)
+            writer = FakeWriter()
+            await receiver.handle_command(writer, encode_message({
+                "type": "activateMenuSession", "requestId": "menu", "sessionId": "session-1",
+            }))
+            assert any(message.get("ok") is True for message in writer.messages)
+            assert receiver.session_statuses["session-1"]["completionId"] == completion_b
+            assert receiver.session_statuses["session-1"]["status"] == "finished"
+            assert receiver.viewed_completions.get("session-1") != completion_b
+            # Neither an unrelated update nor the delayed activation focus can consume B.
+            assert not receiver.should_acknowledge_focus(None)
+            assert not receiver.should_acknowledge_focus("session-1")
+            assert receiver.should_acknowledge_focus("other-pane")
+            assert receiver.should_acknowledge_focus("session-1")
+            receiver.clear_finished_status("session-1")
+            assert receiver.session_statuses["session-1"]["status"] == "idle"
+
+        for new_completion_before_request in (True, False):
+            asyncio.run(check_menu_activation(new_completion_before_request))
 
     bridge = Bridge(None, app)
     try:
