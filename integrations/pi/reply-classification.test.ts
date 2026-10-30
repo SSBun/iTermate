@@ -9,7 +9,7 @@ type ReplyCase = { id: string; expected: "normal" | "question"; text: string };
 const cases: ReplyCase[] = JSON.parse(readFileSync(new URL("./reply-classification-cases.json", import.meta.url), "utf8"));
 
 test("reply regression cases have unique identities and fit the production input boundary", () => {
-  assert.equal(cases.length, 27);
+  assert.equal(cases.length, 38);
   assert.equal(new Set(cases.map(row => row.id)).size, cases.length);
   for (const row of cases) {
     assert.ok(["normal", "question"].includes(row.expected), row.id);
@@ -17,6 +17,11 @@ test("reply regression cases have unique identities and fit the production input
   }
   assert.equal(cases.find(row => row.id === "local-commit-report")?.expected, "normal");
   assert.equal(cases.find(row => row.id === "commit-awaiting-push-approval")?.expected, "question");
+  assert.equal(cases.find(row => row.id === "select-option-to-unblock")?.expected, "question");
+  assert.equal(cases.find(row => row.id === "check-status-send-continue")?.expected, "question");
+  assert.equal(cases.find(row => row.id === "status-confirmation-gate-without-question-mark")?.expected, "question");
+  assert.equal(cases.find(row => row.id === "status-check-instructions-no-response")?.expected, "normal");
+  assert.equal(cases.find(row => row.id === "autonomous-status-check-and-continue")?.expected, "normal");
 });
 
 // No injected labels or HTTP mocks: malformed/unavailable/late results fail, never become a passing normal.

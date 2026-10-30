@@ -1,5 +1,60 @@
 [
   {
+    "id": "select-option-to-unblock",
+    "expected": "question",
+    "text": "请从以下方案中选择一个：A 保留当前布局，B 改为分栏。收到你的选择后我再修改。"
+  },
+  {
+    "id": "check-status-send-continue",
+    "expected": "question",
+    "text": "请检查当前页面状态是否正确，确认后发送“继续”，我再执行下一步。"
+  },
+  {
+    "id": "status-confirmation-gate-without-question-mark",
+    "expected": "question",
+    "text": "当前状态已列出。我先停在这里，等你确认状态正常后再继续任务。"
+  },
+  {
+    "id": "english-status-continue-gate",
+    "expected": "question",
+    "text": "Check the current status and reply with continue when you are ready. I will wait before proceeding."
+  },
+  {
+    "id": "status-check-instructions-no-response",
+    "expected": "normal",
+    "text": "诊断结果如上。请在设置页检查服务状态，必要时重启服务。这是操作说明，导航逻辑仍需修复。"
+  },
+  {
+    "id": "autonomous-status-check-and-continue",
+    "expected": "normal",
+    "text": "我会检查当前状态；如果正常，就继续处理剩余任务，结束后汇报。"
+  },
+  {
+    "id": "quoted-continue-instructions",
+    "expected": "normal",
+    "text": "文档已补充操作示例：用户检查状态后发送‘继续’，助手再执行下一步。这只是文档内容，本次修改已经完成。"
+  },
+  {
+    "id": "completion-report-with-continue-gate",
+    "expected": "question",
+    "text": "第一阶段已完成，检查结果正常。请回复‘继续’，收到后我才会开始第二阶段。"
+  },
+  {
+    "id": "unfinished-diagnosis-reload-instructions",
+    "expected": "normal",
+    "text": "已定位：图标变为空闲只改变了显示，Control-Tab 仍把它当作“等待回复”。\n\n重启恢复问号的另一原因是：该 Pi 会话仍运行旧版集成，缺少稳定的状态时间，导致保存的空闲确认失配。\n\n目前仅完成诊断，尚未修复源码。请先在截图对应的 Pi 会话执行 /reload，加载已安装的新版集成；这只能解决恢复所需的状态信息，导航逻辑仍需修复。"
+  },
+  {
+    "id": "reload-with-explicit-response-request",
+    "expected": "question",
+    "text": "请执行 /reload，完成后回复我，我再继续验证。"
+  },
+  {
+    "id": "unfinished-diagnosis-restart-authorization",
+    "expected": "question",
+    "text": "目前仅完成诊断，尚未修复源码。是否允许我重启该会话后继续修复？"
+  },
+  {
     "id": "restart-report",
     "expected": "normal",
     "text": "因为修复还没加载到当前运行的 App：当前进程启动于 15:51，而修复后的构建在 15:57 才完成，我没有替你重启。\n\n请退出当前 iTermate，再运行本次构建的 App（\"/Users/caishilin/Desktop/personal/iTermate/.build/codex-finished-seen-idle/Build/Products/Debug/iTermate.app\"）。\n\n截图已显示选中高亮，不是你没选中；新版本的真实交互仍需这一步验证。"

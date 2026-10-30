@@ -131,7 +131,10 @@ test("reply classification sends action-instruction counterexamples separately f
   assert.equal(body.messages.length, 2);
   assert.equal(body.messages[0].role, "system");
   const prompt = body.messages[0].content;
-  assert.match(prompt, /currently waiting for a user response/);
+  assert.match(prompt, /Identify what the user is actually asked to SEND BACK/);
+  assert.match(prompt, /A statement that the assistant is waiting for that response also counts/);
+  assert.match(prompt, /Distinguish actions from responses/);
+  assert.match(prompt, /请执行 \/reload，完成后回复我，我再继续验证。\n-> \{"label":"question"\}/);
   assert.match(prompt, /我没有替你重启/);
   assert.match(prompt, /仍需这一步验证。\n-> \{"label":"normal"\}/);
   assert.match(prompt, /是否允许我现在重启？\n-> \{"label":"question"\}/);
@@ -172,7 +175,8 @@ test("local commit reports and explicit push approval reach the classifier with 
     const { body } = h.requests.find(row => row.options.path === "/api/chat");
     assert.equal(body.messages[0].role, "system");
     assert.ok(body.messages[0].content.includes(`${row.text}\n-> ${JSON.stringify({ label: row.expected })}`));
-    assert.match(body.messages[0].content, /Do not infer a confirmation gate merely because an action has not happened/);
+    assert.match(body.messages[0].content, /"not pushed" or other remaining work does not imply a confirmation gate/);
+    assert.match(body.messages[0].content, /Only an actual request such as permission to push\/merge or a required branch name makes it "question"/);
     assert.equal(body.messages[1].role, "user");
     assert.equal(body.messages[1].content, row.text);
   }
