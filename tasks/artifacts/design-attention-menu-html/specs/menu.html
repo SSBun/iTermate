@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>iTermate · 会话分类菜单设计</title>
+<style>
+:root{color-scheme:dark;--ink:#fafafa;--muted:#a3a3a3;--line:rgba(255,255,255,.12);--blue:#63acff;--amber:#e3b45e;--green:#48d6a0;--radius:24px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC",sans-serif}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#0a0a0a;color:var(--ink);font-size:13px;-webkit-font-smoothing:antialiased}button{font:inherit;color:inherit;border:0;cursor:pointer}button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}button:disabled{opacity:.4;cursor:default}button,a{-webkit-tap-highlight-color:transparent}
+.stage{min-height:100vh;display:grid;grid-template-columns:320px 440px;align-items:center;justify-content:center;gap:100px;padding:64px 32px;background:radial-gradient(ellipse at 76% 19%,#112e3b 0,transparent 45%),radial-gradient(ellipse at 60% 80%,#142c25 0,transparent 48%)}
+.intro{align-self:center}.eyebrow{font-size:11px;letter-spacing:2.2px;color:#8ba2ac;font-weight:600}.intro h1{font-size:40px;line-height:1.3;letter-spacing:-1.8px;font-weight:600;margin:22px 0}.intro>p{font-size:15px;line-height:1.9;color:var(--muted);max-width:290px}.principles{margin:35px 0 38px;padding:0;list-style:none}.principles li{display:flex;gap:15px;margin:19px 0;line-height:1.7;color:#bac3c6}.principles span{color:#61717a;font-size:11px;line-height:23px;font-variant-numeric:tabular-nums}.demo-controls{border-top:1px solid var(--line);padding-top:20px}.demo-controls p{font-size:11px;color:#829097;line-height:1.7}.demo-actions{display:flex;gap:8px}.demo-actions button{background:#ffffff09;border:1px solid var(--line);padding:8px 12px;border-radius:8px;font-size:12px}.demo-actions button:hover{background:#ffffff12}
+.preview{width:440px;position:relative}.menubar{height:34px;margin:0 16px 9px;display:flex;align-items:center;justify-content:flex-end;gap:17px;color:#d7e1e6;font-size:11px}.menubar .active-app{display:flex;align-items:center;gap:6px;padding:5px 9px;border-radius:6px;background:#ffffff15}.menubar time{opacity:.7;font-variant-numeric:tabular-nums}.menu{position:relative;background:linear-gradient(155deg,rgba(24,43,49,.88),rgba(24,33,30,.94));border:1px solid rgba(161,203,208,.25);border-top-color:rgba(170,216,230,.38);border-radius:var(--radius);box-shadow:0 28px 80px #0007,0 4px 12px #0005,inset 0 1px 0 #ffffff06;backdrop-filter:blur(32px) saturate(140%);overflow:hidden}.menu::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.025;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23n)' opacity='.5' d='M0 0h180v180H0z'/%3E%3C/svg%3E")}.header{padding:22px 22px 18px;display:flex;justify-content:space-between;align-items:center}.brand{display:flex;gap:10px;align-items:center;font-size:18px;font-weight:650;letter-spacing:-.4px}.terminal{width:22px;height:18px;border:1.8px solid currentColor;border-radius:4px;display:grid;place-items:center;font:600 11px monospace;letter-spacing:-1px}.connection{display:flex;align-items:center;gap:6px;color:#aabcb9;font-size:11px}.pixel{display:block;width:20px;height:20px;image-rendering:pixelated;flex-shrink:0}.connection .pixel{width:12px;height:12px}.summary{display:flex;margin:0 22px 20px;padding:12px 0;border-block:1px solid var(--line);align-items:center}.metric{display:flex;gap:7px;align-items:baseline;flex:1}.metric strong{font-size:23px;letter-spacing:-.8px;font-weight:550;font-variant-numeric:tabular-nums}.metric span{font-size:11px;color:var(--muted)}.running-metric{border-left:1px solid var(--line);padding-left:20px;align-items:center}.running-metric strong{font-size:17px;color:#d4e0e4}.running-metric .pixel{width:17px;height:17px}.section-title{display:flex;align-items:center;justify-content:space-between;padding:0 22px;margin-bottom:12px}.section-title h2{font-size:11px;margin:0;letter-spacing:1.2px;color:#a6b7bb;font-weight:600}.title-left{display:flex;gap:8px;align-items:center}.badge{border-radius:5px;background:#e3b45e18;color:var(--amber);font-size:10px;padding:2px 5px;min-width:17px;text-align:center}.notification-toggle{background:transparent;color:#91a6ab;display:flex;align-items:center;gap:6px;font-size:10px;padding:4px 0}.switch{width:23px;height:13px;border-radius:10px;background:#45877d;position:relative;transition:background .2s}.switch::after{content:"";position:absolute;width:9px;height:9px;left:12px;top:2px;border-radius:50%;background:#e5f4ef;transition:left .2s}.notification-toggle[aria-pressed=false] .switch{background:#4a5558}.notification-toggle[aria-pressed=false] .switch::after{left:2px}.sessions{padding:0 10px;height:310px;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#78938b55 transparent}.filters{display:flex;gap:4px;margin:0 22px 10px;padding:4px;background:#0002;border:1px solid #ffffff08;border-radius:9px}.filter{flex:1;white-space:nowrap;background:transparent;color:#9bb0b2;border-radius:6px;padding:8px 4px;font-size:11px}.filter[aria-pressed=true]{background:#ffffff0e;color:#e9efee;box-shadow:0 1px 3px #0002}.filter span{margin-left:5px;font-size:10px;color:#a6bbb9;font-variant-numeric:tabular-nums}.filter[data-filter=waiting][aria-pressed=true] span{color:var(--amber)}.filter[data-filter=failed][aria-pressed=true] span{color:#f29b91}.list-toolbar{display:flex;align-items:center;justify-content:space-between;min-height:29px;margin:0 22px 5px;font-size:10px;color:#8ba1a3}.list-toolbar button{background:none;color:var(--blue);padding:5px 0;font-size:10px}.list-toolbar button[hidden]{display:none}.sessions .session{padding-top:11px;padding-bottom:11px}.sessions .session-question{margin:4px 0}.session-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.session{width:100%;display:flex;gap:12px;align-items:flex-start;text-align:left;padding:13px 12px;border-radius:10px;background:transparent;position:relative;transition:background .15s}.session+.session{margin-top:3px}.session:hover{background:#ffffff07}.session.selected{background:#b6d5db0b;box-shadow:inset 0 0 0 1px #b6d5db12}.session>.pixel{margin-top:3px;width:23px;height:23px}.session-content{flex:1;min-width:0}.session-top{display:flex;align-items:center;gap:8px}.session-name{font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.session-time{font-size:10px;color:#859997;flex-shrink:0;margin-left:auto}.session-question{font-size:11px;line-height:1.6;margin:5px 0;color:#c7cfc9}.session-meta{display:flex;gap:6px;font-size:10px;color:#809693}.agent{color:#a6b5b8}.arrow{font-size:15px;color:#829b9e;align-self:center;margin-left:2px}.attention-note{font-size:10px;color:#819593;margin:11px 22px 18px;display:flex;align-items:center;gap:6px}.attention-note .pixel{width:12px;height:12px}.divider{height:1px;background:var(--line);margin:0 22px 19px}.favorites{padding:0 13px 10px}.project{width:100%;display:flex;align-items:center;gap:10px;background:none;text-align:left;padding:10px 9px;border-radius:7px}.project:hover{background:#ffffff07}.folder{width:15px;height:12px;flex-shrink:0;border:1px solid #819d9d;border-radius:2px;position:relative;opacity:.7}.folder:before{content:"";position:absolute;top:-4px;left:-1px;width:7px;height:4px;border:1px solid #819d9d;border-bottom:0;border-radius:2px 2px 0 0}.project-name{font-size:12px}.project-meta{margin-left:auto;color:#7e9393;font-size:10px}.footer{margin:0 22px;border-top:1px solid var(--line);padding:15px 0 17px;display:flex;align-items:center;justify-content:space-between}.footer button{color:#a9bdc3;background:transparent;font-size:12px;padding:4px 0}.footer button:hover{color:var(--blue)}.quit{color:#829692!important}.caption{display:flex;justify-content:space-between;color:#5f7c81;font-size:10px;margin:15px 8px;letter-spacing:.4px}.feedback{min-height:49px;margin:20px 6px 0;padding:10px 13px;border-left:2px solid #63acff66;background:#63acff06;font-size:11px;line-height:1.7;color:#a2b7bf}.empty{padding:38px 12px;text-align:center;color:#abc3bd;font-size:13px}.empty small{display:block;color:#819593;margin-top:9px;font-size:11px}.prototype-tag{position:fixed;left:28px;bottom:22px;font-size:10px;letter-spacing:1px;color:#526268}
+@media(max-width:900px){.stage{gap:40px;grid-template-columns:270px 400px;padding:40px 24px}.preview{width:400px}.intro h1{font-size:34px}}
+@media(max-width:740px){.stage{display:flex;flex-direction:column;padding:36px 16px;gap:24px}.intro{width:min(440px,100%);align-self:auto}.intro h1{font-size:28px;margin:12px 0}.intro>p{max-width:none;font-size:13px}.principles{display:none}.demo-controls{margin-top:20px;padding-top:12px}.preview{width:min(440px,100%)}.prototype-tag{position:static;text-align:center;padding-bottom:16px}.menubar{margin-top:0}.session-question{font-size:11px}.session-name{max-width:185px}.project-meta{max-width:95px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="stage">
+<section class="intro" aria-labelledby="design-title">
+<div class="eyebrow">iTermate / 菜单设计 03</div>
+<h1 id="design-title">会话再多，<br>也有轻重。</h1>
+<p>等待、结果与失败分开查看。菜单保持紧凑，重要的事不会淹没在完成记录里。</p>
+<ol class="principles"><li><span>01</span>完成轮次与待查看会话数，分别统计。</li><li><span>02</span>全部汇总非运行会话，包含已读与空闲。</li><li><span>03</span>已读只清理完成项，不清除等待或失败。</li></ol>
+<div class="demo-controls"><div class="demo-actions"><button id="resolve">模拟已回复</button><button id="reset">重置演示</button></div><p>选择右侧会话后可模拟回复。所有内容均为演示数据，<br>不会激活、关闭或修改真实终端。</p></div>
+</section>
+<section class="preview" aria-label="新版菜单预览">
+<div class="menubar" aria-hidden="true"><span class="active-app"><span style="font-family:monospace">&gt;_</span><canvas class="pixel" data-icon="waiting" width="28" height="28" style="width:13px;height:13px"></canvas><span id="bar-count">2</span></span><span>简</span><time>周三 16:04</time></div>
+<div class="menu">
+<header class="header"><div class="brand"><span class="terminal" aria-hidden="true">&gt;_</span>iTermate</div><div class="connection"><canvas class="pixel" data-icon="connected" width="28" height="28" aria-hidden="true"></canvas>已连接</div></header>
+<div class="summary" aria-label="工作概览"><div class="metric"><span>今日完成</span><strong>71</strong><span>次</span></div><div class="metric running-metric"><canvas class="pixel" data-icon="running" width="28" height="28" aria-hidden="true"></canvas><strong id="running-count">2</strong><span>正在运行</span></div></div>
+<section aria-labelledby="attention-heading"><div class="section-title"><h2 id="attention-heading">需要关注的会话</h2><button class="notification-toggle" id="notifications" aria-pressed="true" aria-label="待回复桌面提醒"><span id="notification-label">提醒已开启</span><span class="switch" aria-hidden="true"></span></button></div>
+<div class="filters" role="group" aria-label="会话分类"><button class="filter" data-filter="all" aria-pressed="false" aria-controls="sessions">全部<span id="all-count">24</span></button><button class="filter" data-filter="waiting" aria-pressed="true" aria-controls="sessions">待回复<span id="waiting-count">2</span></button><button class="filter" data-filter="finished" aria-pressed="false" aria-controls="sessions">未读完成<span id="finished-count">18</span></button><button class="filter" data-filter="failed" aria-pressed="false" aria-controls="sessions">失败<span id="failed-count">1</span></button></div>
+<div class="list-toolbar"><span id="list-summary">2 个会话 · 等待最久优先</span><button id="mark-all" hidden>全部标为已读</button></div>
+<div class="sessions" id="sessions" role="region" aria-label="待回复会话" tabindex="0"></div>
+<div class="attention-note"><canvas class="pixel" id="note-icon" data-icon="waiting" width="28" height="28" aria-hidden="true"></canvas><span id="list-note">查看不会清除等待状态</span></div></section>
+<div class="divider"></div>
+<section aria-labelledby="projects-heading"><div class="section-title"><h2 id="projects-heading">收藏项目</h2><span style="font-size:10px;color:#728b8d">3 个项目</span></div><div class="favorites">
+<button class="project" data-project="native-short-reader"><span class="folder" aria-hidden="true"></span><span class="project-name">native-short-reader</span><span class="project-meta">个人项目</span></button>
+<button class="project" data-project="osee2unified"><span class="folder" aria-hidden="true"></span><span class="project-name">osee2unified</span><span class="project-meta">工作项目</span></button>
+<button class="project" data-project="specs"><span class="folder" aria-hidden="true"></span><span class="project-name">specs</span><span class="project-meta">工作项目</span></button>
+</div></section>
+<footer class="footer"><button id="settings">设置</button><button class="quit" id="quit">退出 iTermate</button></footer>
+</div>
+<div class="caption"><span>列表固定高度 · 超出内部滚动</span><span>交互设计原型</span></div>
+<div class="feedback" id="feedback" role="status" aria-live="polite">点击任意待回复会话，预览跳转反馈。</div>
+</section>
+</main>
+<div class="prototype-tag">本地单文件 · 无外部依赖 · 无真实会话操作</div>
+<script>
+'use strict';
+const initial=[{id:'pi-menu',kind:'waiting',name:'设计新版待回复菜单',question:'等待确认：是否采用紧凑的概览布局？',project:'iTermate',agent:'Pi',minutes:2}, {id:'pi-reader',kind:'waiting',name:'调整文章阅读布局',question:'等待选择：正文宽度使用哪一版？',project:'native-short-reader',agent:'Pi',minutes:5}];
+const completedTitles=['修复会话状态恢复','优化文章列表滚动','补充接口类型声明','调整项目分组布局','整理发布说明','修正缓存失效逻辑','完善搜索空态','更新阅读进度保存','清理失效导入','完善设置页文案','修复标题截断','调整图片加载策略','补充协议字段说明','优化归档列表展示','修复深色主题对比度','整理快捷键说明','调整通知去重逻辑','完善错误反馈'];
+completedTitles.forEach((name,index)=>initial.push({id:'done-'+index,kind:'finished',name,question:'本轮已完成，结果等待查看',project:['iTermate','native-short-reader','specs'][index%3],agent:index%2?'Codex':'Pi',minutes:index*3}));
+initial.push({id:'failed-build',kind:'failed',name:'构建 osee2unified',question:'构建失败：依赖解析未完成',project:'osee2unified',agent:'Codex',minutes:7});
+initial.push(
+ {id:'read-release',kind:'finished',read:true,name:'整理版本更新说明',question:'完成结果已查看',project:'iTermate',agent:'Pi',minutes:56},
+ {id:'idle-docs',kind:'idle',name:'文档维护会话',question:'暂无进行中的任务',project:'specs',agent:'Pi',minutes:12},
+ {id:'idle-reader',kind:'idle',name:'阅读器日常维护',question:'暂无进行中的任务',project:'native-short-reader',agent:'Codex',minutes:28},
+ {id:'running-api',kind:'running',name:'实现接口适配',project:'osee2unified',agent:'Codex',minutes:1},
+ {id:'running-layout',kind:'running',name:'优化阅读布局',project:'native-short-reader',agent:'Pi',minutes:3}
+);
+let sessions=initial.map(item=>({...item})), selected=null, activeFilter='waiting';
+const labels={all:'全部',waiting:'待回复',finished:'未读完成',failed:'失败'};
+function matchesFilter(item,filter){return filter==='all'?item.kind!=='running':item.kind===filter&&(filter!=='finished'||!item.read);}
+function chooseDefault(){activeFilter=['waiting','failed','finished','all'].find(kind=>sessions.some(item=>matchesFilter(item,kind)))||'all';}
+const feedback=document.getElementById('feedback');
+function announce(message){feedback.textContent=message;}
+function render(){
+ const container=document.getElementById('sessions');const scrollTop=container.scrollTop;container.replaceChildren();
+ const visible=sessions.filter(item=>matchesFilter(item,activeFilter)).sort((a,b)=>activeFilter==='waiting'?b.minutes-a.minutes:a.minutes-b.minutes);
+ for(const [index,item] of visible.entries()){
+  const button=document.createElement('button');button.className='session'+(selected===item.id?' selected':'');button.dataset.session=item.id;const stateLabel={waiting:'待回复',finished:item.read?'完成 · 已读':'完成 · 未读',failed:'失败',idle:'空闲'}[item.kind];button.setAttribute('aria-label',`${item.name}，${item.agent}，${stateLabel}，模拟跳转`);button.setAttribute('aria-pressed',String(selected===item.id));
+  const canvas=document.createElement('canvas');canvas.className='pixel';canvas.dataset.icon=item.kind;canvas.width=28;canvas.height=28;canvas.setAttribute('aria-hidden','true');
+  const content=document.createElement('span');content.className='session-content';
+  const top=document.createElement('span');top.className='session-top';
+  const name=document.createElement('span');name.className='session-name';name.textContent=item.name;
+  const time=document.createElement('span');time.className='session-time';time.textContent=item.minutes?`${item.minutes} 分钟`:'刚刚';top.append(name,time);
+  const question=document.createElement('p');question.className='session-question';question.textContent=item.kind==='finished'&&item.read?'完成结果已查看':item.question;
+  const meta=document.createElement('span');meta.className='session-meta';meta.textContent=`${item.agent} · ${item.project} · ${stateLabel}`;
+  content.append(top,question,meta);const arrow=document.createElement('span');arrow.className='arrow';arrow.textContent='›';arrow.setAttribute('aria-hidden','true');button.append(canvas,content,arrow);
+  button.addEventListener('click',()=>{
+   if(item.kind==='finished'){
+    item.read=true;selected=null;render();
+    const remaining=container.querySelectorAll('.session');(remaining[Math.min(index,remaining.length-1)]||document.querySelector(`[data-filter="${activeFilter}"]`)).focus({preventScroll:true});
+    announce(`模拟定位成功：「${item.name}」已标为已读，仍保留在“全部”；今日完成轮次不变。`);
+   }else{
+    selected=item.id;render();document.querySelector(`[data-session="${item.id}"]`).focus({preventScroll:true});
+    announce(`模拟跳转至「${item.name}」。${item.kind==='waiting'?'已查看，但仍在等待回复。':item.kind==='idle'?'会话保持空闲，未启动新任务。':'失败仍然保留，查看不代表修复。'}`);
+   }
+  });container.append(button);
+ }
+ if(!visible.length){const empty=document.createElement('div');empty.className='empty';empty.textContent={all:'暂无非运行中的会话',waiting:'暂时没有需要回复的会话',finished:'所有完成结果都已查看',failed:'没有失败会话'}[activeFilter];const sub=document.createElement('small');sub.textContent='其他分类不受影响，可随时切换查看。';empty.append(sub);container.append(empty);}
+ for(const kind of Object.keys(labels))document.getElementById(kind+'-count').textContent=sessions.filter(item=>matchesFilter(item,kind)).length;
+ const waiting=sessions.filter(item=>item.kind==='waiting').length;
+ document.getElementById('bar-count').textContent=waiting;document.getElementById('running-count').textContent=sessions.filter(item=>item.kind==='running').length;document.getElementById('resolve').disabled=!sessions.some(item=>item.id===selected&&item.kind==='waiting');
+ document.querySelectorAll('[data-filter]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.filter===activeFilter)));
+ container.setAttribute('aria-label',labels[activeFilter]+'会话');container.scrollTop=scrollTop;
+ document.getElementById('list-summary').textContent=`${visible.length} 个会话 · ${activeFilter==='waiting'?'等待最久优先':'最新在前'}`;
+ const markAll=document.getElementById('mark-all');markAll.hidden=activeFilter!=='finished';markAll.disabled=!visible.length;
+ document.getElementById('list-note').textContent={all:'不含运行中 · 保留已读完成与空闲会话',waiting:'查看不会清除等待状态',finished:'每个会话仅保留最新未读结果，不是轮次历史',failed:'查看不代表修复，失败状态仍然保留'}[activeFilter];
+ document.getElementById('note-icon').dataset.icon=activeFilter==='all'?'idle':activeFilter;
+ const barIcon=document.querySelector('.menubar canvas');barIcon.dataset.icon=waiting?'waiting':'connected';paint(performance.now());
+}
+document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{activeFilter=button.dataset.filter;selected=null;document.getElementById('sessions').scrollTop=0;render();announce(`正在查看${labels[activeFilter]}；可在列表内部滚动，底部入口保持固定。`);}));
+document.getElementById('mark-all').addEventListener('click',()=>{if(activeFilter!=='finished')return;const count=sessions.filter(item=>matchesFilter(item,'finished')).length;sessions.forEach(item=>{if(item.kind==='finished')item.read=true;});render();document.querySelector('[data-filter="finished"]').focus();announce(`已将 ${count} 个完成会话标为已读。等待、失败和今日完成轮次均未改变。`);});
+document.getElementById('resolve').addEventListener('click',()=>{const item=sessions.find(item=>item.id===selected&&item.kind==='waiting');if(!item)return;item.kind='running';item.minutes=0;selected=null;render();announce(`已模拟回复「${item.name}」：Agent 继续运行，等待项自动移除。`);});
+document.getElementById('reset').addEventListener('click',()=>{sessions=initial.map(item=>({...item}));selected=null;chooseDefault();document.getElementById('sessions').scrollTop=0;const toggle=document.getElementById('notifications');toggle.setAttribute('aria-pressed','true');document.getElementById('notification-label').textContent='提醒已开启';render();announce('演示已重置：全部 24 个非运行会话：2 个待回复、19 个完成（18 个未读）、1 个失败、2 个空闲。');});
+document.getElementById('notifications').addEventListener('click',event=>{const button=event.currentTarget;const enabled=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(enabled));document.getElementById('notification-label').textContent=enabled?'提醒已开启':'提醒已关闭';announce(enabled?'演示：桌面提醒已开启；不会请求系统通知权限。':'演示：桌面提醒已关闭，待回复列表仍然保留。');});
+document.querySelectorAll('[data-project]').forEach(button=>button.addEventListener('click',()=>announce(`模拟打开收藏项目「${button.dataset.project}」。未创建真实终端。`)));
+document.getElementById('settings').addEventListener('click',()=>announce('设置入口预览：正式版本打开 iTermate 设置，本原型不操作 App。'));
+document.getElementById('quit').addEventListener('click',()=>announce('退出入口预览：本原型不会退出 iTermate，也不会关闭浏览器。'));
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+const glyphs={idle:['00000','01110','10001','10001','10001','01110','00000'],finished:['00000','00001','00010','10100','01000','00000','00000'],failed:['10001','01010','00100','01010','10001','00000','00000'],waiting:['01110','10001','00001','00010','00100','00000','00100'],connected:['00000','00100','01110','11111','01110','00100','00000'],running:['00100','01100','11111','00110','01100','01000','00000']};
+function paint(time){document.querySelectorAll('canvas[data-icon]').forEach(canvas=>{const ctx=canvas.getContext('2d');if(!ctx)return;ctx.clearRect(0,0,28,28);const type=canvas.dataset.icon;const wave=reduced.matches?0:Math.sin(time/650);ctx.fillStyle=type==='idle'?'#9caeaf':type==='waiting'?'#e3b45e':type==='failed'?'#f29b91':type==='connected'||type==='finished'?'#48d6a0':'#63acff';ctx.globalAlpha=.78+(wave+1)*.11;const shift=type==='waiting'&&!reduced.matches?Math.round(Math.sin(time/450)*.7):0;glyphs[type].forEach((row,y)=>[...row].forEach((cell,x)=>{if(cell==='1')ctx.fillRect(5+x*3+shift,3+y*3,2.5,2.5);}));ctx.globalAlpha=1;});}
+let animation;
+function tick(time){paint(time);if(!reduced.matches&&!document.hidden)animation=requestAnimationFrame(tick);}
+function restartAnimation(){cancelAnimationFrame(animation);paint(performance.now());if(!reduced.matches&&!document.hidden)animation=requestAnimationFrame(tick);}
+reduced.addEventListener('change',restartAnimation);document.addEventListener('visibilitychange',restartAnimation);render();restartAnimation();
+</script>
+</body>
+</html>
