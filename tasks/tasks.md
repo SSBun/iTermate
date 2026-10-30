@@ -1,5 +1,27 @@
 # 任务索引
 
+- [按独立关注点拆分提交当前全部本地改动](tasks/commit-local-changes-by-concern-20261028-evening.md) — Completed (2026-10-30 14:47)
+
+- [修复会话导航超时后从顶部按优先级选择](tasks/fix-navigation-top-priority.md) — Completed (2026-10-29 19:50)
+
+- [实现新版菜单栏会话状态面板](tasks/implement-attention-status-menu.md) — Completed (2026-10-28 17:17)
+
+- [制作待处理菜单单页 HTML 设计](tasks/design-attention-menu-html.md) — Completed (2026-10-28 16:46)
+
+- [优化回复类型判断避免操作说明被误判为提问](tasks/refine-response-question-classification.md) — Completed (2026-10-28 16:06)
+
+- [修复问号转空闲后仍被导航选中及重启恢复问号](tasks/fix-idle-question-navigation.md) — In Progress (2026-10-28 15:32)
+
+- [iTerm2失焦时重置会话导航轮次](tasks/reset-navigation-on-focus-loss.md) — Completed (2026-10-28 15:33)
+
+- [将会话导航轮次超时缩短为2秒](tasks/shorten-navigation-timeout.md) — Completed (2026-10-28 15:24)
+
+- [排查 Control-Tab 重复选择同一会话](tasks/diagnose-control-tab-selection.md) — Completed (2026-10-28 15:21)
+
+- [调研 iTermate 后续必要功能与优先级](tasks/research-additional-required-features.md) — Pending (2026-10-28 14:52)
+
+- [推送已拆分的本地提交到远端](tasks/push-grouped-commits-20261028.md) — Completed (2026-10-28 14:58)
+
 - [按独立功能拆分提交全部本地改动](tasks/commit-local-changes-by-concern-20261028.md) — Completed (2026-10-28 14:50)
 
 - [修复激活会话后完成状态未转为空闲](tasks/clear-finished-status-on-activation.md) — Completed (2026-10-28 11:49)
