@@ -61,7 +61,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return try await self.localModel.generateSessionTitle(from: excerpt)
     })
     lazy var finishedSessionShortcut = FinishedSessionShortcut(settings: settings) { [weak self] in
-        self?.store.activateNextFinishedSession()
+        guard let self else {
+            return
+        }
+        self.store.activateNextFinishedSession(settings: self.settings)
     }
     let updaterController = SPUStandardUpdaterController(
         startingUpdater: false,

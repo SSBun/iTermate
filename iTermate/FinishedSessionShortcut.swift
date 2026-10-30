@@ -211,7 +211,7 @@ struct FinishedSessionShortcutSettingsView: View {
                 Text("Press a key combination. Escape cancels; Delete clears.")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Text("Press again within 5 seconds to continue the current round through all eligible Agent sessions. After a pause longer than 5 seconds, start a new round with current priorities: waiting for your reply first, then unread finished results (including failures), idle, and running. Uses Window / Tab / Session order within each priority and skips the current session and ordinary commands. Works from any app.")
+            Text("Press again in less than 3 seconds to continue the current round through all eligible Agent sessions. After a pause of 3 seconds or more, or when iTerm2 loses focus, start a new round from the top with current priorities: waiting for your reply first, then unread finished results (including failures), idle, and running. Uses panel order from top to bottom within each priority and skips the current session and ordinary commands. Works from any app.")
                 .font(.caption).foregroundStyle(.secondary)
             if let error = shortcut.error {
                 Text(error).foregroundStyle(.red)

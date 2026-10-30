@@ -820,7 +820,7 @@ final class ItermStore: ObservableObject {
     }
 
     /// Routes the global shortcut to iTerm2 regardless of the foreground terminal.
-    func activateNextFinishedSession() {
+    func activateNextFinishedSession(settings: AppSettings) {
         guard Self.isRunning(.iTerm2) else { return }
         startClient(for: .iTerm2)
         // Native Codex state exists only in the App overlay, not in Bridge lifecycle storage.
@@ -829,7 +829,20 @@ final class ItermStore: ObservableObject {
             .flatMap(\.sessions)
             .filter { $0.agentKind == .codex && $0.activityKind == .agent }
             .map { ($0.id, $0.status) })
-        iTermClient.activateNextFinishedSession(codexStatuses: codexStatuses) { [weak self] error in
+        let orderedSessionIDs = SessionGrouping.groups(
+            from: windows,
+            style: settings.sessionListStyle,
+            pinnedProjectPaths: settings.pinnedProjectFolderPaths,
+            separatesCommandSessions: settings.separatesCommandSessions
+        ).flatMap { group in
+            group.blocks(groupedByPath: group.id == SessionGrouping.commandGroupID)
+                .flatMap(\.sessions)
+                .map(\.session.id)
+        }
+        iTermClient.activateNextFinishedSession(
+            codexStatuses: codexStatuses,
+            orderedSessionIDs: orderedSessionIDs
+        ) { [weak self] error in
             self?.actionError = error
         }
     }
@@ -2211,16 +2224,18 @@ final class ItermBridgeClient {
         )
     }
 
-    /// Supplies App-observed Codex states for this navigation only, including unknown states.
+    /// Supplies panel order and App-observed Codex states for this navigation only.
     func activateNextFinishedSession(
         codexStatuses: [String: TerminalSessionStatus?],
+        orderedSessionIDs: [String],
         completion: @escaping (String?) -> Void
     ) {
         perform(
             SessionActionRequest(
                 type: "activateNextFinishedSession",
                 requestId: UUID().uuidString,
-                codexStatuses: codexStatuses
+                codexStatuses: codexStatuses,
+                orderedSessionIDs: orderedSessionIDs
             ),
             completion: completion
         )
@@ -2478,6 +2493,7 @@ private struct SessionActionRequest: Encodable {
     let sessionDirectory: String?
     let expectedShellPID: Int32?
     let codexStatuses: [String: TerminalSessionStatus?]?
+    let orderedSessionIDs: [String]?
 
     init(
         type: String,
@@ -2487,7 +2503,8 @@ private struct SessionActionRequest: Encodable {
         piSessionId: String? = nil,
         sessionDirectory: String? = nil,
         expectedShellPID: Int32? = nil,
-        codexStatuses: [String: TerminalSessionStatus?]? = nil
+        codexStatuses: [String: TerminalSessionStatus?]? = nil,
+        orderedSessionIDs: [String]? = nil
     ) {
         self.type = type
         self.requestId = requestId
@@ -2497,6 +2514,7 @@ private struct SessionActionRequest: Encodable {
         self.sessionDirectory = sessionDirectory
         self.expectedShellPID = expectedShellPID
         self.codexStatuses = codexStatuses
+        self.orderedSessionIDs = orderedSessionIDs
     }
 }
 

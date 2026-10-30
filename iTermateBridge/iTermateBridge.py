@@ -18,7 +18,7 @@ SOCKET_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.sock")
 LOCK_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.lock")
 SNAPSHOT_INTERVAL = 2
 AGENT_HEARTBEAT_TIMEOUT = 8
-SESSION_NAVIGATION_TIMEOUT = 5
+SESSION_NAVIGATION_TIMEOUT = 3
 
 
 def heartbeat_time():
@@ -171,7 +171,9 @@ class Bridge:
 
         if action == "activateNextFinishedSession":
             try:
-                await self.activate_next_finished_session(request.get("codexStatuses"))
+                await self.activate_next_finished_session(
+                    request.get("codexStatuses"), request.get("orderedSessionIDs")
+                )
             except Exception as error:
                 await self.send_action_result(writer, request_id, False, str(error))
                 return
@@ -414,8 +416,8 @@ class Bridge:
         await self.send_action_result(writer, request_id, True, None)
         await self.publish_snapshot()
 
-    async def activate_next_finished_session(self, codex_statuses=None):
-        """每轮按等待回复、完成、空闲、运行中排序；停顿超过五秒后重开一轮。"""
+    async def activate_next_finished_session(self, codex_statuses=None, ordered_session_ids=None):
+        """每轮按状态优先级及面板从上到下排序；停顿满三秒或应用失焦后重开一轮。"""
         if codex_statuses is None:
             codex_statuses = {}
         if not isinstance(codex_statuses, dict) or any(
@@ -427,11 +429,18 @@ class Bridge:
             for session_id, status in codex_statuses.items()
         ):
             raise ValueError("Invalid Codex navigation statuses")
+        if ordered_session_ids is None:
+            ordered_session_ids = []
+        if not isinstance(ordered_session_ids, list) or any(
+            not isinstance(session_id, str) or not session_id or len(session_id) > 512
+            for session_id in ordered_session_ids
+        ):
+            raise ValueError("Invalid navigation session order")
         async with self.finished_navigation_lock:
             now = time.monotonic()
             if (
                 self.finished_navigation_last_press is None
-                or now - self.finished_navigation_last_press > SESSION_NAVIGATION_TIMEOUT
+                or now - self.finished_navigation_last_press >= SESSION_NAVIGATION_TIMEOUT
             ):
                 self.finished_navigation_visited.clear()
             self.finished_navigation_last_press = now
@@ -440,12 +449,14 @@ class Bridge:
                 for session in tab.all_sessions
             ]
             current_id = self.current_active_session_id()
-            current_index = next(
-                (index for index, session in enumerate(sessions) if session.session_id == current_id),
-                None,
-            )
-            candidates = sessions if current_index is None else (
-                sessions[current_index + 1:] + sessions[:current_index]
+            # Only rank live sessions; stale IDs cannot activate a removed pane.
+            # Sessions not yet in the App snapshot follow in native iTerm order.
+            order = {}
+            for session_id in ordered_session_ids:
+                order.setdefault(session_id, len(order))
+            candidates = sorted(
+                (session for session in sessions if session.session_id != current_id),
+                key=lambda session: order.get(session.session_id, len(order)),
             )
             self.finished_navigation_visited.intersection_update(
                 session.session_id for session in sessions
@@ -2292,8 +2303,8 @@ def self_test():
         await navigation.activate_next_finished_session()
         assert len(activated) == before  # Ordinary commands, unknown and closed Agents are ineligible.
 
-        # Each press extends the window: exactly five seconds continues the same round,
-        # even when the complete sequence takes longer than five seconds.
+        # Each press extends the window: less than three seconds continues the round,
+        # even when the complete sequence takes longer than three seconds.
         from unittest.mock import patch
 
         navigation.set_agent_status("waiting-a", "awaitingInput")
@@ -2302,7 +2313,7 @@ def self_test():
         navigation.finished_navigation_last_press = None
         before = len(activated)
         for now, expected_id in (
-            (100, "waiting-a"), (105, "finished"), (110, "idle"),
+            (100, "waiting-a"), (102, "finished"), (104, "idle"),
         ):
             with patch.object(time, "monotonic", return_value=now):
                 await navigation.activate_next_finished_session({"finished": "finished"})
@@ -2311,17 +2322,49 @@ def self_test():
 
         # Timeout restarts an incomplete round against live priority, not its old visited set.
         navigation.set_agent_status("new", "idle")
-        with patch.object(time, "monotonic", return_value=115.001):
+        with patch.object(time, "monotonic", return_value=107):
             await navigation.activate_next_finished_session({"finished": "finished"})
         assert activated[-1] == "waiting-a"  # Without expiry, the remaining new pane would win.
         assert "new" not in navigation.finished_navigation_visited
-        for now, expected_id in ((120.001, "finished"), (125.001, "new")):
+        for now, expected_id in ((109, "finished"), (111, "idle")):
             with patch.object(time, "monotonic", return_value=now):
                 await navigation.activate_next_finished_session({"finished": "finished"})
             assert activated[-1] == expected_id
-        with patch.object(time, "monotonic", return_value=130.002):
+        with patch.object(time, "monotonic", return_value=114.001):
             await navigation.activate_next_finished_session({"finished": "finished"})
         assert activated[-1] == "waiting-a"
+
+        # Panel order may differ from native order; the current middle row is not an anchor.
+        navigation.set_agent_status("finished", "idle")
+        navigation.set_agent_status("waiting-a", "idle")
+        navigation.set_agent_status("running", "running")
+        panel_order = ["new", "finished", "idle", "waiting-a", "running"]
+        tab.current_session = sessions["idle"]
+        with patch.object(time, "monotonic", return_value=120):
+            await navigation.activate_next_finished_session(None, panel_order)
+        assert activated[-1] == "new"
+        with patch.object(time, "monotonic", return_value=122.999):
+            await navigation.activate_next_finished_session(None, panel_order)
+        assert activated[-1] == "finished"  # Continue rather than reset just below the boundary.
+        with patch.object(time, "monotonic", return_value=126):
+            await navigation.activate_next_finished_session(None, panel_order)
+        assert activated[-1] == "new"  # Reset from the top, not after the current finished row.
+        navigation.set_agent_status("waiting-a", "awaitingInput")
+        with patch.object(time, "monotonic", return_value=129):
+            await navigation.activate_next_finished_session(None, panel_order)
+        assert activated[-1] == "waiting-a"  # Priority still wins over panel position.
+        with patch.object(time, "monotonic", return_value=130):
+            await navigation.activate_next_finished_session(None, ["closed", "new", "new"])
+        assert activated[-1] == "new"  # Removed and duplicate IDs cannot create extra candidates.
+        before = len(activated)
+        for invalid in ({}, [""], [None], "new"):
+            writer = FakeWriter()
+            await navigation.handle_command(writer, encode_message({
+                "type": "activateNextFinishedSession", "requestId": "invalid-order",
+                "orderedSessionIDs": invalid,
+            }))
+            assert not writer.messages[0]["ok"]
+        assert len(activated) == before
 
     asyncio.run(check_navigation_rounds())
 
