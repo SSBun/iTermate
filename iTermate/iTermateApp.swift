@@ -1010,33 +1010,19 @@ private struct PanelContent: View {
 
                 if item.session.environmentAgentKind != nil
                     || SessionStatusAnimation(session: item.session) != nil {
-                    let canMarkIdle = item.session.status == .finished
-                        || item.session.status == .awaitingInput
-                    Group {
-                        if canMarkIdle {
-                            Button {
-                                store.markSessionIdle(sessionID: item.session.id)
-                            } label: {
-                                sessionStatusIcon(item.session)
-                                    .frame(width: 36, height: 16)
-                                    .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            // Disabled buttons dim status pixels even though they remain informative.
-                            sessionStatusIcon(item.session)
-                                .frame(width: 36, height: 16)
-                                .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
-                        }
+                    Button {
+                        store.activate(sessionID: item.session.id)
+                    } label: {
+                        sessionStatusIcon(item.session)
+                            .frame(width: 36, height: 16)
+                            .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
+                            .frame(minHeight: item.session.activityKind == .agent ? 32 : 28)
+                            .contentShape(Rectangle())
                     }
-                    .help(canMarkIdle ? "Mark session idle" : "Session status")
+                    .buttonStyle(.plain)
+                    .help("Activate session")
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(
-                        canMarkIdle
-                            ? "Mark session \(item.session.name) idle"
-                            : "Status of session \(item.session.name)"
-                    )
+                    .accessibilityLabel("Activate session \(item.session.name)")
                     .accessibilityValue(item.session.status?.rawValue ?? "No confirmed activity")
                 }
 
@@ -1069,10 +1055,13 @@ private struct PanelContent: View {
                         Spacer(minLength: 0)
                     }
                     .padding(.vertical, item.session.activityKind == .agent ? 6 : 4)
+                    .frame(
+                        maxWidth: .infinity,
+                        minHeight: item.session.activityKind == .agent ? 32 : 28
+                    )
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .frame(maxWidth: .infinity)
                 .accessibilityLabel("Activate session \(item.session.name)")
             }
             .padding(.leading, 8)

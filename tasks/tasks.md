@@ -1,5 +1,7 @@
 # 任务索引
 
+- [修复 Agent 单元格点击切换不稳定](tasks/fix-agent-cell-session-click.md) — Blocked (2026-11-02 16:56)
+
 - [按独立关注点拆分提交当前全部本地改动](tasks/commit-local-changes-by-concern-20261028-evening.md) — Completed (2026-10-30 14:47)
 
 - [修复会话导航超时后从顶部按优先级选择](tasks/fix-navigation-top-priority.md) — Completed (2026-10-29 19:50)
