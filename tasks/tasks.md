@@ -1,5 +1,7 @@
 # 任务索引
 
+- [调查问号点击未切换空闲状态](tasks/diagnose-question-idle.md) — Completed (2026-11-03 17:29)
+
 - [修复 Agent 单元格点击切换不稳定](tasks/fix-agent-cell-session-click.md) — Blocked (2026-11-02 16:56)
 
 - [按独立关注点拆分提交当前全部本地改动](tasks/commit-local-changes-by-concern-20261028-evening.md) — Completed (2026-10-30 14:47)

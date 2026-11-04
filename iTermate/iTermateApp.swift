@@ -1011,6 +1011,9 @@ private struct PanelContent: View {
                 if item.session.environmentAgentKind != nil
                     || SessionStatusAnimation(session: item.session) != nil {
                     Button {
+                        if item.session.activityKind == .agent, item.session.status == .awaitingInput {
+                            store.markSessionIdle(sessionID: item.session.id)
+                        }
                         store.activate(sessionID: item.session.id)
                     } label: {
                         sessionStatusIcon(item.session)
@@ -1020,9 +1023,12 @@ private struct PanelContent: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .help("Activate session")
+                    .help(item.session.activityKind == .agent && item.session.status == .awaitingInput
+                        ? "Mark as idle and activate session" : "Activate session")
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Activate session \(item.session.name)")
+                    .accessibilityLabel(item.session.activityKind == .agent && item.session.status == .awaitingInput
+                        ? "Mark as idle and activate session \(item.session.name)"
+                        : "Activate session \(item.session.name)")
                     .accessibilityValue(item.session.status?.rawValue ?? "No confirmed activity")
                 }
 
