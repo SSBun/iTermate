@@ -1,8 +1,8 @@
 # 任务索引
 
-- [构建并发布 iTermate 0.8.0](tasks/release-v080.md) — Pending (2026-11-04 15:34)
+- [构建并发布 iTermate 0.8.0](tasks/release-v080.md) — In Progress (2026-11-04 15:34)
 
-- [保存发布前全部本地改动](tasks/commit-all-before-v080.md) — In Progress (2026-11-04 15:34)
+- [保存发布前全部本地改动](tasks/commit-all-before-v080.md) — Completed (2026-11-04 15:34)
 
 - [提交全部本地改动并发布下一个次版本](tasks/commit-and-release-next-minor.md) — In Progress (2026-11-04 15:33)
 
