@@ -217,14 +217,28 @@ final class PanelLayoutTests: XCTestCase {
         )
     }
 
-    func testSeparateCommandSessionsDefaultsOffAndPersists() {
+    func testCommandSessionPlacementDefaultsMixedAndPersistsAllModes() {
         let configURL = makeConfigURL()
         let settings = AppSettings(configURL: configURL)
-        XCTAssertFalse(settings.separatesCommandSessions)
+        XCTAssertEqual(settings.commandSessionPlacement, .mixed)
 
-        settings.setSeparatesCommandSessions(true)
+        for placement in CommandSessionPlacement.allCases {
+            settings.setCommandSessionPlacement(placement)
+            XCTAssertEqual(AppSettings(configURL: configURL).commandSessionPlacement, placement)
+        }
+    }
 
-        XCTAssertTrue(AppSettings(configURL: configURL).separatesCommandSessions)
+    func testExplicitCommandPlacementOverridesLegacyValueInEitherOrder() throws {
+        let configURL = makeConfigURL()
+        let current = "command_session_placement = \"projectLast\""
+        let legacy = "separate_command_sessions = true"
+        for contents in ["\(current)\n\(legacy)", "\(legacy)\n\(current)"] {
+            try contents.write(to: configURL, atomically: true, encoding: .utf8)
+            let settings = AppSettings(configURL: configURL)
+            XCTAssertEqual(settings.commandSessionPlacement, .projectLast)
+            settings.setPanelWidth(400)
+            XCTAssertEqual(AppSettings(configURL: configURL).commandSessionPlacement, .projectLast)
+        }
     }
 
     func testUnrelatedChangesDoNotOverwriteNewerConfigValues() {
@@ -338,7 +352,7 @@ final class PanelLayoutTests: XCTestCase {
         settings.setPanelDockingSide(.left)
         settings.setSessionListStyle(.projectPath)
         settings.setSectionTitleStyle(.folderName)
-        settings.setSeparatesCommandSessions(true)
+        settings.setCommandSessionPlacement(.separate)
         settings.setShowsTabHeaders(false)
         settings.setShowsSessionTime(false)
         settings.setSessionTimeFormat(.detailed)
@@ -352,7 +366,7 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertTrue(contents.contains("panel_docking_side = \"left\""))
         XCTAssertTrue(contents.contains("session_list_style = \"projectPath\""))
         XCTAssertTrue(contents.contains("section_title_style = \"folderName\""))
-        XCTAssertTrue(contents.contains("separate_command_sessions = true"))
+        XCTAssertTrue(contents.contains("command_session_placement = \"separate\""))
         XCTAssertTrue(contents.contains("shows_tab_headers = false"))
         XCTAssertTrue(contents.contains("shows_session_time = false"))
         XCTAssertTrue(contents.contains("session_time_format = \"detailed\""))
@@ -377,7 +391,7 @@ final class PanelLayoutTests: XCTestCase {
         XCTAssertEqual(settings.panelWidth, 420)
         XCTAssertEqual(settings.panelDockingSide, .left)
         XCTAssertEqual(settings.sessionListStyle, .projectPath)
-        XCTAssertTrue(settings.separatesCommandSessions)
+        XCTAssertEqual(settings.commandSessionPlacement, .separate)
         XCTAssertFalse(settings.showsTabHeaders)
         XCTAssertFalse(settings.showsSessionTime)
         XCTAssertEqual(settings.sessionTimeFormat, .detailed)

@@ -1,8 +1,20 @@
 # 任务索引
 
+- [构建并发布 iTermate 0.8.0](tasks/release-v080.md) — Pending (2026-11-04 15:34)
+
+- [保存发布前全部本地改动](tasks/commit-all-before-v080.md) — In Progress (2026-11-04 15:34)
+
+- [提交全部本地改动并发布下一个次版本](tasks/commit-and-release-next-minor.md) — In Progress (2026-11-04 15:33)
+
+- [提交问号点击转空闲修复](tasks/commit-question-idle-fix.md) — Completed (2026-11-04 11:09)
+
 - [调查问号点击未切换空闲状态](tasks/diagnose-question-idle.md) — Completed (2026-11-03 17:29)
 
+- [新增普通终端在对应目录末尾显示的模式](tasks/commands-bottom-in-project.md) — Completed (2026-11-02 17:07)
+
 - [修复 Agent 单元格点击切换不稳定](tasks/fix-agent-cell-session-click.md) — Blocked (2026-11-02 16:56)
+
+- [推送当前分支到远端](tasks/push-current-branch-remote.md) — Completed (2026-11-02 11:28)
 
 - [按独立关注点拆分提交当前全部本地改动](tasks/commit-local-changes-by-concern-20261028-evening.md) — Completed (2026-10-30 14:47)
 

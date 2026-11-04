@@ -237,6 +237,26 @@ enum SectionTitleStyle: String, CaseIterable, Identifiable {
     }
 }
 
+/// 普通终端在会话列表中的展示位置。
+enum CommandSessionPlacement: String, CaseIterable, Identifiable {
+    /// 沿用 Tab 顺序与 Agent 混排。
+    case mixed
+    /// 集中显示在独立的 Commands 分区。
+    case separate
+    /// 在各项目目录内排在所有 Agent 之后。
+    case projectLast
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .mixed: "Mixed with Agents"
+        case .separate: "Separate Commands Section"
+        case .projectLast: "Last in Each Project"
+        }
+    }
+}
+
 struct SessionListItem: Equatable, Identifiable {
     let session: TerminalSessionSnapshot
     let tabID: String
@@ -256,6 +276,7 @@ struct SessionListGroup: Equatable, Identifiable {
     let id: String
     let title: String
     let sessions: [SessionListItem]
+    var commandsLast = false
 
     var tabIDs: [String] {
         var seen: Set<String> = []
@@ -270,9 +291,13 @@ struct SessionListGroup: Equatable, Identifiable {
         var blocks: [SessionListBlock] = []
         var indexByID: [String: Int] = [:]
         for item in sessions {
-            let id = groupedByPath
+            let tabKey = groupedByPath
                 ? "\(item.session.path ?? "")\u{0}\(item.tabID)"
                 : item.tabID
+            // 同一 Tab 的普通终端不能被重新并入前面的 Agent 区块。
+            let id = commandsLast
+                ? "\(item.session.environmentAgentKind == nil ? "command" : "agent")\u{0}\(tabKey)"
+                : tabKey
             if let index = indexByID[id] {
                 blocks[index].sessions.append(item)
             } else {
@@ -291,8 +316,9 @@ enum SessionGrouping {
         from windows: [TerminalWindowSnapshot],
         style: SessionListStyle,
         pinnedProjectPaths: Set<String> = [],
-        separatesCommandSessions: Bool = false
+        commandPlacement: CommandSessionPlacement = .mixed
     ) -> [SessionListGroup] {
+        let separatesCommandSessions = commandPlacement == .separate
         var groups: [SessionListGroup]
         switch style {
         case .window:
@@ -324,10 +350,17 @@ enum SessionGrouping {
                 }
                 return pathComesBefore(first, second)
             }.map { path in
-                SessionListGroup(
+                let sessions = grouped[path] ?? []
+                let commandsLast = commandPlacement == .projectLast
+                let orderedSessions = commandsLast
+                    ? clusteredByTab(sessions.filter { $0.session.environmentAgentKind != nil })
+                        + clusteredByTab(sessions.filter { $0.session.environmentAgentKind == nil })
+                    : clusteredByTab(sessions)
+                return SessionListGroup(
                     id: "path:\(path)",
                     title: path.isEmpty ? "Unknown Path" : path,
-                    sessions: clusteredByTab(grouped[path] ?? [])
+                    sessions: orderedSessions,
+                    commandsLast: commandsLast
                 )
             }
         }
@@ -857,7 +890,7 @@ final class ItermStore: ObservableObject {
             from: windows,
             style: settings.sessionListStyle,
             pinnedProjectPaths: settings.pinnedProjectFolderPaths,
-            separatesCommandSessions: settings.separatesCommandSessions
+            commandPlacement: settings.commandSessionPlacement
         ).flatMap { group in
             group.blocks(groupedByPath: group.id == SessionGrouping.commandGroupID)
                 .flatMap(\.sessions)

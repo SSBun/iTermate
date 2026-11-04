@@ -101,7 +101,7 @@ private struct AppConfig {
     )
     var sessionListStyle: SessionListStyle = .window
     var sectionTitleStyle: SectionTitleStyle = .fullPath
-    var separatesCommandSessions = false
+    var commandSessionPlacement: CommandSessionPlacement = .mixed
     var showsTabHeaders = true
     var showsSessionTime = true
     var sessionTimeFormat: SessionTimeFormat = .compact
@@ -110,6 +110,7 @@ private struct AppConfig {
     var projectFolderCustomizations: [String: ProjectFolderCustomization] = [:]
 
     init(contents: String = "") {
+        var explicitCommandPlacement: CommandSessionPlacement?
         for line in contents.split(whereSeparator: \.isNewline) {
             let line = line.split(separator: "#", maxSplits: 1)[0]
                 .trimmingCharacters(in: .whitespaces)
@@ -202,9 +203,14 @@ private struct AppConfig {
                 }
             case "separate_command_sessions":
                 if value == "true" {
-                    separatesCommandSessions = true
+                    commandSessionPlacement = .separate
                 } else if value == "false" {
-                    separatesCommandSessions = false
+                    commandSessionPlacement = .mixed
+                }
+            case "command_session_placement":
+                if let placement = Self.stringValue(String(value)),
+                   let parsedPlacement = CommandSessionPlacement(rawValue: placement) {
+                    explicitCommandPlacement = parsedPlacement
                 }
             case "shows_tab_headers":
                 if value == "true" {
@@ -251,6 +257,9 @@ private struct AppConfig {
                 continue
             }
         }
+        if let explicitCommandPlacement {
+            commandSessionPlacement = explicitCommandPlacement
+        }
     }
 
     var toml: String {
@@ -275,7 +284,7 @@ private struct AppConfig {
         \(statusAnimations)
         session_list_style = \"\(sessionListStyle.rawValue)\"
         section_title_style = \"\(sectionTitleStyle.rawValue)\"
-        separate_command_sessions = \(separatesCommandSessions)
+        command_session_placement = "\(commandSessionPlacement.rawValue)"
         shows_tab_headers = \(showsTabHeaders)
         shows_session_time = \(showsSessionTime)
         session_time_format = "\(sessionTimeFormat.rawValue)"
@@ -321,7 +330,7 @@ final class AppSettings: ObservableObject {
     ]
     @Published private(set) var sessionListStyle: SessionListStyle
     @Published private(set) var sectionTitleStyle: SectionTitleStyle
-    @Published private(set) var separatesCommandSessions: Bool
+    @Published private(set) var commandSessionPlacement: CommandSessionPlacement
     @Published private(set) var showsTabHeaders: Bool
     @Published private(set) var showsSessionTime: Bool
     @Published private(set) var sessionTimeFormat: SessionTimeFormat
@@ -346,7 +355,7 @@ final class AppSettings: ObservableObject {
         statusAnimationPreferences = config.statusAnimationPreferences
         sessionListStyle = config.sessionListStyle
         sectionTitleStyle = config.sectionTitleStyle
-        separatesCommandSessions = config.separatesCommandSessions
+        commandSessionPlacement = config.commandSessionPlacement
         showsTabHeaders = config.showsTabHeaders
         showsSessionTime = config.showsSessionTime
         sessionTimeFormat = config.sessionTimeFormat
@@ -482,9 +491,9 @@ final class AppSettings: ObservableObject {
         updateConfig { $0.sectionTitleStyle = style }
     }
 
-    func setSeparatesCommandSessions(_ separatesCommandSessions: Bool) {
-        self.separatesCommandSessions = separatesCommandSessions
-        updateConfig { $0.separatesCommandSessions = separatesCommandSessions }
+    func setCommandSessionPlacement(_ placement: CommandSessionPlacement) {
+        commandSessionPlacement = placement
+        updateConfig { $0.commandSessionPlacement = placement }
     }
 
     func setShowsTabHeaders(_ showsTabHeaders: Bool) {
@@ -948,13 +957,18 @@ private struct GeneralSettingsView: View {
             }
 
             Section("Sessions") {
-                Toggle(
-                    "Group Command Sessions Separately",
-                    isOn: Binding(
-                        get: { settings.separatesCommandSessions },
-                        set: settings.setSeparatesCommandSessions
+                Picker(
+                    "Command Sessions",
+                    selection: Binding(
+                        get: { settings.commandSessionPlacement },
+                        set: settings.setCommandSessionPlacement
                     )
-                )
+                ) {
+                    ForEach(CommandSessionPlacement.allCases) { placement in
+                        Text(placement.title).tag(placement)
+                    }
+                }
+                .help("Last in Each Project applies when grouping by Project Path.")
 
                 Toggle(
                     "Show Tab Headers",

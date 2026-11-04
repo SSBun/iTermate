@@ -1056,7 +1056,7 @@ final class ItermBridgeTests: XCTestCase {
         let groups = SessionGrouping.groups(
             from: try hierarchySnapshot(),
             style: .projectPath,
-            separatesCommandSessions: true
+            commandPlacement: .separate
         )
 
         XCTAssertEqual(groups.map(\.title), ["/repo", "Commands"])
@@ -1066,6 +1066,40 @@ final class ItermBridgeTests: XCTestCase {
             ["session-3", "session-2", "session-4"]
         )
         XCTAssertEqual(groups[1].tabIDs, ["tab-3", "tab-2"])
+    }
+
+    func testCommandsLastInProjectPreservesOrderThroughTabBlocks() throws {
+        let message = try JSONDecoder().decode(BridgeMessage.self, from: Data(#"""
+        {"type":"snapshot","windows":[{"id":"w","number":1,"isActive":true,"tabs":[
+          {"id":"a","title":"A","isSelected":true,"sessions":[
+            {"id":"c1","name":"zsh","path":"/repo","isActive":false},
+            {"id":"a1","name":"Pi","path":"/repo","isActive":true,"agentKind":"pi"},
+            {"id":"only-command","name":"zsh","path":"/other","isActive":false}
+          ]},
+          {"id":"b","title":"B","isSelected":false,"sessions":[
+            {"id":"c2","name":"zsh","path":"/repo","isActive":false},
+            {"id":"a2","name":"Codex","path":"/repo","isActive":false,"agentKind":"codex"},
+            {"id":"unknown-path","name":"zsh","isActive":false}
+          ]}
+        ]}]}
+        """#.utf8))
+        let windows = try XCTUnwrap(message.windows)
+        let groups = SessionGrouping.groups(
+            from: windows,
+            style: .projectPath,
+            pinnedProjectPaths: ["/repo"],
+            commandPlacement: .projectLast
+        )
+        XCTAssertEqual(groups.map(\.title), ["/repo", "/other", "Unknown Path"])
+        let project = try XCTUnwrap(groups.first)
+        XCTAssertEqual(project.sessions.map(\.id), ["a1", "a2", "c1", "c2"])
+        XCTAssertEqual(project.blocks().flatMap(\.sessions).map(\.id), ["a1", "a2", "c1", "c2"])
+        XCTAssertEqual(Set(project.blocks().map(\.id)).count, 4)
+        XCTAssertEqual(groups.flatMap(\.sessions).count, 6)
+        XCTAssertEqual(
+            SessionGrouping.groups(from: windows, style: .window, commandPlacement: .projectLast),
+            SessionGrouping.groups(from: windows, style: .window)
+        )
     }
 
     func testCommandSessionsSortByDirectoryAndKeepMatchingPathsTogether() throws {
@@ -1112,7 +1146,7 @@ final class ItermBridgeTests: XCTestCase {
         let commands = try XCTUnwrap(SessionGrouping.groups(
             from: message.windows ?? [],
             style: .window,
-            separatesCommandSessions: true
+            commandPlacement: .separate
         ).last)
 
         XCTAssertEqual(

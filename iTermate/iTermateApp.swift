@@ -576,6 +576,18 @@ private struct PanelContent: View {
             }
 
             Section("Display") {
+                Picker(
+                    "Command Sessions",
+                    selection: Binding(
+                        get: { settings.commandSessionPlacement },
+                        set: settings.setCommandSessionPlacement
+                    )
+                ) {
+                    ForEach(CommandSessionPlacement.allCases) { placement in
+                        Text(placement.title).tag(placement)
+                    }
+                }
+
                 Toggle(
                     isOn: Binding(
                         get: { settings.showsTabHeaders },
@@ -615,7 +627,7 @@ private struct PanelContent: View {
             from: store.windows,
             style: settings.sessionListStyle,
             pinnedProjectPaths: settings.pinnedProjectFolderPaths,
-            separatesCommandSessions: settings.separatesCommandSessions
+            commandPlacement: settings.commandSessionPlacement
         )
     }
 
