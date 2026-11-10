@@ -880,11 +880,16 @@ final class ItermStore: ObservableObject {
     func activateNextFinishedSession(settings: AppSettings) {
         guard Self.isRunning(.iTerm2) else { return }
         startClient(for: .iTerm2)
-        // Native Codex state exists only in the App overlay, not in Bridge lifecycle storage.
-        let codexStatuses = Dictionary(uniqueKeysWithValues: mergingCodexObservations(into: iTermWindows)
+        // The legacy codexStatuses wire field carries App-owned navigation overrides.
+        // Include manual idle acknowledgements for every Agent so ranking matches the panel.
+        let navigationWindows = applyingManualIdleStatuses(to: mergingCodexObservations(into: iTermWindows))
+        let navigationStatuses = Dictionary(uniqueKeysWithValues: navigationWindows
             .flatMap(\.tabs)
             .flatMap(\.sessions)
-            .filter { $0.agentKind == .codex && $0.activityKind == .agent }
+            .filter {
+                $0.activityKind == .agent && ($0.agentKind == .codex
+                    || ($0.status == .idle && manualIdleStatuses[$0.id] != nil))
+            }
             .map { ($0.id, $0.status) })
         let orderedSessionIDs = SessionGrouping.groups(
             from: windows,
@@ -897,7 +902,7 @@ final class ItermStore: ObservableObject {
                 .map(\.session.id)
         }
         iTermClient.activateNextFinishedSession(
-            codexStatuses: codexStatuses,
+            codexStatuses: navigationStatuses,
             orderedSessionIDs: orderedSessionIDs
         ) { [weak self] error in
             self?.actionError = error
@@ -2394,7 +2399,7 @@ final class ItermBridgeClient {
         )
     }
 
-    /// Supplies panel order and App-observed Codex states for this navigation only.
+    /// Supplies panel order and App-owned status overrides for this navigation only.
     func activateNextFinishedSession(
         codexStatuses: [String: TerminalSessionStatus?],
         orderedSessionIDs: [String],
