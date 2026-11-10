@@ -1,0 +1,6 @@
+---
+title: Bridge重连与状态恢复
+summary: Bridge重连与状态恢复的适用条件、实现边界及复查要点。
+---
+
+- [2026-11-06] 睡眠可能漏掉settled、Prompt或Socket事件；墙上时钟检测长间隔后重验状态。refresh_running_statuses先过期旧心跳；仍有有效心跳的running保留。其余running按当前命令重验，无法确认时清状态、Agent身份/所有权及心跳，避免屏蔽后续Shell；finished不由此循环清除。恢复普通命令仅针对未被Agent管理、当前无状态的Session；排除外层Agent命令。不能把交互Agent进程驻留直接视为工作中。恢复计时从观察时开始。建立PromptMonitor增量监听前读取最近Prompt，普通命令已RUNNING且有command时立即发布，再听COMMAND_START/COMMAND_END；不必等待下一次启动事件。无Prompt时走原生jobPid VariableMonitor，以jobName、commandLine、shell确认前台普通作业；变量不可读时不伪造状态。不按Session标题猜测。App客户端重连与helper重启分别核对；常驻helper可跨客户端连接保留内存。当前App启动安装并重启Bridge，但不能把任意重连当成状态重置。新连接首快照前重验running，安装文件、Socket握手与运行实例MUST 一致。验证覆盖：启动/重连前已有命令；普通命令后续开始结束；Agent退出后的Shell恢复；唤醒后的有效/过期心跳、已结束Prompt、保留finished。真实运行验证仍受项目启动授权限制。
