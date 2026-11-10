@@ -1,5 +1,9 @@
 # 任务索引
 
+- [按独立关注点提交全部本地改动](tasks/commit-local-changes.md) — Completed (2026-11-10 14:55)
+
+- [修复手动空闲状态仍保留问号切换优先级](tasks/fix-manual-idle-priority.md) — Completed (2026-11-05 12:36)
+
 - [构建并发布 iTermate 0.8.0](tasks/release-v080.md) — Completed (2026-11-04 15:39)
 
 - [保存发布前全部本地改动](tasks/commit-all-before-v080.md) — Completed (2026-11-04 15:34)
