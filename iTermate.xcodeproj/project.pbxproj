@@ -12,6 +12,7 @@
 		1EB08AB6CC5C68A145AA5E85 /* StatusMenuSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE09BD6E8D3AAB8872C46707 /* StatusMenuSessionTests.swift */; };
 		35E521F366BF50D0CF68FF74 /* StatusMenuSessionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73C59D17D14497ACC160A8C9 /* StatusMenuSessionsView.swift */; };
 		3C23D61D4969774FEA271D3B /* PiStatusRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C392679BCA47875383F75E60 /* PiStatusRecoveryTests.swift */; };
+		3DA800F1DC79ED3A0BE77A50 /* AISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D75188375CF921024FA088F /* AISettingsView.swift */; };
 		5710E93BFF050C2919D03D58 /* PiSessionArchives.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B64B776E9CA4A9EFBFB2C08 /* PiSessionArchives.swift */; };
 		81CDDEC1358C6082F1D554F4 /* PiSessionArchiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B652704E42F76E84D47DEDB /* PiSessionArchiveTests.swift */; };
 		854F100B60C750D06E8DF1EC /* iTermateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44F8719B6809A3EC4D52A306 /* iTermateApp.swift */; };
@@ -28,6 +29,7 @@
 		CD6C91A30902A7FCEE57204D /* PanelLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFACC2CFD88EF145735DCE8 /* PanelLayoutTests.swift */; };
 		D2C6987CA2110DB3371B778F /* PanelLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2964CC35CF647092E51DBA87 /* PanelLayout.swift */; };
 		D70EAEE488EDDDCA530D505D /* ItermBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE386BB5E6A917CC6ACBC72C /* ItermBridgeTests.swift */; };
+		DAA2A2550929452D21343BF0 /* AIModelService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82E3014BE0F1F59FAF3A8561 /* AIModelService.swift */; };
 		EAECC190D6FF2D443E6ABD91 /* SettingsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06B21C5FA55597B9FDA65B2F /* SettingsViews.swift */; };
 		EB587179278E9117F362FB84 /* FinishedSessionShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5F745609B7FE1236B8C257 /* FinishedSessionShortcut.swift */; };
 		F0746B6CD96C6E5C9383D536 /* CodexAppServerClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06B80C0C131D72A362692BB7 /* CodexAppServerClient.swift */; };
@@ -68,7 +70,9 @@
 		6B652704E42F76E84D47DEDB /* PiSessionArchiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PiSessionArchiveTests.swift; sourceTree = "<group>"; };
 		73C59D17D14497ACC160A8C9 /* StatusMenuSessionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuSessionsView.swift; sourceTree = "<group>"; };
 		778A5491FBE924DD5E2ED781 /* iTermate-laya.py */ = {isa = PBXFileReference; lastKnownFileType = text.script.python; path = "iTermate-laya.py"; sourceTree = "<group>"; };
+		7D75188375CF921024FA088F /* AISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettingsView.swift; sourceTree = "<group>"; };
 		7F9780F9E62B5F002E4B8B1A /* LocalModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelService.swift; sourceTree = "<group>"; };
+		82E3014BE0F1F59FAF3A8561 /* AIModelService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIModelService.swift; sourceTree = "<group>"; };
 		8C38928251D32A7255116F91 /* FinishedSessionShortcutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinishedSessionShortcutTests.swift; sourceTree = "<group>"; };
 		8F8A8790CA418B304742A10E /* AgentIntegrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentIntegrations.swift; sourceTree = "<group>"; };
 		8F9D7227C9F23B70A7FDBDAF /* SessionNotificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionNotificationTests.swift; sourceTree = "<group>"; };
@@ -123,6 +127,8 @@
 			isa = PBXGroup;
 			children = (
 				8F8A8790CA418B304742A10E /* AgentIntegrations.swift */,
+				82E3014BE0F1F59FAF3A8561 /* AIModelService.swift */,
+				7D75188375CF921024FA088F /* AISettingsView.swift */,
 				26707EC6497714316C11E6B6 /* Assets.xcassets */,
 				06B80C0C131D72A362692BB7 /* CodexAppServerClient.swift */,
 				2D6FAEF1D6A3ED3BE73E0BED /* CodexSessionMonitor.swift */,
@@ -300,6 +306,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DAA2A2550929452D21343BF0 /* AIModelService.swift in Sources */,
+				3DA800F1DC79ED3A0BE77A50 /* AISettingsView.swift in Sources */,
 				8A0FC8F8870D37796C534582 /* AgentIntegrations.swift in Sources */,
 				F0746B6CD96C6E5C9383D536 /* CodexAppServerClient.swift in Sources */,
 				0944AEEE0596242835BAD8FB /* CodexSessionMonitor.swift in Sources */,
@@ -397,13 +405,13 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = NO;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				INFOPLIST_FILE = iTermate/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.8.0;
+				MARKETING_VERSION = 0.8.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.caishilin.iTermate;
 				SDKROOT = macosx;
 			};
@@ -448,13 +456,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				INFOPLIST_FILE = iTermate/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.8.0;
+				MARKETING_VERSION = 0.8.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.caishilin.iTermate;
 				SDKROOT = macosx;
 			};

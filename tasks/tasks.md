@@ -1,5 +1,23 @@
 # 任务索引
 
+- [提交全部本地改动并发布补丁版本](tasks/release-fix-local-changes.md) — In Progress (2026-11-18 15:49)
+
+- [评估 OpenAI Decision 回复分类准确性](tasks/evaluate-openai-decision-reply-precision.md) — Completed (2026-11-13 16:10)
+
+- [修复后台 AI 重复钥匙串授权弹窗](tasks/fix-repeated-keychain-prompts.md) — Completed (2026-11-13 16:05)
+
+- [远程 LLM 模型列表与思考等级设置](tasks/remote-model-list-and-thinking.md) — Completed (2026-11-13 15:28)
+
+- [补齐 Codex 自动路径与模型设置](tasks/auto-detect-codex-cli-path.md) — Completed (2026-11-13 11:46)
+
+- [固定默认 Decision 模型并移除名称输入](tasks/default-decision-model.md) — Completed (2026-11-13 11:25)
+
+- [修复 AI 提供商测试点击后无反馈](tasks/fix-ai-test-feedback.md) — Completed (2026-11-13 11:25)
+
+- [拆分 AI 设置中的 LLM 与决策模型提供商](tasks/split-ai-model-providers.md) — Completed (2026-11-13 11:08)
+
+- [调查手动重置后状态不刷新根因](tasks/investigate-status-reset.md) — Blocked (2026-11-13 10:26)
+
 - [按独立关注点提交全部本地改动](tasks/commit-local-changes.md) — Completed (2026-11-10 14:55)
 
 - [修复手动空闲状态仍保留问号切换优先级](tasks/fix-manual-idle-priority.md) — Completed (2026-11-05 12:36)

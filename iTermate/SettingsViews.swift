@@ -684,6 +684,7 @@ struct SettingsView: View {
     @ObservedObject var store: ItermStore
     @ObservedObject var settings: AppSettings
     @ObservedObject var localModel: LocalLLMService
+    @ObservedObject var aiModels: AIModelService
     @ObservedObject var finishedSessionShortcut: FinishedSessionShortcut
     let updater: SPUUpdater
 
@@ -699,7 +700,7 @@ struct SettingsView: View {
                     Label("Agents", systemImage: "terminal")
                 }
 
-            LocalLLMSettingsView(service: localModel)
+            AISettingsView(local: localModel, models: aiModels)
                 .tabItem {
                     Label("AI", systemImage: "brain")
                 }

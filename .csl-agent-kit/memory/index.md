@@ -2,7 +2,7 @@
 schema: csl-memory-index/v4
 formatVersion: 5
 scope: project
-generation: 9c50310b3ac13a1f92deb24a72b3d4f48f2fa46714c5d87450e731740de41109
+generation: 741c1ef84ec09b8b59f09b2a41cd9c292897addb40c102967afe275ed2c3886c
 count: 18
 entries: entries
 ---
@@ -19,9 +19,9 @@ sha256: 468f97e9860381e6cee763baf98920d058e3443f19c49ed2cc549e2ddb4a254e
 
 ## [Bridge协议与集成兼容](entries/bridge-protocol.md)
 
-Bridge协议与集成兼容的适用条件、实现边界及复查要点。
+App自管Bridge的内部协议边界、独立更新集成的格式兼容，以及变更后的验收要求。
 
-sha256: 28a2ca31d28be2810f41f092cbff6c54eb5333c66428a7f3e44925cd2119b2dd
+sha256: 95d647a08df03fd5c6362e58e80ec080687a6c76ac7f699f839473adab94daf9
 
 ## [Bridge重连与状态恢复](entries/bridge-recovery.md)
 
@@ -31,9 +31,9 @@ sha256: b5e316fbd788264c23b45fac4364e203ced6955eb8aed78e17c48b8ba17338d8
 
 ## [配置与用户意图](entries/configuration.md)
 
-配置与用户意图的适用条件、实现边界及复查要点。
+共享配置的并发写入保护、持久化用户意图与外部能力的分离，以及历史配置迁移边界。
 
-sha256: 1dc7abac489ebd0d681fd0acb22f99d212ec224c24b8179217333fb62ef4b03b
+sha256: c2d7039a9f71984cab5e949e1a9999a8dcd71be8b2cf051fcb769567d568ce05
 
 ## [项目基础信息](entries/context.md)
 
@@ -49,15 +49,15 @@ sha256: d4af77508a6775f3cfa7a8b3fc4392a1236ee7d25854ee464b42311ddf403435
 
 ## [通用经验](entries/lessons.md)
 
-项目内源码交付、安装与运行边界，以及 macOS 界面和通知验证经验。
+项目内源码交付、安装与运行边界、回复分类回归方法及Decision固定集实测，以及macOS界面和通知验证经验。
 
-sha256: ad63df4ae56711de329e005b423eea9156e85c624e1da951e031cedba72e3ded
+sha256: 5d6fba3e8b0229938eef5b4d542f242ffb3c71354a3bcdcc78725134a068aae1
 
-## [本地模型与标题](entries/local-model.md)
+## [AI模型、问题判断与标题](entries/local-model.md)
 
-本地模型与标题的适用条件、实现边界及复查要点。
+LLM与Decision提供商、模型目录与思考等级、标题和问题判断路由，以及Keychain凭据与App代理边界。
 
-sha256: 5c09478a098281f41219b45f5821e56be449d33d660e477c44cb6a1f575d0373
+sha256: facd3906f67d009f39937a7788744aa9771e0368e3762016b5848424028626e4
 
 ## [面板悬停与命中](entries/panel-hover.md)
 
@@ -75,7 +75,7 @@ sha256: bf236ad75d0e3aeffc303c9ab882323f24f99aaa07244f4ecefd0e5ee6779bed
 
 Pi标题、归档与恢复的适用条件、实现边界及复查要点。
 
-sha256: dcdfdfce4f75d303e194c845d6b0f52825da88ff7aa0feb53928c4295e22e68f
+sha256: bd5a821376397cf74287bc7ca6b442025a142f71cbf0f57f56c38f935252ae99
 
 ## [Pi状态恢复](entries/pi-status.md)
 
@@ -111,10 +111,10 @@ sha256: dbe8045ec8f48f3246338f3bf711d1e2f609b3b2102bc82e93655c8951095f39
 
 最近7个UTC自然日的用户意图与必要背景；不是执行授权。
 
-sha256: 14c331edd5dd567d0b72fb05866eca4e9c47f553f880bfde82707c4a787727f9
+sha256: 0f669fb7d305e1bcd42ea367a8e6c0e48ba30bd87e80b2c2bc37a1df85188e34
 
 ## [视觉设计与资源验收](entries/visual-design.md)
 
-视觉设计与资源验收的适用条件、实现边界及复查要点。
+具象参考与图像生成确认边界、菜单栏资源尺寸、原生 macOS 界面及视觉验收经验。
 
-sha256: 8a9d10e2e7f83b0c3089f95dc7a4afbcb723f07d66337e0a07132fa1b2fa7f8b
+sha256: da47630aa5cf05d2bdbc84a174a89535e2e12463d9165c583a3a5c8d518e5aaf

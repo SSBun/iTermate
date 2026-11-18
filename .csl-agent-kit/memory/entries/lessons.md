@@ -1,6 +1,6 @@
 ---
 title: 通用经验
-summary: 项目内源码交付、安装与运行边界，以及 macOS 界面和通知验证经验。
+summary: 项目内源码交付、安装与运行边界、回复分类回归方法及Decision固定集实测，以及macOS界面和通知验证经验。
 ---
 
 - [2026-11-08] 真实视觉/运行验证涉及 venom-cli build --run、open 或启动/重启 App、Bridge 时，MUST 核对 tasks/lessons.md 的禁止自行启动条目和当前会话授权。默认 MUST 仅做不启动/重启的源码检查、构建、测试；交付时 MUST 提示用户自行重新构建运行，收到确认后再观察。构建通过不授权替换运行实例；MUST NOT 以验证为由擅自启动、替换或重启 App、Bridge。
@@ -10,3 +10,5 @@ summary: 项目内源码交付、安装与运行边界，以及 macOS 界面和�
 - [2026-11-08] macOS SwiftUI 滚动条：MUST NOT 仅凭 .scrollIndicators(.hidden) 或构建通过判定隐藏；SHOULD 优先使用 ScrollView(showsIndicators: false)，运行画面 MUST 无指示器且溢出内容仍能滚动。菜单栏/LSUIElement 的 Settings：macOS 14+ MUST 激活 App 后调用 openSettings；selector/button action 触发不证明窗口创建。MUST 逐入口核对实际构建产物路径，防 LaunchServices 打开同 bundle ID 旧副本，并通过 Accessibility 观察窗口创建且可见。
 - [2026-11-08] UNUserNotificationCenter：add MUST 提供 completion handler 记录系统错误；完整状态转换后 MUST 核对 usernoted 接受、投递与展示。诊断信号为 hasError: 0、Delivering、Presenting ... as banner；失败日志为 iTermate notification failed 及系统错误。验证 MUST 单实例且签名 identifier=CFBundleIdentifier，MUST NOT 用 CODE_SIGNING_ALLOWED=NO 产物验证原通知授权身份；运行中重构建/签名后 MUST 重新运行再验证。
 - [2026-11-08] NSPanel 默认 MUST 接收覆盖区域点击；仅用户明确要求 click-through 时才启用穿透。默认验收 MUST 检查 ignoresMouseEvents=false 且点击不命中下层应用。上述 macOS 界面与通知的真实运行验证 MUST 遵守当前项目启动授权限制，默认由用户重新构建运行后观察。
+- [2026-11-13] 回复分类验证需区分样例结构／协议处理与模型判断准确率：助手只读检查报告称 `integrations/pi/reply-classification-cases.json` 有38条回归样例，20条question（要求用户回答、选择、确认、授权或补充信息）、18条normal（完成报告、自主推进、操作说明或无需回应）；覆盖中英文、隐式确认、无问号等待确认、引用中的问题、Task Target、提交与MR状态报告，以及仅要求重启与重启后请回复的区别。回归入口为 `integrations/pi/reply-classification.test.ts`，模拟网络与解析检查在 `integrations/pi/local-llm-selection.test.mjs`。默认离线测试主要检查结构和协议；原回归入口的真实模型评估需显式启用，调用生产分类函数并跟随当前配置的判断方式，文件名称及注释仍称本地模型，尚非逐提供商测试矩阵。设置页仅少量固定示例，未接入完整38条集合；设置页反馈可见和静态复查不证明模型准确率。此前仅检查文件、未运行测试的边界，现由下方Decision直连固定集实测补充；该实测未覆盖原回归入口或App/Pi IPC，也不验证其他提供商。记忆维护未独立核验源码或样例文件。
+- [2026-11-13] 用户配置OpenAI Decision后要求用现有集合评估精度。交付报告及已读取的统计文件一致：沿用生产提示词、`gpt-6-luna`与0.5阈值，直接请求官方 `/v1/decisions`，38条固定样例均有有效结果，36条正确；TP=18、FN=2、FP=0、TN=18，准确率94.7%，question精确率100%（18/18）、召回率90%（18/20）、F1为94.7%。报告称38次均HTTP 200；统计记录服务失败0、重试0，报告另称无超时。两条漏判均要求用户操作后回复：英文检查状态后回复continue并等待再推进的样例概率0.49，中文“请执行 /reload，完成后回复我，我再继续验证。”概率0.46，均低于阈值；无normal被误判为question。平均耗时1168.03毫秒、P95为2317毫秒，总用量9186 tokens（全部为input），未估算费用。该次仅发送固定样例，报告称未读取真实会话、未改生产提示词／阈值／设置，日常Question checking当时仍选择普通LLM，未替用户切换。单次固定集结果不代表未见样本泛化能力，也不证明App/Pi IPC或Keychain代理端到端可用；后续调阈值 SHOULD 先增加独立样例再验证，避免仅凭这38条及两个近阈值漏判下调。记忆维护核对了统计文件，未重放请求或独立核验HTTP、凭据读取及提示词一致性。

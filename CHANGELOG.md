@@ -4,6 +4,27 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-11-18
+
+### Fixed
+
+- 修复 Pi 后台 AI 调用反复触发钥匙串授权的问题：密钥由 App 统一管理，后台读取禁止交互授权，无法访问时明确失败。
+- 修复手动标为空闲后，会话快捷切换仍使用旧状态的问题。
+- 改进 AI 测试结果反馈、远程模型列表和思考等级选择，以及 Codex CLI 路径自动检测。
+
+### Changed
+
+- AI 设置分为 LLM models、Decision models、Title generation 与 Question checking；标题使用所选 LLM，问题判断可独立选择 LLM 或 Decision。
+- 支持 Codex CLI 登录集成、OpenAI API、DeepSeek API 和本机 Ollama 部署；各类模型提供固定示例测试入口。
+- 默认 Decision 模型为 gpt-6-luna；模型目录及账号可用性以提供商实际返回为准。
+
+### Notes
+
+- 选择远程提供商时，标题或问题判断会向该提供商发送必要对话摘录；API Key 保存在 macOS Keychain，Codex 使用本机 CLI 登录。
+- Pi 远程 API 请求需运行新版 iTermate；更新集成后，已有 Pi 会话需执行 `/reload`。
+- Apple Silicon（arm64），最低 macOS 13，版本 0.8.1（build 16）。
+- 使用 ad hoc 签名，未经 Apple 公证；未运行单元测试或项目测试套件，未执行真实远程模型、Keychain 或 GUI 升级验收。
+
 ## [0.8.0] - 2026-11-04
 
 ### Added

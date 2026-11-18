@@ -575,7 +575,7 @@ private struct ServiceError: LocalizedError {
     var errorDescription: String? { message }
 }
 
-private struct LocalModelInstallationIcon: View {
+struct LocalModelInstallationIcon: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let installed: Bool
 
@@ -1103,12 +1103,59 @@ final class LocalLLMService: ObservableObject {
         return result.text
     }
 
-    private func request(path: String, body: [String: Any]? = nil) async throws -> [String: Any] {
+    /// Downloads only after an explicit deployment action in Settings.
+    func installModel() {
+        guard !isBusy else { return }
+        let selection: (model: LocalLLMModel, autoFillMissingTitles: Bool, identity: Data?)
+        do { selection = try readSelection() }
+        catch { status = "Could not read the saved model selection."; return }
+        isBusy = true
+        isReady = false
+        status = "Deploying \(selection.model.title)…"
+        operation = Task {
+            defer { isBusy = false; operation = nil }
+            do {
+                _ = try await inventoryStartingOllamaIfNeeded()
+                let result = try await request(path: "pull", body: ["model": selection.model.rawValue, "stream": false], timeout: 600)
+                guard result["status"] as? String == "success",
+                      try readSelection().identity == selection.identity else {
+                    throw ServiceError("Deployment did not complete or the selection changed")
+                }
+                status = "Deployed \(selection.model.title). Check & Warm Model to validate it."
+            } catch { status = "Model deployment failed: \(error.localizedDescription)" }
+        }
+    }
+
+    func completeQuestionTest(prompt: String, text: String) async throws -> String {
+        let selection = try readSelection()
+        let inventory = try await request(path: "tags")
+        guard let digest = selection.model.installedRevision(in: inventory["models"] as? [[String: Any]] ?? []) else {
+            throw SessionTitleGenerationError(.modelUnavailable)
+        }
+        let value = try await request(path: "chat", body: [
+            "model": selection.model.rawValue, "stream": false, "think": false, "keep_alive": "10m",
+            "messages": [["role": "system", "content": prompt], ["role": "user", "content": text]],
+            "options": ["temperature": 0, "seed": 42, "num_ctx": 16_384, "num_predict": 32],
+        ], timeout: 10)
+        let after = try await request(path: "tags")
+        guard value["model"] as? String == selection.model.rawValue,
+              value["done"] as? Bool == true, value["done_reason"] as? String == "stop",
+              let message = value["message"] as? [String: Any],
+              (message["thinking"] == nil || (message["thinking"] as? String)?.isEmpty == true),
+              let text = message["content"] as? String,
+              selection.model.installedRevision(in: after["models"] as? [[String: Any]] ?? []) == digest,
+              try readSelection().identity == selection.identity else {
+            throw SessionTitleGenerationError(.invalidContent)
+        }
+        return text
+    }
+
+    private func request(path: String, body: [String: Any]? = nil, timeout: Double = 60) async throws -> [String: Any] {
         guard let url = URL(string: "http://127.0.0.1:11434/api/\(path)") else {
             throw ServiceError("Invalid local model request")
         }
         var request = URLRequest(url: url)
-        request.timeoutInterval = body == nil ? 3 : 60
+        request.timeoutInterval = body == nil ? 3 : timeout
         if let body {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1143,64 +1190,5 @@ private final class LocalLLMRedirectPolicy: NSObject, URLSessionTaskDelegate {
         completionHandler: @escaping (URLRequest?) -> Void
     ) {
         completionHandler(nil)
-    }
-}
-
-/// Local LLM controls intentionally expose no Decision engine, API address, or token.
-struct LocalLLMSettingsView: View {
-    @ObservedObject var service: LocalLLMService
-    @State private var confirmsConfigurationRepair = false
-
-    var body: some View {
-        Form {
-            Section("Session Titles") {
-                Toggle("Automatically Fill Missing Titles", isOn: Binding(
-                    get: { service.autoFillMissingTitles },
-                    set: { service.setAutoFillMissingTitles($0) }
-                ))
-                Text("Generate titles for Pi and Codex sessions without a summary, including after reopening iTermate. Existing titles and manual refresh remain available when disabled.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section("Local LLM") {
-                Picker("Model", selection: Binding(get: { service.selectedModel }, set: { model in
-                    if let model { service.selectModel(model) }
-                })) {
-                    if service.selectedModel == nil {
-                        Text("Choose a model").tag(Optional<LocalLLMModel>.none)
-                    }
-                    ForEach(LocalLLMModel.allCases) { model in
-                        Text(model.title).tag(Optional(model))
-                    }
-                }
-                .disabled(service.isBusy)
-                Text("The saved choice is shared by question detection and session titles. Existing titles are retained until refreshed.")
-                    .font(.caption).foregroundStyle(.secondary)
-                Label {
-                    Text(service.status).foregroundStyle(.secondary)
-                } icon: {
-                    LocalModelInstallationIcon(installed: service.isReady)
-                        .frame(width: 14, height: 14).accessibilityHidden(true)
-                }
-                if service.configurationNeedsRepair {
-                    Button("Repair Saved Configuration…") { confirmsConfigurationRepair = true }
-                        .disabled(service.isBusy)
-                }
-                Button("Check & Warm Model") { service.refresh() }
-                    .disabled(service.isBusy)
-                Text("Question detection and session titles use this local model only. No cloud or other model fallback.")
-                    .font(.caption).foregroundStyle(.secondary)
-                Text("iTermate starts an installed Ollama automatically when needed and leaves it running on quit. Each request keeps the model loaded for 10 minutes of inactivity; Ollama manages memory.")
-                    .font(.caption).foregroundStyle(.secondary)
-                Text("Install the selected model in Ollama before using it, then check and warm it here. Changing the choice does not download a model. Existing downloads are preserved.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-        }
-        .formStyle(.grouped)
-        .alert("Repair Saved Configuration?", isPresented: $confirmsConfigurationRepair) {
-            Button("Cancel", role: .cancel) {}
-            Button("Back Up & Reset") { service.repairConfiguration() }
-        } message: {
-            Text("Save a private copy of the damaged file, then reset the model to Qwen3.5 · 2B with automatic title backfill off. No model will be downloaded or started.")
-        }
     }
 }

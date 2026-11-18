@@ -32,6 +32,7 @@ struct ItermateApplication: App {
                 store: appDelegate.store,
                 settings: appDelegate.settings,
                 localModel: appDelegate.localModel,
+                aiModels: appDelegate.aiModels,
                 finishedSessionShortcut: appDelegate.finishedSessionShortcut,
                 updater: appDelegate.updaterController.updater
             )
@@ -56,9 +57,10 @@ private func statusBarIcon() -> Image {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let settings = AppSettings()
     let localModel = LocalLLMService()
+    let aiModels = AIModelService()
     lazy var store = ItermStore(generateCodexTitle: { [weak self] excerpt in
         guard let self else { throw CancellationError() }
-        return try await self.localModel.generateSessionTitle(from: excerpt)
+        return try await self.aiModels.generateSessionTitle(from: excerpt, local: self.localModel)
     })
     lazy var finishedSessionShortcut = FinishedSessionShortcut(settings: settings) { [weak self] in
         guard let self else {
@@ -81,6 +83,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         NSApplication.shared.setActivationPolicy(.accessory)
+        aiModels.startRequestBroker()
         AgentIntegrationManager().updateInstalledIntegrations()
         updaterController.startUpdater()
         panelFollower = PanelFollower(store: store, settings: settings)
@@ -90,7 +93,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         panelFollower?.start()
         store.start()
-        localModel.refresh()
+        if aiModels.configuration.provider == .ollama { localModel.refresh() }
         finishedSessionShortcut.start()
         NSWorkspace.shared.notificationCenter.addObserver(
             self,

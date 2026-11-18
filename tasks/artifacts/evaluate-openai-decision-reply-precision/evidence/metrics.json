@@ -1,0 +1,49 @@
+{
+  "model": "gpt-6-luna",
+  "endpoint": "https://api.openai.com/v1/decisions",
+  "threshold": 0.5,
+  "samples": 38,
+  "validResults": 38,
+  "serviceFailures": 0,
+  "correct": 36,
+  "accuracy": 0.9473684210526315,
+  "questionPrecision": 1.0,
+  "questionRecall": 0.9,
+  "questionF1": 0.9473684210526316,
+  "confusionMatrix": {
+    "TP": 18,
+    "FN": 2,
+    "FP": 0,
+    "TN": 18
+  },
+  "latencyMilliseconds": {
+    "mean": 1168.0263157894738,
+    "median": 754.0,
+    "p95": 2317,
+    "max": 2366,
+    "sum": 44385
+  },
+  "usage": {
+    "input_tokens": 9186,
+    "output_tokens": 0,
+    "total_tokens": 9186
+  },
+  "misclassified": [
+    {
+      "id": "english-status-continue-gate",
+      "expected": "question",
+      "predicted": "normal",
+      "probability": 0.49,
+      "text": "Check the current status and reply with continue when you are ready. I will wait before proceeding."
+    },
+    {
+      "id": "reload-with-explicit-response-request",
+      "expected": "question",
+      "predicted": "normal",
+      "probability": 0.46,
+      "text": "请执行 /reload，完成后回复我，我再继续验证。"
+    }
+  ],
+  "requestsRetried": 0,
+  "coverageNote": "固定38条回归样例，单次评估；直接HTTPS与生产Decision模型、predicate、阈值一致，未验证App/Pi IPC；未修改生产设置。"
+}
