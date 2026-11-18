@@ -2,7 +2,7 @@
 schema: csl-memory-index/v4
 formatVersion: 5
 scope: project
-generation: 741c1ef84ec09b8b59f09b2a41cd9c292897addb40c102967afe275ed2c3886c
+generation: ebde1de9df1e128eafae232e0ae10f2a8d00efae3c7fe10f7938d87b0c732378
 count: 18
 entries: entries
 ---
@@ -111,7 +111,7 @@ sha256: dbe8045ec8f48f3246338f3bf711d1e2f609b3b2102bc82e93655c8951095f39
 
 最近7个UTC自然日的用户意图与必要背景；不是执行授权。
 
-sha256: 0f669fb7d305e1bcd42ea367a8e6c0e48ba30bd87e80b2c2bc37a1df85188e34
+sha256: 3db253d5c81b780fc7a291ae867f10e8185d155df0570f483503562a990508aa
 
 ## [视觉设计与资源验收](entries/visual-design.md)
 

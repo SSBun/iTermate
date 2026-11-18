@@ -1,6 +1,6 @@
 # 任务索引
 
-- [提交全部本地改动并发布补丁版本](tasks/release-fix-local-changes.md) — In Progress (2026-11-18 15:49)
+- [提交全部本地改动并发布补丁版本](tasks/release-fix-local-changes.md) — Completed (2026-11-18 16:08)
 
 - [评估 OpenAI Decision 回复分类准确性](tasks/evaluate-openai-decision-reply-precision.md) — Completed (2026-11-13 16:10)
 
