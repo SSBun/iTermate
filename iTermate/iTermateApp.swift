@@ -440,6 +440,7 @@ private struct PanelContent: View {
     @ObservedObject var archives: PiSessionArchives
     private static let archiveSectionID = "archive:pi"
     @State private var collapsedSectionIDs: Set<String> = [PanelContent.archiveSectionID]
+    @State private var hoveredProjectGroupID: String?
     @State private var hoveredSessionID: String?
     @State private var hoveredCloseButtonSessionID: String?
     @State private var codexBindingSession: TerminalSessionSnapshot?
@@ -510,6 +511,7 @@ private struct PanelContent: View {
         .overlay {
             ActiveHoverRegion { isHovered in
                 if !isHovered {
+                    hoveredProjectGroupID = nil
                     hoveredSessionID = nil
                     hoveredCloseButtonSessionID = nil
                 }
@@ -798,6 +800,12 @@ private struct PanelContent: View {
             ? settings.projectFolderColor(at: group.title)
             : nil
         let headerColor: Color = projectColor ?? .secondary
+        let canOpenTab = isProjectFolder && store.terminalApp == .iTerm2
+        let showsToolbar = canOpenTab && hoveredProjectGroupID == group.id
+        let count = Text(countLabel)
+            .font(.system(size: settings.panelFontSize * 0.75))
+            .monospacedDigit()
+            .fixedSize()
         return Button {
             toggleSection(group.id)
         } label: {
@@ -821,12 +829,11 @@ private struct PanelContent: View {
                         .accessibilityHidden(true)
                 }
                 Spacer(minLength: 4)
+                if canOpenTab {
+                    Color.clear.frame(width: 20, height: 20)
+                }
                 if showsCount {
-                    Text(countLabel)
-                        .font(.system(size: settings.panelFontSize * 0.75))
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                        .fixedSize()
+                    count
                 }
             }
             .contentShape(Rectangle())
@@ -836,15 +843,58 @@ private struct PanelContent: View {
         .buttonStyle(.plain)
         .font(headerFont())
         .foregroundStyle(.secondary)
-        .padding(.top, 8)
         .help(group.title)
         .accessibilityLabel(
             "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(title), \(countLabel)"
                 + (customization.isPinned ? ", pinned" : "")
                 + (customization.isFavorite ? ", favorite" : "")
         )
+        .overlay(alignment: .trailing) {
+            if showsToolbar {
+                HStack(spacing: 6) {
+                    Button {
+                        store.openProjectInNewTab(atPath: group.title)
+                    } label: {
+                        Image(systemName: "plus")
+                            .frame(width: 20, height: 20)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .help("Open New iTerm2 Tab")
+                    .accessibilityLabel("Open New iTerm2 Tab in \(title)")
+                    if showsCount {
+                        count.hidden()
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .padding(.trailing, 8)
+            }
+        }
+        .overlay {
+            if canOpenTab {
+                ActiveHoverRegion { isHovered in
+                    if isHovered {
+                        hoveredProjectGroupID = group.id
+                    } else if hoveredProjectGroupID == group.id {
+                        hoveredProjectGroupID = nil
+                    }
+                }
+            }
+        }
+        .onDisappear {
+            if hoveredProjectGroupID == group.id {
+                hoveredProjectGroupID = nil
+            }
+        }
+        .padding(.top, 8)
         .contextMenu {
             if isProjectFolder {
+                if canOpenTab {
+                    Button("Open New iTerm2 Tab") {
+                        store.openProjectInNewTab(atPath: group.title)
+                    }
+                }
                 projectFolderActions(for: group.title)
                 Divider()
             }

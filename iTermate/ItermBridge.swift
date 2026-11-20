@@ -828,6 +828,14 @@ final class ItermStore: ObservableObject {
     }
 #endif
 
+    func openProjectInNewTab(atPath path: String) {
+        actionError = nil
+        startClient(for: .iTerm2)
+        iTermClient.openProject(atPath: path, inNewTab: true) { [weak self] error in
+            self?.actionError = error
+        }
+    }
+
     func openFavoriteProject(
         atPath path: String,
         completion: @escaping (String?) -> Void
@@ -2387,11 +2395,12 @@ final class ItermBridgeClient {
 
     func openProject(
         atPath path: String,
+        inNewTab: Bool = false,
         completion: @escaping (String?) -> Void
     ) {
         perform(
             SessionActionRequest(
-                type: "openProject",
+                type: inNewTab ? "openProjectInNewTab" : "openProject",
                 requestId: UUID().uuidString,
                 path: path
             ),

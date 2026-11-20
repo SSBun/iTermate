@@ -2,7 +2,7 @@
 schema: csl-memory-index/v4
 formatVersion: 5
 scope: project
-generation: ebde1de9df1e128eafae232e0ae10f2a8d00efae3c7fe10f7938d87b0c732378
+generation: 3493bc2ad02d72870a829f60034678d41b514c005e62fb3263148b09e3f8fb15
 count: 18
 entries: entries
 ---
@@ -85,15 +85,15 @@ sha256: 288daed6bf000006c201784cceb56a0483a806ace77889f2300304e62b2df883
 
 ## [列表分组与焦点](entries/session-grouping.md)
 
-跨 Window/Tab 全局焦点唯一性、分组信息层级和对应回归检查。
+跨 Window/Tab 全局焦点唯一性、分组信息层级、项目标题栏操作及回归检查。
 
-sha256: 312867029d7bc5c8bdd31583916031581e9e52a38d31bb77cc60c0332680b6af
+sha256: b87e1ed291b7dd605ed75c0b5be88e32cf8c5ca7ca8350f147bb6c7aab5de091
 
 ## [数据源与会话导航](entries/session-navigation.md)
 
 数据源与会话导航的适用条件、实现边界及复查要点。
 
-sha256: 1fe2146c5447e035e4db6bd6cf36ccf00ab2bb664b7d0d3f5afa6c55a8698504
+sha256: b262839ab68cdaca4eb479620e5072d8ce0eaf257b7996140d66c58879ad640e
 
 ## [会话列表与状态展示](entries/session-ui.md)
 
@@ -111,7 +111,7 @@ sha256: dbe8045ec8f48f3246338f3bf711d1e2f609b3b2102bc82e93655c8951095f39
 
 最近7个UTC自然日的用户意图与必要背景；不是执行授权。
 
-sha256: 3db253d5c81b780fc7a291ae867f10e8185d155df0570f483503562a990508aa
+sha256: 448d4cd5301225fe902db138a1ded54a0f05c3b4bbee3f1229b997fe0b99019b
 
 ## [视觉设计与资源验收](entries/visual-design.md)
 

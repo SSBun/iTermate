@@ -18,7 +18,7 @@ SOCKET_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.sock")
 LOCK_PATH = os.path.join(SUPPORT_DIRECTORY, "bridge.lock")
 SNAPSHOT_INTERVAL = 2
 AGENT_HEARTBEAT_TIMEOUT = 8
-SESSION_NAVIGATION_TIMEOUT = 3
+SESSION_NAVIGATION_TIMEOUT = 2
 
 
 def heartbeat_time():
@@ -182,7 +182,7 @@ class Bridge:
             await self.publish_snapshot()
             return
 
-        if action == "openProject":
+        if action in ("openProject", "openProjectInNewTab"):
             path = request.get("path")
             if (
                 not isinstance(path, str)
@@ -196,7 +196,10 @@ class Bridge:
                 )
                 return
             try:
-                await self.open_project(path)
+                if action == "openProjectInNewTab":
+                    await self.create_project_tab(path)
+                else:
+                    await self.open_project(path)
             except Exception as error:
                 await self.send_action_result(writer, request_id, False, str(error))
                 return
@@ -428,7 +431,7 @@ class Bridge:
         await self.publish_snapshot()
 
     async def activate_next_finished_session(self, codex_statuses=None, ordered_session_ids=None):
-        """每轮按状态优先级及面板从上到下排序；停顿满三秒或应用失焦后重开一轮。"""
+        """每轮按状态优先级及面板从上到下排序，快捷键停顿满两秒后重开一轮。"""
         if codex_statuses is None:
             codex_statuses = {}
         if not isinstance(codex_statuses, dict) or any(
@@ -472,8 +475,6 @@ class Bridge:
             self.finished_navigation_visited.intersection_update(
                 session.session_id for session in sessions
             )
-            if current_id is not None:
-                self.finished_navigation_visited.add(current_id)
             eligible = []
             for desired_status in ("awaitingInput", "finished", "idle", "running"):
                 for session in candidates:
@@ -487,15 +488,16 @@ class Bridge:
                         eligible.append((session, status, is_codex))
             if not eligible:
                 return
+            waiting = [item for item in eligible if item[1].get("status") == "awaitingInput"]
+            if waiting:
+                eligible = waiting
             target = next(
                 (item for item in eligible if item[0].session_id not in self.finished_navigation_visited),
                 None,
             )
             if target is None:
-                # Priority only orders a round; visit all remaining eligible Agents before repeating.
+                # Repeat a waiting Agent before falling back to lower-priority statuses.
                 self.finished_navigation_visited.clear()
-                if current_id is not None:
-                    self.finished_navigation_visited.add(current_id)
                 target = eligible[0]
             session, status, is_codex = target
             status_before_activation = dict(self.session_statuses.get(session.session_id, {}))
@@ -538,8 +540,11 @@ class Bridge:
                         )
                         return
 
+        await self.create_project_tab(path)
+
+    async def create_project_tab(self, path):
         if not os.path.isdir(path):
-            raise ValueError("Favorite project folder no longer exists")
+            raise ValueError("Project folder no longer exists")
 
         profile = iterm2.LocalWriteOnlyProfile()
         profile.set_initial_directory_mode(
@@ -630,13 +635,6 @@ class Bridge:
         async with iterm2.FocusMonitor(self.connection) as monitor:
             while True:
                 update = await monitor.async_get_next_update()
-                if (
-                    update.application_active is not None
-                    and not update.application_active.application_active
-                ):
-                    async with self.finished_navigation_lock:
-                        self.finished_navigation_visited.clear()
-                        self.finished_navigation_last_press = None
                 statuses_before_focus = dict(self.session_statuses)
                 await self.app.async_refresh_focus()
                 session_id = self.activated_session_id(update)
@@ -2173,7 +2171,7 @@ def self_test():
         await navigation.activate_next_finished_session()
         assert len(activated) == before  # Current idle, ordinary shell and unknown kind are excluded.
 
-        # Each round covers all four tiers, even with multiple waiting Agents present.
+        # Waiting Agents retain priority even after both have been visited.
         navigation.finished_navigation_visited.clear()
         navigation.agent_managed_session_ids.add("3")
         navigation_app.current_window = window_one
@@ -2191,19 +2189,10 @@ def self_test():
         assert activated[-1] == "1"  # Waiting wins before the unread result in another window.
         tab_one.current_session = split
         await navigation.activate_next_finished_session()
-        assert activated[-1] == "3"  # Visit the remaining finished Agent before idle and running.
-        assert navigation.session_statuses["3"]["status"] == "idle"
+        assert activated[-1] == "0"  # Visit the other waiting Agent before the unread result.
         navigation_app.current_window = window_two
         await navigation.activate_next_finished_session()
-        assert activated[-1] == "2"  # Do not repeat an already-visited waiting or finished Agent.
-        navigation_app.current_window = window_one
-        window_one.current_tab = tab_two
-        await navigation.activate_next_finished_session()
-        assert activated[-1] == "4"  # Running joins only after the remaining higher tiers.
-        window_one.current_tab = tab_one
-        tab_one.current_session = command
-        await navigation.activate_next_finished_session()
-        assert activated[-1] == "0"  # Only after the round is exhausted may waiting repeat.
+        assert activated[-1] == "1"  # Revisit a waiting Agent before falling back to idle.
         navigation_app.current_window = window_one
         window_one.current_tab = tab_one
         tab_one.current_session = first
@@ -2227,12 +2216,12 @@ def self_test():
         await navigation.activate_next_finished_session({"1": "finished"})
         assert activated[-1] == "1"  # Unread Codex outranks idle Pi in a fresh round.
         await navigation.activate_next_finished_session({"1": "awaitingInput"})
-        assert activated[-1] == "2"  # Visit remaining idle before repeating the waiting Codex.
+        assert activated[-1] == "1"  # Waiting Codex retains priority over idle Pi.
         navigation.session_statuses["2"] = {"status": "awaitingInput", "activityKind": "agent"}
         await navigation.activate_next_finished_session({"1": "idle"})
         assert activated[-1] == "2"  # Waiting Pi outranks idle Codex when the next round starts.
         await navigation.activate_next_finished_session({"1": "finished"})
-        assert activated[-1] == "1"  # Visit the unvisited result instead of repeating waiting Pi.
+        assert activated[-1] == "2"  # Waiting Pi retains priority over a finished result.
         navigation.finished_navigation_visited.clear()
         navigation.session_statuses["2"] = {"status": "finished", "activityKind": "agent"}
         await navigation.activate_next_finished_session({"1": "awaitingInput"})
@@ -2317,18 +2306,20 @@ def self_test():
         navigation.session_statuses["shell"] = {"status": "idle", "activityKind": "command"}
         navigation.session_statuses["unknown"] = {"status": "idle"}
         statuses_before = {key: dict(value) for key, value in navigation.session_statuses.items()}
-        expected = ["waiting-a", "waiting-b", "finished", "idle", "running"]
+        expected = ["waiting-a", "waiting-b", "waiting-a"]
         for session_id in expected:
             await navigation.activate_next_finished_session()
             assert activated[-1] == session_id
-        assert activated == expected  # All four tiers are visited before any waiting Agent repeats.
-        assert navigation.session_statuses["finished"]["status"] == "idle"
-        for session_id in ("waiting-a", "waiting-b", "idle", "running"):
-            assert navigation.session_statuses[session_id] == statuses_before[session_id]
+        assert activated == expected
+        assert navigation.session_statuses == statuses_before
+        navigation.set_agent_status("waiting-a", "idle")
+        navigation.set_agent_status("waiting-b", "idle")
         await navigation.activate_next_finished_session()
-        assert activated[-1] == "waiting-a"  # Only the exhausted round restarts at highest priority.
+        assert activated[-1] == "finished"
+        assert navigation.session_statuses["finished"]["status"] == "idle"
 
         # Closed Sessions must leave the round even if their status entry remains.
+        navigation.set_agent_status("waiting-b", "awaitingInput")
         tab.all_sessions.remove(sessions["waiting-b"])
         navigation.finished_navigation_visited.clear()
         tab.current_session = sessions["shell"]
@@ -2342,8 +2333,10 @@ def self_test():
         navigation.finished_navigation_visited.clear()
         tab.current_session = sessions["shell"]
         navigation.set_agent_status("finished", "finished")
+        navigation.set_agent_status("waiting-a", "awaitingInput")
         await navigation.activate_next_finished_session()
         assert activated[-1] == "waiting-a"
+        navigation.set_agent_status("waiting-a", "idle")
         navigation.set_agent_status("finished", "running")
         await navigation.activate_next_finished_session()
         assert activated[-1] == "idle"  # A newly running Agent falls below remaining idle Agents.
@@ -2351,7 +2344,7 @@ def self_test():
         await navigation.activate_next_finished_session()
         assert activated[-1] == "finished"  # The unvisited Agent now joins the idle tier.
         await navigation.activate_next_finished_session()
-        assert activated[-1] == "running"  # Waiting cannot starve the remaining running Agent.
+        assert activated[-1] == "running"
 
         # A new pane joins by its real identity; command and unknown panes never do.
         new_session = RoundSession("new")
@@ -2366,8 +2359,8 @@ def self_test():
         await navigation.activate_next_finished_session()
         assert len(activated) == before  # Ordinary commands, unknown and closed Agents are ineligible.
 
-        # Each press extends the window: less than three seconds continues the round,
-        # even when the complete sequence takes longer than three seconds.
+        # Each press extends the window: less than two seconds continues the round,
+        # even when the complete sequence takes longer than two seconds.
         from unittest.mock import patch
 
         navigation.set_agent_status("waiting-a", "awaitingInput")
@@ -2376,25 +2369,26 @@ def self_test():
         navigation.finished_navigation_last_press = None
         before = len(activated)
         for now, expected_id in (
-            (100, "waiting-a"), (102, "finished"), (104, "idle"),
+            (100, "waiting-a"), (101.5, "finished"), (103, "waiting-a"),
         ):
             with patch.object(time, "monotonic", return_value=now):
                 await navigation.activate_next_finished_session({"finished": "finished"})
             assert activated[-1] == expected_id
-        assert activated[before:] == ["waiting-a", "finished", "idle"]
+        assert activated[before:] == ["waiting-a", "finished", "waiting-a"]
+        navigation.set_agent_status("waiting-a", "idle")
 
         # Timeout restarts an incomplete round against live priority, not its old visited set.
         navigation.set_agent_status("new", "idle")
-        with patch.object(time, "monotonic", return_value=107):
-            await navigation.activate_next_finished_session({"finished": "finished"})
-        assert activated[-1] == "waiting-a"  # Without expiry, the remaining new pane would win.
+        with patch.object(time, "monotonic", return_value=105):
+            await navigation.activate_next_finished_session({"waiting-a": "finished"})
+        assert activated[-1] == "waiting-a"
         assert "new" not in navigation.finished_navigation_visited
-        for now, expected_id in ((109, "finished"), (111, "idle")):
+        for now, expected_id in ((106, "finished"), (107, "idle")):
             with patch.object(time, "monotonic", return_value=now):
-                await navigation.activate_next_finished_session({"finished": "finished"})
+                await navigation.activate_next_finished_session({"waiting-a": "finished", "finished": "finished"})
             assert activated[-1] == expected_id
-        with patch.object(time, "monotonic", return_value=114.001):
-            await navigation.activate_next_finished_session({"finished": "finished"})
+        with patch.object(time, "monotonic", return_value=109.001):
+            await navigation.activate_next_finished_session({"waiting-a": "finished"})
         assert activated[-1] == "waiting-a"
 
         # Panel order may differ from native order; the current middle row is not an anchor.
@@ -2406,7 +2400,7 @@ def self_test():
         with patch.object(time, "monotonic", return_value=120):
             await navigation.activate_next_finished_session(None, panel_order)
         assert activated[-1] == "new"
-        with patch.object(time, "monotonic", return_value=122.999):
+        with patch.object(time, "monotonic", return_value=121.999):
             await navigation.activate_next_finished_session(None, panel_order)
         assert activated[-1] == "finished"  # Continue rather than reset just below the boundary.
         with patch.object(time, "monotonic", return_value=126):
@@ -2429,9 +2423,27 @@ def self_test():
             assert not writer.messages[0]["ok"]
         assert len(activated) == before
 
+        # Clicking a pane excludes it only while it is current. It does not spend its turn.
+        navigation.set_agent_status("waiting-a", "idle")
+        tab.current_session = sessions["idle"]
+        with patch.object(time, "monotonic", return_value=140):
+            await navigation.activate_next_finished_session(None, panel_order)
+        assert activated[-1] == "new"
+        tab.current_session = sessions["finished"]
+        with patch.object(time, "monotonic", return_value=141):
+            await navigation.activate_next_finished_session(None, panel_order)
+        assert activated[-1] == "idle"
+        with patch.object(time, "monotonic", return_value=142):
+            await navigation.activate_next_finished_session(None, panel_order)
+        assert activated[-1] == "finished"
+        tab.current_session = sessions["idle"]
+        with patch.object(time, "monotonic", return_value=144):
+            await navigation.activate_next_finished_session(None, panel_order)
+        assert activated[-1] == "new"
+
     asyncio.run(check_navigation_rounds())
 
-    async def check_navigation_focus_reset():
+    async def check_navigation_preserves_round_on_focus():
         from types import SimpleNamespace
         from unittest.mock import AsyncMock, patch
 
@@ -2457,7 +2469,7 @@ def self_test():
                     raise StopAsyncIteration
                 return update
 
-        # App activation and intra-app focus changes preserve the current round.
+        # Focus changes within iTerm2 or between apps preserve the current round.
         for active in (None, True, False):
             navigation.finished_navigation_visited = {"visited"}
             navigation.finished_navigation_last_press = 100
@@ -2470,11 +2482,11 @@ def self_test():
                     await navigation.monitor_focus()
                 except StopAsyncIteration:
                     pass
-            assert navigation.finished_navigation_visited == (set() if active is False else {"visited"})
-            assert navigation.finished_navigation_last_press == (None if active is False else 100)
+            assert navigation.finished_navigation_visited == {"visited"}
+            assert navigation.finished_navigation_last_press == 100
             assert navigation.session_statuses == lifecycle_before
 
-    asyncio.run(check_navigation_focus_reset())
+    asyncio.run(check_navigation_preserves_round_on_focus())
 
 
 if __name__ == "__main__":

@@ -1,5 +1,11 @@
 # 任务索引
 
+- [项目会话栏添加新标签页按钮](tasks/project-new-tab-toolbar.md) — Completed (2026-11-19 16:56)
+
+- [修复 Ctrl+Tab 问号会话优先跳转](tasks/fix-question-session-jump.md) — Completed (2026-11-19 16:59)
+
+- [评估 iTerm2 功能对 iTermate 的优化价值](tasks/evaluate-iterm2-features.md) — Completed (2026-11-19 15:06)
+
 - [提交全部本地改动并发布补丁版本](tasks/release-fix-local-changes.md) — Completed (2026-11-18 16:08)
 
 - [评估 OpenAI Decision 回复分类准确性](tasks/evaluate-openai-decision-reply-precision.md) — Completed (2026-11-13 16:10)
