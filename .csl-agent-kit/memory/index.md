@@ -2,7 +2,7 @@
 schema: csl-memory-index/v4
 formatVersion: 5
 scope: project
-generation: 3493bc2ad02d72870a829f60034678d41b514c005e62fb3263148b09e3f8fb15
+generation: 3a6b10c9e5501fb89d673df38ee23401d12163a96ef757a19f3785be19a9ba59
 count: 18
 entries: entries
 ---
@@ -61,9 +61,9 @@ sha256: facd3906f67d009f39937a7788744aa9771e0368e3762016b5848424028626e4
 
 ## [面板悬停与命中](entries/panel-hover.md)
 
-面板悬停与命中的适用条件、实现边界及复查要点。
+浮动会话面板的悬停追踪、命中行为、控件提示及桌面验证边界。
 
-sha256: db4149c8987c48ad1228ce07c81706f43d5fbe0de6c2fd6daa8a727f36eedf35
+sha256: 2e845d38af0f86671d7e13dc9bc6995543bac4f175166d7dbbe46064ab97c128
 
 ## [面板前台可见性](entries/panel-visibility.md)
 

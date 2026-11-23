@@ -1,5 +1,9 @@
 # 任务索引
 
+- [提交全部本地改动并发布 iTermate 补丁版](tasks/release-v082.md) — In Progress (2026-11-23 10:52)
+
+- [为浮动会话面板控件添加悬停提示](tasks/panel-control-tooltips.md) — Completed (2026-11-20 14:28)
+
 - [项目会话栏添加新标签页按钮](tasks/project-new-tab-toolbar.md) — Completed (2026-11-19 16:56)
 
 - [修复 Ctrl+Tab 问号会话优先跳转](tasks/fix-question-session-jump.md) — Completed (2026-11-19 16:59)

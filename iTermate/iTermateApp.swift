@@ -466,7 +466,7 @@ private struct PanelContent: View {
                     Image(systemName: "arrow.clockwise")
                 }
                 .buttonStyle(.borderless)
-                .help("Refresh sessions")
+                .help("Fetch the latest sessions from \(terminalName)")
                 .accessibilityLabel("Refresh sessions")
                 groupingMenu
             }
@@ -495,6 +495,7 @@ private struct PanelContent: View {
 
             HStack {
                 settingsButton
+                    .help("Open iTermate settings")
                 Spacer()
             }
         }
@@ -526,10 +527,13 @@ private struct PanelContent: View {
         }
         .alert("Track Codex Conversation", isPresented: $showsCodexBinding) {
             TextField("Thread ID from /status", text: $codexThreadID)
+                .help("Enter the thread ID shown by /status in Codex")
             Button("Track") {
                 if let session = codexBindingSession { store.bindCodexThread(codexThreadID, to: session) }
             }
+            .help("Track the Codex conversation with this thread ID")
             Button("Cancel", role: .cancel) {}
+                .help("Close without changing conversation tracking")
         } message: {
             Text("Track this conversation through the existing Codex daemon. After /new or /resume, bind the new thread ID. Binding ends when Codex or iTermate exits.")
         }
@@ -542,7 +546,6 @@ private struct PanelContent: View {
                 Image(systemName: "gearshape")
             }
             .buttonStyle(.borderless)
-            .help("Settings")
             .accessibilityLabel("Settings")
         } else {
             Button {
@@ -556,7 +559,6 @@ private struct PanelContent: View {
                 Image(systemName: "gearshape")
             }
             .buttonStyle(.borderless)
-            .help("Settings")
             .accessibilityLabel("Settings")
         }
     }
@@ -578,6 +580,7 @@ private struct PanelContent: View {
                 }
                 .labelsHidden()
                 .pickerStyle(.inline)
+                .help("Group sessions by terminal window or project folder")
             }
 
             Section("Display") {
@@ -592,6 +595,7 @@ private struct PanelContent: View {
                         Text(placement.title).tag(placement)
                     }
                 }
+                .help("Choose where shell command sessions appear")
 
                 Toggle(
                     isOn: Binding(
@@ -601,6 +605,7 @@ private struct PanelContent: View {
                 ) {
                     Label("Show Tab Headers", systemImage: "rectangle.stack")
                 }
+                .help(settings.showsTabHeaders ? "Hide the header for each terminal tab" : "Show a header for each terminal tab")
             }
 
             Section("Sections") {
@@ -609,6 +614,7 @@ private struct PanelContent: View {
                 } label: {
                     Label("Expand All", systemImage: "chevron.down.2")
                 }
+                .help("Show sessions in all sections")
                 .disabled(collapsedSectionIDs.isDisjoint(with: collapsibleSectionIDs))
 
                 Button {
@@ -616,6 +622,7 @@ private struct PanelContent: View {
                 } label: {
                     Label("Collapse All", systemImage: "chevron.right.2")
                 }
+                .help("Hide sessions in all sections")
                 .disabled(collapsibleSectionIDs.isSubset(of: collapsedSectionIDs))
             }
         } label: {
@@ -623,7 +630,7 @@ private struct PanelContent: View {
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
-        .help("Configure session list")
+        .help("Change session grouping, command placement, and section display")
         .accessibilityLabel("Session list settings")
     }
 
@@ -730,6 +737,7 @@ private struct PanelContent: View {
             .font(headerFont())
             .foregroundStyle(.secondary)
             .padding(.top, 5)
+            .help(sectionToggleHelp("Archive", id: Self.archiveSectionID))
             .accessibilityLabel(collapsedSectionIDs.contains(Self.archiveSectionID) ? "Expand Archive" : "Collapse Archive")
 
             if !collapsedSectionIDs.contains(Self.archiveSectionID) {
@@ -756,6 +764,7 @@ private struct PanelContent: View {
                             .font(panelFont(0.8))
                             .buttonStyle(.plain)
                             .disabled(archives.isBusy)
+                            .help("Resume this archived Pi session in \(record.terminal)")
                             .accessibilityLabel("Resume archived Pi session \(record.name), \(record.sessionId), in \(record.terminal)")
                     }
                     .contentShape(Rectangle())
@@ -766,6 +775,7 @@ private struct PanelContent: View {
                         Button("Delete Archive", role: .destructive) {
                             Task { await archives.delete(record) }
                         }
+                        .help("Delete this archived Pi session")
                         .disabled(archives.isBusy)
                     }
                 }
@@ -843,7 +853,7 @@ private struct PanelContent: View {
         .buttonStyle(.plain)
         .font(headerFont())
         .foregroundStyle(.secondary)
-        .help(group.title)
+        .help(sectionToggleHelp(title, id: group.id) + (title == group.title ? "" : "\n\(group.title)"))
         .accessibilityLabel(
             "\(collapsedSectionIDs.contains(group.id) ? "Expand" : "Collapse") \(title), \(countLabel)"
                 + (customization.isPinned ? ", pinned" : "")
@@ -860,7 +870,7 @@ private struct PanelContent: View {
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .help("Open New iTerm2 Tab")
+                    .help("Open a new iTerm2 tab in this project folder\n\(group.title)")
                     .accessibilityLabel("Open New iTerm2 Tab in \(title)")
                     if showsCount {
                         count.hidden()
@@ -894,6 +904,7 @@ private struct PanelContent: View {
                     Button("Open New iTerm2 Tab") {
                         store.openProjectInNewTab(atPath: group.title)
                     }
+                    .help("Open a new iTerm2 tab in this project folder")
                 }
                 projectFolderActions(for: group.title)
                 Divider()
@@ -938,6 +949,7 @@ private struct PanelContent: View {
         .padding(.horizontal, 8)
         .padding(.leading, settings.sessionListStyle == .projectPath ? 12 : 0)
         .padding(.top, 10)
+        .help(sectionToggleHelp(title, id: sectionID))
         .accessibilityLabel(
             "\(collapsedSectionIDs.contains(sectionID) ? "Expand" : "Collapse") \(title)"
         )
@@ -958,6 +970,7 @@ private struct PanelContent: View {
                 systemImage: customization.isPinned ? "pin.slash" : "pin"
             )
         }
+        .help(customization.isPinned ? "Return this project to its normal sort order" : "Keep this project at the top of the list")
 
         Button {
             settings.toggleFavoriteProjectFolder(at: path)
@@ -967,6 +980,7 @@ private struct PanelContent: View {
                 systemImage: customization.isFavorite ? "star.slash" : "star"
             )
         }
+        .help(customization.isFavorite ? "Remove this project from Favorites" : "Add this project to Favorites")
 
         ColorPicker(
             selection: Binding(
@@ -977,6 +991,7 @@ private struct PanelContent: View {
         ) {
             Label("Custom Color…", systemImage: "paintpalette")
         }
+        .help("Choose a color for this project header")
 
         if customization.colorHex != nil {
             Button {
@@ -984,6 +999,7 @@ private struct PanelContent: View {
             } label: {
                 Label("Clear Color", systemImage: "xmark.circle")
             }
+            .help("Restore the default color for this project header")
         }
     }
 
@@ -995,6 +1011,7 @@ private struct PanelContent: View {
         } label: {
             Label("Close All Sessions", systemImage: "trash")
         }
+        .help("Close every terminal session in this section")
     }
 
     private func disclosureIcon(isCollapsed: Bool) -> some View {
@@ -1009,6 +1026,11 @@ private struct PanelContent: View {
 
     private func isTabCollapsed(_ tabID: String) -> Bool {
         collapsedSectionIDs.contains(tabSectionID(tabID))
+    }
+
+    private func sectionToggleHelp(_ title: String, id: String) -> String {
+        let action = collapsedSectionIDs.contains(id) ? "Expand" : "Collapse"
+        return "\(action) \(title)"
     }
 
     private func toggleSection(_ sectionID: String) {
@@ -1133,6 +1155,7 @@ private struct PanelContent: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .help("Switch to this terminal session")
                 .accessibilityLabel("Activate session \(item.session.name)")
             }
             .padding(.leading, 8)
@@ -1193,6 +1216,7 @@ private struct PanelContent: View {
                     Task { await archives.refreshTitle(item.session, terminal: terminal) }
                 }
             }
+            .help("Generate an updated title for this session")
             .disabled(!isCodex && !archives.supportsTitleRefresh(item.session, terminal: terminal))
 
             if isCodex {
@@ -1201,10 +1225,12 @@ private struct PanelContent: View {
                     codexThreadID = store.boundCodexThreadID(item.session) ?? ""
                     showsCodexBinding = true
                 }
+                .help("Track an existing Codex conversation by its thread ID")
                 if store.boundCodexThreadID(item.session) != nil {
                     Button("Use Automatic Codex Detection") {
                         store.bindCodexThread(nil, to: item.session)
                     }
+                    .help("Remove the manual thread ID and detect the Codex conversation automatically")
                 }
             }
 
@@ -1213,6 +1239,7 @@ private struct PanelContent: View {
                     store.archivePiSession(observedSession, in: terminal)
                 }
             }
+            .help("Save this Pi session to the archive for later resumption")
             .disabled(observedSession.map { !archives.canArchive($0, terminal: terminal) } ?? true)
         }
         .overlay {
@@ -1280,9 +1307,10 @@ private struct PanelContent: View {
         showsWorkingDirectory: Bool
     ) -> String {
         if showsWorkingDirectory, let path = session.path, !path.isEmpty {
-            return path
+            return "Switch to this terminal session\n\(path)"
         }
-        return archives.sessionTitle(for: session, terminal: store.terminalApp)
+        return "Switch to this terminal session\n"
+            + archives.sessionTitle(for: session, terminal: store.terminalApp)
             + "\n" + session.name
     }
 
